@@ -15,9 +15,9 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Build the Docker image
-      run: docker build . --file Dockerfile --tag jjasloot/ovdb:$(date +%s) --build-arg JWTSigningKey --build-arg UserAgent
+      run: docker build . --file Dockerfile --tag jjasloot/ovdb:$(date +%Y%M%d) --build-arg JWTSigningKey --build-arg UserAgent
     - name: Tag as latest
-      run: docker tag jjasloot/ovdb:$(date +%s) jjasloot/ovdb:latest
+      run: docker tag jjasloot/ovdb:$(date +%Y%M%d) jjasloot/ovdb:latest
     - name: Docker login
       run: docker login -u ${{ secrets.DockerUsername}} -p${{secrets.DockerPassword}} 
     - name: Docker push
