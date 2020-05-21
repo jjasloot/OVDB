@@ -1,4 +1,4 @@
-name: Docker Image CI
+name: OVDB build
 
 on:
   push:
@@ -15,5 +15,11 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Build the Docker image
-      run: docker build . --file Dockerfile --tag jjasloot/ovdb:$(date +%s) --build-arg JWTSigningKey --build-arg UserAgent && docker login -u ${{ secrets.DockerUsername}} -p${{secrets.DockerPassword}} && docker push jjasloot/ovdb
+      run: docker build . --file Dockerfile --tag jjasloot/ovdb:$(date +%s) --build-arg JWTSigningKey --build-arg UserAgent
+    - uses: actions/checkout@v2
+    - name: Docker login
+      run: docker login -u ${{ secrets.DockerUsername}} -p${{secrets.DockerPassword}} 
+    - uses: actions/checkout@v2
+    - name: Docker push
+      run: docker push jjasloot/ovdb
     
