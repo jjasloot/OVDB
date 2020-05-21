@@ -1,0 +1,64 @@
+.container {
+    margin: 48px;
+}
+
+form {
+    display: flex;
+    flex-direction: column;
+}
+
+.column {
+    display: flex;
+    flex-direction: column;
+}
+
+.form {
+    width: 50%;
+    margin: auto;
+    margin-bottom: 24px;
+}
+
+.line {
+    border: solid 1px #ccc;
+    margin: 8px;
+    padding: 8px;
+    display: flex;
+    flex-direction: row;
+}
+
+.info {
+    flex: 1
+}
+
+.row {
+    display: flex;
+    flex-direction: row;
+}
+
+.two-col {
+    display: flex;
+    flex-direction: row;
+    @media (max-width: 900px) {
+        flex-direction: column;
+    }
+}
+
+.left {
+    flex: 1;
+    margin-right: 8px;
+    @media (max-width: 900px) {
+        margin-right: 0;
+    }
+}
+
+.right {
+    flex: 1;
+    margin-left: 8px;
+    @media (max-width: 900px) {
+        margin-left: 0;
+    }
+}
+
+.hidden {
+    display: none !important;
+}

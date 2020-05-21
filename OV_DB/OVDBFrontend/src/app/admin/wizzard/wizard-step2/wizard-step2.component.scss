@@ -1,0 +1,39 @@
+.row {
+    display: flex;
+    flex-direction: row;
+}
+
+.from {
+    width: 100px;
+    align-items: flex-end;
+    display: flex;
+}
+
+.info {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    padding: 4px;
+    color: gray;
+    font-style: italic;
+    &.active {
+        font-style: normal;
+        color: unset;
+        font-weight: 500;
+    }
+}
+
+.to {
+    width: 100px;
+    align-items: flex-start;
+    display: flex;
+}
+
+.stops {
+    max-height: calc(100vh - 250px);
+    overflow-y: auto;
+}
+
+.buttons {
+    margin: 12px;
+}

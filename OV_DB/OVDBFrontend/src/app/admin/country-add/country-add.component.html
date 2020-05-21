@@ -1,0 +1,16 @@
+<h3 mat-dialog-title>{{'ADDCOUNTRY.TITLE'|translate}}</h3>
+<div mat-dialog-content>
+    <mat-form-field style="width: 100%;">
+        <mat-label>{{'ADDCOUNTRY.NAME'|translate}}</mat-label>
+        <input type="text" [(ngModel)]="countryName" matInput required/>
+    </mat-form-field>
+    <mat-form-field style="width: 100%;">
+        <mat-label>{{'ADDCOUNTRY.NAME'|translate}} ({{'LANGUAGES.DUTCH'|translate}})</mat-label>
+        <input type="text" [(ngModel)]="countryNameNL" matInput/>
+    </mat-form-field>
+    {{error}}
+</div>
+<div mat-dialog-actions>
+    <button mat-button (click)="cancel()">{{'CANCEL'|translate}}</button>
+    <button mat-button (click)="return()">{{'SAVE'|translate}}</button>
+</div>

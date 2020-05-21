@@ -1,0 +1,18 @@
+<h3 mat-dialog-title>{{'ADDMAP.TITLE'|translate}}</h3>
+<div mat-dialog-content>
+    <mat-form-field style="width: 100%;">
+        <mat-label>{{'ADDMAP.NAME'|translate}}</mat-label>
+        <input type="text" [(ngModel)]="mapName" matInput required />
+    </mat-form-field>
+    <mat-form-field style="width: 100%;">
+        <mat-label>{{'ADDMAP.SHARENAME'|translate}}</mat-label>
+        <input type="text" [(ngModel)]="mapSharingLink" matInput />
+    </mat-form-field>
+
+    <mat-checkbox [(ngModel)]="mapDefault">{{'ADDMAP.DEFAULT'|translate}}</mat-checkbox>
+    {{error}}
+</div>
+<div mat-dialog-actions>
+    <button mat-button (click)="cancel()">{{'CANCEL'|translate}}</button>
+    <button mat-button (click)="return()">{{'SAVE'|translate}}</button>
+</div>

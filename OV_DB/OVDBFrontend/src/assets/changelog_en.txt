@@ -1,0 +1,14 @@
+2020-05-09:
+- Allow searching at another point in time
+
+2020-05-06:
+- Wizard allow searching for network
+
+2020-05-05-1:
+- Funicular added as type for wizard
+
+2020-05-05:
+- Wizard for routes
+
+2020-04-30:
+- First version in English

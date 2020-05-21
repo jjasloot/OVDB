@@ -1,0 +1,47 @@
+<div *ngIf="!data">
+    <mat-spinner></mat-spinner>
+
+    {{'IMPORTER.THISMAYTAKEAWHILE'|translate}}
+</div>
+<button mat-icon-button (click)="goback()" *ngIf="data">
+<mat-icon>arrow_back</mat-icon>
+</button>
+<div class="row" *ngIf="data">
+    <div style="flex: 3">
+        <div class="map" leaflet style="height: 350px;" [leafletOptions]="options" [leafletLayers]="layers" [leafletFitBounds]="bounds">
+        </div>
+
+
+        <div>
+            <mat-list>
+                <mat-list-item> {{'IMPORTER.NAME'|translate}}: {{data.name}} </mat-list-item>
+                <mat-list-item> {{'IMPORTER.LINENUMBER'|translate}}: {{data.ref}} </mat-list-item>
+                <mat-list-item> {{'IMPORTER.OPERATOR'|translate}}: {{data.operator}} </mat-list-item>
+                <mat-list-item *ngIf="!!data.colour"> {{'IMPORTER.COLOUR'|translate}}:&nbsp;
+                    <mat-chip-list>
+                        <mat-chip [color]="data.colour" [style.background]="data.colour" selected>{{data.colour}}</mat-chip>
+
+                    </mat-chip-list>
+                </mat-list-item>
+            </mat-list>
+        </div>
+    </div>
+    <div style="flex: 2">
+        <div class="buttons">
+            <button mat-raised-button style="margin-right: 8px;" (click)="cut()">{{'IMPORTER.CUT'|translate}}</button>
+            <button mat-raised-button style="margin-right: 8px;" (click)="uncut()">{{'IMPORTER.RESTORE'|translate}}</button>
+
+            <button mat-raised-button style="margin-right: 8px;" (click)="save()" color="primary">{{'IMPORTER.SAVE'|translate}}</button>
+
+            <button mat-raised-button color="primary" (click)="export()">{{'IMPORTER.EXPORT'|translate}}</button>
+
+        </div>
+        <div class="stops">
+            <div *ngFor="let stop of stops" class="row">
+                <div class="from"> <button *ngIf="showFrom(stop.id)" (click)="setFrom(stop.id)" mat-button>{{'IMPORTER.FROM'|translate}}</button> </div>
+                <div class="info" [ngClass]="{'active':included(stop.id)}">{{stop.name}} {{stop.ref}}</div>
+                <div class="to"> <button *ngIf="showTo(stop.id)" (click)="setTo(stop.id)" mat-button>{{'IMPORTER.TO'|translate}}</button> </div>
+            </div>
+        </div>
+    </div>
+</div>

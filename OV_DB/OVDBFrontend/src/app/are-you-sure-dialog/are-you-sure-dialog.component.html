@@ -1,0 +1,8 @@
+<h3 mat-dialog-title>{{'AREYOUSURE.TITLE'|translate}}</h3>
+<div mat-dialog-content>
+    <p>{{'AREYOUSURE.TEXTBEFORE'|translate}} {{item}} {{'AREYOUSURE.TEXTAFTER'|translate}}</p>
+</div>
+<div mat-dialog-actions>
+    <button mat-button (click)="no()">{{'NO'|translate}}</button>
+    <button color="warning" mat-button (click)="yes()">{{'YES'|translate}}</button>
+</div>

@@ -1,0 +1,57 @@
+<h3 mat-dialog-title>Aangepaste selectie</h3>
+<div mat-dialog-content>
+    <mat-accordion>
+        <mat-expansion-panel *ngIf="countries">
+            <mat-expansion-panel-header>
+                <mat-panel-title>
+                    {{'FILTER.COUNTRIES'|translate}}
+                </mat-panel-title>
+                <mat-panel-description class="ellipsis">
+                    {{countriesString}}
+                </mat-panel-description>
+            </mat-expansion-panel-header>
+
+            <div class="grid">
+                <mat-checkbox *ngFor="let country of countries" [checked]="isCountryChecked(country.countryId)" (change)="setCountry(country.countryId,$event)">{{name(country)}}</mat-checkbox>
+            </div>
+        </mat-expansion-panel>
+        <mat-expansion-panel *ngIf="routeTypes">
+            <mat-expansion-panel-header>
+                <mat-panel-title>
+                    {{'FILTER.TYPES'|translate}}
+                </mat-panel-title>
+                <mat-panel-description class="ellipsis">
+                    {{typesString}}
+                </mat-panel-description>
+            </mat-expansion-panel-header>
+
+            <div class="grid">
+                <mat-checkbox *ngFor="let type of routeTypes" [checked]="isTypeChecked(type.typeId)" (change)="setType(type.typeId,$event)">{{name(type)}}</mat-checkbox>
+            </div>
+        </mat-expansion-panel>
+        <mat-expansion-panel *ngIf="routeTypes">
+            <mat-expansion-panel-header>
+                <mat-panel-title>
+                    {{'FILTER.YEARS'|translate}}
+                </mat-panel-title>
+                <mat-panel-description class="ellipsis">
+                    {{yearsString}}
+                </mat-panel-description>
+            </mat-expansion-panel-header>
+
+            <div class="grid">
+                <mat-checkbox *ngFor="let year of years" [checked]="isYearChecked(year)" (change)="setYear(year,$event)">{{displayYear(year)}}</mat-checkbox>
+            </div>
+        </mat-expansion-panel>
+    </mat-accordion>
+
+
+
+
+</div>
+<div mat-dialog-actions>
+    <button mat-button (click)="cancel()">{{'CANCEL'|translate}}</button>
+    <button mat-button (click)="return()">{{'SAVE'|translate}}</button>
+
+    <!-- <button mat-button [mat-dialog-close]="data.animal" cdkFocusInitial>Ok</button> -->
+</div>

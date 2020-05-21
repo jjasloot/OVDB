@@ -1,0 +1,93 @@
+<button mat-button (click)="goBack()">Terug</button>
+<div class="form">
+    <form [formGroup]="form" (ngSubmit)="onSubmit(form.value)">
+        <mat-form-field>
+            <mat-label>{{'ROUTEDETAILS.NAME'|translate}}</mat-label>
+            <input matInput formControlName="name" required>
+        </mat-form-field>
+        <mat-form-field>
+            <mat-label>{{'ROUTEDETAILS.NAME'|translate}} ({{'LANGUAGES.DUTCH'|translate}})</mat-label>
+            <input matInput formControlName="nameNL">
+        </mat-form-field>
+        <mat-form-field>
+            <mat-label>{{'ROUTEDETAILS.DESCRIPTION'|translate}}</mat-label>
+            <input matInput formControlName="description">
+        </mat-form-field>
+        <mat-form-field>
+            <mat-label>{{'ROUTEDETAILS.DESCRIPTION'|translate}} ({{'LANGUAGES.DUTCH'|translate}})</mat-label>
+            <input matInput formControlName="descriptionNL">
+        </mat-form-field>
+        <mat-form-field>
+            <mat-label>{{'ROUTEDETAILS.LINENUMBER'|translate}}</mat-label>
+            <input matInput formControlName="lineNumber">
+        </mat-form-field>
+        <mat-form-field>
+            <mat-label>{{'ROUTEDETAILS.OPERATINGCOMPANY'|translate}}</mat-label>
+            <input matInput formControlName="operatingCompany">
+        </mat-form-field>
+        <div class="row">
+            <mat-form-field style="width: 50%;">
+                <mat-label>{{'ROUTEDETAILS.OVERRIDECOLOUR'|translate}}</mat-label>
+                <input [(ngModel)]="colour" [ngModelOptions]="{standalone: true}" matInput />
+            </mat-form-field>
+            <mat-form-field style="width: 50%;">
+                <input type="color" [(ngModel)]="colour" [ngModelOptions]="{standalone: true}" matInput />
+            </mat-form-field>
+
+        </div>
+        <mat-form-field>
+            <mat-label>{{'ROUTEDETAILS.FIRSTDATETIME'|translate}}</mat-label>
+            <input matInput [matDatepicker]="firstPicker" formControlName="firstDateTime">
+            <mat-datepicker-toggle matSuffix [for]="firstPicker"></mat-datepicker-toggle>
+            <mat-datepicker #firstPicker></mat-datepicker>
+        </mat-form-field>
+        <mat-form-field>
+            <mat-label>{{'ROUTEDETAILS.TYPE'|translate}}</mat-label>
+            <mat-select formControlName="routeTypeId" required>
+                <mat-option *ngFor="let type of types" [value]="type.typeId">
+                    {{name(type)}}
+                </mat-option>
+            </mat-select>
+        </mat-form-field>
+    </form>
+    <mat-expansion-panel class="countries">
+        <mat-expansion-panel-header>
+            <mat-panel-title>
+                {{'ROUTEDETAILS.COUNTRIES'|translate}}
+            </mat-panel-title>
+            <mat-panel-description>
+                {{countriesString}}
+            </mat-panel-description>
+        </mat-expansion-panel-header>
+
+        <mat-selection-list [(ngModel)]="selectedOptions" #countriesSelection>
+            <mat-list-option *ngFor="let country of countries" [value]="country.countryId">
+                {{name(country)}}
+            </mat-list-option>
+        </mat-selection-list>
+    </mat-expansion-panel>
+
+    <mat-expansion-panel class="countries">
+        <mat-expansion-panel-header>
+            <mat-panel-title>
+                {{'ROUTEDETAILS.MAPS'|translate}}
+            </mat-panel-title>
+            <mat-panel-description>
+                {{mapsString}}
+            </mat-panel-description>
+        </mat-expansion-panel-header>
+
+        <mat-selection-list [(ngModel)]="selectedMaps" #mapsSelection>
+            <mat-list-option *ngFor="let map of maps" [value]="map.mapId">
+                {{map.name}}
+            </mat-list-option>
+        </mat-selection-list>
+    </mat-expansion-panel>
+
+
+
+
+    <button mat-raised-button color="primary" type="submit" (click)="onSubmit(form.value)" [disabled]="form.invalid">{{'SAVE'|translate}}</button>
+    <button mat-button color="warning" type="button" (click)="delete()">{{'DELETE'|translate}}</button>
+
+</div>

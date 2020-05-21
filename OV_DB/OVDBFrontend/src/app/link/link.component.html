@@ -1,0 +1,11 @@
+<div *ngIf="!loading;else loadingDisplay">
+    <app-map *ngIf="!error; else errorState" [guid]="guid"></app-map>
+</div>
+
+<ng-template #loadingDisplay>
+    <mat-spinner></mat-spinner>
+</ng-template>
+
+<ng-template #errorState>
+    {{'ERROR'|translate}}
+</ng-template>

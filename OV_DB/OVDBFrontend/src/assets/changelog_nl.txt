@@ -1,0 +1,28 @@
+2020-05-09:
+- Zoeken op een ander punt in tijd
+
+2020-05-06:
+- Wizard zoeken op netwerk
+
+2020-05-05-1:
+- Funicular toegevoegd als type voor wizard
+
+2020-05-05:
+- Wizard voor routes
+
+2020-04-30:
+- Types kunnen nu gesorteerd worden
+- De kleur van een route kan individueel ingesteld worden voor een overschrijving van de kleur van het type
+- Vertalingen in het Engels
+
+2020-04-07:
+- Laden indicator bij inloggen. Meer info over fouten
+
+2020-04-02:
+- Highlight een route als deze 'geselecteerd' is.
+- Maak changelog zichtbaar
+- Text op helppagina
+- Packages bijgewerkt
+
+2020-03-22:
+- Start van changelog

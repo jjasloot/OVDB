@@ -1,0 +1,16 @@
+.add {
+    position: fixed;
+    bottom: 50px;
+    right: 50px;
+}
+
+.sort {
+    position: fixed;
+    bottom: 50px;
+    right: 150px;
+}
+
+button:not(.mat-fab) {
+    min-width: 100px;
+    margin: 0 12px;
+}

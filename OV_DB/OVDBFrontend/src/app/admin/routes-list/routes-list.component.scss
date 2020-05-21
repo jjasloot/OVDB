@@ -1,0 +1,38 @@
+.spinner-container {
+    height: 100px;
+    width: 100px;
+    left: calc(50% - 50px);
+    top: 200px;
+    position: fixed;
+}
+
+mat-table {
+    min-height: 300px;
+}
+
+.filter {
+    padding: 12px;
+    margin-left: 12px;
+    display: block;
+}
+
+.mat-column-date {
+    max-width: 100px;
+}
+
+.mat-column-type {
+    max-width: 150px;
+}
+
+.mat-column-name {
+    flex: 3
+}
+
+.mat-column-edit {
+    max-width: 170px;
+}
+
+button:not(.mat-fab) {
+    min-width: 80px;
+    margin: 0 4px;
+}

@@ -1,0 +1,7 @@
+OVDB/.vs/
+OVDB/bin/
+OVDB/obj/
+OVDB_database/bin/Debug/netcoreapp3.1/
+OVDB_database/obj/
+.vs/
+OVDB_database/bin/

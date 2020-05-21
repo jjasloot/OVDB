@@ -1,0 +1,13 @@
+.add {
+    position: fixed;
+    bottom: 50px;
+    right: 50px;
+    z-index: 10000;
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+}
+
+button:not(.mat-fab) {
+    min-width: 100px;
+    margin: 0 12px;
+}

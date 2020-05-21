@@ -1,0 +1,44 @@
+<div #box class="container" style="display: flex;flex-direction: column;">
+    <mat-toolbar color="primary">
+        <div class="row">
+            <h2 style="cursor: pointer;" (click)="gotoHome()">OVDβ</h2>
+
+            <div class="icons" *ngIf="isLoggedIn">
+                <p>{{email}}</p>
+                <button mat-icon-button [routerLink]="['/']">
+          <mat-icon>map</mat-icon>
+        </button>
+                <button mat-icon-button [routerLink]="['/admin']">
+          <mat-icon>backup</mat-icon>
+        </button>
+                <button mat-icon-button [routerLink]="['/help']">
+          <mat-icon>help_outline</mat-icon>
+        </button>
+                <mat-select [value]="currentLanguage" (selectionChange)="setLanguage($event)">
+                    <mat-option [value]="'nl'">nl</mat-option>
+                    <mat-option [value]="'en'">en</mat-option>
+                </mat-select>
+                <button mat-icon-button (click)="signOut()">
+          <mat-icon>highlight_off</mat-icon>
+        </button>
+            </div>
+            <div class='icons' *ngIf="!isLoggedIn">
+                <button mat-icon-button [routerLink]="['/help']">
+          <mat-icon>help_outline</mat-icon>
+        </button>
+                <mat-select [value]="currentLanguage" (selectionChange)="setLanguage($event)">
+                    <mat-option [value]="'nl'">nl</mat-option>
+                    <mat-option [value]="'en'">en</mat-option>
+                </mat-select>
+                <button mat-icon-button (click)="signIn()">
+          <mat-icon>person</mat-icon>
+        </button>
+            </div>
+
+
+        </div>
+    </mat-toolbar>
+    <div class="router-container">
+        <router-outlet></router-outlet>
+    </div>
+</div>

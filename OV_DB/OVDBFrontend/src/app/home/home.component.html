@@ -1,0 +1,31 @@
+<div class="container">
+    <div *ngIf="isLoggedIn;else notLoggedIn">
+        <h1>{{'HOME.WELCOME'|translate}}</h1>
+        <p>{{'HOME.EXPLANATION'|translate}}</p>
+        <div class="buttons">
+            <button mat-raised-button [routerLink]="['/admin']">{{'HOME.DATA'|translate}}</button>
+        </div>
+        <div *ngIf="!!maps">
+            <mat-list *ngIf="maps.length>0;else noData">
+                <mat-list-item *ngFor="let map of maps">
+                    <h4 mat-line><b>{{map.name}}</b></h4>
+                    <div mat-line *ngIf="!map.sharingLinkName">{{'HOME.CREATELINKTOSHARE'|translate}}</div>
+                    <button mat-raised-button color="primary" (click)="view(map)">{{'HOME.VIEW'|translate}}</button>
+                    <button mat-button *ngIf="!!map.sharingLinkName" [cdkCopyToClipboard]="getLink(map)">{{'HOME.COPY'|translate}}</button>
+                </mat-list-item>
+            </mat-list>
+        </div>
+    </div>
+    <br>
+
+    <ng-template #notLoggedIn>
+        <h1>{{'HOME.WELCOME'|translate}}</h1>
+        <p>{{'HOME.INFONOTLOGGEDIN'|translate}}</p>
+        <button mat-raised-button [routerLink]="['/login']">{{'HOME.LOGIN'|translate}}</button>
+        <button mat-raised-button [routerLink]="['/register']">{{'HOME.REGISTER'|translate}}</button>
+        <br>
+    </ng-template>
+
+    <ng-template #noData>
+        <h3>{{'HOME.NOMAPS'|translate}}</h3>
+    </ng-template>

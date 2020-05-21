@@ -1,0 +1,16 @@
+<form [formGroup]="form">
+    <h3>{{'LOGIN.TITLE'|translate}}</h3>
+    <mat-form-field>
+        <mat-label>{{'LOGIN.EMAIL'|translate}}</mat-label>
+        <input matInput formControlName="email">
+    </mat-form-field>
+    <mat-form-field>
+        <mat-label>{{'LOGIN.PASSWORD'|translate}}</mat-label>
+        <input matInput type="password" formControlName="password">
+    </mat-form-field>
+    <div class="failed" *ngIf="failed">{{'LOGIN.UPINCORRECT'|translate}}</div>
+    <div class="failed" *ngIf="!!error">{{error.message}}</div>
+    <mat-spinner style="margin:auto" *ngIf="loading"></mat-spinner>
+
+    <button mat-raised-button (click)="submit()" [disabled]="loading">{{'LOGIN.SUBMIT'|translate}}</button>
+</form>

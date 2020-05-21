@@ -1,0 +1,24 @@
+<mat-spinner *ngIf="loading"></mat-spinner>
+<div class="container" *ngIf="!loading">
+    <mat-list *ngIf="data.length>0;else noData">
+        <mat-list-item *ngFor="let routeType of data">
+            <h4 mat-line><b>{{name(routeType)}}</b></h4>
+            <mat-chip-list *ngIf="routeType">
+                <mat-chip [color]="routeType.colour" [style.background]="routeType.colour">{{routeType.colour}}
+                </mat-chip>
+            </mat-chip-list>
+            <button mat-button color="primary" (click)="edit(routeType)">{{'EDIT'|translate}}</button>
+            <button mat-button color="error" (click)="delete(routeType)">{{'DELETE'|translate}}</button>
+        </mat-list-item>
+    </mat-list>
+    <button class="sort" mat-fab (click)="sort()">
+    <mat-icon>sort</mat-icon>
+  </button>
+    <button class="add" mat-fab (click)="add()">
+    <mat-icon>add</mat-icon>
+  </button>
+</div>
+
+<ng-template #noData>
+    {{'ROUTETYPES.NODATA'|translate}}
+</ng-template>

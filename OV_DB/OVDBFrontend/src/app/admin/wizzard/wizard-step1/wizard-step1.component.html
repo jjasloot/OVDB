@@ -1,0 +1,93 @@
+<div class="container">
+    <div *ngIf="loading">
+        <mat-spinner></mat-spinner>
+
+        {{'IMPORTER.THISMAYTAKEAWHILE'|translate}}
+    </div>
+    <div *ngIf="error">
+        {{'ERROR'|translate}}
+    </div>
+    <div *ngIf="!loading">
+        <div *ngIf="step==1" class="two-col">
+            <div class="left">
+                <p>{{'IMPORTER.STEP1'|translate}}</p>
+                <div class="form">
+                    <form [formGroup]="form" (ngSubmit)="getLines()">
+                        <mat-form-field>
+                            <mat-label>{{'IMPORTER.REFERENCE'|translate}}</mat-label>
+                            <input matInput formControlName="reference" required>
+                        </mat-form-field>
+                        <mat-form-field>
+                            <mat-label>{{'IMPORTER.NETWORK'|translate}}</mat-label>
+                            <input matInput formControlName="network">
+                        </mat-form-field>
+                        <mat-form-field>
+                            <mat-label>{{'ROUTEDETAILS.TYPE'|translate}}</mat-label>
+                            <mat-select formControlName="type" required>
+                                <mat-option *ngFor="let type of types" [value]="type">
+                                    {{type}}
+                                </mat-option>
+                            </mat-select>
+                        </mat-form-field>
+                        <mat-checkbox [(ngModel)]="differentTimeLeft" [ngModelOptions]="{standalone: true}">
+                            {{'IMPORTER.DIFFERENTTIME'|translate}}</mat-checkbox>
+                        <mat-form-field [ngClass]="{'hidden':!differentTimeLeft}">
+                            <mat-label>{{'IMPORTER.DATETIME'|translate}}</mat-label>
+                            <input matInput [matDatepicker]="firstPicker" formControlName="dateTime">
+                            <mat-datepicker-toggle matSuffix [for]="firstPicker"></mat-datepicker-toggle>
+                            <mat-datepicker #firstPicker></mat-datepicker>
+                        </mat-form-field>
+                        <button mat-raised-button type="submit">{{'IMPORTER.SEARCH'|translate}}</button>
+                    </form>
+                </div>
+            </div>
+            <div class="right">
+                <p>{{'IMPORTER.STEP1NETWORK'|translate}}</p>
+                <div class="form column">
+                    <mat-form-field>
+                        <mat-label>{{'IMPORTER.NETWORK'|translate}}</mat-label>
+                        <input matInput [(ngModel)]="selectedNetwork" required>
+                    </mat-form-field>
+                    <mat-form-field>
+                        <mat-label>{{'IMPORTER.NETWORKNETHERLANDS'|translate}}</mat-label>
+                        <mat-select [(ngModel)]="selectedNetwork">
+                            <mat-option *ngFor="let network of networks" [value]="network">
+                                {{network}}
+                            </mat-option>
+                        </mat-select>
+                    </mat-form-field>
+                    <mat-checkbox [(ngModel)]="differentTimeRight">
+                        {{'IMPORTER.DIFFERENTTIME'|translate}}</mat-checkbox>
+                    <mat-form-field [ngClass]="{'hidden':!differentTimeRight}">
+                        <mat-label>{{'IMPORTER.DATETIME'|translate}}</mat-label>
+                        <input matInput [matDatepicker]="rightPicker" [(ngModel)]="dateTime">
+                        <mat-datepicker-toggle matSuffix [for]="rightPicker"></mat-datepicker-toggle>
+                        <mat-datepicker #rightPicker></mat-datepicker>
+                    </mat-form-field>
+                    <button mat-raised-button (click)="getNetwork()">{{'IMPORTER.SEARCH'|translate}}</button>
+                </div>
+            </div>
+        </div>
+        <div *ngIf="step==2">
+            <div class="row"> <button mat-icon-button (click)="gotoStep1()">
+          <mat-icon>arrow_back</mat-icon>
+        </button>
+                <p>{{'IMPORTER.STEP2'|translate}}</p>
+            </div>
+
+            <div *ngFor="let line of lines" class="line">
+                <div class="info">
+                    <b>{{line.name}}</b>
+                    <mat-chip-list *ngIf="!!line.colour">
+                        <mat-chip [color]="line.colour" [style.background]="line.colour" selected></mat-chip>
+                    </mat-chip-list>
+                    <br>
+                    <i>{{line.from}} &rarr; {{line.to}}</i><br> {{'IMPORTER.NETWORK'|translate}}: {{line.network}}<br> {{'IMPORTER.OPERATOR'|translate}}: {{line.operator }}
+                </div>
+                <div class="button">
+                    <button mat-raised-button color="primary" (click)="select(line)">{{'IMPORTER.SELECT'|translate}}</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
