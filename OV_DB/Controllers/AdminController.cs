@@ -40,16 +40,5 @@ namespace OV_DB.Controllers
             return Ok();
         }
 
-        [HttpGet("useragent")]
-        public ActionResult GetUserAgent()
-        {
-            var adminClaim = (User.Claims.SingleOrDefault(c => c.Type == "admin").Value ?? "false");
-            if (string.Equals(adminClaim, "false", StringComparison.OrdinalIgnoreCase))
-            {
-                return Forbid();
-            }
-            var userAgent = _configuration.GetValue<string>("UserAgent", "OVDB");
-            return Ok(userAgent);
-        }
     }
 }

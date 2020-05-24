@@ -122,10 +122,9 @@ namespace OV_DB.Controllers
             query += $"><id-query type=\"relation\" ref=\"" + id + $"\"/>  <union into=\"_\">    <item from=\"_\" into=\"_\"/>    <recurse from=\"_\" into=\"_\" type=\"down\"/>  </union>  <print from=\"_\" /></osm-script>";
 
             string text = null;
-            var userAgent = _configuration.GetValue<string>("UserAgent", "OVDB");
             using (var httpClient = new HttpClient())
             {
-                httpClient.DefaultRequestHeaders.Add("User-Agent", userAgent);
+                httpClient.DefaultRequestHeaders.Add("User-Agent", "OVDB");
 
                 var response = await httpClient.PostAsync("https://overpass-api.de/api/interpreter", new StringContent(query));
                 if (response.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
@@ -402,10 +401,9 @@ namespace OV_DB.Controllers
             query += $"<has-kv k=\"route\"/>";
             query += $"</query><print mode=\"tags\" order=\"quadtile\"/></osm-script>";
             string text = null;
-            var userAgent = _configuration.GetValue<string>("UserAgent", "OVDB");
             using (var httpClient = new HttpClient())
             {
-                httpClient.DefaultRequestHeaders.Add("User-Agent", userAgent);
+                httpClient.DefaultRequestHeaders.Add("User-Agent", "OVDB");
                 var response = await httpClient.PostAsync("https://overpass-api.de/api/interpreter", new StringContent(query));
                 if (response.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
                 {
