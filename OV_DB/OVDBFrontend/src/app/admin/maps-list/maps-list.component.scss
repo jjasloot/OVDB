@@ -8,6 +8,10 @@
 }
 
 button:not(.mat-fab) {
-    min-width: 100px;
+    margin: 0 12px;
+}
+
+.space {
+    min-width: 40px;
     margin: 0 12px;
 }

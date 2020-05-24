@@ -524,6 +524,7 @@ namespace OV_DB.Controllers
             {
                 Coordinates = string.Join('\n', coordinates),
                 Name = line.Name,
+                Share = Guid.NewGuid(),
                 RouteMaps = new List<RouteMap>()
             };
             if (route.Name == null)

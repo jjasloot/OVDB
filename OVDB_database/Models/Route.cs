@@ -37,5 +37,7 @@ namespace OVDB_database.Models
         public string Coordinates { get; set; }
         [JsonProperty]
         public List<RouteMap> RouteMaps { get; set; }
+        [JsonProperty]
+        public Guid Share { get; set; }
     }
 }

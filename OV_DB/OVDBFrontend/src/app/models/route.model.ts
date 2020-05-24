@@ -5,6 +5,7 @@ import { Map } from './map.model';
 import { RoutesMaps } from './routesMaps.model'
 
 export interface Route {
+    share: any;
     overrideColour: string;
     routeId: number;
     name: string;

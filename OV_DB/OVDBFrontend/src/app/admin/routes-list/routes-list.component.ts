@@ -123,4 +123,8 @@ export class RoutesListComponent implements OnInit, AfterViewInit {
   name(item) {
     return this.translationService.getNameForItem(item);
   }
+
+  view(route:Route){
+    this.router.navigate(['/route',route.routeId,route.share])
+  }
 }

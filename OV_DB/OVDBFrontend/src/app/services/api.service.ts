@@ -15,8 +15,6 @@ import { Moment } from 'moment';
 })
 export class ApiService {
 
-
-
   getRoutesWithMissingSettings(): Observable<Route[]> {
     return this.httpClient.get<Route[]>(environment.backend + 'api/routes/missingInfo');
   }
@@ -112,12 +110,19 @@ export class ApiService {
   getRoutes(filter: string, guid: string, language: string): Observable<string> {
     let url = "";
 
-    url = environment.backend + 'odata/kml/' + guid;
+    url = environment.backend + 'odata/' + guid;
     if (!!filter) {
       url += '?$filter=' + filter + '&language=' + language;
     }
     return this.httpClient.get<string>(url);
   }
+
+  getSingleRoute(routeId: number, guid: string, language: string): Observable<string> {
+    const url = environment.backend + `odata/single/${routeId}/${guid}`;
+    return this.httpClient.get<string>(url);
+  }
+
+
   updateRoute(route: Route): Observable<any> {
     return this.httpClient.put(environment.backend + 'api/routes/' + route.routeId, route);
 

@@ -116,17 +116,17 @@ namespace OV_DB
                 routeBuilder.MapODataServiceRoute("odata", "odata", GetEdmModel());
                 routeBuilder.EnableDependencyInjection();
             });
-            //using (var serviceScope = app.ApplicationServices.GetRequiredService<IServiceScopeFactory>().CreateScope())
-            //{
-            //    try
-            //    {
-            //        serviceScope.ServiceProvider.GetService<OVDBDatabaseContext>().Database.Migrate();
-            //    }
-            //    catch (Exception ex)
-            //    {
-            //        Console.WriteLine(ex.Message);
-            //    }
-            //}
+            using (var serviceScope = app.ApplicationServices.GetRequiredService<IServiceScopeFactory>().CreateScope())
+            {
+                try
+                {
+                    serviceScope.ServiceProvider.GetService<OVDBDatabaseContext>().Database.Migrate();
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.Message);
+                }
+            }
             app.UseSpa(spa =>
             {
                 // To learn more about options for serving an Angular SPA from ASP.NET Core,

@@ -1,0 +1,56 @@
+.container {
+    min-height: calc(100vh - 64px);
+    overflow-y: auto;
+    position: relative;
+    display: -webkit-box;
+    display: -ms-flexbox;
+    display: flex;
+    -webkit-box-orient: vertical;
+    -webkit-box-direction: normal;
+    -ms-flex-direction: column;
+    flex-direction: column;
+}
+
+.row {
+    display: flex;
+    flex-direction: row;
+}
+
+.defaults-grid {
+    margin: 4px;
+    flex: 1;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    grid-row-gap: 16px;
+}
+
+.loading-indicator {
+    position: absolute;
+    width: 0;
+    height: 0;
+    background: rgba($color: #000000, $alpha: 0.75);
+    opacity: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.loading {
+    z-index: 3000;
+    opacity: 1;
+    width: 100%;
+    height: 100%;
+}
+
+.map-container {
+    flex: 100000000000;
+    position: relative;
+    min-height: 100%;
+    display: flex;
+}
+
+.map {
+    min-height: 100%;
+    position: relative;
+    flex: 1;
+}

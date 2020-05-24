@@ -373,7 +373,8 @@ namespace OV_DB.Controllers
                 {
                     Coordinates = string.Join('\n', coordinates),
                     Name = name,
-                    RouteMaps = new List<RouteMap>()
+                    RouteMaps = new List<RouteMap>(),
+                    Share = Guid.NewGuid()
                 };
                 if (placeMark.Description != null)
                 {
@@ -526,6 +527,7 @@ namespace OV_DB.Controllers
             {
                 Coordinates = string.Join('\n', coordinates),
                 Name = name,
+                Share = Guid.NewGuid(),
                 RouteMaps = new List<RouteMap>
                 {
                     new RouteMap
@@ -606,7 +608,7 @@ namespace OV_DB.Controllers
                 return NotFound();
             }
 
-     
+
 
 
             var folder = new Folder

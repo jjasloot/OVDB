@@ -5,3 +5,5 @@ OVDB_database/bin/Debug/netcoreapp3.1/
 OVDB_database/obj/
 .vs/
 OVDB_database/bin/
+private_vars.txt
+OV_DB/Properties/launchSettings.json

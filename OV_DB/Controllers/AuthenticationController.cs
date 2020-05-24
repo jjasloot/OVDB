@@ -74,7 +74,8 @@ namespace OV_DB.Controllers
             var claims = new List<Claim>
             {
                 new Claim("sub", user.Id.ToString()),
-                new Claim("email", user.Email)
+                new Claim("email", user.Email),
+                new Claim("admin",user.IsAdmin?"true":"false")
             };
 
             var token = GenerateToken(claims);
@@ -89,8 +90,8 @@ namespace OV_DB.Controllers
         [HttpPost("refreshToken")]
         public ActionResult<LoginResponse> RefreshToken([FromBody] RefreshTokenRequest request)
         {
-
-            var newJwtToken = GenerateToken(User.Claims);
+            var claims = User.Claims.Where(s => s.Type != "aud");
+            var newJwtToken = GenerateToken(claims);
 
             return new LoginResponse
             {

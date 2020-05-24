@@ -59,6 +59,7 @@ import { TranslateModule, TranslateLoader, TranslateService } from '@ngx-transla
 import { TranslateHttpLoader } from '@ngx-translate/http-loader';
 import { WizzardStep1Component } from './admin/wizzard/wizard-step1/wizard-step1.component';
 import { WizzardStep2Component } from './admin/wizzard/wizard-step2/wizard-step2.component';
+import { SingleRouteMapComponent } from './single-route-map/single-route-map.component';
 
 registerLocaleData(localeNl, 'nl-NL');
 export function HttpLoaderFactory(http: HttpClient) {
@@ -92,6 +93,7 @@ export function HttpLoaderFactory(http: HttpClient) {
     SortItemsDialogComponent,
     WizzardStep1Component,
     WizzardStep2Component,
+    SingleRouteMapComponent,
   ],
   imports: [
     BrowserModule,

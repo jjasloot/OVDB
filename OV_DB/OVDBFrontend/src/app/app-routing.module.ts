@@ -20,6 +20,7 @@ import { RouteTypesComponent } from './admin/route-types/route-types.component';
 import { HelpComponent } from './help/help.component';
 import { WizzardStep1Component } from './admin/wizzard/wizard-step1/wizard-step1.component';
 import { WizzardStep2Component } from './admin/wizzard/wizard-step2/wizard-step2.component';
+import { SingleRouteMapComponent } from './single-route-map/single-route-map.component';
 
 
 const routes: Routes = [
@@ -30,6 +31,7 @@ const routes: Routes = [
     children: [
       {
         path: '', component: RoutesComponent, children: [
+          { path: '', pathMatch: 'full', redirectTo: 'maps' },
           { path: 'maps', component: MapsListComponent },
           { path: 'routes', component: RoutesListComponent },
           { path: 'routes/:routeId', component: RouteDetailComponent },
@@ -51,7 +53,8 @@ const routes: Routes = [
       { path: 'register', component: RegistrationComponent },
       { path: 'map/:guid', component: MapViewComponent },
       { path: 'link/:name', component: LinkComponent },
-      { path: 'help', component: HelpComponent }
+      { path: 'help', component: HelpComponent },
+      { path: 'route/:routeId/:guid', component: SingleRouteMapComponent }
     ]
   }
 ];

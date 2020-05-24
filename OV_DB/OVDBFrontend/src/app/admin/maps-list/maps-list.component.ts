@@ -59,6 +59,13 @@ export class MapsListComponent implements OnInit {
       }
     });
   }
+
+  getLink(map: Map) {
+    return location.origin + '/link/' + map.sharingLinkName;
+  }
+  view(map: Map) {
+    this.router.navigate(['/map', map.mapGuid]);
+  }
   delete(map: Map) {
     const dialogRef = this.dialog.open(AreYouSureDialogComponent, {
       width: '50%',
