@@ -181,7 +181,8 @@ namespace OV_DB.Controllers
                             subList.Add(new Position(node.Lat.GetValueOrDefault(), node.Lon.GetValueOrDefault()));
 
                         });
-                        lists.Add(subList);
+                        if (nodes.Any())
+                            lists.Add(subList);
                     }
                 }
             });
@@ -282,6 +283,11 @@ namespace OV_DB.Controllers
 
         private void SortListOfList(List<List<IPosition>> test)
         {
+            if (test.Count < 2)
+            {
+                return;
+            }
+            test = test.Where(t => t.Count > 0).ToList();
 
 
             if (test[1].Select(l => l.Latitude).Contains(test[0].First().Latitude) && test[1].Select(l => l.Longitude).Contains(test[0].First().Longitude))
@@ -291,61 +297,73 @@ namespace OV_DB.Controllers
 
             for (int index = 1; index < test.Count; index++)
             {
-                if (index < test.Count - 1 && test[index].First().Latitude == test[index].Last().Latitude && test[index].First().Longitude == test[index].Last().Longitude)
+                try
                 {
-                    //Roundabout
-
-                    var entryLocation = test[index - 1].Last();
-                    var startIndex = test[index].FindIndex(t => t.Longitude == entryLocation.Longitude && t.Latitude == entryLocation.Latitude);
-
-
-                    var exitLocation = test[index + 1].First();
-                    var endIndex = test[index].FindIndex(t => t.Longitude == exitLocation.Longitude && t.Latitude == exitLocation.Latitude);
-
-                    if (endIndex < 0)
+                    if (index < test.Count - 1 && test[index].First().Latitude == test[index].Last().Latitude && test[index].First().Longitude == test[index].Last().Longitude)
                     {
-                        exitLocation = test[index + 1].Last();
-                        endIndex = test[index].FindIndex(t => t.Longitude == exitLocation.Longitude && t.Latitude == exitLocation.Latitude);
-                    }
+                        //Roundabout
 
-                    if (startIndex >= 0 && endIndex >= 0)
-                    {
-                        var points = new List<IPosition>();
-                        if (startIndex > endIndex)
+                        var entryLocation = test[index - 1].Last();
+                        var startIndex = test[index].FindIndex(t => t.Longitude == entryLocation.Longitude && t.Latitude == entryLocation.Latitude);
+
+
+                        var exitLocation = test[index + 1].First();
+                        var endIndex = test[index].FindIndex(t => t.Longitude == exitLocation.Longitude && t.Latitude == exitLocation.Latitude);
+
+                        if (endIndex < 0)
                         {
-                            points.AddRange(test[index].Skip(startIndex));
-                            points.AddRange(test[index].Take(endIndex));
+                            exitLocation = test[index + 1].Last();
+                            endIndex = test[index].FindIndex(t => t.Longitude == exitLocation.Longitude && t.Latitude == exitLocation.Latitude);
                         }
-                        else
-                        {
-                            points.AddRange(test[index].Take(endIndex).Skip(startIndex));
-                        }
-                        test[index] = points;
-                    }
 
-                }
-                if (test[index - 1].Last().Latitude == test[index].Last().Latitude && test[index - 1].Last().Longitude == test[index].Last().Longitude)
-                {
-                    test[index].Reverse();
-                }
-                else
-                {
-                    if (test[index - 1].Last().Latitude == test[index].First().Latitude && test[index - 1].Last().Longitude == test[index].First().Longitude)
+                        if (startIndex >= 0 && endIndex >= 0)
+                        {
+                            var points = new List<IPosition>();
+                            if (startIndex > endIndex)
+                            {
+                                points.AddRange(test[index].Skip(startIndex));
+                                points.AddRange(test[index].Take(endIndex));
+                            }
+                            else
+                            {
+                                points.AddRange(test[index].Take(endIndex).Skip(startIndex));
+                            }
+                            test[index] = points;
+                            if (!points.Any())
+                            {
+                                test.RemoveAt(index);
+                                index--;
+                            }
+                        }
+
+                    }
+                    if (test[index - 1].Last().Latitude == test[index].Last().Latitude && test[index - 1].Last().Longitude == test[index].Last().Longitude)
                     {
-                        //correct direction
+                        test[index].Reverse();
                     }
                     else
                     {
-                        //We have to guess
-                        var distanceStart = GeometryHelper.distance(test[index - 1].Last().Latitude, test[index - 1].Last().Longitude, test[index].First().Latitude, test[index].First().Longitude, 'k');
-                        var distanceEnd = GeometryHelper.distance(test[index - 1].Last().Latitude, test[index - 1].Last().Longitude, test[index].Last().Latitude, test[index].Last().Longitude, 'k');
-
-                        if (distanceEnd < distanceStart)
+                        if (test[index - 1].Last().Latitude == test[index].First().Latitude && test[index - 1].Last().Longitude == test[index].First().Longitude)
                         {
-                            test[index].Reverse();
+                            //correct direction
                         }
+                        else
+                        {
+                            //We have to guess
+                            var distanceStart = GeometryHelper.distance(test[index - 1].Last().Latitude, test[index - 1].Last().Longitude, test[index].First().Latitude, test[index].First().Longitude, 'k');
+                            var distanceEnd = GeometryHelper.distance(test[index - 1].Last().Latitude, test[index - 1].Last().Longitude, test[index].Last().Latitude, test[index].Last().Longitude, 'k');
 
+                            if (distanceEnd < distanceStart)
+                            {
+                                test[index].Reverse();
+                            }
+
+                        }
                     }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("Hier");
                 }
             }
 
