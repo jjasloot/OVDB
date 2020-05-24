@@ -1,3 +1,7 @@
+2020-05-24:
+- Allow showing and sharing single routes
+- Avoid errors in the importer
+
 2020-05-09:
 - Allow searching at another point in time
 

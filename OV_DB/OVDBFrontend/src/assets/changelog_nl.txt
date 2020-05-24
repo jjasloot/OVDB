@@ -1,3 +1,7 @@
+2020-05-24:
+- Het kunnen tonen en delen van een enkele route
+- Een aantal mogelijke fouten in de importer voorkomen
+
 2020-05-09:
 - Zoeken op een ander punt in tijd
 
