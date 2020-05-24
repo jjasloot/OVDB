@@ -7,6 +7,7 @@ import { DataUpdateService } from 'src/app/services/data-update.service';
 import { AreYouSureDialogComponent } from 'src/app/are-you-sure-dialog/are-you-sure-dialog.component';
 import { MapsAddComponent } from '../maps-add/maps-add.component';
 import { TranslateService } from '@ngx-translate/core';
+import { SortItemsDialogComponent } from '../sort-items-dialog/sort-items-dialog.component';
 
 @Component({
   selector: 'app-maps-list',
@@ -81,6 +82,24 @@ export class MapsListComponent implements OnInit {
           this.dataUpdateService.requestUpdate();
         });
       }
+    });
+  }
+
+  sort() {
+    const dialogRef = this.dialog.open(SortItemsDialogComponent, {
+      width: '50%',
+      data: {
+        list: Object.assign([], this.data),
+        title: this.translateService.instant('MAPLIST.SORTTITLE')
+      }
+    });
+    dialogRef.afterClosed().subscribe((data: false | Map[]) => {
+      if (data === false) {
+        return;
+      }
+      this.apiService.updateMapOrder(data.map(d => d.mapId)).subscribe(() => this.loadData());
+
+
     });
   }
 }

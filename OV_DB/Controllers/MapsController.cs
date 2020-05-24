@@ -31,7 +31,7 @@ namespace OV_DB.Controllers
             {
                 return Forbid();
             }
-            return await _context.Maps.Where(m => m.UserId == userIdClaim).ToListAsync();
+            return await _context.Maps.Where(m => m.UserId == userIdClaim).OrderBy(m => m.OrderNr).ToListAsync();
         }
 
         // GET: api/Maps/5
@@ -141,6 +141,22 @@ namespace OV_DB.Controllers
             await _context.SaveChangesAsync();
 
             return map;
+        }
+
+        [HttpPost("order")]
+        public async Task<ActionResult> UpdateMapsOrdering([FromBody] List<int> mapOrdering)
+        {
+            var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value ?? "-1");
+            if (userIdClaim < 0)
+            {
+                return Forbid();
+            }
+            var maps = await _context.Maps.Where(rt => rt.UserId == userIdClaim).ToListAsync();
+
+            maps.ForEach(r => r.OrderNr = mapOrdering.FindIndex(i => r.MapId == i));
+            _context.Maps.UpdateRange(maps);
+            await _context.SaveChangesAsync();
+            return Ok();
         }
 
         private bool MapExists(int id)

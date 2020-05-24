@@ -105,6 +105,7 @@
     "PAGINATOR.LASTPAGE": "Last pagE",
     "MAPLIST.DELETEFRONT": "delete the map",
     "MAPLIST.DELETEREAR": "from the database",
+	"MAPLIST.SORTTITLE": "Sort maps",
     "ADDROUTE.FILESUPLOADED": "files uploaded",
     "ADDROUTE.ERRORS": "error(s)",
     "ROUTE.DELETEFRONT": "delete the route",

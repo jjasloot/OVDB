@@ -58,7 +58,6 @@ export class RouteTypesComponent implements OnInit {
       }
     });
     dialogRef.afterClosed().subscribe((data: false | RouteType[]) => {
-      console.log(data);
       if (data === false) {
         return;
       }

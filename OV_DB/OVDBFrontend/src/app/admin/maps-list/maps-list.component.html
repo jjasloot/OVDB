@@ -2,15 +2,27 @@
 <div class="container" *ngIf="!loading">
     <mat-list *ngIf="data.length>0;else noData">
         <mat-list-item *ngFor="let map of data">
-            <h4 mat-line><b>{{map.name}}</b></h4>
-            <button mat-icon-button matTooltip="{{'HOME.VIEW'|translate}}" color="primary" (click)="view(map)"><mat-icon>pageview</mat-icon></button>
-            <button mat-icon-button matTooltip="{{'EDIT'|translate}}" (click)="edit(map)"><mat-icon>create</mat-icon></button>
-            <button mat-icon-button matTooltip="{{'DELETE'|translate}}" color="error" (click)="delete(map)"><mat-icon>delete</mat-icon></button>
-            <button mat-icon-button matTooltip="{{'HOME.COPY'|translate}}" *ngIf="!!map.sharingLinkName" [cdkCopyToClipboard]="getLink(map)"><mat-icon>share</mat-icon></button>
+            <h4 mat-line><b>{{map.name}}</b> <em><small *ngIf="map.default">&nbsp;({{'ADDMAP.DEFAULT'|translate|lowercase}})</small></em>
+            </h4>
+            <button mat-icon-button matTooltip="{{'HOME.VIEW'|translate}}" color="primary" (click)="view(map)">
+        <mat-icon>pageview</mat-icon>
+      </button>
+            <button mat-icon-button matTooltip="{{'EDIT'|translate}}" (click)="edit(map)">
+        <mat-icon>create</mat-icon>
+      </button>
+            <button mat-icon-button matTooltip="{{'DELETE'|translate}}" color="error" (click)="delete(map)">
+        <mat-icon>delete</mat-icon>
+      </button>
+            <button mat-icon-button matTooltip="{{'HOME.COPY'|translate}}" *ngIf="!!map.sharingLinkName" [cdkCopyToClipboard]="getLink(map)">
+        <mat-icon>share</mat-icon>
+      </button>
             <div class="space" *ngIf="!map.sharingLinkName"></div>
         </mat-list-item>
     </mat-list>
 </div>
+<button class="sort" mat-fab (click)="sort()">
+  <mat-icon>sort</mat-icon>
+</button>
 <button class="add" mat-fab (click)="add()">
   <mat-icon>add</mat-icon>
 </button>

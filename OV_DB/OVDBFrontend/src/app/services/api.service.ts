@@ -14,6 +14,7 @@ import { Moment } from 'moment';
   providedIn: 'root'
 })
 export class ApiService {
+  
 
   getRoutesWithMissingSettings(): Observable<Route[]> {
     return this.httpClient.get<Route[]>(environment.backend + 'api/routes/missingInfo');
@@ -154,6 +155,9 @@ export class ApiService {
 
   updateRouteTypeOrder(newOrder: number[]): Observable<any> {
     return this.httpClient.post<RouteType>(environment.backend + 'api/routeTypes/order', newOrder);
+  }
+  updateMapOrder(newOrder: number[]) {
+    return this.httpClient.post<Map>(environment.backend + 'api/maps/order', newOrder);
   }
 
   importerGetLines(reference: string, network: string, type: string, dateTime: Moment): Observable<OSMDataLine[]> {
