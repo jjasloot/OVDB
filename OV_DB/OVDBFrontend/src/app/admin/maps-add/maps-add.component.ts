@@ -15,8 +15,8 @@ export class MapsAddComponent implements OnInit {
   mapName: string;
   mapSharingLink: string;
   mapDefault: boolean;
-  showRouteInfo: boolean;
-  showRouteOutline: boolean;
+  showRouteInfo=true;
+  showRouteOutline=true;
 
   id: number;
   loading: boolean;
