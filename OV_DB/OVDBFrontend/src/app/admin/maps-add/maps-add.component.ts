@@ -37,9 +37,7 @@ export class MapsAddComponent implements OnInit {
     }
   }
 
-  ngOnInit() {
-
-  }
+  ngOnInit() { }
 
   cancel() {
     this.dialogRef.close();
