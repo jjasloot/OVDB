@@ -15,6 +15,8 @@ export class MapsAddComponent implements OnInit {
   mapName: string;
   mapSharingLink: string;
   mapDefault: boolean;
+  showRouteInfo: boolean;
+  showRouteOutline: boolean;
 
   id: number;
   loading: boolean;
@@ -30,6 +32,8 @@ export class MapsAddComponent implements OnInit {
       this.id = map.mapId;
       this.mapSharingLink = map.sharingLinkName;
       this.mapDefault = map.default;
+      this.showRouteInfo = map.showRouteInfo;
+      this.showRouteOutline = map.showRouteOutline;
     }
   }
 
@@ -45,7 +49,9 @@ export class MapsAddComponent implements OnInit {
     const map = ({
       name: this.mapName,
       default: this.mapDefault,
-      sharingLinkName: this.mapSharingLink
+      sharingLinkName: this.mapSharingLink,
+      showRouteInfo:this.showRouteInfo,
+      showRouteOutline:this.showRouteOutline
     } as Map);
     if (!!this.id) {
       map.mapId = this.id;

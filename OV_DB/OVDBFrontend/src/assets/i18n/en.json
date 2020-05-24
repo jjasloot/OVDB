@@ -134,5 +134,7 @@
     "MAP.POPUP.TYPE": "Type",
     "MAP.POPUP.REMARK": "Remark",
     "MAP.POPUP.LINENUMBER": "Line number",
-    "MAP.POPUP.OPERATINGCOMPANY": "Operating company"
+    "MAP.POPUP.OPERATINGCOMPANY": "Operating company",
+	"ADDMAP.SHOWROUTEINFO":"Show route information on map",
+	"ADDMAP.SHOWROUTEOUTLINE":"Highlight route on selection"
 }

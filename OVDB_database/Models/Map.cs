@@ -24,6 +24,10 @@ namespace OVDB_database.Models
         public string? SharingLinkName { get; set; }
         [JsonProperty]
         public bool Default { get; set; } = false;
+        [JsonProperty]
+        public bool ShowRouteInfo { get; set; } = true;
+        [JsonProperty]
+        public bool ShowRouteOutline { get; set; } = true;
         public int OrderNr { get; set; }
 
         public User? User { get; set; }

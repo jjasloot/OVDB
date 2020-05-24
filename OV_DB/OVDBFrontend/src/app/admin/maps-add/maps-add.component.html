@@ -9,7 +9,9 @@
         <input type="text" [(ngModel)]="mapSharingLink" matInput />
     </mat-form-field>
 
-    <mat-checkbox [(ngModel)]="mapDefault">{{'ADDMAP.DEFAULT'|translate}}</mat-checkbox>
+    <mat-checkbox [(ngModel)]="mapDefault">{{'ADDMAP.DEFAULT'|translate}}</mat-checkbox><br>
+    <mat-checkbox [(ngModel)]="showRouteInfo">{{'ADDMAP.SHOWROUTEINFO'|translate}}</mat-checkbox><br>
+    <mat-checkbox [(ngModel)]="showRouteOutline">{{'ADDMAP.SHOWROUTEOUTLINE'|translate}}</mat-checkbox>
     {{error}}
 </div>
 <div mat-dialog-actions>

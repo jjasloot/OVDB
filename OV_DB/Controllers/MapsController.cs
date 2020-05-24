@@ -71,6 +71,8 @@ namespace OV_DB.Controllers
             dbMap.NameNL = map.NameNL;
             dbMap.OrderNr = map.OrderNr;
             dbMap.Default = map.Default;
+            dbMap.ShowRouteInfo = map.ShowRouteInfo;
+            dbMap.ShowRouteOutline = map.ShowRouteOutline;
             if (map.Default == true)
             {
                 var maps = await _context.Maps.Where(m => m.UserId == userIdClaim && m.MapId != map.MapId).ToListAsync();

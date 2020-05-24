@@ -28,6 +28,7 @@ export class MapComponent implements OnInit, AfterViewInit {
   selectedYears: number[];
   error: boolean;
   active: string;
+  selectedRoute;
   get bounds(): L.LatLngBounds {
     return this._bounds;
   }
@@ -187,29 +188,39 @@ export class MapComponent implements OnInit, AfterViewInit {
           };
         },
         onEachFeature(feature, layer) {
-          let popup = '<h2>' + feature.properties.name + '</h2><p>'
-            + parent.translateService.instant('MAP.POPUP.TYPE')
-            + ': ' + feature.properties.type;
-          if (!!feature.properties.description) {
-            popup += '<br>' + parent.translateService.instant('MAP.POPUP.REMARK') + ': ' + feature.properties.description;
+          if (!!feature.properties.name) {
+            let popup = '<h2>' + feature.properties.name + '</h2><p>'
+              + parent.translateService.instant('MAP.POPUP.TYPE')
+              + ': ' + feature.properties.type;
+            if (!!feature.properties.description) {
+              popup += '<br>' + parent.translateService.instant('MAP.POPUP.REMARK') + ': ' + feature.properties.description;
+            }
+            if (!!feature.properties.lineNumber) {
+              popup += '<br>' + parent.translateService.instant('MAP.POPUP.LINENUMBER') + ': ' + feature.properties.lineNumber;
+            }
+            if (!!feature.properties.operatingCompany) {
+              popup += '<br>' + parent.translateService.instant('MAP.POPUP.OPERATINGCOMPANY') + ': ' + feature.properties.operatingCompany;
+            }
+            popup += '</p>';
+            layer.bindPopup(popup);
           }
-          if (!!feature.properties.lineNumber) {
-            popup += '<br>' + parent.translateService.instant('MAP.POPUP.LINENUMBER') + ': ' + feature.properties.lineNumber;
-          }
-          if (!!feature.properties.operatingCompany) {
-            popup += '<br>' + parent.translateService.instant('MAP.POPUP.OPERATINGCOMPANY') + ': ' + feature.properties.operatingCompany;
-          }
-          popup += '</p>';
-          layer.on('click', f => {
-            f.target.setStyle({ weight: 8, })
-            f.target.bringToFront();
-            f.target.getPopup().on('remove', () => {
-              f.target.setStyle({
-                weight: 3,
-              });
+          if (!!feature.properties.o) {
+            layer.on('click', f => {
+              if (!!parent.selectedRoute) {
+                parent.selectedRoute.setStyle({ weight: 3 });
+              }
+              parent.selectedRoute = f.target;
+              f.target.setStyle({ weight: 8, })
+              f.target.bringToFront();
+              if (!!feature.properties.name) {
+                f.target.getPopup().on('remove', () => {
+                  f.target.setStyle({
+                    weight: 3,
+                  });
+                });
+              }
             });
-          });
-          layer.bindPopup(popup);
+          }
         }
       });
       this.layers = [track];
