@@ -97,7 +97,9 @@ namespace OV_DB
             }
             else
             {
-                app.UseExceptionHandler("/Error");
+                app.UseDeveloperExceptionPage();
+
+                //app.UseExceptionHandler("/Error");
                 //The default HSTS value is 30 days.You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
                 app.UseHttpsRedirection();
                 app.UseHsts();
