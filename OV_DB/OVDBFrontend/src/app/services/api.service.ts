@@ -11,11 +11,13 @@ import { OSMLineStop } from '../models/osmLineStop.model';
 import { Moment } from 'moment';
 import { AdminMap } from '../models/adminMap.model';
 import { AdminUser } from '../models/adminUser.model';
+import { MultipleEdit } from '../models/multipleEdit.model';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ApiService {
+
 
 
   getRoutesWithMissingSettings(): Observable<Route[]> {
@@ -222,6 +224,12 @@ export class ApiService {
     const url = environment.backend + 'api/admin/users';
 
     return this.httpClient.get<AdminUser[]>(url);
+  }
+
+  updateMultiple(model: MultipleEdit) {
+    const url = environment.backend + 'api/routes/editmultiple';
+
+    return this.httpClient.put<MultipleEdit>(url, model);
   }
 
 }

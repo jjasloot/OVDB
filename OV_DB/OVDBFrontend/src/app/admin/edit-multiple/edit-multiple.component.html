@@ -1,0 +1,60 @@
+<h3 mat-dialog-title>{{'EDITMULTIPLE.TITLE'|translate}}</h3>
+<div mat-dialog-content class="dialog">
+    <mat-checkbox [(ngModel)]="updateDate">{{'EDITMULTIPLE.UPDATEDATE'|translate}}</mat-checkbox><br>
+    <mat-form-field>
+        <mat-label>{{'ROUTEDETAILS.FIRSTDATETIME'|translate}}</mat-label>
+        <input [disabled]="!updateDate" matInput [matDatepicker]="firstPicker" [(ngModel)]="firstDateTime">
+        <mat-datepicker-toggle matSuffix [for]="firstPicker"></mat-datepicker-toggle>
+        <mat-datepicker #firstPicker></mat-datepicker>
+    </mat-form-field><br>
+    <mat-checkbox [(ngModel)]="updateType">{{'EDITMULTIPLE.UPDATETYPE'|translate}}</mat-checkbox><br>
+    <mat-form-field>
+        <mat-label>{{'ROUTEDETAILS.TYPE'|translate}}</mat-label>
+        <mat-select [(ngModel)]="routeTypeId" required [disabled]="!updateType">
+            <mat-option *ngFor="let type of types" [value]="type.typeId">
+                {{name(type)}}
+            </mat-option>
+        </mat-select>
+    </mat-form-field><br>
+    <mat-checkbox [(ngModel)]="updateCountries">{{'EDITMULTIPLE.UPDATECOUNTRIES'|translate}}</mat-checkbox><br>
+    <mat-expansion-panel class="countries" *ngIf="updateCountries">
+        <mat-expansion-panel-header>
+            <mat-panel-title>
+                {{'ROUTEDETAILS.COUNTRIES'|translate}}
+            </mat-panel-title>
+            <mat-panel-description>
+                {{countriesString}}
+            </mat-panel-description>
+        </mat-expansion-panel-header>
+
+        <mat-selection-list [(ngModel)]="selectedOptions" #countriesSelection>
+            <mat-list-option *ngFor="let country of countries" [value]="country.countryId">
+                {{name(country)}}
+            </mat-list-option>
+        </mat-selection-list>
+    </mat-expansion-panel>
+    <mat-checkbox [(ngModel)]="updateMaps">{{'EDITMULTIPLE.UPDATEMAPS'|translate}}</mat-checkbox><br>
+    <mat-expansion-panel class="countries" *ngIf="updateMaps">
+        <mat-expansion-panel-header>
+            <mat-panel-title>
+                {{'ROUTEDETAILS.MAPS'|translate}}
+            </mat-panel-title>
+            <mat-panel-description>
+                {{mapsString}}
+            </mat-panel-description>
+        </mat-expansion-panel-header>
+
+        <mat-selection-list [(ngModel)]="selectedMaps" #mapsSelection>
+            <mat-list-option *ngFor="let map of maps" [value]="map.mapId">
+                {{map.name}}
+            </mat-list-option>
+        </mat-selection-list>
+    </mat-expansion-panel>
+
+    <div class="error" *ngIf="!!error">{{error|json}}</div>
+
+</div>
+<div mat-dialog-actions>
+    <button mat-button (click)="cancel()">{{'CANCEL'|translate}}</button>
+    <button mat-button (click)="return()">{{'SAVE'|translate}}</button>
+</div>

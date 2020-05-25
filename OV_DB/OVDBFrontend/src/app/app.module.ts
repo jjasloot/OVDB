@@ -63,6 +63,7 @@ import { SingleRouteMapComponent } from './single-route-map/single-route-map.com
 import { AdministratorLayoutComponent } from './administrator/administrator-layout/administrator-layout.component';
 import { AdministratorUsersComponent } from './administrator/administrator-users/administrator-users.component';
 import { AdministratorMapsComponent } from './administrator/administrator-maps/administrator-maps.component';
+import { EditMultipleComponent } from './admin/edit-multiple/edit-multiple.component';
 
 registerLocaleData(localeNl, 'nl-NL');
 export function HttpLoaderFactory(http: HttpClient) {
@@ -100,6 +101,7 @@ export function HttpLoaderFactory(http: HttpClient) {
     AdministratorLayoutComponent,
     AdministratorUsersComponent,
     AdministratorMapsComponent,
+    EditMultipleComponent,
   ],
   imports: [
     BrowserModule,

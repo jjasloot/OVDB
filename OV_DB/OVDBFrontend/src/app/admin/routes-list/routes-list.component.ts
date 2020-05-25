@@ -12,6 +12,9 @@ import { MatSort } from '@angular/material/sort';
 import { saveAs } from 'file-saver';
 import { TranslateService } from '@ngx-translate/core';
 import { TranslationService } from 'src/app/services/translation.service';
+import { MatCheckboxChange } from '@angular/material/checkbox';
+import { MatDialog } from '@angular/material/dialog';
+import { EditMultipleComponent } from '../edit-multiple/edit-multiple.component';
 
 @Component({
   selector: 'app-routes-list',
@@ -21,10 +24,9 @@ import { TranslationService } from 'src/app/services/translation.service';
 export class RoutesListComponent implements OnInit, AfterViewInit {
   routes: Route[];
   loading: boolean;
-  displayedColumns: string[] = ['name', 'date', 'maps', 'type', 'edit'];
-  dataSource: RoutesDataSource
-
-    ;
+  displayedColumns: string[] = ['select', 'name', 'date', 'maps', 'type', 'edit'];
+  dataSource: RoutesDataSource;
+  selectedRoutes: number[] = [];
 
   @ViewChild(MatPaginator, { static: true }) paginator: MatPaginator;
   @ViewChild(MatSort) sort: MatSort;
@@ -37,7 +39,7 @@ export class RoutesListComponent implements OnInit, AfterViewInit {
     private router: Router,
     private translateService: TranslateService,
     private translationService: TranslationService,
-    private dataUpdateService: DataUpdateService) { }
+    private dialog: MatDialog) { }
 
   ngOnInit() {
     this.loadCount();
@@ -124,7 +126,33 @@ export class RoutesListComponent implements OnInit, AfterViewInit {
     return this.translationService.getNameForItem(item);
   }
 
-  view(route:Route){
-    this.router.navigate(['/route',route.routeId,route.share])
+  view(route: Route) {
+    this.router.navigate(['/route', route.routeId, route.share])
+  }
+
+  isChecked(route: Route) {
+    return this.selectedRoutes.includes(route.routeId);
+  }
+
+  toggle(route: Route, event: MatCheckboxChange) {
+    if (event.checked) {
+      this.selectedRoutes.push(route.routeId);
+    } else {
+      this.selectedRoutes = this.selectedRoutes.filter(r => r !== route.routeId);
+    }
+  }
+
+  editMultiple() {
+    const dialog = this.dialog.open(EditMultipleComponent, {
+      width: '80%',
+      data: {
+        selectedRoutes: this.selectedRoutes
+      }
+    });
+    dialog.afterClosed().subscribe(() => this.loadRoutesPage())
+  }
+
+  clearSelection() {
+    this.selectedRoutes = [];
   }
 }

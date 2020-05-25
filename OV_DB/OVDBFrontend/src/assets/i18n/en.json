@@ -136,5 +136,13 @@
     "MAP.POPUP.LINENUMBER": "Line number",
     "MAP.POPUP.OPERATINGCOMPANY": "Operating company",
 	"ADDMAP.SHOWROUTEINFO":"Show route information on map",
-	"ADDMAP.SHOWROUTEOUTLINE":"Highlight route on selection"
+	"ADDMAP.SHOWROUTEOUTLINE":"Highlight route on selection",
+	"ROUTESLIST.SELECT":"Select",
+	"ROUTESLIST.SELECTED":"selected for edit",
+	"EDITMULTIPLE.TITLE":"Edit multiple routes",
+	"EDITMULTIPLE.UPDATEDATE":"Update the date for selected routes",
+	"EDITMULTIPLE.UPDATETYPE":"Update the type for selected routes",
+	"EDITMULTIPLE.UPDATECOUNTRIES":"Update the countries for selected routes",
+	"EDITMULTIPLE.UPDATEMAPS":"Update the maps for selected routes",
+	"ROUTESLIST.DESELECT":"Deselect all"
 }

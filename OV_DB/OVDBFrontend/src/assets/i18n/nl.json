@@ -136,5 +136,14 @@
     "MAP.POPUP.LINENUMBER": "Lijnnummer",
     "MAP.POPUP.OPERATINGCOMPANY": "Bedienend bedrijf",
 	"ADDMAP.SHOWROUTEINFO":"Laat route informatie zien op de kaart",
-	"ADDMAP.SHOWROUTEOUTLINE":"Benadruk route bij selectie"
+	"ADDMAP.SHOWROUTEOUTLINE":"Benadruk route bij selectie",
+	"ROUTESLIST.SELECT":"Selecteer",
+	"ROUTESLIST.SELECTED":"geselecteerd voor bewerken",
+	"EDITMULTIPLE.TITLE":"Meerdere routes bewerken",
+	"EDITMULTIPLE.UPDATEDATE":"Datum bijwerken voor geselecteerde routes",
+	"EDITMULTIPLE.UPDATETYPE":"Type bijwerken voor geselecteerde routes",
+	"EDITMULTIPLE.UPDATECOUNTRIES":"Landen bijwerken voor geselecteerde routes",
+	"EDITMULTIPLE.UPDATEMAPS":"Kaarten bijwerken voor geselecteerde routes",
+	"ROUTESLIST.DESELECT":"Alles deselecteren"
+
 }

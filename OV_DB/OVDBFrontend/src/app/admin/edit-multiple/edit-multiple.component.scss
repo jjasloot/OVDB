@@ -1,0 +1,17 @@
+.dialog {
+    overflow-y: auto;
+    max-height: calc(100vh - 200px);
+    padding: 8px;
+}
+
+mat-expansion-panel {
+    margin: 8px;
+}
+
+.error {
+    color: red;
+}
+
+.mat-form-field {
+    width: 100%;
+}

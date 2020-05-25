@@ -1,11 +1,20 @@
 <div class="spinner-container" *ngIf="dataSource.loading$ | async">
     <mat-spinner></mat-spinner>
 </div>
-<div class="mat-elevation-z8">
+<div class="mat-elevation-z8 container">
     <mat-form-field class="filter">
         <input matInput placeholder="{{'ROUTESLIST.SEARCH'|translate}}" #input>
     </mat-form-field>
+    <button mat-raised-button color="primary" (click)="editMultiple()" [disabled]="selectedRoutes.length===0">{{selectedRoutes.length}} {{'ROUTESLIST.SELECTED'|translate}}</button>
+    <button mat-stroked-button (click)="clearSelection()" [disabled]="selectedRoutes.length===0">{{'ROUTESLIST.DESELECT'|translate}}</button>
+    <button mat-stroked-button (click)="exportAll()">{{'ROUTESLIST.EXPORTALL'|translate}}</button>
     <mat-table [dataSource]="dataSource" matSort matSortActive="date" matSortDirection="desc" matSortDisableClear>
+        <ng-container matColumnDef="select">
+            <mat-header-cell *matHeaderCellDef mat-sort-header> {{'ROUTESLIST.SELECT'|translate}} </mat-header-cell>
+            <mat-cell *matCellDef="let element">
+                <mat-checkbox [checked]="isChecked(element)" (change)="toggle(element,$event)"></mat-checkbox>
+            </mat-cell>
+        </ng-container>
         <ng-container matColumnDef="name">
             <mat-header-cell *matHeaderCellDef mat-sort-header> {{'ROUTESLIST.NAME'|translate}} </mat-header-cell>
             <mat-cell *matCellDef="let element"><b>{{element.name}}</b> </mat-cell>
@@ -54,7 +63,10 @@
 
     <mat-paginator [length]="count" [pageSize]="10" [pageSizeOptions]="[10, 20, 50]" [showFirstLastButtons]="true">
     </mat-paginator>
-    <button mat-button (click)="exportAll()">{{'ROUTESLIST.EXPORTALL'|translate}}</button>
+    <button mat-raised-button color="primary" (click)="editMultiple()" [disabled]="selectedRoutes.length===0">{{selectedRoutes.length}} {{'ROUTESLIST.SELECTED'|translate}}</button>
+    <button mat-stroked-button (click)="clearSelection()" [disabled]="selectedRoutes.length===0">{{'ROUTESLIST.DESELECT'|translate}}</button>
+
+    <button mat-stroked-button (click)="exportAll()">{{'ROUTESLIST.EXPORTALL'|translate}}</button>
 </div>
 
 <ng-template #noData>

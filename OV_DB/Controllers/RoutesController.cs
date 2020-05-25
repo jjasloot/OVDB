@@ -740,5 +740,115 @@ namespace OV_DB.Controllers
         {
             return _context.Routes.Any(e => e.RouteId == id);
         }
+
+        [HttpPut("editmultiple")]
+        public async Task<ActionResult> UpdateMultipleRoutes([FromBody] EditMultiple editMultiple)
+        {
+            var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value ?? "-1");
+            if (userIdClaim < 0)
+            {
+                return Forbid();
+            }
+
+            var selectedRoutes = await _context.Routes
+                .Include(r => r.RouteCountries)
+                .Include(r => r.RouteMaps)
+                .Where(r => editMultiple.RouteIds.Contains(r.RouteId) && r.RouteMaps.Any(rm => rm.Map.UserId == userIdClaim))
+                .ToListAsync();
+
+            if (editMultiple.UpdateDate)
+            {
+                selectedRoutes.ForEach(r => r.FirstDateTime = editMultiple.Date);
+            }
+            if (editMultiple.UpdateType)
+            {
+                var validType = await _context.RouteTypes.AnyAsync(t => t.TypeId == editMultiple.TypeId && t.UserId == userIdClaim);
+                if (validType)
+                    selectedRoutes.ForEach(r => r.RouteTypeId = editMultiple.TypeId);
+            }
+
+            if (editMultiple.UpdateCountries)
+            {
+                var validSelectedCountryIds = await _context.Countries.Where(c => editMultiple.Countries.Contains(c.CountryId) && c.UserId == userIdClaim).Select(c => c.CountryId).ToListAsync();
+
+                selectedRoutes.ForEach(route =>
+                {
+                    var toDelete = new List<RouteCountry>();
+                    var toAdd = new List<int>();
+                    route.RouteCountries.ForEach(r =>
+                    {
+                        if (!validSelectedCountryIds.Contains(r.CountryId))
+                        {
+                            toDelete.Add(r);
+                        }
+                    });
+                    if (validSelectedCountryIds != null)
+                    {
+                        validSelectedCountryIds.ForEach(rm1 =>
+                        {
+                            if (!route.RouteMaps.Select(rm => rm.MapId).Contains(rm1))
+                            {
+                                toAdd.Add(rm1);
+                            }
+                        });
+                    }
+                    if (toDelete.Any())
+                    {
+                        _context.RoutesCountries.RemoveRange(toDelete);
+                    }
+
+                    if (toAdd.Any())
+                    {
+                        _context.RoutesCountries.AddRange(toAdd.Select(c => new RouteCountry { CountryId = c, RouteId = route.RouteId }));
+                    }
+
+                });
+
+            }
+
+            if (editMultiple.UpdateMaps)
+            {
+                var validSelectedMapIds = await _context.Maps.Where(m => editMultiple.Maps.Contains(m.MapId) && m.UserId == userIdClaim).Select(m => m.MapId).ToListAsync();
+
+                selectedRoutes.ForEach(route =>
+                {
+                    var toDelete = new List<RouteMap>();
+                    var toAdd = new List<int>();
+                    route.RouteMaps.ForEach(r =>
+                    {
+                        if (!editMultiple.Maps.Contains(r.MapId))
+                        {
+                            toDelete.Add(r);
+                        }
+                    });
+                    if (editMultiple.Maps != null)
+                    {
+                        editMultiple.Maps.ForEach(rm1 =>
+                        {
+                            if (!route.RouteMaps.Select(rm => rm.MapId).Contains(rm1))
+                            {
+                                toAdd.Add(rm1);
+                            }
+                        });
+                    }
+                    if (toDelete.Any())
+                    {
+                        _context.RoutesMaps.RemoveRange(toDelete);
+                    }
+
+                    if (toAdd.Any())
+                    {
+                        _context.RoutesMaps.AddRange(toAdd.Select(m => new RouteMap { MapId = m, RouteId = route.RouteId }));
+                    }
+
+                });
+
+            }
+
+
+            await _context.SaveChangesAsync();
+
+            return Ok();
+        }
     }
 }
