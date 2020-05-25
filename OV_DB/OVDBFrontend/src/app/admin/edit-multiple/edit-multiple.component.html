@@ -27,7 +27,7 @@
             </mat-panel-description>
         </mat-expansion-panel-header>
 
-        <mat-selection-list [(ngModel)]="selectedOptions" #countriesSelection>
+        <mat-selection-list #countriesSelection>
             <mat-list-option *ngFor="let country of countries" [value]="country.countryId">
                 {{name(country)}}
             </mat-list-option>
@@ -44,7 +44,7 @@
             </mat-panel-description>
         </mat-expansion-panel-header>
 
-        <mat-selection-list [(ngModel)]="selectedMaps" #mapsSelection>
+        <mat-selection-list #mapsSelection>
             <mat-list-option *ngFor="let map of maps" [value]="map.mapId">
                 {{map.name}}
             </mat-list-option>
