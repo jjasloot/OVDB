@@ -12,7 +12,7 @@ namespace OV_DB.Models
         public bool UpdateType { get; set; }
         public bool UpdateCountries { get; set; }
         public bool UpdateMaps { get; set; }
-        public DateTime Date { get; set; }
+        public DateTime? Date { get; set; }
         public int? TypeId { get; set; }
         public List<int> Countries { get; set; }
         public List<int> Maps { get; set; }
