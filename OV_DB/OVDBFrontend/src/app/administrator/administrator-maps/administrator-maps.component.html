@@ -1,0 +1,41 @@
+<div class="mat-elevation-z8">
+    <mat-table [dataSource]="data">
+        <ng-container matColumnDef="id">
+            <mat-header-cell *matHeaderCellDef> Id</mat-header-cell>
+            <mat-cell *matCellDef="let element"> {{element.id}} </mat-cell>
+        </ng-container>
+
+        <ng-container matColumnDef="name">
+            <mat-header-cell *matHeaderCellDef> Name </mat-header-cell>
+            <mat-cell *matCellDef="let element"> {{element.mapName}} </mat-cell>
+        </ng-container>
+
+        <ng-container matColumnDef="user">
+            <mat-header-cell *matHeaderCellDef> User </mat-header-cell>
+            <mat-cell *matCellDef="let element"> {{element.userEmail}} </mat-cell>
+        </ng-container>
+
+        <ng-container matColumnDef="link">
+            <mat-header-cell *matHeaderCellDef> Link? </mat-header-cell>
+            <mat-cell *matCellDef="let element"> {{element.shareLink}} </mat-cell>
+        </ng-container>
+
+        <ng-container matColumnDef="routes">
+            <mat-header-cell *matHeaderCellDef> Routes </mat-header-cell>
+            <mat-cell *matCellDef="let element"> {{element.routeCount}} </mat-cell>
+        </ng-container>
+
+        <ng-container matColumnDef="buttons">
+            <mat-header-cell *matHeaderCellDef></mat-header-cell>
+            <mat-cell *matCellDef="let element">
+                <button mat-icon-button (click)="view(element)" color="primary">
+          <mat-icon>pageview</mat-icon>
+        </button>
+            </mat-cell>
+        </ng-container>
+
+        <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
+        <mat-row *matRowDef="let row; columns: displayedColumns;"></mat-row>
+    </mat-table>
+
+</div>

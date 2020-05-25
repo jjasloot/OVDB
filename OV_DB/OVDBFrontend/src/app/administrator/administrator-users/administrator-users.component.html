@@ -1,0 +1,34 @@
+<div class="mat-elevation-z8">
+    <mat-table [dataSource]="data">
+        <ng-container matColumnDef="id">
+            <mat-header-cell *matHeaderCellDef> Id</mat-header-cell>
+            <mat-cell *matCellDef="let element"> {{element.id}} </mat-cell>
+        </ng-container>
+
+        <ng-container matColumnDef="email">
+            <mat-header-cell *matHeaderCellDef> Email </mat-header-cell>
+            <mat-cell *matCellDef="let element"> {{element.email}} </mat-cell>
+        </ng-container>
+
+        <ng-container matColumnDef="lastLogin">
+            <mat-header-cell *matHeaderCellDef> Last login </mat-header-cell>
+            <mat-cell *matCellDef="let element"> {{element.lastLogin|date:'medium':undefined:'nl-NL'}} </mat-cell>
+        </ng-container>
+
+        <ng-container matColumnDef="routes">
+            <mat-header-cell *matHeaderCellDef> Routes </mat-header-cell>
+            <mat-cell *matCellDef="let element"> {{element.routeCount}} </mat-cell>
+        </ng-container>
+
+        <ng-container matColumnDef="isAdmin">
+            <mat-header-cell *matHeaderCellDef> IsAdmin </mat-header-cell>
+            <mat-cell *matCellDef="let element">
+                <mat-checkbox [checked]="element.isAdmin"></mat-checkbox>
+            </mat-cell>
+        </ng-container>
+
+        <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
+        <mat-row *matRowDef="let row; columns: displayedColumns;"></mat-row>
+    </mat-table>
+
+</div>

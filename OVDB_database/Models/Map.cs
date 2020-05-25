@@ -31,6 +31,6 @@ namespace OVDB_database.Models
         public int OrderNr { get; set; }
 
         public User? User { get; set; }
-        public List<Route> Routes { get; set; }
+        public List<RouteMap> RouteMaps { get; set; }
     }
 }

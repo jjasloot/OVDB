@@ -21,16 +21,25 @@ import { HelpComponent } from './help/help.component';
 import { WizzardStep1Component } from './admin/wizzard/wizard-step1/wizard-step1.component';
 import { WizzardStep2Component } from './admin/wizzard/wizard-step2/wizard-step2.component';
 import { SingleRouteMapComponent } from './single-route-map/single-route-map.component';
+import { AdministratorLayoutComponent } from './administrator/administrator-layout/administrator-layout.component';
+import { AdministratorMapsComponent } from './administrator/administrator-maps/administrator-maps.component';
+import { AdministratorUsersComponent } from './administrator/administrator-users/administrator-users.component';
+import { AdministratorGuard } from './guards/administrator.guard';
 
 
 const routes: Routes = [
   {
-    path: 'admin',
-    component: LayoutComponent,
-    canActivate: [LoginGuard],
-    children: [
+    path: '', component: LayoutComponent, children: [
+      { path: '', pathMatch: 'full', component: HomeComponent },
+      { path: 'login', component: LoginComponent },
+      { path: 'login/failed', component: LoginComponent, data: { failed: true } },
+      { path: 'register', component: RegistrationComponent },
+      { path: 'map/:guid', component: MapViewComponent },
+      { path: 'link/:name', component: LinkComponent },
+      { path: 'help', component: HelpComponent },
+      { path: 'route/:routeId/:guid', component: SingleRouteMapComponent },
       {
-        path: '', component: RoutesComponent, children: [
+        path: 'admin', component: RoutesComponent, canActivate: [LoginGuard], children: [
           { path: '', pathMatch: 'full', redirectTo: 'maps' },
           { path: 'maps', component: MapsListComponent },
           { path: 'routes', component: RoutesListComponent },
@@ -43,18 +52,13 @@ const routes: Routes = [
           { path: 'wizard', component: WizzardStep1Component }
         ]
       },
-    ]
-  },
-  {
-    path: '', component: LayoutComponent, children: [
-      { path: '', pathMatch: 'full', component: HomeComponent },
-      { path: 'login', component: LoginComponent },
-      { path: 'login/failed', component: LoginComponent, data: { failed: true } },
-      { path: 'register', component: RegistrationComponent },
-      { path: 'map/:guid', component: MapViewComponent },
-      { path: 'link/:name', component: LinkComponent },
-      { path: 'help', component: HelpComponent },
-      { path: 'route/:routeId/:guid', component: SingleRouteMapComponent }
+      {
+        path: 'administrator', component: AdministratorLayoutComponent, canActivate: [LoginGuard, AdministratorGuard], children: [
+          { path: '', pathMatch: 'full', redirectTo: 'users' },
+          { path: 'maps', component: AdministratorMapsComponent },
+          { path: 'users', component: AdministratorUsersComponent }
+        ]
+      },
     ]
   }
 ];

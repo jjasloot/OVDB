@@ -45,4 +45,11 @@ export class LayoutComponent implements OnInit {
     }
     return this.authService.email;
   }
+
+  get isAdmin(){
+    if(!this.isLoggedIn){
+      return false;
+    }
+    return this.authService.admin;
+  }
 }

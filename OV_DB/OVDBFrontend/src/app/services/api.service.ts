@@ -9,12 +9,14 @@ import { Map } from 'src/app/models/map.model';
 import { OSMDataLine } from '../models/osmDataLine.model';
 import { OSMLineStop } from '../models/osmLineStop.model';
 import { Moment } from 'moment';
+import { AdminMap } from '../models/adminMap.model';
+import { AdminUser } from '../models/adminUser.model';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ApiService {
-  
+
 
   getRoutesWithMissingSettings(): Observable<Route[]> {
     return this.httpClient.get<Route[]>(environment.backend + 'api/routes/missingInfo');
@@ -209,4 +211,17 @@ export class ApiService {
 
     return this.httpClient.post<Route>(url, data);
   }
+
+  administratorGetMaps(): Observable<AdminMap[]> {
+    const url = environment.backend + 'api/admin/maps';
+
+    return this.httpClient.get<AdminMap[]>(url);
+  }
+
+  administratorGetUsers(): Observable<AdminUser[]> {
+    const url = environment.backend + 'api/admin/users';
+
+    return this.httpClient.get<AdminUser[]>(url);
+  }
+
 }

@@ -88,4 +88,8 @@ export class AuthenticationService {
   get email() {
     return this.helper.decodeToken(this.token)['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress'];
   }
+
+  get admin() {
+    return this.helper.decodeToken(this.token).admin === 'true';
+  }
 }

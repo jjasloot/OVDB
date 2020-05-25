@@ -60,6 +60,9 @@ import { TranslateHttpLoader } from '@ngx-translate/http-loader';
 import { WizzardStep1Component } from './admin/wizzard/wizard-step1/wizard-step1.component';
 import { WizzardStep2Component } from './admin/wizzard/wizard-step2/wizard-step2.component';
 import { SingleRouteMapComponent } from './single-route-map/single-route-map.component';
+import { AdministratorLayoutComponent } from './administrator/administrator-layout/administrator-layout.component';
+import { AdministratorUsersComponent } from './administrator/administrator-users/administrator-users.component';
+import { AdministratorMapsComponent } from './administrator/administrator-maps/administrator-maps.component';
 
 registerLocaleData(localeNl, 'nl-NL');
 export function HttpLoaderFactory(http: HttpClient) {
@@ -94,6 +97,9 @@ export function HttpLoaderFactory(http: HttpClient) {
     WizzardStep1Component,
     WizzardStep2Component,
     SingleRouteMapComponent,
+    AdministratorLayoutComponent,
+    AdministratorUsersComponent,
+    AdministratorMapsComponent,
   ],
   imports: [
     BrowserModule,

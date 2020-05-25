@@ -1,0 +1,18 @@
+mat-table {
+    min-height: 300px;
+}
+
+.mat-column-id,
+.mat-column-routes,
+.mat-column-buttons {
+    max-width: 100px;
+}
+
+.mat-column-user,
+.mat-column-name {
+    flex: 1
+}
+
+button:not(.mat-fab) {
+    margin: 0 8px;
+}
