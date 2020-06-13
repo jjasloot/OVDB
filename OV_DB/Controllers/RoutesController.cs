@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using OV_DB.Helpers;
 using OV_DB.Models;
 using OVDB_database.Database;
 using OVDB_database.Models;
@@ -495,6 +496,8 @@ namespace OV_DB.Controllers
                     route.RouteMaps.Add(new RouteMap { MapId = defaultMap.MapId });
                 }
 
+                DistanceCalculationHelper.ComputeDistance(route);
+
                 routes.Add(route);
                 _context.Routes.Add(route);
                 await _context.SaveChangesAsync();
@@ -550,6 +553,7 @@ namespace OV_DB.Controllers
             {
                 defaultMap = maps.First();
             }
+            DistanceCalculationHelper.ComputeDistance(route);
 
 
             _context.Add(route);
