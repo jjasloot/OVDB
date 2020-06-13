@@ -38,7 +38,7 @@ namespace OV_DB.Controllers
         }
 
         [HttpGet("find")]
-        public async Task<ActionResult> GetLinesAsync([FromQuery]string reference, [FromQuery] OSMRouteType? routeType, [FromQuery]string network, [FromQuery] DateTime? dateTime)
+        public async Task<ActionResult> GetLinesAsync([FromQuery] string reference, [FromQuery] OSMRouteType? routeType, [FromQuery] string network, [FromQuery] DateTime? dateTime)
         {
             if (string.IsNullOrWhiteSpace(reference))
             {
@@ -55,7 +55,7 @@ namespace OV_DB.Controllers
             return Ok(responseList);
         }
         [HttpGet("network")]
-        public async Task<ActionResult> GetNetworkLinesAsync([FromQuery]string network, [FromQuery]DateTime? dateTime)
+        public async Task<ActionResult> GetNetworkLinesAsync([FromQuery] string network, [FromQuery] DateTime? dateTime)
         {
             if (string.IsNullOrWhiteSpace(network))
             {
@@ -568,7 +568,7 @@ namespace OV_DB.Controllers
             }
 
             route.RouteMaps.Add(new RouteMap { MapId = defaultMap.MapId });
-
+            DistanceCalculationHelper.ComputeDistance(route);
 
             _context.Routes.Add(route);
             await _context.SaveChangesAsync();
