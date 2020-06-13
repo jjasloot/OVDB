@@ -201,6 +201,9 @@ export class MapComponent implements OnInit, AfterViewInit {
             if (!!feature.properties.operatingCompany) {
               popup += '<br>' + parent.translateService.instant('MAP.POPUP.OPERATINGCOMPANY') + ': ' + feature.properties.operatingCompany;
             }
+            if (!!feature.properties.distance) {
+              popup += '<br>' + parent.translateService.instant('ROUTES.DISTANCE') + ': ' + feature.properties.distance + ' km';
+            }
             popup += '</p>';
             layer.bindPopup(popup);
           }

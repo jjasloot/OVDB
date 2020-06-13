@@ -124,7 +124,15 @@ namespace OV_DB.Controllers
                     else
                         feature.Properties.Add("description", r.Description);
                     feature.Properties.Add("lineNumber", r.LineNumber);
-                    feature.Properties.Add("operatingCompany", r.OperatingCompany); ;
+                    feature.Properties.Add("operatingCompany", r.OperatingCompany);
+                    if (r.OverrideDistance.HasValue)
+                    {
+                        feature.Properties.Add("distance", r.OverrideDistance);
+                    }
+                    else
+                    {
+                        feature.Properties.Add("distance", r.CalculatedDistance);
+                    }
                 }
                 if (!string.IsNullOrWhiteSpace(r.OverrideColour))
                     feature.Properties.Add("stroke", r.OverrideColour);

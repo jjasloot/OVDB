@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using OV_DB.Helpers;
 using OV_DB.Models;
 using OVDB_database.Database;
 
@@ -83,6 +84,42 @@ namespace OV_DB.Controllers
 
             return Ok(list);
         }
+        [HttpGet("distance/{id:int}")]
+        public async Task<ActionResult> CalculateDistanceById(int id)
+        {
+            var adminClaim = (User.Claims.SingleOrDefault(c => c.Type == "admin").Value ?? "false");
+            if (string.Equals(adminClaim, "false", StringComparison.OrdinalIgnoreCase))
+            {
+                return Forbid();
+            }
 
+            var route = await _dbContext.Routes.FindAsync(id);
+
+            if (route != null)
+            {
+                DistanceCalculationHelper.ComputeDistance(route);
+            }
+            await _dbContext.SaveChangesAsync();
+            return Ok();
+        }
+
+        [HttpGet("distance/missing")]
+        public async Task<ActionResult> CalculateDistanceForAllMissing(int id)
+        {
+            var adminClaim = (User.Claims.SingleOrDefault(c => c.Type == "admin").Value ?? "false");
+            if (string.Equals(adminClaim, "false", StringComparison.OrdinalIgnoreCase))
+            {
+                return Forbid();
+            }
+
+            var routes = await _dbContext.Routes.Where(r => r.CalculatedDistance == 0).ToListAsync();
+
+            routes.ForEach(route =>
+            {
+                DistanceCalculationHelper.ComputeDistance(route);
+            });
+            await _dbContext.SaveChangesAsync();
+            return Ok();
+        }
     }
 }

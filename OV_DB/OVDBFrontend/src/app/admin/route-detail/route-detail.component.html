@@ -49,6 +49,13 @@
                 </mat-option>
             </mat-select>
         </mat-form-field>
+        <p>
+            {{'ROUTEDETAILS.CALCULATEDDISTANCE'|translate}}: {{route.calculatedDistance|number:'1.1-3'}} km
+        </p>
+        <mat-form-field>
+            <mat-label>{{'ROUTEDETAILS.OVERRIDEISTANCE'|translate}}</mat-label>
+            <input matInput formControlName="overrideDistance">
+        </mat-form-field>
     </form>
     <mat-expansion-panel class="countries">
         <mat-expansion-panel-header>

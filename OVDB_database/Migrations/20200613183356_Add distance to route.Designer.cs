@@ -2,15 +2,17 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using OVDB_database.Database;
 
 namespace OVDB_database.Migrations
 {
     [DbContext(typeof(OVDBDatabaseContext))]
-    partial class OVDBDatabaseContextModelSnapshot : ModelSnapshot
+    [Migration("20200613183356_Add distance to route")]
+    partial class Adddistancetoroute
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -149,7 +151,7 @@ namespace OVDB_database.Migrations
                     b.Property<string>("OverrideColour")
                         .HasColumnType("TEXT");
 
-                    b.Property<double?>("OverrideDistance")
+                    b.Property<double>("OverrideDistance")
                         .HasColumnType("REAL");
 
                     b.Property<int?>("RouteTypeId")

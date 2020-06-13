@@ -34,6 +34,10 @@ namespace OVDB_database.Models
         public int? RouteTypeId { get; set; }
         [JsonProperty]
         public RouteType? RouteType { get; set; }
+        [JsonProperty]
+        public double CalculatedDistance { get; set; }
+        [JsonProperty]
+        public double? OverrideDistance { get; set; }
         public string Coordinates { get; set; }
         [JsonProperty]
         public List<RouteMap> RouteMaps { get; set; }

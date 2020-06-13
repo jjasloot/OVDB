@@ -192,6 +192,7 @@ namespace OV_DB.Controllers
             dbRoute.OverrideColour = route.OverrideColour;
             dbRoute.OperatingCompany = route.OperatingCompany;
             dbRoute.RouteTypeId = route.RouteTypeId;
+            dbRoute.OverrideDistance = route.OverrideDistance;
 
             if (route.Countries != null)
             {

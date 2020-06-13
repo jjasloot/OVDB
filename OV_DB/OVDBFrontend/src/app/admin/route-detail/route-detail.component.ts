@@ -57,6 +57,8 @@ export class RouteDetailComponent implements OnInit {
       overrideColour: null,
       firstDateTime: moment(),
       routeTypeId: [null, Validators.required],
+      calculatedDistance: [null],
+      overrideDistance: [null]
     });
   }
 

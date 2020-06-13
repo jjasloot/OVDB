@@ -144,5 +144,8 @@
 	"EDITMULTIPLE.UPDATETYPE":"Update the type for selected routes",
 	"EDITMULTIPLE.UPDATECOUNTRIES":"Update the countries for selected routes",
 	"EDITMULTIPLE.UPDATEMAPS":"Update the maps for selected routes",
-	"ROUTESLIST.DESELECT":"Deselect all"
+	"ROUTESLIST.DESELECT":"Deselect all",
+	"ROUTEDETAILS.CALCULATEDDISTANCE":"Calculated distance",
+	"ROUTEDETAILS.OVERRIDEISTANCE":"Override distance (km)",
+	"ROUTES.DISTANCE": "Distance"
 }

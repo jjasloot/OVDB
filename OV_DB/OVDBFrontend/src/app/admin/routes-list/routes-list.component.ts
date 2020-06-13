@@ -24,7 +24,7 @@ import { EditMultipleComponent } from '../edit-multiple/edit-multiple.component'
 export class RoutesListComponent implements OnInit, AfterViewInit {
   routes: Route[];
   loading: boolean;
-  displayedColumns: string[] = ['select', 'name', 'date', 'maps', 'type', 'edit'];
+  displayedColumns: string[] = ['select', 'name', 'date','distance', 'maps', 'type', 'edit'];
   dataSource: RoutesDataSource;
   selectedRoutes: number[] = [];
 
@@ -154,5 +154,12 @@ export class RoutesListComponent implements OnInit, AfterViewInit {
 
   clearSelection() {
     this.selectedRoutes = [];
+  }
+
+  getDistance(route:Route){
+    if(!!route.overrideDistance){
+      return route.overrideDistance;
+    }
+    return route.calculatedDistance;
   }
 }

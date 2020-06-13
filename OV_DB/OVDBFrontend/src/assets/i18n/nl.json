@@ -144,6 +144,8 @@
 	"EDITMULTIPLE.UPDATETYPE":"Type bijwerken voor geselecteerde routes",
 	"EDITMULTIPLE.UPDATECOUNTRIES":"Landen bijwerken voor geselecteerde routes",
 	"EDITMULTIPLE.UPDATEMAPS":"Kaarten bijwerken voor geselecteerde routes",
-	"ROUTESLIST.DESELECT":"Alles deselecteren"
-
+	"ROUTESLIST.DESELECT":"Alles deselecteren",
+	"ROUTEDETAILS.CALCULATEDDISTANCE":"Berekende afstand",
+	"ROUTEDETAILS.OVERRIDEISTANCE":"Overschrijven van de afstand (km)",
+	"ROUTES.DISTANCE": "Afstand"
 }
