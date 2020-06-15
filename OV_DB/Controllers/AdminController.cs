@@ -104,7 +104,7 @@ namespace OV_DB.Controllers
         }
 
         [HttpGet("distance/missing")]
-        public async Task<ActionResult> CalculateDistanceForAllMissing(int id)
+        public async Task<ActionResult> CalculateDistanceForAllMissing()
         {
             var adminClaim = (User.Claims.SingleOrDefault(c => c.Type == "admin").Value ?? "false");
             if (string.Equals(adminClaim, "false", StringComparison.OrdinalIgnoreCase))
@@ -113,6 +113,24 @@ namespace OV_DB.Controllers
             }
 
             var routes = await _dbContext.Routes.Where(r => r.CalculatedDistance == 0).ToListAsync();
+
+            routes.ForEach(route =>
+            {
+                DistanceCalculationHelper.ComputeDistance(route);
+            });
+            await _dbContext.SaveChangesAsync();
+            return Ok();
+        }
+        [HttpGet("distance/all")]
+        public async Task<ActionResult> CalculateDistanceForAll()
+        {
+            var adminClaim = (User.Claims.SingleOrDefault(c => c.Type == "admin").Value ?? "false");
+            if (string.Equals(adminClaim, "false", StringComparison.OrdinalIgnoreCase))
+            {
+                return Forbid();
+            }
+
+            var routes = await _dbContext.Routes.ToListAsync();
 
             routes.ForEach(route =>
             {

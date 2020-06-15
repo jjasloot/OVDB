@@ -19,10 +19,12 @@ namespace OV_DB.Helpers
             var distance = 0d;
             for (var index = 1; index < coordinates.Count; index++)
             {
-                var additionalDistance = Distance(coordinates[index - 1][1], coordinates[index - 1][0], coordinates[index][1], coordinates[index][0]);
-                distance += additionalDistance;
+                var start = new GeoCoordinatePortable.GeoCoordinate(coordinates[index - 1][1], coordinates[index - 1][0]);
+                var end = new GeoCoordinatePortable.GeoCoordinate(coordinates[index][1], coordinates[index][0]);
+
+                distance += start.GetDistanceTo(end);
             }
-            distance = Math.Round(distance, 3);
+            distance = Math.Round(distance / 1000, 3);
             route.CalculatedDistance = distance;
 
         }
