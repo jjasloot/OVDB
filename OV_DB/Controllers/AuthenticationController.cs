@@ -88,10 +88,18 @@ namespace OV_DB.Controllers
         }
 
         [HttpPost("refreshToken")]
-        public ActionResult<LoginResponse> RefreshToken([FromBody] RefreshTokenRequest request)
+        public async Task<ActionResult<LoginResponse>> RefreshTokenAsync([FromBody] RefreshTokenRequest request)
         {
             var claims = User.Claims.Where(s => s.Type != "aud");
             var newJwtToken = GenerateToken(claims);
+
+            var id = int.Parse(User.Claims.Where(s => s.Type == ClaimTypes.NameIdentifier).SingleOrDefault().Value);
+
+            var user = await _dbContext.Users.FindAsync(id);
+
+            user.LastLogin = DateTime.UtcNow;
+
+            await _dbContext.SaveChangesAsync();
 
             return new LoginResponse
             {

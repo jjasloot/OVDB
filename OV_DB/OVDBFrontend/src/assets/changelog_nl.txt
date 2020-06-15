@@ -1,3 +1,6 @@
+2020-06-15:
+- Bereken afstanden van routes
+
 2020-05-24:
 - Het kunnen tonen en delen van een enkele route
 - Een aantal mogelijke fouten in de importer voorkomen
