@@ -9,33 +9,34 @@ using OVDB_database.Database;
 namespace OVDB_database.Migrations
 {
     [DbContext(typeof(OVDBDatabaseContext))]
-    [Migration("20200430171653_Ordering and Translations")]
-    partial class OrderingandTranslations
+    [Migration("20200629184213_MySql")]
+    partial class MySql
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "3.1.3");
+                .HasAnnotation("ProductVersion", "3.1.3")
+                .HasAnnotation("Relational:MaxIdentifierLength", 64);
 
             modelBuilder.Entity("OVDB_database.Models.Country", b =>
                 {
                     b.Property<int>("CountryId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("int");
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("longtext CHARACTER SET utf8mb4");
 
                     b.Property<string>("NameNL")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("longtext CHARACTER SET utf8mb4");
 
                     b.Property<int>("OrderNr")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("int");
 
                     b.Property<int>("UserId")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("int");
 
                     b.HasKey("CountryId");
 
@@ -48,19 +49,22 @@ namespace OVDB_database.Migrations
                 {
                     b.Property<int>("InviteCodeId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("int");
 
                     b.Property<string>("Code")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("longtext CHARACTER SET utf8mb4");
 
                     b.Property<int?>("CreatedByUserId")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("int");
+
+                    b.Property<bool>("DoesNotExpire")
+                        .HasColumnType("tinyint(1)");
 
                     b.Property<bool>("IsUsed")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("tinyint(1)");
 
                     b.Property<int?>("UserId")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("int");
 
                     b.HasKey("InviteCodeId");
 
@@ -75,28 +79,34 @@ namespace OVDB_database.Migrations
                 {
                     b.Property<int>("MapId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("int");
 
                     b.Property<bool>("Default")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("tinyint(1)");
 
                     b.Property<Guid>("MapGuid")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("char(36)");
 
                     b.Property<string>("Name")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("longtext CHARACTER SET utf8mb4");
 
                     b.Property<string>("NameNL")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("longtext CHARACTER SET utf8mb4");
 
                     b.Property<int>("OrderNr")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("int");
 
                     b.Property<string>("SharingLinkName")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("longtext CHARACTER SET utf8mb4");
+
+                    b.Property<bool>("ShowRouteInfo")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<bool>("ShowRouteOutline")
+                        .HasColumnType("tinyint(1)");
 
                     b.Property<int>("UserId")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("int");
 
                     b.HasKey("MapId");
 
@@ -109,42 +119,50 @@ namespace OVDB_database.Migrations
                 {
                     b.Property<int>("RouteId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("int");
+
+                    b.Property<double>("CalculatedDistance")
+                        .HasColumnType("double");
 
                     b.Property<string>("Coordinates")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("longtext CHARACTER SET utf8mb4")
+                        .HasMaxLength(1048576000);
 
                     b.Property<string>("Description")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("longtext CHARACTER SET utf8mb4");
 
                     b.Property<string>("DescriptionNL")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("longtext CHARACTER SET utf8mb4");
 
                     b.Property<DateTime?>("FirstDateTime")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("datetime(6)");
 
                     b.Property<string>("LineNumber")
-                        .HasColumnType("TEXT");
-
-                    b.Property<int?>("MapId")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("longtext CHARACTER SET utf8mb4");
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("longtext CHARACTER SET utf8mb4");
 
                     b.Property<string>("NameNL")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("longtext CHARACTER SET utf8mb4");
 
                     b.Property<string>("OperatingCompany")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("longtext CHARACTER SET utf8mb4");
+
+                    b.Property<string>("OverrideColour")
+                        .HasColumnType("longtext CHARACTER SET utf8mb4");
+
+                    b.Property<double?>("OverrideDistance")
+                        .HasColumnType("double");
 
                     b.Property<int?>("RouteTypeId")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("Share")
+                        .HasColumnType("char(36)");
 
                     b.HasKey("RouteId");
-
-                    b.HasIndex("MapId");
 
                     b.HasIndex("RouteTypeId");
 
@@ -155,13 +173,13 @@ namespace OVDB_database.Migrations
                 {
                     b.Property<long>("RouteCountryId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("bigint");
 
                     b.Property<int>("CountryId")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("int");
 
                     b.Property<int>("RouteId")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("int");
 
                     b.HasKey("RouteCountryId");
 
@@ -176,13 +194,13 @@ namespace OVDB_database.Migrations
                 {
                     b.Property<long>("RouteMapId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("bigint");
 
                     b.Property<int>("MapId")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("int");
 
                     b.Property<int>("RouteId")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("int");
 
                     b.HasKey("RouteMapId");
 
@@ -197,24 +215,24 @@ namespace OVDB_database.Migrations
                 {
                     b.Property<int>("TypeId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("int");
 
                     b.Property<string>("Colour")
                         .IsRequired()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("longtext CHARACTER SET utf8mb4");
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("longtext CHARACTER SET utf8mb4");
 
                     b.Property<string>("NameNL")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("longtext CHARACTER SET utf8mb4");
 
                     b.Property<int>("OrderNr")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("int");
 
                     b.Property<int>("UserId")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("int");
 
                     b.HasKey("TypeId");
 
@@ -227,22 +245,25 @@ namespace OVDB_database.Migrations
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("int");
 
                     b.Property<string>("Email")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("longtext CHARACTER SET utf8mb4");
 
                     b.Property<Guid>("Guid")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("char(36)");
+
+                    b.Property<bool>("IsAdmin")
+                        .HasColumnType("tinyint(1)");
 
                     b.Property<DateTime>("LastLogin")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("datetime(6)");
 
                     b.Property<string>("Password")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("longtext CHARACTER SET utf8mb4");
 
                     b.Property<string>("RefreshToken")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("longtext CHARACTER SET utf8mb4");
 
                     b.HasKey("Id");
 
@@ -280,10 +301,6 @@ namespace OVDB_database.Migrations
 
             modelBuilder.Entity("OVDB_database.Models.Route", b =>
                 {
-                    b.HasOne("OVDB_database.Models.Map", null)
-                        .WithMany("Routes")
-                        .HasForeignKey("MapId");
-
                     b.HasOne("OVDB_database.Models.RouteType", "RouteType")
                         .WithMany("Routes")
                         .HasForeignKey("RouteTypeId");
@@ -307,7 +324,7 @@ namespace OVDB_database.Migrations
             modelBuilder.Entity("OVDB_database.Models.RouteMap", b =>
                 {
                     b.HasOne("OVDB_database.Models.Map", "Map")
-                        .WithMany()
+                        .WithMany("RouteMaps")
                         .HasForeignKey("MapId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();

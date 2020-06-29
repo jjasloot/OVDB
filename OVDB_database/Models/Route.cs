@@ -38,6 +38,7 @@ namespace OVDB_database.Models
         public double CalculatedDistance { get; set; }
         [JsonProperty]
         public double? OverrideDistance { get; set; }
+        [StringLength(1048576000)]
         public string Coordinates { get; set; }
         [JsonProperty]
         public List<RouteMap> RouteMaps { get; set; }

@@ -83,62 +83,70 @@ namespace OV_DB.Controllers
             var collection = new FeatureCollection();
             await routes.ForEachAsync(r =>
             {
-                var multi = r.Coordinates.Split("###").ToList();
-                var lines = new List<GeoJSON.Net.Geometry.LineString>();
-                multi.ForEach(block =>
+                try
                 {
-                    var coordinates = block.Split('\n').Where(a => !string.IsNullOrWhiteSpace(a)).ToList();
-                    var coords = coordinates.Select(r => new Position(double.Parse(r.Split(',')[1], CultureInfo.InvariantCulture), double.Parse(r.Split(',')[0], CultureInfo.InvariantCulture))).ToList();
-                    if (coords.Count >= 2)
+                    var multi = r.Coordinates.Split("###").ToList();
+                    var lines = new List<GeoJSON.Net.Geometry.LineString>();
+                    multi.ForEach(block =>
                     {
-                        var geo = new GeoJSON.Net.Geometry.LineString(coords);
-                        lines.Add(geo);
-                    }
-                });
-                GeoJSON.Net.Feature.Feature feature;
-                if (lines.Count == 1)
-                {
-                    feature = new GeoJSON.Net.Feature.Feature(lines.Single());
-                }
-                else
-                {
-                    var multiLineString = new MultiLineString(lines);
-                    feature = new GeoJSON.Net.Feature.Feature(multiLineString);
-                }
-                if (map.ShowRouteOutline)
-                {
-                    feature.Properties.Add("o", 1);
-                }
-                if (map.ShowRouteInfo)
-                {
-                    if (language == "nl" && !string.IsNullOrWhiteSpace(r.NameNL))
-                        feature.Properties.Add("name", r.NameNL);
-                    else
-                        feature.Properties.Add("name", r.Name);
-                    if (language == "nl" && !string.IsNullOrWhiteSpace(r.RouteType.NameNL))
-                        feature.Properties.Add("type", r.RouteType.NameNL);
-                    else
-                        feature.Properties.Add("type", r.RouteType.Name);
-                    if (language == "nl" && !string.IsNullOrWhiteSpace(r.DescriptionNL))
-                        feature.Properties.Add("description", r.DescriptionNL);
-                    else
-                        feature.Properties.Add("description", r.Description);
-                    feature.Properties.Add("lineNumber", r.LineNumber);
-                    feature.Properties.Add("operatingCompany", r.OperatingCompany);
-                    if (r.OverrideDistance.HasValue)
+                        var coordinates = block.Split('\n').Where(a => !string.IsNullOrWhiteSpace(a)).ToList();
+                        var coords = coordinates.Select(r => new Position(double.Parse(r.Split(',')[1], CultureInfo.InvariantCulture), double.Parse(r.Split(',')[0], CultureInfo.InvariantCulture))).ToList();
+                        if (coords.Count >= 2)
+                        {
+                            var geo = new GeoJSON.Net.Geometry.LineString(coords);
+                            lines.Add(geo);
+                        }
+                    });
+                    GeoJSON.Net.Feature.Feature feature;
+                    if (lines.Count == 1)
                     {
-                        feature.Properties.Add("distance", r.OverrideDistance);
+                        feature = new GeoJSON.Net.Feature.Feature(lines.Single());
                     }
                     else
                     {
-                        feature.Properties.Add("distance", r.CalculatedDistance);
+                        var multiLineString = new MultiLineString(lines);
+                        feature = new GeoJSON.Net.Feature.Feature(multiLineString);
                     }
+                    if (map.ShowRouteOutline)
+                    {
+                        feature.Properties.Add("o", 1);
+                    }
+                    if (map.ShowRouteInfo)
+                    {
+                        if (language == "nl" && !string.IsNullOrWhiteSpace(r.NameNL))
+                            feature.Properties.Add("name", r.NameNL);
+                        else
+                            feature.Properties.Add("name", r.Name);
+                        if (language == "nl" && !string.IsNullOrWhiteSpace(r.RouteType.NameNL))
+                            feature.Properties.Add("type", r.RouteType.NameNL);
+                        else
+                            feature.Properties.Add("type", r.RouteType.Name);
+                        if (language == "nl" && !string.IsNullOrWhiteSpace(r.DescriptionNL))
+                            feature.Properties.Add("description", r.DescriptionNL);
+                        else
+                            feature.Properties.Add("description", r.Description);
+                        feature.Properties.Add("lineNumber", r.LineNumber);
+                        feature.Properties.Add("operatingCompany", r.OperatingCompany);
+                        if (r.OverrideDistance.HasValue)
+                        {
+                            feature.Properties.Add("distance", r.OverrideDistance);
+                        }
+                        else
+                        {
+                            feature.Properties.Add("distance", r.CalculatedDistance);
+                        }
+                    }
+                    if (!string.IsNullOrWhiteSpace(r.OverrideColour))
+                        feature.Properties.Add("stroke", r.OverrideColour);
+                    else
+                        feature.Properties.Add("stroke", r.RouteType.Colour);
+                    collection.Features.Add(feature);
                 }
-                if (!string.IsNullOrWhiteSpace(r.OverrideColour))
-                    feature.Properties.Add("stroke", r.OverrideColour);
-                else
-                    feature.Properties.Add("stroke", r.RouteType.Colour);
-                collection.Features.Add(feature);
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.Message);
+                    throw;
+                }
             });
 
             return collection;

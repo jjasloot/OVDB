@@ -10,7 +10,7 @@ namespace OVDB_database.Database
         public OVDBDatabaseContext CreateDbContext(string[] args)
         {
             var optionsBuilder = new DbContextOptionsBuilder<OVDBDatabaseContext>();
-            optionsBuilder.UseSqlite("Data Source = ../../ovdb.db;");
+            optionsBuilder.UseMySql("");
 
             return new OVDBDatabaseContext(optionsBuilder.Options);
         }

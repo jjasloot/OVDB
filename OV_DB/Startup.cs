@@ -38,7 +38,7 @@ namespace OV_DB
             });
             services.AddDbContext<OVDBDatabaseContext>(options =>
             {
-                options.UseSqlite(Configuration["Database"]);
+                options.UseMySql(Configuration["DBCONNECTIONSTRING"]);
             });
             services.AddAuthentication(options =>
             {

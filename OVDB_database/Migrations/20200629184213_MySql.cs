@@ -1,9 +1,10 @@
 ﻿using System;
+using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace OVDB_database.Migrations
 {
-    public partial class Initial : Migration
+    public partial class MySql : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
@@ -12,9 +13,10 @@ namespace OVDB_database.Migrations
                 columns: table => new
                 {
                     Id = table.Column<int>(nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
                     Email = table.Column<string>(nullable: true),
                     Password = table.Column<string>(nullable: true),
+                    IsAdmin = table.Column<bool>(nullable: false),
                     LastLogin = table.Column<DateTime>(nullable: false),
                     RefreshToken = table.Column<string>(nullable: true),
                     Guid = table.Column<Guid>(nullable: false)
@@ -29,8 +31,10 @@ namespace OVDB_database.Migrations
                 columns: table => new
                 {
                     CountryId = table.Column<int>(nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
                     Name = table.Column<string>(nullable: false),
+                    NameNL = table.Column<string>(nullable: true),
+                    OrderNr = table.Column<int>(nullable: false),
                     UserId = table.Column<int>(nullable: false)
                 },
                 constraints: table =>
@@ -49,11 +53,12 @@ namespace OVDB_database.Migrations
                 columns: table => new
                 {
                     InviteCodeId = table.Column<int>(nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
                     Code = table.Column<string>(nullable: true),
                     IsUsed = table.Column<bool>(nullable: false),
                     UserId = table.Column<int>(nullable: true),
-                    CreatedByUserId = table.Column<int>(nullable: true)
+                    CreatedByUserId = table.Column<int>(nullable: true),
+                    DoesNotExpire = table.Column<bool>(nullable: false)
                 },
                 constraints: table =>
                 {
@@ -77,12 +82,16 @@ namespace OVDB_database.Migrations
                 columns: table => new
                 {
                     MapId = table.Column<int>(nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
                     UserId = table.Column<int>(nullable: false),
                     Name = table.Column<string>(nullable: true),
+                    NameNL = table.Column<string>(nullable: true),
                     MapGuid = table.Column<Guid>(nullable: false),
                     SharingLinkName = table.Column<string>(nullable: true),
-                    Default = table.Column<bool>(nullable: false)
+                    Default = table.Column<bool>(nullable: false),
+                    ShowRouteInfo = table.Column<bool>(nullable: false),
+                    ShowRouteOutline = table.Column<bool>(nullable: false),
+                    OrderNr = table.Column<int>(nullable: false)
                 },
                 constraints: table =>
                 {
@@ -100,10 +109,12 @@ namespace OVDB_database.Migrations
                 columns: table => new
                 {
                     TypeId = table.Column<int>(nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
                     Name = table.Column<string>(nullable: false),
+                    NameNL = table.Column<string>(nullable: true),
                     Colour = table.Column<string>(nullable: false),
-                    UserId = table.Column<int>(nullable: false)
+                    UserId = table.Column<int>(nullable: false),
+                    OrderNr = table.Column<int>(nullable: false)
                 },
                 constraints: table =>
                 {
@@ -121,25 +132,24 @@ namespace OVDB_database.Migrations
                 columns: table => new
                 {
                     RouteId = table.Column<int>(nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
                     Name = table.Column<string>(nullable: false),
                     Description = table.Column<string>(nullable: true),
+                    NameNL = table.Column<string>(nullable: true),
+                    DescriptionNL = table.Column<string>(nullable: true),
+                    OverrideColour = table.Column<string>(nullable: true),
                     LineNumber = table.Column<string>(nullable: true),
                     OperatingCompany = table.Column<string>(nullable: true),
                     FirstDateTime = table.Column<DateTime>(nullable: true),
                     RouteTypeId = table.Column<int>(nullable: true),
-                    Coordinates = table.Column<string>(nullable: true),
-                    MapId = table.Column<int>(nullable: true)
+                    CalculatedDistance = table.Column<double>(nullable: false),
+                    OverrideDistance = table.Column<double>(nullable: true),
+                    Coordinates = table.Column<string>(maxLength: 1048576000, nullable: true),
+                    Share = table.Column<Guid>(nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Routes", x => x.RouteId);
-                    table.ForeignKey(
-                        name: "FK_Routes_Maps_MapId",
-                        column: x => x.MapId,
-                        principalTable: "Maps",
-                        principalColumn: "MapId",
-                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_Routes_RouteTypes_RouteTypeId",
                         column: x => x.RouteTypeId,
@@ -153,7 +163,7 @@ namespace OVDB_database.Migrations
                 columns: table => new
                 {
                     RouteCountryId = table.Column<long>(nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
                     RouteId = table.Column<int>(nullable: false),
                     CountryId = table.Column<int>(nullable: false)
                 },
@@ -179,7 +189,7 @@ namespace OVDB_database.Migrations
                 columns: table => new
                 {
                     RouteMapId = table.Column<long>(nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
                     RouteId = table.Column<int>(nullable: false),
                     MapId = table.Column<int>(nullable: false)
                 },
@@ -219,11 +229,6 @@ namespace OVDB_database.Migrations
                 name: "IX_Maps_UserId",
                 table: "Maps",
                 column: "UserId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Routes_MapId",
-                table: "Routes",
-                column: "MapId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Routes_RouteTypeId",
@@ -271,10 +276,10 @@ namespace OVDB_database.Migrations
                 name: "Countries");
 
             migrationBuilder.DropTable(
-                name: "Routes");
+                name: "Maps");
 
             migrationBuilder.DropTable(
-                name: "Maps");
+                name: "Routes");
 
             migrationBuilder.DropTable(
                 name: "RouteTypes");
