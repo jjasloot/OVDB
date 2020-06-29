@@ -2,7 +2,6 @@ FROM jjasloot/build AS build-env
 WORKDIR /app
 ARG UserAgent
 ARG JWTSigningKey
-ARG DBConnectionString
 # Copy csproj and restore as distinct layers
 COPY . ./
 RUN dotnet restore
@@ -13,6 +12,5 @@ FROM mcr.microsoft.com/dotnet/core/aspnet:3.1
 WORKDIR /app
 ENV UserAgent=$UserAgent
 ENV JWTSigningKey=$JWTSigningKey
-ENV DBConnectionString=$JWTSigningKey
 COPY --from=build-env /app/out .
 ENTRYPOINT ["dotnet", "OV_DB.dll"]
