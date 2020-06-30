@@ -28,7 +28,7 @@ import { RouteDetailComponent } from './admin/route-detail/route-detail.componen
 import { AdminComponent } from './admin/admin.component';
 import { RoutesListComponent } from './admin/routes-list/routes-list.component';
 import { RoutesComponent } from './admin/routes/routes.component';
-import { registerLocaleData } from '@angular/common';
+import { registerLocaleData, DatePipe } from '@angular/common';
 import localeNl from '@angular/common/locales/nl';
 import { RouteAddComponent } from './admin/route-add/route-add.component';
 import { MapFilterComponent } from './map-filter/map-filter.component';
@@ -47,7 +47,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatTableModule } from '@angular/material/table';
 import { MatPaginatorModule, MatPaginatorIntl } from '@angular/material/paginator';
 import { MatSortModule } from '@angular/material/sort';
-import { PaginatorIntlService  } from './admin/data-sources/mat-paginator-intl-nl';
+import { PaginatorIntlService } from './admin/data-sources/mat-paginator-intl-nl';
 import { RegistrationComponent } from './registration/registration.component';
 import { MapsListComponent } from './admin/maps-list/maps-list.component';
 import { MapsAddComponent } from './admin/maps-add/maps-add.component';
@@ -64,6 +64,8 @@ import { AdministratorLayoutComponent } from './administrator/administrator-layo
 import { AdministratorUsersComponent } from './administrator/administrator-users/administrator-users.component';
 import { AdministratorMapsComponent } from './administrator/administrator-maps/administrator-maps.component';
 import { EditMultipleComponent } from './admin/edit-multiple/edit-multiple.component';
+import { RouteInstancesComponent } from './admin/route-instances/route-instances.component';
+import { RouteInstancesEditComponent } from './admin/route-instances-edit/route-instances-edit.component';
 
 registerLocaleData(localeNl, 'nl-NL');
 export function HttpLoaderFactory(http: HttpClient) {
@@ -102,6 +104,8 @@ export function HttpLoaderFactory(http: HttpClient) {
     AdministratorUsersComponent,
     AdministratorMapsComponent,
     EditMultipleComponent,
+    RouteInstancesComponent,
+    RouteInstancesEditComponent,
   ],
   imports: [
     BrowserModule,
@@ -150,7 +154,8 @@ export function HttpLoaderFactory(http: HttpClient) {
         return service;
       },
       deps: [TranslateService]
-    }
+    },
+    DatePipe
   ],
   entryComponents: [
     MapFilterComponent,

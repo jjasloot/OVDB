@@ -130,8 +130,10 @@ export class MapComponent implements OnInit, AfterViewInit {
       this.loading = true;
       let filter = '';
       if (!!this.to && !!this.from) {
-        filter += 'FirstDateTime ge ' + this.from.format('YYYY-MM-DD') + ' and ';
-        filter += 'FirstDateTime lt ' + this.to.format('YYYY-MM-DD') + ' and ';
+        filter +=   filter += '(RouteInstances/any(tag: tag/Date ge '
+        + this.from.format('YYYY-MM-DD')
+        + ')) and (RouteInstances/any(tag: tag/Date lt '
+        + this.to.format('YYYY-MM-DD') + '))  and ';
       }
       if (this.selectedCountries && this.selectedCountries.length > 0) {
         filter += '(';
@@ -163,10 +165,10 @@ export class MapComponent implements OnInit, AfterViewInit {
             const start = moment().year(option).startOf('year');
             const end = moment().year(option + 1).startOf('year');
 
-            filter += '(FirstDateTime ge '
+            filter += '(RouteInstances/any(tag: tag/Date ge '
               + start.format('YYYY-MM-DD')
-              + ' and FirstDateTime lt '
-              + end.format('YYYY-MM-DD') + ') or ';
+              + ')) and (RouteInstances/any(tag: tag/Date lt '
+              + end.format('YYYY-MM-DD') + ')) or ';
           }
         });
         if (filter.endsWith(' or ')) {

@@ -21,6 +21,8 @@ namespace OVDB_database.Database
         public DbSet<RouteType> RouteTypes { get; set; }
         public DbSet<User> Users { get; set; }
         public DbSet<InviteCode> InviteCodes { get; set; }
+        public DbSet<RouteInstance> RouteInstances { get; set; }
+        public DbSet<RouteInstanceProperty> RouteInstanceProperties { get; set; }
         protected override void OnConfiguring(DbContextOptionsBuilder options)
         {
             if (!options.IsConfigured)
@@ -35,7 +37,6 @@ namespace OVDB_database.Database
             base.OnModelCreating(modelBuilder);
 
             modelBuilder.Entity<RouteCountry>().HasOne(rc => rc.Route).WithMany(r => r.RouteCountries).OnDelete(DeleteBehavior.Restrict);
-
         }
     }
 }

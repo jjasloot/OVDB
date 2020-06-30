@@ -55,7 +55,7 @@ export class RouteDetailComponent implements OnInit {
       lineNumber: null,
       operatingCompany: null,
       overrideColour: null,
-      firstDateTime: moment(),
+      firstDateTime: '',
       routeTypeId: [null, Validators.required],
       calculatedDistance: [null],
       overrideDistance: [null]
@@ -88,6 +88,9 @@ export class RouteDetailComponent implements OnInit {
         this.selectedOptions = this.route.routeCountries.map(r => r.countryId);
         this.selectedMaps = this.route.routeMaps.map(r => r.mapId)
         this.form.patchValue(this.route);
+        if (this.route.routeInstancesCount > 1) {
+          this.form.controls.firstDateTime.disable();
+        }
       });
     });
   }

@@ -2,7 +2,7 @@ import { Moment } from 'moment';
 import { RouteType } from './routeType.model';
 import { RouteCountry } from './routeCountry.model';
 import { Map } from './map.model';
-import { RoutesMaps } from './routesMaps.model'
+import { RoutesMapsFromRoute } from './routesMapsFromRoute.model';
 
 export interface Route {
   share: any;
@@ -14,7 +14,7 @@ export interface Route {
   operatingCompany?: string;
   firstDateTime: Moment;
   routeCountries: RouteCountry[];
-  routeMaps: RoutesMaps[];
+  routeMaps: RoutesMapsFromRoute[];
   routeTypeId: number;
   routeType?: RouteType;
   coordinates: string;
@@ -22,4 +22,5 @@ export interface Route {
   map: Map;
   overrideDistance: number;
   calculatedDistance: number;
+  routeInstancesCount: number;
 }

@@ -44,5 +44,7 @@ namespace OVDB_database.Models
         public List<RouteMap> RouteMaps { get; set; }
         [JsonProperty]
         public Guid Share { get; set; }
+        [JsonProperty]
+        public List<RouteInstance> RouteInstances { get; set; }
     }
 }

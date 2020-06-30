@@ -1,3 +1,4 @@
+using AutoMapper;
 using Microsoft.AspNet.OData.Builder;
 using Microsoft.AspNet.OData.Extensions;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -11,6 +12,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OData.Edm;
 using Newtonsoft.Json;
+using OV_DB.Mappings;
 using OVDB_database.Database;
 using OVDB_database.Models;
 using SharpKml.Dom;
@@ -36,6 +38,13 @@ namespace OV_DB
             {
                 options.AllowSynchronousIO = true;
             });
+            var mappingConfig = new MapperConfiguration(mc =>
+            {
+                mc.AddProfile(new MappingProfile());
+            });
+
+            IMapper mapper = mappingConfig.CreateMapper();
+            services.AddSingleton(mapper);
             services.AddDbContext<OVDBDatabaseContext>(options =>
             {
                 options.UseMySql(Configuration["DBCONNECTIONSTRING"]);

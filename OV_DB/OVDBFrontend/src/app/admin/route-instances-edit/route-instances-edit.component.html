@@ -1,0 +1,62 @@
+<h3 mat-dialog-title>{{'ROUTEINSTANCESEDIT.TITLE'|translate}}</h3>
+<div mat-dialog-content>
+    <mat-form-field>
+        <mat-label>Datum</mat-label>
+        <input matInput [matDatepicker]="pickerDate" [(ngModel)]="instance.date">
+        <mat-datepicker-toggle matSuffix [for]="pickerDate"></mat-datepicker-toggle>
+        <mat-datepicker #pickerDate></mat-datepicker>
+    </mat-form-field>
+    <mat-table [dataSource]="instance.routeInstanceProperties" #table>
+        <!-- User name Definition -->
+        <ng-container matColumnDef="key">
+            <mat-header-cell *matHeaderCellDef> Key </mat-header-cell>
+            <mat-cell *matCellDef="let row">
+                <mat-form-field>
+                    <input matInput [(ngModel)]="row.key">
+                </mat-form-field>
+            </mat-cell>
+            <mat-footer-cell *matFooterCellDef>
+                <button mat-button (click)="addRow() " [disabled]="canAddNewRow">add</button>
+            </mat-footer-cell>
+        </ng-container>
+
+        <!-- Age Definition -->
+        <ng-container matColumnDef="string">
+            <mat-header-cell *matHeaderCellDef> Text </mat-header-cell>
+            <mat-cell *matCellDef="let row">
+                <mat-form-field>
+                    <input matInput [(ngModel)]="row.value" [disabled]="disableValue(row)">
+                </mat-form-field>
+            </mat-cell>
+
+        </ng-container>
+
+        <!-- Title Definition -->
+        <ng-container matColumnDef="date">
+            <mat-header-cell *matHeaderCellDef> Date </mat-header-cell>
+            <mat-cell *matCellDef="let row">
+                <mat-form-field>
+                    <input matInput [matDatepicker]="picker" [(ngModel)]="row.date" [disabled]="disableDate(row)">
+                    <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+                    <mat-datepicker #picker></mat-datepicker>
+                </mat-form-field>
+            </mat-cell>
+
+        </ng-container>
+        <ng-container matColumnDef="bool">
+            <mat-header-cell *matHeaderCellDef> True/False </mat-header-cell>
+            <mat-cell *matCellDef="let row">
+                <mat-checkbox [(ngModel)]="row.bool" [disabled]="disableBool(row)" [indeterminate]="row.bool===undefined||row.bool===null"></mat-checkbox>
+            </mat-cell>
+
+        </ng-container>
+        <!-- Header and Row Declarations -->
+        <mat-header-row *matHeaderRowDef="['key', 'string', 'date', 'bool']"></mat-header-row>
+        <mat-row *matRowDef="let row; columns: ['key', 'string', 'date', 'bool']"></mat-row>
+        <mat-footer-row *matFooterRowDef="['key']"></mat-footer-row>
+    </mat-table>
+</div>
+<div mat-dialog-actions>
+    <button mat-button (click)="cancel()">{{'CANCEL'|translate}}</button>
+    <button mat-button (click)="return()">{{'SAVE'|translate}}</button>
+</div>

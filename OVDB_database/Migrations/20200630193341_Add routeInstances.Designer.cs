@@ -2,15 +2,17 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using OVDB_database.Database;
 
 namespace OVDB_database.Migrations
 {
     [DbContext(typeof(OVDBDatabaseContext))]
-    partial class OVDBDatabaseContextModelSnapshot : ModelSnapshot
+    [Migration("20200630193341_Add routeInstances")]
+    partial class AddrouteInstances
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -197,7 +199,7 @@ namespace OVDB_database.Migrations
                     b.Property<DateTime>("Date")
                         .HasColumnType("datetime(6)");
 
-                    b.Property<int>("RouteId")
+                    b.Property<int?>("RouteId")
                         .HasColumnType("int");
 
                     b.HasKey("RouteInstanceId");
@@ -368,11 +370,9 @@ namespace OVDB_database.Migrations
 
             modelBuilder.Entity("OVDB_database.Models.RouteInstance", b =>
                 {
-                    b.HasOne("OVDB_database.Models.Route", "Route")
+                    b.HasOne("OVDB_database.Models.Route", null)
                         .WithMany("RouteInstances")
-                        .HasForeignKey("RouteId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("RouteId");
                 });
 
             modelBuilder.Entity("OVDB_database.Models.RouteInstanceProperty", b =>

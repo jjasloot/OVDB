@@ -30,9 +30,9 @@
             <mat-header-cell *matHeaderCellDef mat-sort-header> {{'ROUTESLIST.MAPS'|translate}} </mat-header-cell>
             <mat-cell *matCellDef="let element"> {{getMapsString(element)}} </mat-cell>
         </ng-container>
-        <ng-container matColumnDef="distance">
-            <mat-header-cell *matHeaderCellDef> {{'ROUTES.DISTANCE'|translate}} </mat-header-cell>
-            <mat-cell *matCellDef="let element"> {{getDistance(element)|number:'1.0-3':currentLocale}} km </mat-cell>
+        <ng-container matColumnDef="instances">
+            <mat-header-cell *matHeaderCellDef> {{'ROUTES.INSTANCES'|translate}} </mat-header-cell>
+            <mat-cell *matCellDef="let element"> {{element.routeInstancesCount}} </mat-cell>
         </ng-container>
 
         <ng-container matColumnDef="type">

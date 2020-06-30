@@ -12,11 +12,14 @@ import { Moment } from 'moment';
 import { AdminMap } from '../models/adminMap.model';
 import { AdminUser } from '../models/adminUser.model';
 import { MultipleEdit } from '../models/multipleEdit.model';
+import { RouteInstance } from '../models/routeInstance.model';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ApiService {
+
+
 
 
 
@@ -84,6 +87,12 @@ export class ApiService {
   }
   deleteRoute(routeId: number) {
     return this.httpClient.delete(environment.backend + 'api/routes/' + routeId);
+  }
+  getRouteInstances(routeId: number) {
+    return this.httpClient.get<RouteInstance[]>(environment.backend + 'api/routes/instances/' + routeId);
+  }
+  updateRouteInstance(instance: RouteInstance) {
+    return this.httpClient.put(environment.backend + 'api/routes/instances',instance);
   }
   getAllRoutes(start?: number, count?: number, column?: string, order?: boolean, filter?: string): Observable<Route[]> {
     let params = new HttpParams();

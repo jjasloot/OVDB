@@ -24,7 +24,7 @@ import { EditMultipleComponent } from '../edit-multiple/edit-multiple.component'
 export class RoutesListComponent implements OnInit, AfterViewInit {
   routes: Route[];
   loading: boolean;
-  displayedColumns: string[] = ['select', 'name', 'date','distance', 'maps', 'type', 'edit'];
+  displayedColumns: string[] = ['select', 'name', 'date', 'instances', 'maps', 'type', 'edit'];
   dataSource: RoutesDataSource;
   selectedRoutes: number[] = [];
 
@@ -115,7 +115,7 @@ export class RoutesListComponent implements OnInit, AfterViewInit {
     if (element.routeMaps.length > 3) {
       return element.routeMaps.length + ' ' + this.translateService.instant('ROUTESLIST.MAPSFORCOUNT');
     }
-    return element.routeMaps.map(r => r.map.name).join(', ');
+    return element.routeMaps.map(r => r.name).join(', ');
   }
 
   get currentLocale() {
@@ -156,8 +156,8 @@ export class RoutesListComponent implements OnInit, AfterViewInit {
     this.selectedRoutes = [];
   }
 
-  getDistance(route:Route){
-    if(!!route.overrideDistance){
+  getDistance(route: Route) {
+    if (!!route.overrideDistance) {
       return route.overrideDistance;
     }
     return route.calculatedDistance;

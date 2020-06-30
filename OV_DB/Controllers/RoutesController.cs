@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNet.OData;
+﻿using AutoMapper;
+using AutoMapper.QueryableExtensions;
+using Microsoft.AspNet.OData;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -27,17 +29,19 @@ namespace OV_DB.Controllers
     public class RoutesController : ControllerBase
     {
         private readonly OVDBDatabaseContext _context;
+        private readonly IMapper _mapper;
 
-        public RoutesController(OVDBDatabaseContext context)
+        public RoutesController(OVDBDatabaseContext context, IMapper mapper)
         {
             _context = context;
+            _mapper = mapper;
         }
 
         // GET: api/RoutesAPI
         [HttpGet]
         [EnableQuery]
 
-        public async Task<ActionResult<IEnumerable<Route>>> GetRoutes([FromQuery] int? start, [FromQuery] int? count, [FromQuery] string sortColumn, [FromQuery] bool? descending, [FromQuery] string filter)
+        public async Task<ActionResult<IEnumerable<RouteDTO>>> GetRoutes([FromQuery] int? start, [FromQuery] int? count, [FromQuery] string sortColumn, [FromQuery] bool? descending, [FromQuery] string filter)
         {
             var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value ?? "-1");
             if (userIdClaim < 0)
@@ -45,10 +49,9 @@ namespace OV_DB.Controllers
                 return Forbid();
             }
             var query = _context.Routes
-                .Include(r => r.RouteType)
-                .Include(r => r.RouteMaps)
-                .ThenInclude(r => r.Map)
-                .Where(r => r.RouteMaps.Any(rm => rm.Map.UserId == userIdClaim));
+                .Where(r => r.RouteMaps.Any(rm => rm.Map.UserId == userIdClaim))
+                .ProjectTo<RouteDTO>(_mapper.ConfigurationProvider);
+
 
             if (!string.IsNullOrWhiteSpace(sortColumn))
             {
@@ -76,15 +79,15 @@ namespace OV_DB.Controllers
                 if (sortColumn == "maps")
                 {
                     if (descending.GetValueOrDefault(false))
-                        query = query.OrderByDescending(r => r.RouteMaps.FirstOrDefault().Map.Name ?? "");
+                        query = query.OrderByDescending(r => r.RouteMaps.FirstOrDefault().Name ?? "");
                     else
-                        query = query.OrderBy(r => r.RouteMaps.FirstOrDefault().Map.Name ?? "");
+                        query = query.OrderBy(r => r.RouteMaps.FirstOrDefault().Name ?? "");
                 }
             }
 
             if (!string.IsNullOrWhiteSpace(filter))
             {
-                query = query.Where(r => EF.Functions.Like(r.Name, "%" + filter + "%") || EF.Functions.Like(r.RouteType.Name, "%" + filter + "%") || r.RouteMaps.Any(rm => EF.Functions.Like(rm.Map.Name, "%" + filter + "%")));
+                query = query.Where(r => EF.Functions.Like(r.Name, "%" + filter + "%") || EF.Functions.Like(r.RouteType.Name, "%" + filter + "%") || r.RouteMaps.Any(rm => EF.Functions.Like(rm.Name, "%" + filter + "%")));
             }
 
             if (start.HasValue && count.HasValue)
@@ -139,7 +142,7 @@ namespace OV_DB.Controllers
         }
         // GET: api/RoutesAPI/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<Route>> GetRoute(int id)
+        public async Task<ActionResult<RouteDTO>> GetRoute(int id)
         {
             var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value ?? "-1");
             if (userIdClaim < 0)
@@ -149,13 +152,14 @@ namespace OV_DB.Controllers
             var route = await _context.Routes
                 .Where(r => r.RouteMaps.Any(rm => rm.Map.UserId == userIdClaim))
                 .Include(r => r.RouteCountries)
+                .Include(r => r.RouteInstances)
                 .Include(r => r.RouteMaps)
+                .ProjectTo<RouteDTO>(_mapper.ConfigurationProvider)
                 .SingleAsync(r => r.RouteId == id);
             if (route == null)
             {
                 return NotFound();
             }
-            route.Coordinates = null;
             return route;
         }
 
@@ -179,6 +183,7 @@ namespace OV_DB.Controllers
                 .Where(r => r.RouteMaps.Any(rm => rm.Map.UserId == userIdClaim))
                 .Include(r => r.RouteCountries)
                 .Include(r => r.RouteMaps)
+                .Include(r => r.RouteInstances)
                 .SingleOrDefaultAsync(r => r.RouteId == id);
             if (dbRoute is null)
             {
@@ -186,7 +191,6 @@ namespace OV_DB.Controllers
             }
             dbRoute.Description = route.Description;
             dbRoute.DescriptionNL = route.DescriptionNL;
-            dbRoute.FirstDateTime = route.FirstDateTime;
             dbRoute.LineNumber = route.LineNumber;
             dbRoute.Name = route.Name;
             dbRoute.NameNL = route.NameNL;
@@ -194,7 +198,17 @@ namespace OV_DB.Controllers
             dbRoute.OperatingCompany = route.OperatingCompany;
             dbRoute.RouteTypeId = route.RouteTypeId;
             dbRoute.OverrideDistance = route.OverrideDistance;
-
+            if (route.FirstDateTime.HasValue)
+            {
+                if (dbRoute.RouteInstances.Count == 0)
+                {
+                    dbRoute.RouteInstances.Add(new RouteInstance { Date = route.FirstDateTime.Value });
+                }
+                else if (dbRoute.RouteInstances.Count == 1)
+                {
+                    dbRoute.RouteInstances.First().Date = route.FirstDateTime.Value;
+                }
+            }
             if (route.Countries != null)
             {
                 var toDelete = new List<RouteCountry>();
@@ -851,6 +865,99 @@ namespace OV_DB.Controllers
             }
 
 
+            await _context.SaveChangesAsync();
+
+            return Ok();
+        }
+
+        [HttpGet("instances/{id}")]
+        public async Task<ActionResult<List<RouteInstance>>> GetRouteInstances(int id)
+        {
+            var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value ?? "-1");
+            if (userIdClaim < 0)
+            {
+                return Forbid();
+            }
+            var routeInstances = await _context.RouteInstances
+                .Where(ri => ri.Route.RouteId == id && ri.Route.RouteMaps.Any(rm => rm.Map.UserId == userIdClaim))
+                .Include(ri => ri.RouteInstanceProperties)
+                .ToListAsync();
+            if (routeInstances == null)
+            {
+                return NotFound();
+            }
+            return routeInstances;
+        }
+
+        [HttpPut("instances")]
+        public async Task<ActionResult> UpdateInstance([FromBody] RouteInstanceUpdate update)
+        {
+            var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value ?? "-1");
+            if (userIdClaim < 0)
+            {
+                return Forbid();
+            }
+            var route = await _context.Routes
+                .Where(r => r.RouteId == update.RouteId && r.RouteMaps.Any(rm => rm.Map.UserId == userIdClaim))
+                .Include(r => r.RouteInstances)
+                .ThenInclude(ri => ri.RouteInstanceProperties)
+                .SingleOrDefaultAsync();
+
+            if (route == null)
+            {
+                return NotFound();
+            }
+
+            if (update.RouteInstanceId.HasValue)
+            {
+                var current = route.RouteInstances.SingleOrDefault(ri => ri.RouteInstanceId == update.RouteInstanceId);
+                if (current != null)
+                {
+                    current.Date = update.Date;
+
+                    update.RouteInstanceProperties.ForEach(rip =>
+                    {
+                        if (rip.RouteInstancePropertyId.HasValue)
+                        {
+                            var currentProp = current.RouteInstanceProperties.Single(rp => rp.RouteInstancePropertyId == rip.RouteInstancePropertyId);
+                            currentProp.Key = rip.Key;
+                            currentProp.Bool = rip.Bool;
+                            currentProp.Date = rip.Date;
+                            currentProp.Value = rip.Value;
+                        }
+                        else
+                        {
+                            current.RouteInstanceProperties.Add(new RouteInstanceProperty
+                            {
+                                Key = rip.Key,
+                                Bool = rip.Bool,
+                                Date = rip.Date,
+                                Value = rip.Value
+                            });
+                        }
+                    });
+                }
+            }
+            else
+            {
+                var newInstance = new RouteInstance
+                {
+                    Date = update.Date
+                };
+                newInstance.RouteInstanceProperties = new List<RouteInstanceProperty>();
+                update.RouteInstanceProperties.ForEach(rip =>
+                {
+                    newInstance.RouteInstanceProperties.Add(
+                        new RouteInstanceProperty
+                        {
+                            Key = rip.Key,
+                            Bool = rip.Bool,
+                            Date = rip.Date,
+                            Value = rip.Value
+                        });
+                });
+                _context.RouteInstances.Add(newInstance);
+            }
             await _context.SaveChangesAsync();
 
             return Ok();

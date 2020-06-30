@@ -25,6 +25,7 @@ import { AdministratorLayoutComponent } from './administrator/administrator-layo
 import { AdministratorMapsComponent } from './administrator/administrator-maps/administrator-maps.component';
 import { AdministratorUsersComponent } from './administrator/administrator-users/administrator-users.component';
 import { AdministratorGuard } from './guards/administrator.guard';
+import { RouteInstancesComponent } from './admin/route-instances/route-instances.component';
 
 
 const routes: Routes = [
@@ -44,6 +45,7 @@ const routes: Routes = [
           { path: 'maps', component: MapsListComponent },
           { path: 'routes', component: RoutesListComponent },
           { path: 'routes/:routeId', component: RouteDetailComponent },
+          { path: 'routes/instances/:routeId', component: RouteInstancesComponent },
           { path: 'addRoute', component: RouteAddComponent },
           { path: 'countries', component: CountriesComponent },
           { path: 'types', component: RouteTypesComponent },
