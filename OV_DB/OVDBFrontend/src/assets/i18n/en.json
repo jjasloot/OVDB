@@ -155,6 +155,11 @@
     "INSTANCE.KEY": "Key",
     "INSTANCE.TEXT": "Value",
     "INSTANCE.DATE": "Date",
-    "INSTANCE.BOOL": "True/False"
-
+    "INSTANCE.BOOL": "True/False",
+    "MAPINSTANCES.TITLE": "Trips",
+    "INSTANCE.DETAILS": "Detail(s)",
+    "CLOSE": "Close",
+    "INSTANCES": "trip(s) total",
+    "INSTANCE.LOADALL": "Load all",
+    "MAPINSTANCES.INPERIOD": "in chosen period"
 }

@@ -58,6 +58,7 @@ namespace OV_DB.Controllers
 
             var routes = _context.Routes
                 .Include(r => r.RouteType)
+                .Include(r => r.RouteInstances)
                 .Where(r => r.RouteTypeId.HasValue && r.RouteMaps.Any(rm => rm.MapId == map.MapId))
                 .AsQueryable();
 
@@ -107,6 +108,9 @@ namespace OV_DB.Controllers
                         var multiLineString = new MultiLineString(lines);
                         feature = new GeoJSON.Net.Feature.Feature(multiLineString);
                     }
+                    feature.Properties.Add("id", r.RouteId);
+                    feature.Properties.Add("totalInstances", r.RouteInstances.Count);
+
                     if (map.ShowRouteOutline)
                     {
                         feature.Properties.Add("o", 1);

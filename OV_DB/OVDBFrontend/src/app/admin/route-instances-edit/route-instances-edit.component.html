@@ -9,7 +9,7 @@
         <mat-datepicker-toggle matSuffix [for]="pickerDate"></mat-datepicker-toggle>
         <mat-datepicker #pickerDate></mat-datepicker>
     </mat-form-field>
-    <mat-table [dataSource]="instance.routeInstanceProperties" #table>
+    <!-- <mat-table [dataSource]="instance.routeInstanceProperties" #table>
         <ng-container matColumnDef="key">
             <mat-header-cell *matHeaderCellDef> {{'INSTANCE.KEY'|translate}} </mat-header-cell>
             <mat-cell *matCellDef="let row">
@@ -61,11 +61,10 @@
             </mat-cell>
 
         </ng-container>
-        <!-- Header and Row Declarations -->
-        <mat-header-row *matHeaderRowDef="['key', 'string', 'date', 'bool','buttons']"></mat-header-row>
-        <mat-row *matRowDef="let row; columns: ['key', 'string', 'date', 'bool','buttons']"></mat-row>
-        <mat-footer-row *matFooterRowDef="['key']"></mat-footer-row>
-    </mat-table>
+    <mat-header-row *matHeaderRowDef="['key', 'string', 'date', 'bool','buttons']"></mat-header-row>
+    <mat-row *matRowDef="let row; columns: ['key', 'string', 'date', 'bool','buttons']"></mat-row>
+    <mat-footer-row *matFooterRowDef="['key']"></mat-footer-row>
+    </mat-table> -->
 </div>
 <div mat-dialog-actions>
     <button mat-button (click)="cancel()">{{'CANCEL'|translate}}</button>

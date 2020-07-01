@@ -66,6 +66,7 @@ import { AdministratorMapsComponent } from './administrator/administrator-maps/a
 import { EditMultipleComponent } from './admin/edit-multiple/edit-multiple.component';
 import { RouteInstancesComponent } from './admin/route-instances/route-instances.component';
 import { RouteInstancesEditComponent } from './admin/route-instances-edit/route-instances-edit.component';
+import { MapInstanceDialogComponent } from './map-instance-dialog/map-instance-dialog.component';
 
 registerLocaleData(localeNl, 'nl-NL');
 export function HttpLoaderFactory(http: HttpClient) {
@@ -106,6 +107,7 @@ export function HttpLoaderFactory(http: HttpClient) {
     EditMultipleComponent,
     RouteInstancesComponent,
     RouteInstancesEditComponent,
+    MapInstanceDialogComponent,
   ],
   imports: [
     BrowserModule,
@@ -163,7 +165,8 @@ export function HttpLoaderFactory(http: HttpClient) {
     AreYouSureDialogComponent,
     RouteTypesAddComponent,
     MapsAddComponent,
-    SortItemsDialogComponent
+    SortItemsDialogComponent,
+    MapInstanceDialogComponent
   ],
   bootstrap: [AppComponent]
 })

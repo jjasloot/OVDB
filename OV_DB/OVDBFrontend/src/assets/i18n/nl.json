@@ -155,5 +155,11 @@
     "INSTANCE.KEY": "Sleutel",
     "INSTANCE.TEXT": "Waarde",
     "INSTANCE.DATE": "Datum",
-    "INSTANCE.BOOL": "Waar/niet waar"
+    "INSTANCE.BOOL": "Waar/niet waar",
+    "MAPINSTANCES.TITLE": "Ritten",
+    "INSTANCE.DETAILS": "Detail(s)",
+    "CLOSE": "Sluiten",
+    "INSTANCES": "rit(ten) totaal",
+    "INSTANCE.LOADALL": "Alles laden",
+    "MAPINSTANCES.INPERIOD": "in gekozen periode"
 }

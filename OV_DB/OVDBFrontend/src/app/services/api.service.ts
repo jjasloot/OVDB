@@ -85,8 +85,12 @@ export class ApiService {
   deleteRoute(routeId: number) {
     return this.httpClient.delete(environment.backend + 'api/routes/' + routeId);
   }
-  getRouteInstances(routeId: number) {
-    return this.httpClient.get<Route>(environment.backend + 'api/routes/instances/' + routeId);
+  getRouteInstances(routeId: number, from?, to?) {
+    let url = environment.backend + 'api/routes/instances/' + routeId;
+    if (!!from && !!to) {
+      url += `?from=${from}&to=${to}`;
+    }
+    return this.httpClient.get<Route>(url);
   }
   updateRouteInstance(instance: RouteInstance) {
     return this.httpClient.put(environment.backend + 'api/routes/instances', instance);

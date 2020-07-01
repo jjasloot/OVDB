@@ -24,5 +24,5 @@ export interface Route {
   overrideDistance: number;
   calculatedDistance: number;
   routeInstancesCount: number;
-  routeInstances:RouteInstance;
+  routeInstances: RouteInstance[];
 }

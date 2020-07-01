@@ -871,7 +871,7 @@ namespace OV_DB.Controllers
         }
 
         [HttpGet("instances/{id}")]
-        public async Task<ActionResult<Route>> GetRouteInstances(int id)
+        public async Task<ActionResult<Route>> GetRouteInstances(int id, [FromQuery] DateTime from, [FromQuery] DateTime to)
         {
             var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value ?? "-1");
             if (userIdClaim < 0)
@@ -879,17 +879,21 @@ namespace OV_DB.Controllers
                 return Forbid();
             }
             var route = await _context.Routes
-              .Where(r => r.RouteId == id && r.RouteMaps.Any(rm => rm.Map.UserId == userIdClaim))
+              .Where(r => r.RouteId == id)
               .Include(r => r.RouteType)
               .Include(r => r.RouteInstances)
               .ThenInclude(ri => ri.RouteInstanceProperties)
               .SingleOrDefaultAsync();
-
-            route.RouteInstances = route.RouteInstances.OrderByDescending(ri => ri.Date).ToList();
             if (route == null)
             {
                 return NotFound();
             }
+            route.RouteInstances = route.RouteInstances.OrderByDescending(ri => ri.Date).ToList();
+            if (from != null && from != default && to != null && to != default)
+            {
+                route.RouteInstances = route.RouteInstances.Where(ri => ri.Date >= from && ri.Date < to).ToList();
+            }
+
             return route;
         }
 

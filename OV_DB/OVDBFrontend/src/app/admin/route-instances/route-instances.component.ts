@@ -63,7 +63,7 @@ export class RouteInstancesComponent implements OnInit {
     if (!!property.date) {
       return this.datePipe.transform(property.date, 'mediumDate', null, this.currentLocale);
     }
-    return 'EMPTY';
+    return '';
   }
 
   edit(instance: RouteInstance) {

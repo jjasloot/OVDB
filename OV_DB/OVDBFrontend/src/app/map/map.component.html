@@ -8,7 +8,6 @@
         </ng-container>
         <button mat-button *ngIf="active!='filter'" color="primary" (click)="openDialog()">{{'MAP.FILTER'|translate}}</button>
         <button mat-stroked-button *ngIf="active=='filter'" color="primary" (click)="openDialog()">{{'MAP.FILTER'|translate}}</button>
-
     </div>
     <div class="map-container" #mapContainer>
         <div class="map" leaflet [leafletOptions]="options" [leafletLayers]="layers" [leafletLayersControl]="leafletLayersControl" [leafletFitBounds]="bounds">

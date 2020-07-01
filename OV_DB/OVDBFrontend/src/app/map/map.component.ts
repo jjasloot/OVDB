@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild, Input, AfterViewInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, ViewChild, Input, AfterViewInit, ChangeDetectorRef, NgZone } from '@angular/core';
 import * as moment from 'moment';
 import { tileLayer } from 'leaflet';
 import { ApiService } from '../services/api.service';
@@ -9,6 +9,9 @@ import { Country } from '../models/country.model';
 import { MapFilterComponent } from '../map-filter/map-filter.component';
 import { TranslateService } from '@ngx-translate/core';
 import { TranslationService } from '../services/translation.service';
+import { merge } from 'rxjs';
+import { RouteInstance } from '../models/routeInstance.model';
+import { MapInstanceDialogComponent } from '../map-instance-dialog/map-instance-dialog.component';
 
 @Component({
   selector: 'app-map',
@@ -111,7 +114,12 @@ export class MapComponent implements OnInit, AfterViewInit {
   constructor(
     private translateService: TranslateService,
     private translationService: TranslationService,
-    private apiService: ApiService, private dialog: MatDialog, private cd: ChangeDetectorRef) { }
+    private apiService: ApiService,
+    private dialog: MatDialog,
+    private cd: ChangeDetectorRef,
+    private _ngZone: NgZone) {
+    window['angularComponentRef'] = { component: this, zone: _ngZone };
+  }
   ngAfterViewInit(): void {
     this.cd.detectChanges();
   }
@@ -130,10 +138,10 @@ export class MapComponent implements OnInit, AfterViewInit {
       this.loading = true;
       let filter = '';
       if (!!this.to && !!this.from) {
-        filter +=   filter += '(RouteInstances/any(tag: tag/Date ge '
-        + this.from.format('YYYY-MM-DD')
-        + ')) and (RouteInstances/any(tag: tag/Date lt '
-        + this.to.format('YYYY-MM-DD') + '))  and ';
+        filter += filter += '(RouteInstances/any(tag: tag/Date ge '
+          + this.from.format('YYYY-MM-DD')
+          + ')) and (RouteInstances/any(tag: tag/Date lt '
+          + this.to.format('YYYY-MM-DD') + '))  and ';
       }
       if (this.selectedCountries && this.selectedCountries.length > 0) {
         filter += '(';
@@ -191,8 +199,13 @@ export class MapComponent implements OnInit, AfterViewInit {
         },
         onEachFeature(feature, layer) {
           if (!!feature.properties.name) {
-            let popup = '<h2>' + feature.properties.name + '</h2><p>'
-              + parent.translateService.instant('MAP.POPUP.TYPE')
+            let popup = '<h2>' + feature.properties.name + '</h2><p>';
+            popup += `<a href="javascript:void(0)" onclick="
+            parent.angularComponentRef.zone.run(()=>
+            parent.angularComponentRef.component.showDialog(` + feature.properties.id + `))">` +
+              feature.properties.totalInstances + " " + parent.translateService.instant('INSTANCES') + `</a>`;
+
+            popup += '<br>' + parent.translateService.instant('MAP.POPUP.TYPE')
               + ': ' + feature.properties.type;
             if (!!feature.properties.description) {
               popup += '<br>' + parent.translateService.instant('MAP.POPUP.REMARK') + ': ' + feature.properties.description;
@@ -205,7 +218,9 @@ export class MapComponent implements OnInit, AfterViewInit {
             }
             if (!!feature.properties.distance) {
               popup += '<br>' + parent.translateService.instant('ROUTES.DISTANCE') + ': ' + feature.properties.distance + ' km';
+
             }
+
             popup += '</p>';
             layer.bindPopup(popup);
           }
@@ -267,4 +282,32 @@ export class MapComponent implements OnInit, AfterViewInit {
       }
     });
   }
+
+  test() {
+    console.log('test');
+    alert('test');
+  }
+
+  showDialog(id: number) {
+    const limits = this.selectedYears.map(s => {
+      return {
+        start: moment().year(s).startOf('year'),
+        end: moment().year(s + 1).startOf('year')
+      }
+    });
+    if (!!this.from && !!this.to) {
+      limits.push({
+        start: moment(this.from),
+        end: moment(this.to)
+      });
+    }
+
+    const dialogRef = this.dialog.open(MapInstanceDialogComponent, {
+      width: '50%',
+      data: { id, limits }
+    });
+  }
 }
+
+
+

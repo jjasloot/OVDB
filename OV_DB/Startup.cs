@@ -159,6 +159,7 @@ namespace OV_DB
             builder.EntitySet<Route>("Routes");
             builder.EntitySet<Country>("Countries");
             builder.EntitySet<OVDB_database.Models.RouteType>("Types");
+            builder.EntitySet<RouteInstance>("RouteInstances");
             return builder.GetEdmModel();
         }
     }
