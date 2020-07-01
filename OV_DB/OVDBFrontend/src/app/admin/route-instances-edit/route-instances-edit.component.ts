@@ -16,6 +16,7 @@ import { DateAdapter } from '@angular/material/core';
 export class RouteInstancesEditComponent implements OnInit {
   @ViewChild('table') table: MatTable<RouteInstanceProperty>;
   instance: RouteInstance;
+  new = false;
 
   constructor(
     public dialogRef: MatDialogRef<RouteInstancesEditComponent>,
@@ -28,6 +29,9 @@ export class RouteInstancesEditComponent implements OnInit {
       this.instance = Object.assign({}, data.instance);
       this.instance.routeInstanceProperties = Object.assign([], data.instance.routeInstanceProperties);
       this.instance.routeInstanceProperties.push({} as RouteInstanceProperty);
+      if (data.new) {
+        this.new = true;
+      }
     }
   }
 
@@ -41,6 +45,9 @@ export class RouteInstancesEditComponent implements OnInit {
   }
 
   return() {
+    if (this.incomplete) {
+      return;
+    }
     if (!this.instance.routeInstanceProperties[this.instance.routeInstanceProperties.length - 1].key) {
       this.instance.routeInstanceProperties = this.instance.routeInstanceProperties.slice(0, this.instance.routeInstanceProperties.length - 1)
     }
@@ -64,5 +71,18 @@ export class RouteInstancesEditComponent implements OnInit {
 
   get canAddNewRow() {
     return !this.instance.routeInstanceProperties.every(p => !!p.key);
+  }
+
+  removeRow(index: number) {
+    this.instance.routeInstanceProperties.splice(index, 1);
+    this.table.renderRows();
+  }
+
+  rowIsEmpty(prop: RouteInstanceProperty) {
+    return !prop.key;
+  }
+
+  get incomplete() {
+    return !this.instance.date;
   }
 }

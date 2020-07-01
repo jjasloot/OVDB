@@ -60,14 +60,9 @@ export class RoutesListComponent implements OnInit, AfterViewInit {
     this.router.navigate(['/admin', 'routes', id]);
   }
 
-  export(route: Route) {
-    this.apiService.getExport(route.routeId).subscribe(data => {
-      saveAs(data, route.name.trim().replace(' ', '_') + '.kml')
-    });
-  }
   exportAll() {
     this.apiService.getCompleteExport().subscribe(data => {
-      saveAs(data, 'Export.kml')
+      saveAs(data, 'Export.kml');
     });
   }
   get filterValue() {
@@ -161,5 +156,9 @@ export class RoutesListComponent implements OnInit, AfterViewInit {
       return route.overrideDistance;
     }
     return route.calculatedDistance;
+  }
+
+  instances(route: Route) {
+    this.router.navigate(['/', 'admin', 'routes', 'instances', route.routeId]);
   }
 }

@@ -8,6 +8,8 @@ import { TranslateService } from '@ngx-translate/core';
 import { DatePipe } from '@angular/common';
 import { MatDialog } from '@angular/material/dialog';
 import { RouteInstancesEditComponent } from '../route-instances-edit/route-instances-edit.component';
+import { Route } from 'src/app/models/route.model';
+import { AreYouSureDialogComponent } from 'src/app/are-you-sure-dialog/are-you-sure-dialog.component';
 
 @Component({
   selector: 'app-route-instances',
@@ -16,8 +18,14 @@ import { RouteInstancesEditComponent } from '../route-instances-edit/route-insta
 })
 export class RouteInstancesComponent implements OnInit {
   routeId: number;
-  instances: RouteInstance[];
-
+  route: Route;
+  loading = false;
+  get instances() {
+    if (!this.route) {
+      return [];
+    }
+    return this.route.routeInstances;
+  }
   constructor(
     private activatedRoute: ActivatedRoute,
     private apiService: ApiService,
@@ -34,8 +42,10 @@ export class RouteInstancesComponent implements OnInit {
     });
   }
   private getData() {
+    this.loading = true;
     this.apiService.getRouteInstances(this.routeId).subscribe(data => {
-      this.instances = data;
+      this.route = data;
+      this.loading = false;
     });
   }
 
@@ -62,11 +72,54 @@ export class RouteInstancesComponent implements OnInit {
       data: { instance }
     });
     dialogRef.afterClosed().subscribe((result: RouteInstance) => {
-      this.apiService.updateRouteInstance(result).subscribe(() => {
-        this.getData();
-      })
+      if (!!result) {
+        this.apiService.updateRouteInstance(result).subscribe(() => {
+          this.getData();
+        });
+      }
     });
 
   }
 
+  get routeName() {
+    if (!this.route) {
+      return '';
+    }
+    return this.translationService.getNameForItem(this.route)
+  }
+
+  get typeName() {
+    if (!this.route) {
+      return '';
+    }
+    return this.translationService.getNameForItem(this.route.routeType)
+  }
+  add() {
+    const dialogRef = this.dialog.open(RouteInstancesEditComponent, {
+      width: '80%',
+      data: { instance: { routeId: this.routeId } as RouteInstance, new: true }
+    });
+    dialogRef.afterClosed().subscribe((result: RouteInstance) => {
+      if (!!result) {
+        this.apiService.updateRouteInstance(result).subscribe(() => {
+          this.getData();
+        });
+      }
+    });
+
+  }
+
+  delete(instance: RouteInstance) {
+    const dialogRef = this.dialog.open(AreYouSureDialogComponent, {
+      width: '50%',
+      data: { item: 'deze rit wilt verwijderen' }
+    });
+    dialogRef.afterClosed().subscribe((result: RouteInstance) => {
+      if (!!result) {
+        this.apiService.deleteRouteInstance(instance.routeInstanceId).subscribe(() => {
+          this.getData();
+        });
+      }
+    });
+  }
 }

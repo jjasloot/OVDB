@@ -1,17 +1,27 @@
 <div class="container">
-    <mat-expansion-panel *ngFor="let instance of instances">
-        <mat-expansion-panel-header>
-            <mat-panel-title>
-                {{instance.date|date:'longDate':null:currentLocale}}
-            </mat-panel-title>
-            <mat-panel-description>
-                <button mat-button (click)="edit(instance)">edit</button>
-            </mat-panel-description>
-        </mat-expansion-panel-header>
-        <mat-list>
-            <mat-list-item *ngFor="let property of instance.routeInstanceProperties">
-                <b>{{property.key}}</b>: {{value(property)}}
-            </mat-list-item>
-        </mat-list>
-    </mat-expansion-panel>
+    <h3>{{'RIDES.FOR'|translate}} {{typeName}} {{routeName}}</h3>
+    <div *ngIf="!loading;else displayLoading">
+        <mat-expansion-panel *ngFor="let instance of instances">
+            <mat-expansion-panel-header>
+                <mat-panel-title>
+                    {{instance.date|date:'longDate':null:currentLocale}}
+                </mat-panel-title>
+            </mat-expansion-panel-header>
+            <mat-list>
+                <mat-list-item *ngFor="let property of instance.routeInstanceProperties">
+                    <b>{{property.key}}</b>: {{value(property)}}
+                </mat-list-item>
+                <button mat-button (click)="edit(instance)">{{"EDIT"|translate}}</button>
+                <button mat-button (click)="delete(instance)">{{"DELETE"|translate}}</button>
+            </mat-list>
+        </mat-expansion-panel>
+    </div>
 </div>
+
+<button class="add" mat-fab (click)="add()">
+  <mat-icon>add</mat-icon>
+</button>
+
+<ng-template #displayLoading>
+    <mat-spinner></mat-spinner>
+</ng-template>

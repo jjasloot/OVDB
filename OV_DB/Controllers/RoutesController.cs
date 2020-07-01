@@ -871,22 +871,26 @@ namespace OV_DB.Controllers
         }
 
         [HttpGet("instances/{id}")]
-        public async Task<ActionResult<List<RouteInstance>>> GetRouteInstances(int id)
+        public async Task<ActionResult<Route>> GetRouteInstances(int id)
         {
             var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value ?? "-1");
             if (userIdClaim < 0)
             {
                 return Forbid();
             }
-            var routeInstances = await _context.RouteInstances
-                .Where(ri => ri.Route.RouteId == id && ri.Route.RouteMaps.Any(rm => rm.Map.UserId == userIdClaim))
-                .Include(ri => ri.RouteInstanceProperties)
-                .ToListAsync();
-            if (routeInstances == null)
+            var route = await _context.Routes
+              .Where(r => r.RouteId == id && r.RouteMaps.Any(rm => rm.Map.UserId == userIdClaim))
+              .Include(r => r.RouteType)
+              .Include(r => r.RouteInstances)
+              .ThenInclude(ri => ri.RouteInstanceProperties)
+              .SingleOrDefaultAsync();
+
+            route.RouteInstances = route.RouteInstances.OrderByDescending(ri => ri.Date).ToList();
+            if (route == null)
             {
                 return NotFound();
             }
-            return routeInstances;
+            return route;
         }
 
         [HttpPut("instances")]
@@ -910,10 +914,15 @@ namespace OV_DB.Controllers
 
             if (update.RouteInstanceId.HasValue)
             {
+
+
+
                 var current = route.RouteInstances.SingleOrDefault(ri => ri.RouteInstanceId == update.RouteInstanceId);
                 if (current != null)
                 {
                     current.Date = update.Date;
+                    var toDelete = current.RouteInstanceProperties.Where(ri => !update.RouteInstanceProperties.Any(uri => uri.RouteInstancePropertyId == ri.RouteInstancePropertyId)).ToList();
+                    current.RouteInstanceProperties = current.RouteInstanceProperties.Where(ri => !toDelete.Any(dri => dri.RouteInstancePropertyId == ri.RouteInstancePropertyId)).ToList();
 
                     update.RouteInstanceProperties.ForEach(rip =>
                     {
@@ -956,8 +965,32 @@ namespace OV_DB.Controllers
                             Value = rip.Value
                         });
                 });
-                _context.RouteInstances.Add(newInstance);
+                route.RouteInstances.Add(newInstance);
             }
+            await _context.SaveChangesAsync();
+
+            return Ok();
+        }
+
+
+        [HttpDelete("instances/{id:int}")]
+        public async Task<ActionResult> DeleteInstance(int id)
+        {
+            var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value ?? "-1");
+            if (userIdClaim < 0)
+            {
+                return Forbid();
+            }
+            var routeInstance = await _context.RouteInstances
+                .Where(r => r.RouteInstanceId == id && r.Route.RouteMaps.Any(rm => rm.Map.UserId == userIdClaim))
+                .SingleOrDefaultAsync();
+
+            if (routeInstance == null)
+            {
+                return NotFound();
+            }
+
+            _context.RouteInstances.Remove(routeInstance);
             await _context.SaveChangesAsync();
 
             return Ok();

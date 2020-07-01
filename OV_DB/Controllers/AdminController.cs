@@ -139,5 +139,31 @@ namespace OV_DB.Controllers
             await _dbContext.SaveChangesAsync();
             return Ok();
         }
+
+        [HttpGet("convertToInstances")]
+        public async Task<ActionResult> ConvertToInstances()
+        {
+            var adminClaim = (User.Claims.SingleOrDefault(c => c.Type == "admin").Value ?? "false");
+            if (string.Equals(adminClaim, "false", StringComparison.OrdinalIgnoreCase))
+            {
+                return Forbid();
+            }
+
+            var routes = await _dbContext.Routes.Include(r => r.RouteInstances).ToListAsync();
+
+            routes.ForEach(r =>
+            {
+                if (r.FirstDateTime.HasValue)
+                {
+                    if (!r.RouteInstances.Any(ri => ri.Date == r.FirstDateTime))
+                    {
+                        r.RouteInstances.Add(new OVDB_database.Models.RouteInstance { Date = r.FirstDateTime.Value });
+                    }
+                }
+            });
+
+            await _dbContext.SaveChangesAsync();
+            return Ok();
+        }
     }
 }

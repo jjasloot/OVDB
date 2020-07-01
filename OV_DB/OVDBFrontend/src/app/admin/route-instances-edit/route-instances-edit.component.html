@@ -1,4 +1,7 @@
-<h3 mat-dialog-title>{{'ROUTEINSTANCESEDIT.TITLE'|translate}}</h3>
+<h3 mat-dialog-title>
+    <span *ngIf="new">{{'ROUTEINSTANCESEDIT.NEWTITLE'|translate}}</span>
+    <span *ngIf="!new">{{'ROUTEINSTANCESEDIT.TITLE'|translate}}</span>
+</h3>
 <div mat-dialog-content>
     <mat-form-field>
         <mat-label>Datum</mat-label>
@@ -7,22 +10,22 @@
         <mat-datepicker #pickerDate></mat-datepicker>
     </mat-form-field>
     <mat-table [dataSource]="instance.routeInstanceProperties" #table>
-        <!-- User name Definition -->
         <ng-container matColumnDef="key">
-            <mat-header-cell *matHeaderCellDef> Key </mat-header-cell>
+            <mat-header-cell *matHeaderCellDef> {{'INSTANCE.KEY'|translate}} </mat-header-cell>
             <mat-cell *matCellDef="let row">
                 <mat-form-field>
                     <input matInput [(ngModel)]="row.key">
                 </mat-form-field>
             </mat-cell>
             <mat-footer-cell *matFooterCellDef>
-                <button mat-button (click)="addRow() " [disabled]="canAddNewRow">add</button>
+                <button mat-icon-button (click)="addRow() " [disabled]="canAddNewRow">
+                <mat-icon>add</mat-icon>
+              </button>
             </mat-footer-cell>
         </ng-container>
 
-        <!-- Age Definition -->
         <ng-container matColumnDef="string">
-            <mat-header-cell *matHeaderCellDef> Text </mat-header-cell>
+            <mat-header-cell *matHeaderCellDef> {{'INSTANCE.TEXT'|translate}} </mat-header-cell>
             <mat-cell *matCellDef="let row">
                 <mat-form-field>
                     <input matInput [(ngModel)]="row.value" [disabled]="disableValue(row)">
@@ -31,9 +34,8 @@
 
         </ng-container>
 
-        <!-- Title Definition -->
         <ng-container matColumnDef="date">
-            <mat-header-cell *matHeaderCellDef> Date </mat-header-cell>
+            <mat-header-cell *matHeaderCellDef> {{'INSTANCE.DATE'|translate}} </mat-header-cell>
             <mat-cell *matCellDef="let row">
                 <mat-form-field>
                     <input matInput [matDatepicker]="picker" [(ngModel)]="row.date" [disabled]="disableDate(row)">
@@ -44,19 +46,28 @@
 
         </ng-container>
         <ng-container matColumnDef="bool">
-            <mat-header-cell *matHeaderCellDef> True/False </mat-header-cell>
+            <mat-header-cell *matHeaderCellDef> {{'INSTANCE.BOOL'|translate}} </mat-header-cell>
             <mat-cell *matCellDef="let row">
                 <mat-checkbox [(ngModel)]="row.bool" [disabled]="disableBool(row)" [indeterminate]="row.bool===undefined||row.bool===null"></mat-checkbox>
             </mat-cell>
 
         </ng-container>
+        <ng-container matColumnDef="buttons">
+            <mat-header-cell *matHeaderCellDef></mat-header-cell>
+            <mat-cell *matCellDef="let row;let i=index">
+                <button mat-icon-button (click)="removeRow(i)" *ngIf="!rowIsEmpty(row)">
+          <mat-icon>delete</mat-icon>
+        </button>
+            </mat-cell>
+
+        </ng-container>
         <!-- Header and Row Declarations -->
-        <mat-header-row *matHeaderRowDef="['key', 'string', 'date', 'bool']"></mat-header-row>
-        <mat-row *matRowDef="let row; columns: ['key', 'string', 'date', 'bool']"></mat-row>
+        <mat-header-row *matHeaderRowDef="['key', 'string', 'date', 'bool','buttons']"></mat-header-row>
+        <mat-row *matRowDef="let row; columns: ['key', 'string', 'date', 'bool','buttons']"></mat-row>
         <mat-footer-row *matFooterRowDef="['key']"></mat-footer-row>
     </mat-table>
 </div>
 <div mat-dialog-actions>
     <button mat-button (click)="cancel()">{{'CANCEL'|translate}}</button>
-    <button mat-button (click)="return()">{{'SAVE'|translate}}</button>
+    <button mat-button (click)="return()" [disabled]="incomplete">{{'SAVE'|translate}}</button>
 </div>

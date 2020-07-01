@@ -168,4 +168,10 @@ export class RouteDetailComponent implements OnInit {
   name(item: any) {
     return this.translationService.getNameForItem(item);
   }
+
+  export() {
+    this.apiService.getExport(this.route.routeId).subscribe(data => {
+      saveAs(data, this.route.name.trim().replace(' ', '_') + '.kml')
+    });
+  }
 }

@@ -3,6 +3,7 @@ import { RouteType } from './routeType.model';
 import { RouteCountry } from './routeCountry.model';
 import { Map } from './map.model';
 import { RoutesMapsFromRoute } from './routesMapsFromRoute.model';
+import { RouteInstance } from './routeInstance.model';
 
 export interface Route {
   share: any;
@@ -23,4 +24,5 @@ export interface Route {
   overrideDistance: number;
   calculatedDistance: number;
   routeInstancesCount: number;
+  routeInstances:RouteInstance;
 }

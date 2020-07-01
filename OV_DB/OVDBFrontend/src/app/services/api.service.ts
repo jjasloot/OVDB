@@ -20,9 +20,6 @@ import { RouteInstance } from '../models/routeInstance.model';
 export class ApiService {
 
 
-
-
-
   getRoutesWithMissingSettings(): Observable<Route[]> {
     return this.httpClient.get<Route[]>(environment.backend + 'api/routes/missingInfo');
   }
@@ -89,10 +86,14 @@ export class ApiService {
     return this.httpClient.delete(environment.backend + 'api/routes/' + routeId);
   }
   getRouteInstances(routeId: number) {
-    return this.httpClient.get<RouteInstance[]>(environment.backend + 'api/routes/instances/' + routeId);
+    return this.httpClient.get<Route>(environment.backend + 'api/routes/instances/' + routeId);
   }
   updateRouteInstance(instance: RouteInstance) {
-    return this.httpClient.put(environment.backend + 'api/routes/instances',instance);
+    return this.httpClient.put(environment.backend + 'api/routes/instances', instance);
+  }
+
+  deleteRouteInstance(routeInstanceId: number): Observable<any> {
+    return this.httpClient.delete(environment.backend + 'api/routes/instances/' + routeInstanceId, {});
   }
   getAllRoutes(start?: number, count?: number, column?: string, order?: boolean, filter?: string): Observable<Route[]> {
     let params = new HttpParams();
