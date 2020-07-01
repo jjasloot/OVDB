@@ -390,7 +390,8 @@ namespace OV_DB.Controllers
                     Coordinates = string.Join('\n', coordinates),
                     Name = name,
                     RouteMaps = new List<RouteMap>(),
-                    Share = Guid.NewGuid()
+                    Share = Guid.NewGuid(),
+                    RouteInstances = new List<RouteInstance>()
                 };
                 if (placeMark.Description != null)
                 {
@@ -404,7 +405,7 @@ namespace OV_DB.Controllers
                     var extendedData = placeMark.ExtendedData.Data;
                     if (extendedData.Any(d => d.Name == "firstDateTime"))
                     {
-                        route.FirstDateTime = DateTime.ParseExact(extendedData.Single(d => d.Name == "firstDateTime").Value, "yyyy-MM-dd", CultureInfo.InvariantCulture);
+                        route.RouteInstances.Add(new RouteInstance { Date = DateTime.ParseExact(extendedData.Single(d => d.Name == "firstDateTime").Value, "yyyy-MM-dd", CultureInfo.InvariantCulture) });
                     }
 
                     if (extendedData.Any(d => d.Name == "type"))
