@@ -48,11 +48,14 @@ namespace OV_DB.Controllers
             {
                 return Forbid();
             }
-            var query = _context.Routes
-                .Where(r => r.RouteMaps.Any(rm => rm.Map.UserId == userIdClaim))
-                .ProjectTo<RouteDTO>(_mapper.ConfigurationProvider);
+            var originalQuery = _context.Routes
+                .Where(r => r.RouteMaps.Any(rm => rm.Map.UserId == userIdClaim));
 
-
+            if (!string.IsNullOrWhiteSpace(filter))
+            {
+                originalQuery = originalQuery.Where(r => EF.Functions.Like(r.Name, "%" + filter + "%") || EF.Functions.Like(r.RouteType.Name, "%" + filter + "%") || r.RouteMaps.Any(rm => EF.Functions.Like(rm.Map.Name, "%" + filter + "%")));
+            }
+            var query = originalQuery.ProjectTo<RouteDTO>(_mapper.ConfigurationProvider);
             if (!string.IsNullOrWhiteSpace(sortColumn))
             {
                 if (sortColumn == "name")
@@ -85,10 +88,7 @@ namespace OV_DB.Controllers
                 }
             }
 
-            if (!string.IsNullOrWhiteSpace(filter))
-            {
-                query = query.Where(r => EF.Functions.Like(r.Name, "%" + filter + "%") || EF.Functions.Like(r.RouteType.Name, "%" + filter + "%") || r.RouteMaps.Any(rm => EF.Functions.Like(rm.Name, "%" + filter + "%")));
-            }
+
 
             if (start.HasValue && count.HasValue)
             {

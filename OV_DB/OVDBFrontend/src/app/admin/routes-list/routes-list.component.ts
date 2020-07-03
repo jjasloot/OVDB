@@ -122,7 +122,7 @@ export class RoutesListComponent implements OnInit, AfterViewInit {
   }
 
   view(route: Route) {
-    this.router.navigate(['/route', route.routeId, route.share])
+    this.router.navigate(['/route', route.routeId, route.share]);
   }
 
   isChecked(route: Route) {

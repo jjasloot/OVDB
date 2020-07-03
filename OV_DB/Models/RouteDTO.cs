@@ -24,5 +24,6 @@ namespace OV_DB.Models
         public double? OverrideDistance { get; set; }
         public List<RouteMapDTO> RouteMaps { get; set; }
         public int RouteInstancesCount { get; set; }
+        public Guid Share { get; set; }
     }
 }
