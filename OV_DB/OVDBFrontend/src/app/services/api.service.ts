@@ -245,5 +245,28 @@ export class ApiService {
 
     return this.httpClient.put<MultipleEdit>(url, model);
   }
+  getStatsForGraph(map: string, year?: number) {
+    let url = environment.backend + 'api/stats/time/' + map;
+    if (!!year) {
+      url += `?year=${year}`;
+    }
+    return this.httpClient.get(url);
+  }
+
+  getStats(map: string, year: number) {
+    let url = environment.backend + 'api/stats/' + map;
+    if (!!year) {
+      url += `?year=${year}`;
+    }
+    return this.httpClient.get(url);
+  }
+
+  getStatsReach(map: string, year: number) {
+    let url = environment.backend + 'api/stats/reach/' + map;
+    if (!!year) {
+      url += `?year=${year}`;
+    }
+    return this.httpClient.get(url);
+  }
 
 }

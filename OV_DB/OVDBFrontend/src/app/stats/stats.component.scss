@@ -1,0 +1,53 @@
+.container {
+    margin: 24px;
+}
+
+.row {
+    display: flex;
+    flex-direction: row;
+}
+
+table {
+    margin-top: 24px;
+    flex: 1;
+}
+
+.graph {
+    flex: 3;
+}
+
+.loading-indicator {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: -1;
+    width: 100%;
+    height: 100%;
+}
+
+.loading {
+    z-index: 3000;
+    opacity: 1;
+    background: rgba($color: #000000, $alpha: 0.7);
+    align-items: center;
+    justify-content: center;
+    display: flex;
+    transition: all ease 0.5s;
+}
+
+.map-container {
+    flex: 100000000000;
+    position: relative;
+    min-height: 100%;
+    display: flex;
+}
+
+.map {
+    min-height: 90vh;
+    position: relative;
+    flex: 1;
+}
+
+mat-tab {
+    position: relative;
+}

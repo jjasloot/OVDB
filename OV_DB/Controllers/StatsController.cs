@@ -1,11 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using OV_DB.Models;
+using OV_DB.Models.Graphs;
 using OVDB_database.Database;
 
 namespace OV_DB.Controllers
@@ -21,8 +24,8 @@ namespace OV_DB.Controllers
             _context = context;
         }
 
-        [HttpGet]
-        public async Task<ActionResult> GetStats([FromQuery] int? year)
+        [HttpGet("{map}")]
+        public async Task<ActionResult> GetStats(Guid map, [FromQuery] int? year)
         {
             var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value ?? "-1");
             if (userIdClaim < 0)
@@ -30,23 +33,188 @@ namespace OV_DB.Controllers
                 return Forbid();
             }
 
-            var query = _context.Routes
-                .Where(r => r.RouteMaps.Any(rm => rm.Map.UserId == userIdClaim));
+            var query = _context.RouteInstances
+                .Where(ri => ri.Route.RouteMaps.Any(rm => rm.Map.UserId == userIdClaim) && ri.Route.RouteMaps.Any(rm => rm.Map.MapGuid == map));
 
             if (year.HasValue)
             {
-                query = query.Where(r => r.RouteInstances.Any(ri => ri.Date.Year == year));
+                query = query.Where(ri => ri.Date.Year == year);
             }
 
-            var x = await query.Select(ro => new
+            var x = await query.Select(ri => new
             {
-                ro.RouteType.Name,
-                ro.RouteType.NameNL,
-                Distance = ((ro.OverrideDistance.HasValue && ro.OverrideDistance > 0) ? ro.OverrideDistance : ro.CalculatedDistance) * ro.RouteInstances.Count
+                ri.Date.Date,
+                ri.Route.RouteType.Name,
+                ri.Route.RouteType.NameNL,
+                Distance = (double)(((ri.Route.OverrideDistance.HasValue && ri.Route.OverrideDistance > 0) ? ri.Route.OverrideDistance : ri.Route.CalculatedDistance))
             }).ToListAsync();
 
-            var x2 = x.GroupBy(x => x.Name).Select(x => new { Name = x.Key, NameNl = x.First().NameNL, Distance = x.Sum(x => x.Distance) });
+            var x2 = x.GroupBy(x => x.Name).Select(x => new { Name = x.Key, NameNl = x.First().NameNL, Distance = Math.Round(x.Sum(x => x.Distance), 2) }).OrderByDescending(x => x.Distance);
             return Ok(x2);
+        }
+
+        [HttpGet("time/{map}")]
+        public async Task<ActionResult> GetTimedStats(Guid map, [FromQuery] int? year)
+        {
+            var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value ?? "-1");
+            if (userIdClaim < 0)
+            {
+                return Forbid();
+            }
+
+            var query = _context.RouteInstances
+                .Where(ri => ri.Route.RouteMaps.Any(rm => rm.Map.UserId == userIdClaim) && ri.Route.RouteMaps.Any(rm => rm.Map.MapGuid == map));
+
+            if (year.HasValue)
+            {
+                query = query.Where(ri => ri.Date.Year == year);
+            }
+
+            var x = await query.Select(ri => new
+            {
+                ri.Date.Date,
+                ri.Route.RouteType.Name,
+                ri.Route.RouteType.NameNL,
+                Distance = (double)(((ri.Route.OverrideDistance.HasValue && ri.Route.OverrideDistance > 0) ? ri.Route.OverrideDistance : ri.Route.CalculatedDistance))
+            }).OrderBy(x => x.Name).ThenBy(x => x.Date).ToListAsync();
+
+
+            var typesAndValues = new Dictionary<string, double>();
+            var periods = new Dictionary<string, Dictionary<DateTime, double>>();
+
+            x.ForEach(value =>
+            {
+                if (!typesAndValues.ContainsKey(value.Name))
+                {
+                    typesAndValues.Add(value.Name, 0);
+                    periods.Add(value.Name, new Dictionary<DateTime, double>());
+                    if (year.HasValue)
+                    {
+                        periods[value.Name].Add(new DateTime(year.Value, 1, 1), 0);
+                    }
+                }
+                typesAndValues[value.Name] += value.Distance;
+
+                if (!periods[value.Name].ContainsKey(value.Date.Date))
+                {
+                    periods[value.Name].Add(value.Date.Date, 0);
+                }
+                periods[value.Name][value.Date.Date] = typesAndValues[value.Name];
+
+            });
+            var data = new Data
+            {
+                Datasets = new List<Dataset>()
+            };
+            periods.Keys.ToList().ForEach(k =>
+                {
+                    var dataForKey = periods[k].Select(x => new Point { X = x.Key, Y = Math.Round(x.Value, 2) }).ToList();
+                    data.Datasets.Add(new Dataset { Label = k, Data = dataForKey });
+                });
+
+            if (year.HasValue)
+            {
+                var endDate = new DateTime(year.Value + 1, 1, 1);
+                if (endDate > DateTime.Now)
+                {
+                    endDate = DateTime.Now.AddDays(1).Date;
+                }
+                data.Datasets.ForEach(ds => ds.Data.Add(new Point { X = endDate, Y = Math.Round(typesAndValues[ds.Label], 2) }));
+            }
+            return Ok(data);
+        }
+
+        [HttpGet("reach/{map}")]
+        public async Task<ActionResult> GetReachStats(Guid map, [FromQuery] int? year)
+        {
+            var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value ?? "-1");
+            if (userIdClaim < 0)
+            {
+                return Forbid();
+            }
+
+            var query = _context.RouteInstances
+                .Where(ri => ri.Route.RouteMaps.Any(rm => rm.Map.UserId == userIdClaim) && ri.Route.RouteMaps.Any(rm => rm.Map.MapGuid == map));
+
+            if (year.HasValue)
+            {
+                query = query.Where(ri => ri.Date.Year == year);
+            }
+
+            var x = await query.Select(ri => ri.Route).Distinct().ToListAsync();
+            if (!x.Any())
+            {
+                return Ok();
+            }
+
+            var x2 = x.Select(c =>
+            new
+            {
+                Route = c,
+                Coordinates = c.Coordinates.Split("\n").Select(c2 => c2.Replace("\r", "").Split(',').Select(x => double.Parse(x, CultureInfo.InvariantCulture)))
+            }).ToList();
+
+
+            var x3 = x2.Select(route =>
+              {
+                  return new
+                  {
+                      Route = route,
+                      MinLat = route.Coordinates.OrderBy(c => c.ElementAt(1)).First(),
+                      MaxLat = route.Coordinates.OrderByDescending(c => c.ElementAt(1)).First(),
+                      MinLong = route.Coordinates.OrderBy(c => c.First()).First(),
+                      MaxLong = route.Coordinates.OrderByDescending(c => c.First()).First()
+                  };
+              }).ToList();
+
+            var minLatPoint = x3.OrderBy(x => x.MinLat.ElementAt(1)).Select(x =>
+            {
+                return new BoundsPoint
+                {
+                    Lat = x.MinLat.ElementAt(1),
+                    Long = x.MinLat.First(),
+                    Route = x.Route.Route
+                };
+            }).First();
+
+            var maxLatPoint = x3.OrderByDescending(x => x.MaxLat.ElementAt(1)).Select(x =>
+            {
+                return new BoundsPoint
+                {
+                    Lat = x.MaxLat.ElementAt(1),
+                    Long = x.MaxLat.First(),
+                    Route = x.Route.Route
+                };
+            }).First();
+
+            var minLongPoint = x3.OrderBy(x => x.MinLong.First()).Select(x =>
+        {
+            return new BoundsPoint
+            {
+                Lat = x.MinLong.ElementAt(1),
+                Long = x.MinLong.First(),
+                Route = x.Route.Route
+            };
+        }).First();
+
+            var maxLongPoint = x3.OrderByDescending(x => x.MaxLong.First()).Select(x =>
+            {
+                return new BoundsPoint
+                {
+                    Lat = x.MaxLong.ElementAt(1),
+                    Long = x.MaxLong.First(),
+                    Route = x.Route.Route
+                };
+            }).First();
+
+            var bounds = new Bounds
+            {
+                LatMax = maxLatPoint,
+                LatMin = minLatPoint,
+                LongMax = maxLongPoint,
+                LongMin = minLongPoint
+            };
+            return Ok(bounds);
         }
     }
 }

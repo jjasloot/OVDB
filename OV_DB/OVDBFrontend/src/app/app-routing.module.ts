@@ -26,6 +26,7 @@ import { AdministratorMapsComponent } from './administrator/administrator-maps/a
 import { AdministratorUsersComponent } from './administrator/administrator-users/administrator-users.component';
 import { AdministratorGuard } from './guards/administrator.guard';
 import { RouteInstancesComponent } from './admin/route-instances/route-instances.component';
+import { StatsComponent } from './stats/stats.component';
 
 
 const routes: Routes = [
@@ -39,6 +40,7 @@ const routes: Routes = [
       { path: 'link/:name', component: LinkComponent },
       { path: 'help', component: HelpComponent },
       { path: 'route/:routeId/:guid', component: SingleRouteMapComponent },
+      { path: 'stats', component: StatsComponent, canActivate: [LoginGuard] },
       {
         path: 'admin', component: RoutesComponent, canActivate: [LoginGuard], children: [
           { path: '', pathMatch: 'full', redirectTo: 'maps' },
@@ -51,7 +53,7 @@ const routes: Routes = [
           { path: 'types', component: RouteTypesComponent },
           { path: 'missingData', component: FillMissingDataListComponent },
           { path: 'wizard/:id', component: WizzardStep2Component },
-          { path: 'wizard', component: WizzardStep1Component }
+          { path: 'wizard', component: WizzardStep1Component },
         ]
       },
       {

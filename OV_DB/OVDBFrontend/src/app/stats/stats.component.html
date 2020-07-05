@@ -1,0 +1,49 @@
+<div class="container">
+
+    <mat-form-field appearance="fill">
+        <mat-label>Choose map</mat-label>
+        <mat-select (selectionChange)="changeMap($event.value)">
+            <mat-option *ngFor="let map of maps" [value]="map.mapGuid">
+                {{map.name}}
+            </mat-option>
+        </mat-select>
+    </mat-form-field>
+    <mat-form-field appearance="fill">
+        <mat-label>Choose year</mat-label>
+        <mat-select (selectionChange)="getData($event.value)" [(ngModel)]="selectedYear">
+            <mat-option *ngFor="let year of years" [value]="year">
+                {{year}}
+            </mat-option>
+            <mat-option [value]="null">
+                All
+            </mat-option>
+        </mat-select>
+    </mat-form-field>
+
+
+    <div class="row">
+        <table>
+            <tr>
+                <th>Name</th>
+                <th>Distance</th>
+            </tr>
+            <tr *ngFor="let row of tableData">
+                <td>{{row.name}}</td>
+                <td>{{row.distance}} km</td>
+            </tr>
+        </table>
+        <div *ngIf="!!data" class="container graph">
+            <canvas baseChart height="400" [datasets]="data.datasets" [options]="lineChartOptions" chartType="line"></canvas>
+        </div>
+    </div>
+
+    <div class="map-container" #mapContainer>
+        <div class="map" leaflet [leafletOptions]="options" [leafletLayers]="layers" [leafletLayersControl]="leafletLayersControl" [leafletFitBounds]="bounds">
+        </div>
+        <div [ngClass]="{'loading':loadingMap,'loading-indicator':true}">
+            <mat-spinner></mat-spinner>
+        </div>
+    </div>
+
+
+</div>

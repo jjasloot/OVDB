@@ -1,6 +1,6 @@
 import { BrowserModule } from '@angular/platform-browser';
 import { NgModule, LOCALE_ID } from '@angular/core';
-
+import { ChartsModule } from 'ng2-charts';
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
@@ -67,6 +67,7 @@ import { EditMultipleComponent } from './admin/edit-multiple/edit-multiple.compo
 import { RouteInstancesComponent } from './admin/route-instances/route-instances.component';
 import { RouteInstancesEditComponent } from './admin/route-instances-edit/route-instances-edit.component';
 import { MapInstanceDialogComponent } from './map-instance-dialog/map-instance-dialog.component';
+import { StatsComponent } from './stats/stats.component';
 
 registerLocaleData(localeNl, 'nl-NL');
 export function HttpLoaderFactory(http: HttpClient) {
@@ -108,6 +109,7 @@ export function HttpLoaderFactory(http: HttpClient) {
     RouteInstancesComponent,
     RouteInstancesEditComponent,
     MapInstanceDialogComponent,
+    StatsComponent,
   ],
   imports: [
     BrowserModule,
@@ -143,7 +145,8 @@ export function HttpLoaderFactory(http: HttpClient) {
         useFactory: HttpLoaderFactory,
         deps: [HttpClient]
       }
-    })
+    }),
+    ChartsModule
   ],
   providers: [
     { provide: MAT_MOMENT_DATE_ADAPTER_OPTIONS, useValue: { useUtc: true } },
