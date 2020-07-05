@@ -248,7 +248,7 @@ assign classifiermask add          isbadoneway
 assign caraccess = 1
 
 assign initialcost =
-    switch and avoid_toll barrier=toll_booth 1000000 
+    switch and avoid_toll barrier=toll_booth 1000000
     switch caraccess
             0
             1000000
@@ -263,7 +263,7 @@ assign maxspeed =
         0
     else if railway=level_crossing then 0
     else 999
-    
+
         </textarea>
     </div>
     <div>{{'HELP.BOATS'|translate}}<br>
@@ -279,7 +279,7 @@ switch route=ferry 1
 
 ---context:node  # following code refers to node tags
 
-assign initialcost 0                
+assign initialcost 0
         </textarea>
     </div>
 
@@ -288,4 +288,6 @@ assign initialcost 0
 
     <h3>{{'HELP.CHANGELOG'|translate}}</h3>
     <textarea readonly>{{changelog}}</textarea>
+
+    <a [routerLink]="['/stats']">???</a>
 </div>

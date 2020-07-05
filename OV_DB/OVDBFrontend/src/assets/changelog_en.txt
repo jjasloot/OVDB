@@ -1,3 +1,6 @@
+2020-07-05:
+- Hidden a statisticspage somewhere
+
 2020-07-02:
 - Allow multiple dates per route
 - Foundations on adding properties to a trip

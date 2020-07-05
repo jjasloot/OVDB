@@ -1,3 +1,6 @@
+2020-07-05:
+- Statistiekenpagina ergens verstopt
+
 2020-07-02:
 - Meerdere data per route
 - Voorwerk voor eigenschappen per rit
