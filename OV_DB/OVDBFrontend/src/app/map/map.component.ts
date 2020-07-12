@@ -44,11 +44,11 @@ export class MapComponent implements OnInit, AfterViewInit {
   private _bounds: L.LatLngBounds;
 
   defaults = new Map<string, FilterSettings>([
-    ['LastMonth',
+    ['ThisMonth',
       new FilterSettings(
-        'LastMonth',
-        moment().startOf('year'),
+        'ThisMonth',
         moment().startOf('month'),
+        moment().startOf('month').add(1, 'month'),
         []
       ),
     ],
