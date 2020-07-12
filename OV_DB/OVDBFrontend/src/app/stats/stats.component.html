@@ -28,7 +28,7 @@
                 <th>Distance</th>
             </tr>
             <tr *ngFor="let row of tableData">
-                <td>{{row.name}}</td>
+                <td>{{name(row)}}</td>
                 <td>{{row.distance}} km</td>
             </tr>
         </table>

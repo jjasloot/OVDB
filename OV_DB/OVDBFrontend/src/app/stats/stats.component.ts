@@ -4,6 +4,7 @@ import { ChartOptions } from 'chart.js';
 import { tileLayer, marker, icon } from 'leaflet';
 import * as L from 'leaflet';
 import { Map } from '../models/map.model';
+import { TranslationService } from '../services/translation.service';
 @Component({
   selector: 'app-stats',
   templateUrl: './stats.component.html',
@@ -99,7 +100,10 @@ export class StatsComponent implements OnInit {
   maps: Map[];
 
 
-  constructor(private apiService: ApiService) { }
+  constructor(
+    private apiService: ApiService,
+    private translationService: TranslationService
+  ) { }
 
   ngOnInit(): void {
     this.apiService.getMaps().subscribe(maps => {
@@ -197,5 +201,9 @@ export class StatsComponent implements OnInit {
   }
   resetZoom() {
     this.singleChart.resetZoom();
+  }
+
+  name(item) {
+    return this.translationService.getNameForItem(item);
   }
 }

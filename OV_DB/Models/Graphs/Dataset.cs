@@ -14,5 +14,7 @@ namespace OV_DB.Models.Graphs
         public double BarPercentage { get; set; } = 1.0d;
         public string BarThickness = "flex";
         public string Stack { get; set; }
+        public string BorderColor { get; set; }
+        public string PointBackgroundColor { get; set; }
     }
 }

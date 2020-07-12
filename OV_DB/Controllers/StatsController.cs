@@ -49,12 +49,12 @@ namespace OV_DB.Controllers
                 Distance = (double)(((ri.Route.OverrideDistance.HasValue && ri.Route.OverrideDistance > 0) ? ri.Route.OverrideDistance : ri.Route.CalculatedDistance))
             }).ToListAsync();
 
-            var x2 = x.GroupBy(x => x.Name).Select(x => new { Name = x.Key, NameNl = x.First().NameNL, Distance = Math.Round(x.Sum(x => x.Distance), 2) }).OrderByDescending(x => x.Distance);
+            var x2 = x.GroupBy(x => x.Name).Select(x => new { Name = x.Key, x.First().NameNL, Distance = Math.Round(x.Sum(x => x.Distance), 2) }).OrderByDescending(x => x.Distance);
             return Ok(x2);
         }
 
         [HttpGet("time/{map}")]
-        public async Task<ActionResult> GetTimedStats(Guid map, [FromQuery] int? year)
+        public async Task<ActionResult> GetTimedStats(Guid map, [FromQuery] int? year, [FromQuery] string language = "nl")
         {
             var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value ?? "-1");
             if (userIdClaim < 0)
@@ -75,37 +75,49 @@ namespace OV_DB.Controllers
                 ri.Date.Date,
                 ri.Route.RouteType.Name,
                 ri.Route.RouteType.NameNL,
+                ri.Route.RouteType.Colour,
                 Distance = (double)(((ri.Route.OverrideDistance.HasValue && ri.Route.OverrideDistance > 0) ? ri.Route.OverrideDistance : ri.Route.CalculatedDistance))
             }).OrderBy(x => x.Name).ThenBy(x => x.Date).ToListAsync();
 
 
             var typesAndValuesCumulative = new Dictionary<string, double>();
+            var typesAndColours = new Dictionary<string, string>();
             var periodsCumulative = new Dictionary<string, Dictionary<DateTime, double>>();
             var periodsSingle = new Dictionary<string, Dictionary<DateTime, double>>();
 
             x.ForEach(value =>
             {
-                if (!typesAndValuesCumulative.ContainsKey(value.Name))
+                var name = value.Name;
+                if (language == "nl" && !string.IsNullOrWhiteSpace(value.NameNL))
                 {
-                    typesAndValuesCumulative.Add(value.Name, 0);
-                    periodsCumulative.Add(value.Name, new Dictionary<DateTime, double>());
-                    periodsSingle.Add(value.Name, new Dictionary<DateTime, double>());
+                    name = value.NameNL;
+                }
+                if (!typesAndColours.ContainsKey(name))
+                {
+                    typesAndColours.Add(name, value.Colour);
+                }
+                if (!typesAndValuesCumulative.ContainsKey(name))
+                {
+
+                    typesAndValuesCumulative.Add(name, 0);
+                    periodsCumulative.Add(name, new Dictionary<DateTime, double>());
+                    periodsSingle.Add(name, new Dictionary<DateTime, double>());
                     if (year.HasValue)
                     {
-                        periodsCumulative[value.Name].Add(new DateTime(year.Value, 1, 1), 0);
-                        periodsSingle[value.Name].Add(new DateTime(year.Value, 1, 1), 0);
+                        periodsCumulative[name].Add(new DateTime(year.Value, 1, 1), 0);
+                        periodsSingle[name].Add(new DateTime(year.Value, 1, 1), 0);
                     }
                 }
-                typesAndValuesCumulative[value.Name] += value.Distance;
+                typesAndValuesCumulative[name] += value.Distance;
 
-                if (!periodsCumulative[value.Name].ContainsKey(value.Date.Date))
+                if (!periodsCumulative[name].ContainsKey(value.Date.Date))
                 {
-                    periodsCumulative[value.Name].Add(value.Date.Date, 0);
-                    periodsSingle[value.Name].Add(value.Date.Date, 0);
+                    periodsCumulative[name].Add(value.Date.Date, 0);
+                    periodsSingle[name].Add(value.Date.Date, 0);
 
                 }
-                periodsCumulative[value.Name][value.Date.Date] = typesAndValuesCumulative[value.Name];
-                periodsSingle[value.Name][value.Date.Date] += value.Distance;
+                periodsCumulative[name][value.Date.Date] = typesAndValuesCumulative[name];
+                periodsSingle[name][value.Date.Date] += value.Distance;
 
             });
             var dataCumulative = new Data
@@ -119,7 +131,8 @@ namespace OV_DB.Controllers
             periodsCumulative.Keys.ToList().ForEach(k =>
                 {
                     var dataForKey = periodsCumulative[k].Select(x => new Point { T = x.Key, Y = Math.Round(x.Value, 2) }).ToList();
-                    dataCumulative.Datasets.Add(new Dataset { Label = k, Data = dataForKey });
+                    var colour = typesAndColours[k].ToUpper();
+                    dataCumulative.Datasets.Add(new Dataset { Label = k, Data = dataForKey, PointBackgroundColor = colour, BorderColor = colour });
                 });
             var dates = periodsSingle.SelectMany(p => p.Value.Select(d => d.Key)).Distinct();
             periodsSingle.Keys.ToList().ForEach(k =>
@@ -128,8 +141,8 @@ namespace OV_DB.Controllers
                     var dataToAdd = dates.Where(d => !dataForKey.Any(p => p.T == d)).ToList();
                     dataToAdd.ForEach(d => dataForKey.Add(new Point { T = d, Y = 0 }));
                     dataForKey = dataForKey.OrderBy(d => d.T).ToList();
-
-                    dataSingle.Datasets.Add(new Dataset { Label = k, Data = dataForKey });
+                    var colour = typesAndColours[k].ToUpper();
+                    dataSingle.Datasets.Add(new Dataset { Label = k, Data = dataForKey, BorderColor = colour, PointBackgroundColor = colour });
                 });
 
             if (year.HasValue)
