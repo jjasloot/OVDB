@@ -7,7 +7,7 @@ namespace OV_DB.Models.Graphs
 {
     public class Point
     {
-        public DateTime X { get; set; }
+        public DateTime T { get; set; }
         public double Y { get; set; }
     }
 }

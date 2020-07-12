@@ -40,11 +40,27 @@
             </mat-expansion-panel-header>
 
             <div class="grid">
-                <mat-checkbox *ngFor="let year of years" [checked]="isYearChecked(year)" (change)="setYear(year,$event)">{{displayYear(year)}}</mat-checkbox>
+                <mat-checkbox *ngFor="let year of years" [checked]="isYearChecked(year)" (change)="setYear(year,$event)">
+                    {{displayYear(year)}}</mat-checkbox>
             </div>
         </mat-expansion-panel>
     </mat-accordion>
 
+    <div class="date-selection">
+        <div class="info">{{'FILTER.EXPLAINDATES'|translate}}</div>
+        <mat-form-field>
+            <mat-label>{{'FILTER.STARTDATE'|translate}}</mat-label>
+            <input matInput [matDatepicker]="picker" [(ngModel)]="from" (input)="resetYears()">
+            <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+            <mat-datepicker #picker></mat-datepicker>
+        </mat-form-field>
+        <mat-form-field>
+            <mat-label>{{'FILTER.ENDDATE'|translate}}</mat-label>
+            <input matInput [matDatepicker]="picker2" [(ngModel)]="to" (input)="resetYears()">
+            <mat-datepicker-toggle matSuffix [for]="picker2"></mat-datepicker-toggle>
+            <mat-datepicker #picker2></mat-datepicker>
+        </mat-form-field>
+    </div>
 
 
 
@@ -52,6 +68,4 @@
 <div mat-dialog-actions>
     <button mat-button (click)="cancel()">{{'CANCEL'|translate}}</button>
     <button mat-button (click)="return()">{{'SAVE'|translate}}</button>
-
-    <!-- <button mat-button [mat-dialog-close]="data.animal" cdkFocusInitial>Ok</button> -->
 </div>

@@ -11,3 +11,14 @@
     overflow: hidden;
     text-overflow: ellipsis;
 }
+
+.date-selection {
+    margin: 16px;
+    .info {
+        color: gray;
+        font-style: italic;
+    }
+    mat-form-field {
+        margin: 8px;
+    }
+}

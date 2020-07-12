@@ -10,5 +10,9 @@ namespace OV_DB.Models.Graphs
         public string Label { get; set; }
         public List<Point> Data { get; set; }
         public bool SteppedLine { get; set; } = true;
+        public double CategoryPercentage = 0.7d;
+        public double BarPercentage { get; set; } = 1.0d;
+        public string BarThickness = "flex";
+        public string Stack { get; set; }
     }
 }

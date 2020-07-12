@@ -68,7 +68,8 @@ import { RouteInstancesComponent } from './admin/route-instances/route-instances
 import { RouteInstancesEditComponent } from './admin/route-instances-edit/route-instances-edit.component';
 import { MapInstanceDialogComponent } from './map-instance-dialog/map-instance-dialog.component';
 import { StatsComponent } from './stats/stats.component';
-
+import 'hammerjs';
+import 'chartjs-plugin-zoom';
 registerLocaleData(localeNl, 'nl-NL');
 export function HttpLoaderFactory(http: HttpClient) {
   return new TranslateHttpLoader(http);

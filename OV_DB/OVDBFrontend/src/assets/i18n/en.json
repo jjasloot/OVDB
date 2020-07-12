@@ -161,5 +161,9 @@
     "CLOSE": "Close",
     "INSTANCES": "trip(s) total",
     "INSTANCE.LOADALL": "Load all",
-    "MAPINSTANCES.INPERIOD": "in chosen period"
+    "MAPINSTANCES.INPERIOD": "in chosen period",
+	"FILTER.EXPLAINDATES":"Chosen dates take precedence over selected years",
+	"FILTER.STARTDATE":"From",
+	"FILTER.ENDDATE":"Up to (excluding)",
+	"ROUTESLIST.INSTANCES":"Trips"
 }

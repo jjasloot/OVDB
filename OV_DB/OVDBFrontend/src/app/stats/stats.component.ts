@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
 import { ApiService } from '../services/api.service';
 import { ChartOptions } from 'chart.js';
 import { tileLayer, marker, icon } from 'leaflet';
@@ -10,7 +10,10 @@ import { Map } from '../models/map.model';
   styleUrls: ['./stats.component.scss']
 })
 export class StatsComponent implements OnInit {
+  @ViewChild('singleChart') singleChart;
   data: any;
+  singleData: any;
+
   loadingMap = false;
   selectedMap: string = null;
   selectedYear: number = null;
@@ -34,6 +37,38 @@ export class StatsComponent implements OnInit {
         },
       }],
     }
+  };
+  public barChartOptions: any = {
+    responsive: true,
+    maintainAspectRatio: false,
+    tooltips: {
+      enabled: true
+    },
+    scales: {
+      xAxes: [{
+        type: 'time',
+        offset: true,
+        time: {
+          tooltipFormat: 'DD-MM-YYYY',
+          unit: 'month',
+          displayFormats: {
+            month: 'MMM\'YY'
+          }
+        },
+        stacked: true
+      }],
+      yAxes: [{
+        stacked: true
+      }]
+    },
+    pan: {
+      enabled: true,
+      mode: 'x'
+    },
+    zoom: {
+      enabled: true,
+      mode: 'x',
+    },
   };
   tableData: any;
   layers = [];
@@ -87,7 +122,8 @@ export class StatsComponent implements OnInit {
   getData(year?: number) {
     this.apiService.getStatsForGraph(this.selectedMap, year).subscribe(stats => {
       console.log(stats);
-      this.data = stats;
+      this.data = stats.cumulative;
+      this.singleData = stats.single;
     });
     this.apiService.getStats(this.selectedMap, year).subscribe(data => {
       this.tableData = data;
@@ -158,5 +194,10 @@ export class StatsComponent implements OnInit {
       this.layers.push(rectangle);
       this.loadingMap = false;
     })
+
+  }
+  resetZoom() {
+    console.log(this.singleChart);
+    this.singleChart.resetZoom();
   }
 }

@@ -245,7 +245,7 @@ export class ApiService {
 
     return this.httpClient.put<MultipleEdit>(url, model);
   }
-  getStatsForGraph(map: string, year?: number) {
+  getStatsForGraph(map: string, year?: number):Observable<any> {
     let url = environment.backend + 'api/stats/time/' + map;
     if (!!year) {
       url += `?year=${year}`;

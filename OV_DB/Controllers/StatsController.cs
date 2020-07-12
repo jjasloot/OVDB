@@ -79,37 +79,57 @@ namespace OV_DB.Controllers
             }).OrderBy(x => x.Name).ThenBy(x => x.Date).ToListAsync();
 
 
-            var typesAndValues = new Dictionary<string, double>();
-            var periods = new Dictionary<string, Dictionary<DateTime, double>>();
+            var typesAndValuesCumulative = new Dictionary<string, double>();
+            var periodsCumulative = new Dictionary<string, Dictionary<DateTime, double>>();
+            var periodsSingle = new Dictionary<string, Dictionary<DateTime, double>>();
 
             x.ForEach(value =>
             {
-                if (!typesAndValues.ContainsKey(value.Name))
+                if (!typesAndValuesCumulative.ContainsKey(value.Name))
                 {
-                    typesAndValues.Add(value.Name, 0);
-                    periods.Add(value.Name, new Dictionary<DateTime, double>());
+                    typesAndValuesCumulative.Add(value.Name, 0);
+                    periodsCumulative.Add(value.Name, new Dictionary<DateTime, double>());
+                    periodsSingle.Add(value.Name, new Dictionary<DateTime, double>());
                     if (year.HasValue)
                     {
-                        periods[value.Name].Add(new DateTime(year.Value, 1, 1), 0);
+                        periodsCumulative[value.Name].Add(new DateTime(year.Value, 1, 1), 0);
+                        periodsSingle[value.Name].Add(new DateTime(year.Value, 1, 1), 0);
                     }
                 }
-                typesAndValues[value.Name] += value.Distance;
+                typesAndValuesCumulative[value.Name] += value.Distance;
 
-                if (!periods[value.Name].ContainsKey(value.Date.Date))
+                if (!periodsCumulative[value.Name].ContainsKey(value.Date.Date))
                 {
-                    periods[value.Name].Add(value.Date.Date, 0);
+                    periodsCumulative[value.Name].Add(value.Date.Date, 0);
+                    periodsSingle[value.Name].Add(value.Date.Date, 0);
+
                 }
-                periods[value.Name][value.Date.Date] = typesAndValues[value.Name];
+                periodsCumulative[value.Name][value.Date.Date] = typesAndValuesCumulative[value.Name];
+                periodsSingle[value.Name][value.Date.Date] += value.Distance;
 
             });
-            var data = new Data
+            var dataCumulative = new Data
             {
                 Datasets = new List<Dataset>()
             };
-            periods.Keys.ToList().ForEach(k =>
+            var dataSingle = new Data
+            {
+                Datasets = new List<Dataset>()
+            };
+            periodsCumulative.Keys.ToList().ForEach(k =>
                 {
-                    var dataForKey = periods[k].Select(x => new Point { X = x.Key, Y = Math.Round(x.Value, 2) }).ToList();
-                    data.Datasets.Add(new Dataset { Label = k, Data = dataForKey });
+                    var dataForKey = periodsCumulative[k].Select(x => new Point { T = x.Key, Y = Math.Round(x.Value, 2) }).ToList();
+                    dataCumulative.Datasets.Add(new Dataset { Label = k, Data = dataForKey });
+                });
+            var dates = periodsSingle.SelectMany(p => p.Value.Select(d => d.Key)).Distinct();
+            periodsSingle.Keys.ToList().ForEach(k =>
+                {
+                    var dataForKey = periodsSingle[k].Select(x => new Point { T = x.Key, Y = Math.Round(x.Value, 2) }).ToList();
+                    var dataToAdd = dates.Where(d => !dataForKey.Any(p => p.T == d)).ToList();
+                    dataToAdd.ForEach(d => dataForKey.Add(new Point { T = d, Y = 0 }));
+                    dataForKey = dataForKey.OrderBy(d => d.T).ToList();
+
+                    dataSingle.Datasets.Add(new Dataset { Label = k, Data = dataForKey });
                 });
 
             if (year.HasValue)
@@ -119,9 +139,9 @@ namespace OV_DB.Controllers
                 {
                     endDate = DateTime.Now.AddDays(1).Date;
                 }
-                data.Datasets.ForEach(ds => ds.Data.Add(new Point { X = endDate, Y = Math.Round(typesAndValues[ds.Label], 2) }));
+                dataCumulative.Datasets.ForEach(ds => ds.Data.Add(new Point { T = endDate, Y = Math.Round(typesAndValuesCumulative[ds.Label], 2) }));
             }
-            return Ok(data);
+            return Ok(new { Cumulative = dataCumulative, Single = dataSingle });
         }
 
         [HttpGet("reach/{map}")]

@@ -94,13 +94,7 @@ namespace OV_DB.Controllers
                     var stop = osm.Elements.SingleOrDefault(e => e.Id == way.Ref);
                     if (stop != null && stop.Lon != null && stop.Lat != null)
                     {
-                        var currentName = stop.Tags.GetValueOrDefault("name");
-
-                        if (!string.IsNullOrWhiteSpace(currentName) && !stops.Any(s =>
-                           (s.Tags.GetValueOrDefault("name").Contains(currentName, StringComparison.OrdinalIgnoreCase) ||
-                           currentName.Contains(s.Tags.GetValueOrDefault("name"), StringComparison.OrdinalIgnoreCase))
-                           && s.Tags.GetValueOrDefault("public_transport", "") != stop.Tags.GetValueOrDefault("public_transport", "")))
-                            stops.Add(stop);
+                        AddRelevantStops(stops, stop);
                     }
                 }
 
@@ -112,6 +106,19 @@ namespace OV_DB.Controllers
                 Ref = s.Tags.GetValueOrDefault("ref")
             }).ToList();
             return Ok(listOfStops);
+        }
+
+        private static void AddRelevantStops(List<Element> stops, Element stop)
+        {
+            var currentName = stop.Tags.GetValueOrDefault("name");
+            var previousStop = stops.LastOrDefault();
+
+            if (!string.IsNullOrWhiteSpace(currentName) && !(
+                previousStop != null &&
+               (previousStop.Tags.GetValueOrDefault("name").Contains(currentName, StringComparison.OrdinalIgnoreCase) ||
+               currentName.Contains(previousStop.Tags.GetValueOrDefault("name"), StringComparison.OrdinalIgnoreCase))
+               && previousStop.Tags.GetValueOrDefault("public_transport", "") != stop.Tags.GetValueOrDefault("public_transport", "")))
+                stops.Add(stop);
         }
 
         private async Task<string> GetRelationFromOSMAsync(int id, DateTime? dateTime)
@@ -159,13 +166,7 @@ namespace OV_DB.Controllers
                     var stop = osm.Elements.SingleOrDefault(e => e.Id == way.Ref);
                     if (stop != null && stop.Lon != null && stop.Lat != null)
                     {
-                        var currentName = stop.Tags.GetValueOrDefault("name");
-
-                        if (!string.IsNullOrWhiteSpace(currentName) && !stops.Any(s =>
-                           (s.Tags.GetValueOrDefault("name").Contains(currentName, StringComparison.OrdinalIgnoreCase) ||
-                           currentName.Contains(s.Tags.GetValueOrDefault("name"), StringComparison.OrdinalIgnoreCase))
-                           && s.Tags.GetValueOrDefault("public_transport", "") != stop.Tags.GetValueOrDefault("public_transport", "")))
-                            stops.Add(stop);
+                        AddRelevantStops(stops, stop);
                     }
                 }
                 else
@@ -557,6 +558,10 @@ namespace OV_DB.Controllers
             if (!string.IsNullOrWhiteSpace(line.Operator))
             {
                 route.OperatingCompany = line.Operator;
+            }
+            if (!string.IsNullOrWhiteSpace(line.Ref))
+            {
+                route.LineNumber = line.Ref;
             }
 
             var maps = await _context.Maps.Where(m => m.UserId == userIdClaim).ToListAsync();

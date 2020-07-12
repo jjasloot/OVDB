@@ -35,6 +35,10 @@
         <div *ngIf="!!data" class="container graph">
             <canvas baseChart height="400" [datasets]="data.datasets" [options]="lineChartOptions" chartType="line"></canvas>
         </div>
+        <!-- <div *ngIf="!!data" class="container graph">
+            <button (click)="resetZoom()">Reset zoom</button>
+            <canvas #singleChart baseChart height="400" [datasets]="singleData.datasets" [options]="barChartOptions" chartType="bar"></canvas>
+        </div> -->
     </div>
 
     <div class="map-container" #mapContainer>

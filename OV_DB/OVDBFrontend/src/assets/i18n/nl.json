@@ -161,5 +161,9 @@
     "CLOSE": "Sluiten",
     "INSTANCES": "rit(ten) totaal",
     "INSTANCE.LOADALL": "Alles laden",
-    "MAPINSTANCES.INPERIOD": "in gekozen periode"
+    "MAPINSTANCES.INPERIOD": "in gekozen periode",
+	"FILTER.EXPLAINDATES":"Data hebben voorrang boven gekozen jaren",
+	"FILTER.STARTDATE":"Vanaf",
+	"FILTER.ENDDATE":"Tot",
+	"ROUTESLIST.INSTANCES":"Ritten"
 }

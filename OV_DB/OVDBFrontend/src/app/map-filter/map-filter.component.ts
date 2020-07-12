@@ -7,6 +7,8 @@ import { Country } from '../models/country.model';
 import { RouteType } from '../models/routeType.model';
 import { TranslateService } from '@ngx-translate/core';
 import { TranslationService } from '../services/translation.service';
+import { DateAdapter } from '@angular/material/core';
+import { Moment } from 'moment';
 
 @Component({
   selector: 'app-map-filter',
@@ -19,6 +21,8 @@ export class MapFilterComponent implements OnInit {
   selectedCountries: number[] = [];
   selectedTypes: number[] = [];
   selectedYears: number[] = [];
+  to: Moment;
+  from: Moment;
   routeTypes: RouteType[];
   years: number[];
   ownMap = false;
@@ -27,6 +31,7 @@ export class MapFilterComponent implements OnInit {
     private apiService: ApiService,
     private translateService: TranslateService,
     private translationService: TranslationService,
+    private dateAdapter: DateAdapter<any>,
     public dialogRef: MatDialogRef<MapFilterComponent>,
     @Inject(MAT_DIALOG_DATA) public data) {
     this.settings = data.settings;
@@ -35,12 +40,19 @@ export class MapFilterComponent implements OnInit {
   }
 
   ngOnInit() {
-    this.translationService.languageChanged.subscribe(() => this.sortNames());
+    this.dateAdapter.setLocale(this.translationService.dateLocale);
+    this.translationService.languageChanged.subscribe(() => {
+      this.sortNames();
+      console.log(this.translationService.dateLocale);
+      this.dateAdapter.setLocale(this.translationService.dateLocale);
+    });
     this.selectedCountries = this.settings.selectedCountries;
     this.selectedTypes = this.settings.selectedTypes;
     this.selectedYears = this.settings.selectedYears;
+    this.from = this.settings.from;
+    this.to = this.settings.to;
     this.apiService.getCountries(this.guid).subscribe(countries => {
-      this.countries = countries
+      this.countries = countries;
       this.sortNames();
     });
     this.apiService.getTypes(this.guid).subscribe(types => {
@@ -53,10 +65,12 @@ export class MapFilterComponent implements OnInit {
   sortNames() {
     if (!!this.countries) {
       this.countries = this.countries.sort((a, b) => {
-        if (this.name(a) > this.name(b))
+        if (this.name(a) > this.name(b)) {
           return 1;
-        if (this.name(a) < this.name(b))
+        }
+        if (this.name(a) < this.name(b)) {
           return -1;
+        }
         return 0;
       });
     }
@@ -69,15 +83,28 @@ export class MapFilterComponent implements OnInit {
   }
 
   return() {
-    const settings = new FilterSettings(
-      'filter',
-      null,
-      null,
-      this.selectedCountries,
-      this.selectedTypes,
-      this.selectedYears
-    );
-    this.dialogRef.close(settings);
+    console.log(this.from !== null && this.from.isValid())
+    if (this.from !== null && this.from.isValid()) {
+      const settings = new FilterSettings(
+        'filter',
+        this.from,
+        this.to,
+        this.selectedCountries,
+        this.selectedTypes,
+        []
+      );
+      this.dialogRef.close(settings);
+    } else {
+      const settings = new FilterSettings(
+        'filter',
+        null,
+        null,
+        this.selectedCountries,
+        this.selectedTypes,
+        this.selectedYears
+      );
+      this.dialogRef.close(settings);
+    }
 
   }
 
@@ -152,5 +179,9 @@ export class MapFilterComponent implements OnInit {
       return year;
     }
     return this.translateService.instant('FILTER.UNKNOWNYEAR');
+  }
+
+  resetYears() {
+    this.selectedYears = [];
   }
 }

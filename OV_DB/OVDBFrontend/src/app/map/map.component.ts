@@ -4,7 +4,7 @@ import { tileLayer } from 'leaflet';
 import { ApiService } from '../services/api.service';
 import * as L from 'leaflet';
 import { FilterSettings } from '../models/filterSettings';
-import { MatDialog } from '@angular/material/dialog';
+import { MatDialog, throwMatDialogContentAlreadyAttachedError } from '@angular/material/dialog';
 import { Country } from '../models/country.model';
 import { MapFilterComponent } from '../map-filter/map-filter.component';
 import { TranslateService } from '@ngx-translate/core';
@@ -12,6 +12,8 @@ import { TranslationService } from '../services/translation.service';
 import { merge } from 'rxjs';
 import { RouteInstance } from '../models/routeInstance.model';
 import { MapInstanceDialogComponent } from '../map-instance-dialog/map-instance-dialog.component';
+import { filter } from 'rxjs/operators';
+import { Router, ActivatedRoute } from '@angular/router';
 
 @Component({
   selector: 'app-map',
@@ -116,6 +118,8 @@ export class MapComponent implements OnInit, AfterViewInit {
     private translationService: TranslationService,
     private apiService: ApiService,
     private dialog: MatDialog,
+    private router: Router,
+    private activatedRoute: ActivatedRoute,
     private cd: ChangeDetectorRef,
     private _ngZone: NgZone) {
     window['angularComponentRef'] = { component: this, zone: _ngZone };
@@ -127,14 +131,57 @@ export class MapComponent implements OnInit, AfterViewInit {
 
 
   ngOnInit() {
-    this.setOption(this.defaults.get('ThisYear'));
+    this.readFromQueryParams();
     this.translationService.languageChanged.subscribe(() => this.getRoutes())
+  }
+  readFromQueryParams() {
+    const queryParams = this.activatedRoute.snapshot.queryParamMap;
+    if (queryParams.keys.length === 0) {
+      this.setOption(this.defaults.get('ThisYear'));
+      return;
+    }
+    if (queryParams.has('from')) {
+      this.from = moment(+queryParams.get('from'));
+    }
+    if (queryParams.has('from')) {
+      this.to = moment(+queryParams.get('to'));
+    }
+    if (queryParams.has('types')) {
+      this.selectedTypes = queryParams.get('types').split(',').map(c => +c);
+    }
+    if (queryParams.has('countries')) {
+      this.selectedCountries = queryParams.get('countries').split(',').map(c => +c);
+    }
+    if (queryParams.has('years')) {
+      this.selectedYears = queryParams.get('years').split(',').map(c => +c);
+    }
+    this.active = 'filter';
+    this.getRoutes();
   }
 
 
 
   private async getRoutes() {
     try {
+
+      const queryParams = {};
+      if (!!this.to && !!this.from) {
+        queryParams['to'] = this.to.valueOf();
+        queryParams['from'] = this.from.valueOf();
+      }
+      if (this.selectedCountries && this.selectedCountries.length > 0) {
+        queryParams['countries'] = this.selectedCountries.join(',');
+      }
+      if (this.selectedTypes && this.selectedTypes.length > 0) {
+        queryParams['types'] = this.selectedTypes.join(',');
+      }
+      if (this.selectedYears && this.selectedYears.length > 0) {
+        queryParams['years'] = this.selectedYears.join(',');
+      }
+      console.log(queryParams);
+      console.log(this.activatedRoute.snapshot.url);
+      this.router.navigate(this.activatedRoute.snapshot.url.map(u => u.path), { queryParams: queryParams });
+
       this.loading = true;
       let filter = '';
       if (!!this.to && !!this.from) {
@@ -259,6 +306,7 @@ export class MapComponent implements OnInit, AfterViewInit {
     this.selectedTypes = [...option.selectedTypes];
     this.selectedYears = [...option.selectedYears];
     this.active = option.name;
+    console.log(option);
     this.getRoutes();
   }
 
@@ -272,20 +320,15 @@ export class MapComponent implements OnInit, AfterViewInit {
       this.selectedTypes,
       this.selectedYears);
     const dialogRef = this.dialog.open(MapFilterComponent, {
-      width: '50%',
+      width: '75%',
       data: { settings, guid: this.guid }
     });
     dialogRef.afterClosed().subscribe(result => {
       if (!!result) {
-        result.name = 'filter'
+        result.name = 'filter';
         this.setOption(result);
       }
     });
-  }
-
-  test() {
-    console.log('test');
-    alert('test');
   }
 
   showDialog(id: number) {
