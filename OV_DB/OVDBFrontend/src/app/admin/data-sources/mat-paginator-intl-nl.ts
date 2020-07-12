@@ -8,9 +8,9 @@ export class PaginatorIntlService  extends MatPaginatorIntl {
   itemsPerPageLabel = 'Items per page';
   nextPageLabel     = 'Next page';
   previousPageLabel = 'Previous page';
-  firstPageLabel = 'First page'
-  lastPageLabel = 'Last page'
-  getRangeLabel = function (page, pageSize, length) {
+  firstPageLabel = 'First page';
+  lastPageLabel = 'Last page';
+  getRangeLabel = function(page, pageSize, length) {
     const of = this.translate ? this.translate.instant('PAGINATOR.OF') : 'of';
     if (length === 0 || pageSize === 0) {
       return '0 ' + of + ' ' + length;

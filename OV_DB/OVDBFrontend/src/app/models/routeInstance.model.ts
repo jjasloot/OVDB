@@ -1,4 +1,4 @@
-import { RouteInstanceProperty } from "./routeInstanceProperty.model";
+import { RouteInstanceProperty } from './routeInstanceProperty.model';
 
 export interface RouteInstance {
   routeInstanceId: number;

@@ -4,15 +4,11 @@ import { tileLayer } from 'leaflet';
 import { ApiService } from '../services/api.service';
 import * as L from 'leaflet';
 import { FilterSettings } from '../models/filterSettings';
-import { MatDialog, throwMatDialogContentAlreadyAttachedError } from '@angular/material/dialog';
+import { MatDialog } from '@angular/material/dialog';
 import { Country } from '../models/country.model';
 import { MapFilterComponent } from '../map-filter/map-filter.component';
 import { TranslateService } from '@ngx-translate/core';
 import { TranslationService } from '../services/translation.service';
-import { merge } from 'rxjs';
-import { RouteInstance } from '../models/routeInstance.model';
-import { MapInstanceDialogComponent } from '../map-instance-dialog/map-instance-dialog.component';
-import { filter } from 'rxjs/operators';
 import { Router, ActivatedRoute } from '@angular/router';
 
 @Component({
@@ -44,6 +40,7 @@ export class MapComponent implements OnInit, AfterViewInit {
       this.bounds = new L.LatLngBounds(new L.LatLng(50.656245, 2.921360), new L.LatLng(53.604563, 7.428211));
     }
   }
+  // tslint:disable-next-line: variable-name
   private _bounds: L.LatLngBounds;
 
   defaults = new Map<string, FilterSettings>([
@@ -81,7 +78,7 @@ export class MapComponent implements OnInit, AfterViewInit {
 
   get mapHeight() {
     if (this.mapContainer) {
-      return this.mapContainer.offsetHeight
+      return this.mapContainer.offsetHeight;
     }
     return 500;
   }
@@ -121,8 +118,9 @@ export class MapComponent implements OnInit, AfterViewInit {
     private router: Router,
     private activatedRoute: ActivatedRoute,
     private cd: ChangeDetectorRef,
-    private _ngZone: NgZone) {
-    window['angularComponentRef'] = { component: this, zone: _ngZone };
+    ngZone: NgZone) {
+    // tslint:disable-next-line: no-string-literal
+    window['angularComponentRef'] = { component: this, zone: ngZone };
   }
   ngAfterViewInit(): void {
     this.cd.detectChanges();
@@ -132,7 +130,7 @@ export class MapComponent implements OnInit, AfterViewInit {
 
   ngOnInit() {
     this.readFromQueryParams();
-    this.translationService.languageChanged.subscribe(() => this.getRoutes())
+    this.translationService.languageChanged.subscribe(() => this.getRoutes());
   }
   readFromQueryParams() {
     const queryParams = this.activatedRoute.snapshot.queryParamMap;
@@ -165,6 +163,7 @@ export class MapComponent implements OnInit, AfterViewInit {
     try {
 
       const queryParams = {};
+      // tslint:disable: no-string-literal
       if (!!this.to && !!this.from) {
         queryParams['to'] = this.to.valueOf();
         queryParams['from'] = this.from.valueOf();
@@ -178,9 +177,8 @@ export class MapComponent implements OnInit, AfterViewInit {
       if (this.selectedYears && this.selectedYears.length > 0) {
         queryParams['years'] = this.selectedYears.join(',');
       }
-      console.log(queryParams);
-      console.log(this.activatedRoute.snapshot.url);
-      this.router.navigate(this.activatedRoute.snapshot.url.map(u => u.path), { queryParams: queryParams });
+      // tslint:enable: no-string-literal
+      this.router.navigate(this.activatedRoute.snapshot.url.map(u => u.path), { queryParams });
 
       this.loading = true;
       let filter = '';
@@ -250,7 +248,7 @@ export class MapComponent implements OnInit, AfterViewInit {
             popup += `<a href="javascript:void(0)" onclick="
             parent.angularComponentRef.zone.run(()=>
             parent.angularComponentRef.component.showDialog(` + feature.properties.id + `))">` +
-              feature.properties.totalInstances + " " + parent.translateService.instant('INSTANCES') + `</a>`;
+              feature.properties.totalInstances + ' ' + parent.translateService.instant('INSTANCES') + `</a>`;
 
             popup += '<br>' + parent.translateService.instant('MAP.POPUP.TYPE')
               + ': ' + feature.properties.type;
@@ -277,7 +275,7 @@ export class MapComponent implements OnInit, AfterViewInit {
                 parent.selectedRoute.setStyle({ weight: 3 });
               }
               parent.selectedRoute = f.target;
-              f.target.setStyle({ weight: 8, })
+              f.target.setStyle({ weight: 8, });
               f.target.bringToFront();
               if (!!feature.properties.name) {
                 f.target.getPopup().on('remove', () => {
@@ -294,7 +292,7 @@ export class MapComponent implements OnInit, AfterViewInit {
       this.bounds = track.getBounds();
       this.loading = false;
     }
-    catch{
+    catch {
       this.error = true;
     }
   }
@@ -306,7 +304,6 @@ export class MapComponent implements OnInit, AfterViewInit {
     this.selectedTypes = [...option.selectedTypes];
     this.selectedYears = [...option.selectedYears];
     this.active = option.name;
-    console.log(option);
     this.getRoutes();
   }
 
@@ -331,12 +328,12 @@ export class MapComponent implements OnInit, AfterViewInit {
     });
   }
 
-  showDialog(id: number) {
+  showDialog() {
     const limits = this.selectedYears.map(s => {
       return {
         start: moment().year(s).startOf('year'),
         end: moment().year(s + 1).startOf('year')
-      }
+      };
     });
     if (!!this.from && !!this.to) {
       limits.push({
@@ -345,10 +342,6 @@ export class MapComponent implements OnInit, AfterViewInit {
       });
     }
 
-    const dialogRef = this.dialog.open(MapInstanceDialogComponent, {
-      width: '50%',
-      data: { id, limits }
-    });
   }
 }
 

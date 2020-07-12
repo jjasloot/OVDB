@@ -104,7 +104,7 @@ export class StatsComponent implements OnInit {
   ngOnInit(): void {
     this.apiService.getMaps().subscribe(maps => {
       this.maps = maps;
-    })
+    });
   }
 
   changeMap(mapGuid: string) {
@@ -121,7 +121,6 @@ export class StatsComponent implements OnInit {
 
   getData(year?: number) {
     this.apiService.getStatsForGraph(this.selectedMap, year).subscribe(stats => {
-      console.log(stats);
       this.data = stats.cumulative;
       this.singleData = stats.single;
     });
@@ -193,11 +192,10 @@ export class StatsComponent implements OnInit {
       });
       this.layers.push(rectangle);
       this.loadingMap = false;
-    })
+    });
 
   }
   resetZoom() {
-    console.log(this.singleChart);
     this.singleChart.resetZoom();
   }
 }

@@ -6,7 +6,7 @@ describe('DataUpdateService', () => {
   beforeEach(() => TestBed.configureTestingModule({}));
 
   it('should be created', () => {
-    const service: DataUpdateService = TestBed.get(DataUpdateService);
+    const service: DataUpdateService = TestBed.inject(DataUpdateService);
     expect(service).toBeTruthy();
   });
 });

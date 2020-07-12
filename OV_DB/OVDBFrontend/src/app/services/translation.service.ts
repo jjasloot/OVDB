@@ -7,11 +7,10 @@ import { TranslateService } from '@ngx-translate/core';
 export class TranslationService {
   languageChanged = new EventEmitter<null>();
   constructor(private translateService: TranslateService) {
-    console.log(navigator.language)
     if (navigator.language.includes('nl')) {
       this.language = 'nl';
     } else {
-      this.language = 'en'
+      this.language = 'en';
     }
   }
 
@@ -24,6 +23,7 @@ export class TranslationService {
     this.languageChanged.emit(null);
   }
 
+  // tslint:disable-next-line: variable-name
   private _language: 'nl' | 'en' = 'nl';
 
   getNameForItem(item: any) {

@@ -21,10 +21,10 @@ export class FillMissingDataListComponent implements OnInit {
     this.apiService.getRoutesWithMissingSettings().subscribe(data => {
       this.data = data;
       this.loading = false;
-    })
+    });
   }
 
   edit(id: number) {
-    this.router.navigate(['/admin','routes', id]);
+    this.router.navigate(['/admin', 'routes', id]);
   }
 }

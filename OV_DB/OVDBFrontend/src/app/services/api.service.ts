@@ -104,15 +104,16 @@ export class ApiService {
     if (start !== undefined && count !== undefined) {
       params = params
         .set('start', start.toString())
-        .set('count', count.toString())
+        .set('count', count.toString());
     }
     if (column !== undefined) {
-      params = params.set('sortColumn', column.toString())
-      if (order !== undefined)
+      params = params.set('sortColumn', column.toString());
+      if (order !== undefined) {
         params = params.set('descending', order.toString());
+      }
     }
     if (filter !== undefined) {
-      params = params.set('filter', filter)
+      params = params.set('filter', filter);
     }
     return this.httpClient.get<Route[]>(environment.backend + 'api/routes', {
       params
@@ -127,7 +128,7 @@ export class ApiService {
   }
 
   getRoutes(filter: string, guid: string, language: string): Observable<string> {
-    let url = "";
+    let url = '';
 
     url = environment.backend + 'odata/' + guid;
     if (!!filter) {
@@ -187,7 +188,7 @@ export class ApiService {
       url += '&routeType=' + type;
     }
     if (!!dateTime) {
-      url += '&dateTime=' + dateTime.toISOString()
+      url += '&dateTime=' + dateTime.toISOString();
     }
     return this.httpClient.get<OSMDataLine[]>(url);
 
@@ -195,7 +196,7 @@ export class ApiService {
   importerGetNetwork(network: string, dateTime: Moment): Observable<OSMDataLine[]> {
     let url = environment.backend + 'api/importer/network?network=' + network;
     if (!!dateTime) {
-      url += '&dateTime=' + dateTime.toISOString()
+      url += '&dateTime=' + dateTime.toISOString();
     }
     return this.httpClient.get<OSMDataLine[]>(url);
   }
@@ -245,7 +246,7 @@ export class ApiService {
 
     return this.httpClient.put<MultipleEdit>(url, model);
   }
-  getStatsForGraph(map: string, year?: number):Observable<any> {
+  getStatsForGraph(map: string, year?: number): Observable<any> {
     let url = environment.backend + 'api/stats/time/' + map;
     if (!!year) {
       url += `?year=${year}`;

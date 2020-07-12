@@ -44,7 +44,7 @@ export class MapsListComponent implements OnInit {
     });
     dialogRef.afterClosed().subscribe((result: boolean) => {
       if (!!result) {
-        this.loadData()
+        this.loadData();
       }
     });
   }
@@ -56,7 +56,7 @@ export class MapsListComponent implements OnInit {
     });
     dialogRef.afterClosed().subscribe((result: boolean) => {
       if (!!result) {
-        this.loadData()
+        this.loadData();
       }
     });
   }

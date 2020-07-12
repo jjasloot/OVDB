@@ -43,7 +43,6 @@ export class MapFilterComponent implements OnInit {
     this.dateAdapter.setLocale(this.translationService.dateLocale);
     this.translationService.languageChanged.subscribe(() => {
       this.sortNames();
-      console.log(this.translationService.dateLocale);
       this.dateAdapter.setLocale(this.translationService.dateLocale);
     });
     this.selectedCountries = this.settings.selectedCountries;
@@ -83,7 +82,6 @@ export class MapFilterComponent implements OnInit {
   }
 
   return() {
-    console.log(this.from !== null && this.from.isValid())
     if (this.from !== null && this.from.isValid()) {
       const settings = new FilterSettings(
         'filter',
@@ -117,7 +115,7 @@ export class MapFilterComponent implements OnInit {
       this.selectedCountries.push(id);
     }
     if (!event.checked && this.selectedCountries.includes(id)) {
-      this.selectedCountries = this.selectedCountries.filter(i => i !== id)
+      this.selectedCountries = this.selectedCountries.filter(i => i !== id);
     }
   }
 
@@ -130,7 +128,7 @@ export class MapFilterComponent implements OnInit {
       this.selectedTypes.push(id);
     }
     if (!event.checked && this.selectedTypes.includes(id)) {
-      this.selectedTypes = this.selectedTypes.filter(i => i !== id)
+      this.selectedTypes = this.selectedTypes.filter(i => i !== id);
     }
   }
 
@@ -143,12 +141,12 @@ export class MapFilterComponent implements OnInit {
       this.selectedYears.push(year);
     }
     if (!event.checked && this.selectedYears.includes(year)) {
-      this.selectedYears = this.selectedYears.filter(i => i !== year)
+      this.selectedYears = this.selectedYears.filter(i => i !== year);
     }
   }
 
   get countriesString(): string {
-    const countriesNames = this.countries.filter(c => this.selectedCountries.includes(c.countryId)).map(c => c.name)
+    const countriesNames = this.countries.filter(c => this.selectedCountries.includes(c.countryId)).map(c => c.name);
     let countriesString = countriesNames.join(', ');
     if (countriesNames.length > 2) {
       countriesString = countriesNames.length + ' ' + this.translateService.instant('FILTER.SELECTED');
@@ -157,7 +155,7 @@ export class MapFilterComponent implements OnInit {
   }
 
   get typesString(): string {
-    const typesNames = this.routeTypes.filter(c => this.selectedTypes.includes(c.typeId)).map(c => c.name)
+    const typesNames = this.routeTypes.filter(c => this.selectedTypes.includes(c.typeId)).map(c => c.name);
     let typesString = typesNames.join(', ');
     if (typesNames.length > 2) {
       typesString = typesNames.length + ' ' + this.translateService.instant('FILTER.SELECTED');

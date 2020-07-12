@@ -18,7 +18,7 @@ export class AuthenticationService {
   refreshTrigger: any;
   returnUrl: string;
   constructor(private httpClient: HttpClient, private router: Router) {
-    this.token = localStorage.getItem('OVDBToken')
+    this.token = localStorage.getItem('OVDBToken');
     setTimeout(() => {
       if (!!this.token) {
         this.refreshTheToken();
@@ -34,7 +34,7 @@ export class AuthenticationService {
         if (!!this.returnUrl) {
           this.router.navigateByUrl(this.returnUrl);
         } else {
-          this.router.navigate(['/'])
+          this.router.navigate(['/']);
         }
       }));
   }
@@ -45,7 +45,7 @@ export class AuthenticationService {
       if (!!this.returnUrl) {
         this.router.navigateByUrl(this.returnUrl);
       } else {
-        this.router.navigate(['/'])
+        this.router.navigate(['/']);
       }
     }));
   }
@@ -69,10 +69,10 @@ export class AuthenticationService {
     if (this.refreshTrigger) {
       clearTimeout(this.refreshTrigger);
     }
-    localStorage.removeItem('OVDBToken')
+    localStorage.removeItem('OVDBToken');
     this.refreshToken = null;
     this.token = null;
-    this.router.navigate(['/'])
+    this.router.navigate(['/']);
   }
 
   get isLoggedIn(): boolean {
@@ -82,7 +82,7 @@ export class AuthenticationService {
     return (this.helper.getTokenExpirationDate(this.token) > new Date());
   }
   get autoUpdateRunning() {
-    return !!this.refreshTrigger
+    return !!this.refreshTrigger;
   }
 
   get email() {

@@ -13,8 +13,8 @@ export class MapViewComponent implements OnInit {
 
   ngOnInit() {
     this.activatedRoute.paramMap.subscribe((paramMap: ParamMap) => {
-      this.guid = paramMap.get("guid");
-    })
+      this.guid = paramMap.get('guid');
+    });
   }
 
 }

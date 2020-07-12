@@ -23,7 +23,6 @@ export class LayoutComponent implements OnInit {
   }
 
   setLanguage(language: MatSelectChange) {
-    console.log(language);
     this.translationService.language = language.value;
   }
   get currentLanguage() {
@@ -47,7 +46,7 @@ export class LayoutComponent implements OnInit {
   }
 
   get isAdmin(){
-    if(!this.isLoggedIn){
+    if (!this.isLoggedIn){
       return false;
     }
     return this.authService.admin;

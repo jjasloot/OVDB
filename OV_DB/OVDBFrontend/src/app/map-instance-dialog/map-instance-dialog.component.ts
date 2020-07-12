@@ -70,7 +70,6 @@ export class MapInstanceDialogComponent implements OnInit {
       l.start.format('YYYY-MM-DD'),
       l.end.format('YYYY-MM-DD')
     ))).subscribe(data => {
-      console.log(data.routeInstances, this.instances);
       this.instances = this.instances.concat(...data.routeInstances);
       completed++;
       if (completed === this.limits.length) {
@@ -81,7 +80,7 @@ export class MapInstanceDialogComponent implements OnInit {
       if (completed === this.limits.length) {
         this.loading = false;
       }
-    })
+    });
   }
 
 

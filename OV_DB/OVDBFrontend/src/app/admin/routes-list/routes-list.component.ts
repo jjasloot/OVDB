@@ -7,7 +7,7 @@ import { MatPaginator } from '@angular/material/paginator';
 import { MatTableDataSource } from '@angular/material/table';
 import { RoutesDataSource } from '../data-sources/routes-data-source';
 import { tap, debounceTime, distinctUntilChanged, filter } from 'rxjs/operators';
-import { merge, fromEvent } from 'rxjs'
+import { merge, fromEvent } from 'rxjs';
 import { MatSort } from '@angular/material/sort';
 import { saveAs } from 'file-saver';
 import { TranslateService } from '@ngx-translate/core';
@@ -105,7 +105,7 @@ export class RoutesListComponent implements OnInit, AfterViewInit {
 
   getMapsString(element: Route) {
     if (element.routeMaps.length === 0) {
-      return this.translateService.instant('ROUTESLIST.NOMAPS')
+      return this.translateService.instant('ROUTESLIST.NOMAPS');
     }
     if (element.routeMaps.length > 3) {
       return element.routeMaps.length + ' ' + this.translateService.instant('ROUTESLIST.MAPSFORCOUNT');
@@ -144,7 +144,7 @@ export class RoutesListComponent implements OnInit, AfterViewInit {
         selectedRoutes: this.selectedRoutes
       }
     });
-    dialog.afterClosed().subscribe(() => this.loadRoutesPage())
+    dialog.afterClosed().subscribe(() => this.loadRoutesPage());
   }
 
   clearSelection() {

@@ -23,7 +23,7 @@ export class RegistrationComponent implements OnInit {
   submit() {
     if (this.form.valid) {
       this.authService.registration(this.form.value as RegistrationRequest).subscribe(() => { },
-        err => { this.error = err.error, this.failed = true; })
+        err => { this.error = err.error, this.failed = true; });
     }
   }
 }

@@ -35,7 +35,7 @@ export class WizzardStep2Component implements OnInit {
   stops: OSMLineStop[];
 
   from: number;
-  to: number
+  to: number;
   dateTime: Moment;
   constructor(
     private activatedRoute: ActivatedRoute,
@@ -43,28 +43,29 @@ export class WizzardStep2Component implements OnInit {
     private translateService: TranslateService,
     private dialog: MatDialog,
     private router: Router) {
-    this.activatedRoute.params.subscribe(p => this.id = p.id)
+    this.activatedRoute.params.subscribe(p => this.id = p.id);
     this.activatedRoute.queryParamMap.subscribe(p => {
-      if (p.has('date'))
+      if (p.has('date')) {
         this.dateTime = moment.unix(+p.get('date'));
-      else
+      }
+      else {
         this.dateTime = null;
-    })
+      }
+    });
 
   }
 
   ngOnInit(): void {
-    console.log(this.dateTime)
     this.apiService.importerGetLine(this.id, null, null, this.dateTime).subscribe(data => {
       this.data = data;
-      this.apiService.importerGetStops(this.id, this.dateTime).subscribe(data => {
-        this.stops = data;
+      this.apiService.importerGetStops(this.id, this.dateTime).subscribe(stops => {
+        this.stops = stops;
         this.from = this.stops[0].id;
         this.to = this.stops[this.stops.length - 1].id;
-      })
+      });
       this.addTrackToMap();
 
-    })
+    });
 
   }
 
@@ -81,7 +82,7 @@ export class WizzardStep2Component implements OnInit {
     dialogRef.afterClosed().subscribe((result: boolean) => {
       if (!!result) {
         this.apiService.importerAddRoute(this.data).subscribe(route => {
-          this.router.navigate(['/', 'admin', 'routes', route.routeId])
+          this.router.navigate(['/', 'admin', 'routes', route.routeId]);
         });
       }
     });
@@ -113,7 +114,7 @@ export class WizzardStep2Component implements OnInit {
     const toIndex = this.stops.findIndex(t => t.id === this.to);
     const fromIndex = this.stops.findIndex(t => t.id === this.from);
     const index = this.stops.findIndex(t => t.id === id);
-    return index >= fromIndex && index <= toIndex
+    return index >= fromIndex && index <= toIndex;
   }
   addTrackToMap() {
     if (!this.data.geoJson) {
@@ -136,7 +137,7 @@ export class WizzardStep2Component implements OnInit {
     this.apiService.importerGetLine(this.id, this.from, this.to, this.dateTime).subscribe(data => {
       this.data = data;
       this.addTrackToMap();
-    })
+    });
   }
   uncut() {
     this.apiService.importerGetLine(this.id, null, null, this.dateTime).subscribe(data => {
@@ -144,6 +145,6 @@ export class WizzardStep2Component implements OnInit {
       this.addTrackToMap();
       this.from = this.stops[0].id;
       this.to = this.stops[this.stops.length - 1].id;
-    })
+    });
   }
 }

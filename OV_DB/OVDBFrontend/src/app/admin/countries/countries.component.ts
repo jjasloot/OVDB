@@ -29,7 +29,7 @@ export class CountriesComponent implements OnInit {
 
   ngOnInit() {
     this.loadData();
-    this.translationService.languageChanged.subscribe(() => this.sort())
+    this.translationService.languageChanged.subscribe(() => this.sort());
   }
 
   private loadData() {
@@ -43,10 +43,12 @@ export class CountriesComponent implements OnInit {
 
   sort() {
     this.data = this.data.sort((a, b) => {
-      if (this.name(a) > this.name(b))
+      if (this.name(a) > this.name(b)) {
         return 1;
-      if (this.name(a) < this.name(b))
+      }
+      if (this.name(a) < this.name(b)) {
         return -1;
+      }
       return 0;
     });
   }
@@ -61,7 +63,7 @@ export class CountriesComponent implements OnInit {
     });
     dialogRef.afterClosed().subscribe((result: boolean) => {
       if (!!result) {
-        this.loadData()
+        this.loadData();
       }
     });
   }
@@ -73,7 +75,7 @@ export class CountriesComponent implements OnInit {
     });
     dialogRef.afterClosed().subscribe((result: boolean) => {
       if (!!result) {
-        this.loadData()
+        this.loadData();
       }
     });
   }

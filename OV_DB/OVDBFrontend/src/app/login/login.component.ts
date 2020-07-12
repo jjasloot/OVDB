@@ -29,11 +29,11 @@ export class LoginComponent implements OnInit {
       if (!!data.failed) {
         this.failed = true;
       }
-    })
+    });
 
     this.form = this.formBuilder.group({
-      'email': ['', [Validators.required, Validators.email]],
-      'password': ['', Validators.required]
+      email: ['', [Validators.required, Validators.email]],
+      password: ['', Validators.required]
     });
   }
 
@@ -43,7 +43,7 @@ export class LoginComponent implements OnInit {
       this.authService.login(this.form.value.email, this.form.value.password).subscribe(() => {
         this.loading = false;
       },
-        err => { this.error = err; this.loading = false; this.failed = true; })
+        err => { this.error = err; this.loading = false; this.failed = true; });
     }
   }
 }

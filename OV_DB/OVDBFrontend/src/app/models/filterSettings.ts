@@ -15,7 +15,7 @@ export class FilterSettings {
         this.selectedTypes = selectedTypes || [];
         this.selectedYears = selectedYears || [];
     }
-    name: string
+    name: string;
     from: Moment;
     to: Moment;
     selectedCountries: number[] = [];

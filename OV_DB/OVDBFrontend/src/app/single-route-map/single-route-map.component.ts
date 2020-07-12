@@ -29,11 +29,12 @@ export class SingleRouteMapComponent implements OnInit {
       this.bounds = new L.LatLngBounds(new L.LatLng(50.656245, 2.921360), new L.LatLng(53.604563, 7.428211));
     }
   }
+  // tslint:disable-next-line: variable-name
   private _bounds: L.LatLngBounds;
 
   get mapHeight() {
     if (this.mapContainer) {
-      return this.mapContainer.offsetHeight
+      return this.mapContainer.offsetHeight;
     }
     return 500;
   }
@@ -79,8 +80,8 @@ export class SingleRouteMapComponent implements OnInit {
       this.routeId = +p.get('routeId');
       this.guid = p.get('guid');
       this.getRoute();
-    })
-    this.translationService.languageChanged.subscribe(() => this.getRoute())
+    });
+    this.translationService.languageChanged.subscribe(() => this.getRoute());
   }
 
 
@@ -113,7 +114,7 @@ export class SingleRouteMapComponent implements OnInit {
           }
           popup += '</p>';
           layer.on('click', f => {
-            f.target.setStyle({ weight: 8, })
+            f.target.setStyle({ weight: 8, });
             f.target.bringToFront();
             f.target.getPopup().on('remove', () => {
               f.target.setStyle({
@@ -128,7 +129,7 @@ export class SingleRouteMapComponent implements OnInit {
       this.bounds = track.getBounds();
       this.loading = false;
     }
-    catch{
+    catch {
       this.error = true;
     }
   }

@@ -85,14 +85,14 @@ export class RouteInstancesComponent implements OnInit {
     if (!this.route) {
       return '';
     }
-    return this.translationService.getNameForItem(this.route)
+    return this.translationService.getNameForItem(this.route);
   }
 
   get typeName() {
     if (!this.route) {
       return '';
     }
-    return this.translationService.getNameForItem(this.route.routeType)
+    return this.translationService.getNameForItem(this.route.routeType);
   }
   add() {
     const dialogRef = this.dialog.open(RouteInstancesEditComponent, {

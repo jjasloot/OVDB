@@ -4,6 +4,6 @@ export interface Map {
     mapGuid: string;
     sharingLinkName: string;
     default: boolean;
-    showRouteInfo:boolean;
-    showRouteOutline:boolean;
+    showRouteInfo: boolean;
+    showRouteOutline: boolean;
 }

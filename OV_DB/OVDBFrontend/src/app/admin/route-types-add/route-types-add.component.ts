@@ -25,7 +25,7 @@ export class RouteTypesAddComponent implements OnInit {
       this.id = data.routeType.typeId;
       this.colour = data.routeType.colour;
       this.routeTypeName = data.routeType.name;
-      this.routeTypeNameNL = data.routeType.nameNL
+      this.routeTypeNameNL = data.routeType.nameNL;
     }
   }
 

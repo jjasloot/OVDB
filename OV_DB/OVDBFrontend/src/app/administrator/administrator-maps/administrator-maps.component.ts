@@ -16,11 +16,11 @@ export class AdministratorMapsComponent implements OnInit {
   ngOnInit(): void {
     this.apiService.administratorGetMaps().subscribe(data => {
       this.data = data;
-    })
+    });
   }
 
   view(map: AdminMap) {
-    this.router.navigate(['/map', map.guid]); 
+    this.router.navigate(['/map', map.guid]);
   }
 
 }

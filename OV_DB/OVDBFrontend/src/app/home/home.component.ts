@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { AuthenticationService } from '../services/authentication.service';
 import { ApiService } from '../services/api.service';
-import { Map } from '../models/map.model'
+import { Map } from '../models/map.model';
 import { Router } from '@angular/router';
 @Component({
   selector: 'app-home',
@@ -20,7 +20,7 @@ export class HomeComponent implements OnInit {
     if (this.isLoggedIn) {
       this.apiService.getMaps().subscribe(maps => {
         this.maps = maps;
-      })
+      });
     }
   }
 
@@ -29,7 +29,7 @@ export class HomeComponent implements OnInit {
   }
 
   view(map: Map) {
-    this.router.navigate(['/map', map.mapGuid])
+    this.router.navigate(['/map', map.mapGuid]);
   }
   getLink(map: Map) {
     return location.origin + '/link/' + map.sharingLinkName;

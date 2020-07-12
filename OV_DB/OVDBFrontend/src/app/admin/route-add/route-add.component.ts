@@ -35,7 +35,7 @@ export class RouteAddComponent implements OnInit {
     this.apiService.postRoute(this.inputString).subscribe((resp: Route) => {
       this.inputString = null;
       this.router.navigate(['/admin', 'routes', resp.routeId]);
-    })
+    });
   }
 
   handleFileInput(files: FileList) {

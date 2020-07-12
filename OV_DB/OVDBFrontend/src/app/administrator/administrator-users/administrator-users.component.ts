@@ -16,6 +16,6 @@ export class AdministratorUsersComponent implements OnInit {
   ngOnInit(): void {
     this.apiService.administratorGetUsers().subscribe(data => {
       this.data = data;
-    })
+    });
   }
 }

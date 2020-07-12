@@ -45,7 +45,7 @@ export class RouteTypesComponent implements OnInit {
     });
     dialogRef.afterClosed().subscribe((result: boolean) => {
       if (!!result) {
-        this.loadData()
+        this.loadData();
       }
     });
   }
@@ -66,7 +66,7 @@ export class RouteTypesComponent implements OnInit {
 
     });
   }
-  name(routeType:RouteType){
+  name(routeType: RouteType){
     return this.translationService.getNameForItem(routeType);
   }
 
@@ -77,7 +77,7 @@ export class RouteTypesComponent implements OnInit {
     });
     dialogRef.afterClosed().subscribe((result: boolean) => {
       if (!!result) {
-        this.loadData()
+        this.loadData();
       }
     });
   }

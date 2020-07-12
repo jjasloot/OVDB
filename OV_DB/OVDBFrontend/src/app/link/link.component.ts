@@ -27,8 +27,8 @@ export class LinkComponent implements OnInit {
         this.error = true;
         this.loading = false;
 
-      })
-    })
+      });
+    });
   }
 
 }

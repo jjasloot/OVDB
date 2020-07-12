@@ -27,14 +27,14 @@ export class WizzardStep1Component implements OnInit {
     private router: Router,
     private dateAdapter: DateAdapter<any>,
     private translationService: TranslationService) {
-    this.dateAdapter.setLocale(this.translationService.dateLocale)
+    this.dateAdapter.setLocale(this.translationService.dateLocale);
 
     this.form = this.formBuilder.group({
       reference: ['', Validators.required],
       network: [''],
       type: ['bus', Validators.required],
       dateTime: [null]
-    })
+    });
   }
   types = [
     'bus',
@@ -48,7 +48,7 @@ export class WizzardStep1Component implements OnInit {
     'ferry',
     'funicular',
     'not_specified'
-  ]
+  ];
 
   networks = [
     'Achterhoek-Rivierenland',
@@ -94,13 +94,13 @@ export class WizzardStep1Component implements OnInit {
     'Zwolle - Kampen en Zwolle - Enschede',
     'RNet',
     'Blauwnet'
-  ]
+  ];
 
   selectedNetwork = '';
   ngOnInit(): void {
     this.translationService.languageChanged.subscribe(() => {
       this.dateAdapter.setLocale(this.translationService.dateLocale);
-    })
+    });
   }
 
   getLines() {
@@ -114,7 +114,7 @@ export class WizzardStep1Component implements OnInit {
       this.lines = data;
       this.step = 2;
       this.loading = false;
-    }, err => { this.error = true; })
+    }, err => { this.error = true; });
   }
 
   getNetwork() {
@@ -126,13 +126,13 @@ export class WizzardStep1Component implements OnInit {
       this.lines = data;
       this.step = 2;
       this.loading = false;
-    }, err => { this.error = true; })
+    }, err => { this.error = true; });
   }
   select(line: OSMDataLine) {
     if (!!this.dateTime) {
       this.router.navigate(['/', 'admin', 'wizard', line.id], { queryParams: { date: this.dateTime.unix() } });
     } else {
-      this.router.navigate(['/', 'admin', 'wizard', line.id])
+      this.router.navigate(['/', 'admin', 'wizard', line.id]);
     }
   }
 

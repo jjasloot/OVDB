@@ -36,7 +36,7 @@ export class RouteInstancesEditComponent implements OnInit {
   }
 
   ngOnInit() {
-    this.dateAdapter.setLocale(this.translationService.dateLocale)
+    this.dateAdapter.setLocale(this.translationService.dateLocale);
 
   }
 
@@ -49,9 +49,9 @@ export class RouteInstancesEditComponent implements OnInit {
       return;
     }
     if (!this.instance.routeInstanceProperties[this.instance.routeInstanceProperties.length - 1].key) {
-      this.instance.routeInstanceProperties = this.instance.routeInstanceProperties.slice(0, this.instance.routeInstanceProperties.length - 1)
+      this.instance.routeInstanceProperties =
+        this.instance.routeInstanceProperties.slice(0, this.instance.routeInstanceProperties.length - 1);
     }
-    console.log(this.instance);
     this.dialogRef.close(this.instance);
   }
 

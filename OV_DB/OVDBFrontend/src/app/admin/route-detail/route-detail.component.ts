@@ -45,7 +45,7 @@ export class RouteDetailComponent implements OnInit {
     private dateAdapter: DateAdapter<any>,
     private dialog: MatDialog,
     private router: Router) {
-    this.dateAdapter.setLocale(this.translationService.dateLocale)
+    this.dateAdapter.setLocale(this.translationService.dateLocale);
 
     this.form = this.formBuilder.group({
       name: ['', Validators.required],
@@ -66,13 +66,13 @@ export class RouteDetailComponent implements OnInit {
     this.translationService.languageChanged.subscribe(() => {
       this.sortOrder();
       this.dateAdapter.setLocale(this.translationService.dateLocale);
-    })
+    });
     this.apiService.getTypes().subscribe(types => {
       this.types = types;
     });
     this.apiService.getCountries().subscribe(countries => {
       this.countries = countries;
-      this.sortOrder()
+      this.sortOrder();
     });
     this.apiService.getMaps().subscribe(maps => {
       this.maps = maps;
@@ -86,7 +86,7 @@ export class RouteDetailComponent implements OnInit {
         }
         this.colour = this.route.overrideColour;
         this.selectedOptions = this.route.routeCountries.map(r => r.countryId);
-        this.selectedMaps = this.route.routeMaps.map(r => r.mapId)
+        this.selectedMaps = this.route.routeMaps.map(r => r.mapId);
         this.form.patchValue(this.route);
         if (this.route.routeInstancesCount > 1) {
           this.form.controls.firstDateTime.disable();
@@ -96,10 +96,12 @@ export class RouteDetailComponent implements OnInit {
   }
   sortOrder() {
     this.countries = this.countries.sort((a, b) => {
-      if (this.name(a) > this.name(b))
+      if (this.name(a) > this.name(b)) {
         return 1;
-      if (this.name(a) < this.name(b))
+      }
+      if (this.name(a) < this.name(b)) {
         return -1;
+      }
       return 0;
     });
   }
@@ -121,7 +123,7 @@ export class RouteDetailComponent implements OnInit {
 
 
   goBack(): void {
-    this.router.navigate(['/', 'admin', 'routes'])
+    this.router.navigate(['/', 'admin', 'routes']);
   }
   delete() {
     const dialogRef = this.dialog.open(AreYouSureDialogComponent, {
@@ -147,9 +149,9 @@ export class RouteDetailComponent implements OnInit {
       .filter(c => this.countriesSelection.selectedOptions.selected.some(rc => rc.value === c.countryId))
       .map(c => this.name(c));
     if (countries.length > 3) {
-      return '' + countries.length + ' ' + this.translateService.instant('ROUTEDETAILS.COUNTRIESINSTRING')
+      return '' + countries.length + ' ' + this.translateService.instant('ROUTEDETAILS.COUNTRIESINSTRING');
     }
-    return countries.join(', ')
+    return countries.join(', ');
   }
 
   get mapsString() {
@@ -160,9 +162,9 @@ export class RouteDetailComponent implements OnInit {
       .filter(m => this.mapsSelection.selectedOptions.selected.some(rm => rm.value === m.mapId))
       .map(m => this.name(m));
     if (maps.length > 3) {
-      return '' + maps.length + ' ' + this.translateService.instant('ROUTEDETAILS.MAPSINSTRING')
+      return '' + maps.length + ' ' + this.translateService.instant('ROUTEDETAILS.MAPSINSTRING');
     }
-    return maps.join(', ')
+    return maps.join(', ');
   }
 
   name(item: any) {
@@ -171,7 +173,7 @@ export class RouteDetailComponent implements OnInit {
 
   export() {
     this.apiService.getExport(this.route.routeId).subscribe(data => {
-      saveAs(data, this.route.name.trim().replace(' ', '_') + '.kml')
+      saveAs(data, this.route.name.trim().replace(' ', '_') + '.kml');
     });
   }
 }
