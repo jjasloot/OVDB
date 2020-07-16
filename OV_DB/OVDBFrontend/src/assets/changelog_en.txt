@@ -1,6 +1,7 @@
 2020-07-16:
 - Add properties to trips
 - Added edit and edit trips buttons to map
+- Fixed a bug in the importer -> roundabout sorting and cutting
 
 2020-07-12:
 - Filter using datepickers

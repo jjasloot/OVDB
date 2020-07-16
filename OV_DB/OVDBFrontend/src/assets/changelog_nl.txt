@@ -1,6 +1,7 @@
 2020-07-16:
 - Eigenschappen toevoegen aan ritten
 - Bewerken en rit bewerken knop toegevoegd aan kaart
+- Bug opgelost in de importer - > rotonde sortering en bijknippen
 
 2020-07-12:
 - Filteren met datumpickers
