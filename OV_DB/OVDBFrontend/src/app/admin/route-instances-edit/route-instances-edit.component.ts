@@ -18,7 +18,7 @@ export class RouteInstancesEditComponent implements OnInit {
   @ViewChild('table') table: MatTable<RouteInstanceProperty>;
   instance: RouteInstance;
   new = false;
-  options = ['test', 'test2']
+  options = [];
   filteredOptions: BehaviorSubject<string[]> = new BehaviorSubject<string[]>(this.options);
   constructor(
     public dialogRef: MatDialogRef<RouteInstancesEditComponent>,
@@ -42,7 +42,7 @@ export class RouteInstancesEditComponent implements OnInit {
     this.apiService.getAutocompleteForTags().subscribe(data => {
       this.options = data;
       this.updateSuggestions('');
-    })
+    });
   }
   updateSuggestions(value: string) {
     const filterValue = value.toLowerCase();

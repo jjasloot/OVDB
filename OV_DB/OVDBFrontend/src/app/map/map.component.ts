@@ -266,7 +266,16 @@ export class MapComponent implements OnInit, AfterViewInit {
               popup += '<br>' + parent.translateService.instant('ROUTES.DISTANCE') + ': ' + feature.properties.distance + ' km';
 
             }
-
+            if (!!feature.properties.owner) {
+              popup += `<br><a href="javascript:void(0)" onclick="
+              parent.angularComponentRef.zone.run(()=>
+              parent.angularComponentRef.component.edit(` + feature.properties.id + `))">` +
+                parent.translateService.instant('EDIT') + `</a>`;
+              popup += `&nbsp;<a href="javascript:void(0)" onclick="
+              parent.angularComponentRef.zone.run(()=>
+              parent.angularComponentRef.component.editInstances(` + feature.properties.id + `))">` +
+                parent.translateService.instant('INSTANCES.EDITINSTANCE') + `</a>`;
+            }
             popup += '</p>';
             layer.bindPopup(popup);
           }
@@ -346,8 +355,16 @@ export class MapComponent implements OnInit, AfterViewInit {
       data: {
         id, limits
       },
-      width:'50%'
+      width: '50%'
     });
+  }
+
+  edit(id: number) {
+    this.router.navigate(['/', 'admin', 'routes', id]);
+  }
+
+  editInstances(id: number) {
+    this.router.navigate(['/', 'admin', 'routes', 'instances', id]);
   }
 }
 

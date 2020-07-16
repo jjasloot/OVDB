@@ -35,6 +35,8 @@ namespace OV_DB.Controllers
         [Produces("application/json")]
         public async Task<ActionResult<FeatureCollection>> GetGeoJsonAsync(string id, ODataQueryOptions<Route> q, [FromQuery] string language)
         {
+            var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value ?? "-1");
+
             var guid = Guid.Parse(id);
             var map = await _context.Maps.SingleOrDefaultAsync(m => m.MapGuid == guid);
             if (map == null)
@@ -47,7 +49,6 @@ namespace OV_DB.Controllers
                 {
                     return Forbid();
                 }
-                var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value ?? "-1");
                 var adminClaim = (User.Claims.SingleOrDefault(c => c.Type == "admin").Value ?? "false");
 
                 if ((userIdClaim < 0 || map.UserId != userIdClaim) && !string.Equals(adminClaim, "true", StringComparison.OrdinalIgnoreCase))
@@ -139,6 +140,10 @@ namespace OV_DB.Controllers
                         {
                             feature.Properties.Add("distance", r.CalculatedDistance);
                         }
+                    }
+                    if (map.UserId == userIdClaim)
+                    {
+                        feature.Properties.Add("owner", true);
                     }
                     if (!string.IsNullOrWhiteSpace(r.OverrideColour))
                         feature.Properties.Add("stroke", r.OverrideColour);

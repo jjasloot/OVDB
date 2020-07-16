@@ -165,5 +165,6 @@
 	"FILTER.EXPLAINDATES":"Data hebben voorrang boven gekozen jaren",
 	"FILTER.STARTDATE":"Vanaf",
 	"FILTER.ENDDATE":"Tot",
-	"ROUTESLIST.INSTANCES":"Ritten"
+  "ROUTESLIST.INSTANCES": "Ritten",
+  "INSTANCES.EDITINSTANCE": "Ritten bewerken"
 }
