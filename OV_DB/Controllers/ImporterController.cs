@@ -206,7 +206,7 @@ namespace OV_DB.Controllers
                 element.PotentialErrors = relation.Tags["fixme"];
             if (relation.Tags.ContainsKey("colour"))
                 element.Colour = relation.Tags["colour"];
-            SortListOfList(lists);
+            lists = SortListOfList(lists);
             var oneList = lists.SelectMany(i => i).ToList();
             var pointts2 = oneList.Select(l => l.Longitude.ToString(CultureInfo.InvariantCulture) + ", " + l.Latitude.ToString(CultureInfo.InvariantCulture)).ToList();
             var pointts2String = string.Join("\n", pointts2);
@@ -281,11 +281,11 @@ namespace OV_DB.Controllers
 
 
 
-        private void SortListOfList(List<List<IPosition>> test)
+        private List<List<IPosition>> SortListOfList(List<List<IPosition>> test)
         {
             if (test.Count < 2)
             {
-                return;
+                return test;
             }
             test = test.Where(t => t.Count > 0).ToList();
 
@@ -322,7 +322,7 @@ namespace OV_DB.Controllers
                             if (startIndex > endIndex)
                             {
                                 points.AddRange(test[index].Skip(startIndex));
-                                points.AddRange(test[index].Take(endIndex));
+                                points.AddRange(test[index].Take(endIndex + 1));
                             }
                             else
                             {
@@ -366,7 +366,7 @@ namespace OV_DB.Controllers
                     Console.WriteLine("Hier");
                 }
             }
-
+            return test;
         }
 
         private async Task<OSM> CreateCache(int id, ICacheEntry entry, DateTime? dateTime)
