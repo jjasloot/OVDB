@@ -1,3 +1,7 @@
+2020-07-16:
+- Eigenschappen toevoegen aan ritten
+- Bewerken en rit bewerken knop toegevoegd aan kaart
+
 2020-07-12:
 - Filteren met datumpickers
 - Laatste maand -> Huidige maand
