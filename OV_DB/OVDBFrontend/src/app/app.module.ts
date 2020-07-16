@@ -70,6 +70,9 @@ import { MapInstanceDialogComponent } from './map-instance-dialog/map-instance-d
 import { StatsComponent } from './stats/stats.component';
 import 'hammerjs';
 import 'chartjs-plugin-zoom';
+import {MatAutocompleteModule} from '@angular/material/autocomplete';
+
+
 registerLocaleData(localeNl, 'nl-NL');
 export function HttpLoaderFactory(http: HttpClient) {
   return new TranslateHttpLoader(http);
@@ -147,7 +150,8 @@ export function HttpLoaderFactory(http: HttpClient) {
         deps: [HttpClient]
       }
     }),
-    ChartsModule
+    ChartsModule,
+    MatAutocompleteModule
   ],
   providers: [
     { provide: MAT_MOMENT_DATE_ADAPTER_OPTIONS, useValue: { useUtc: true } },

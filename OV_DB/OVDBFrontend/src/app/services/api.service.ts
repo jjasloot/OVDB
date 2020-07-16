@@ -270,4 +270,10 @@ export class ApiService {
     return this.httpClient.get(url);
   }
 
+  getAutocompleteForTags() {
+    const url = environment.backend + 'api/routes/instances/tags/autocomplete';
+
+    return this.httpClient.get<string[]>(url);
+  }
+
 }

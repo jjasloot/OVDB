@@ -1000,5 +1000,24 @@ namespace OV_DB.Controllers
 
             return Ok();
         }
+
+        [HttpGet("instances/tags/autocomplete")]
+        public async Task<ActionResult> AutocompleteTags()
+        {
+            var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value ?? "-1");
+            if (userIdClaim < 0)
+            {
+                return Forbid();
+            }
+            var tags = await _context.RouteInstanceProperties
+                .Where(rip => rip.RouteInstance.Route.RouteMaps.Any(rm => rm.Map.UserId == userIdClaim))
+                .GroupBy(rip => rip.Key)
+                .Select(a => new { a.Key, Count = a.Count() })
+                .OrderByDescending(a => a.Count)
+                .Select(a => a.Key)
+                .ToListAsync();
+
+            return Ok(tags);
+        }
     }
 }

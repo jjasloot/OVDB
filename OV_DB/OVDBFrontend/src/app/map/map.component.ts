@@ -10,6 +10,7 @@ import { MapFilterComponent } from '../map-filter/map-filter.component';
 import { TranslateService } from '@ngx-translate/core';
 import { TranslationService } from '../services/translation.service';
 import { Router, ActivatedRoute } from '@angular/router';
+import { MapInstanceDialogComponent } from '../map-instance-dialog/map-instance-dialog.component';
 
 @Component({
   selector: 'app-map',
@@ -328,7 +329,7 @@ export class MapComponent implements OnInit, AfterViewInit {
     });
   }
 
-  showDialog() {
+  showDialog(id: number) {
     const limits = this.selectedYears.map(s => {
       return {
         start: moment().year(s).startOf('year'),
@@ -341,7 +342,12 @@ export class MapComponent implements OnInit, AfterViewInit {
         end: moment(this.to)
       });
     }
-
+    const dialog = this.dialog.open(MapInstanceDialogComponent, {
+      data: {
+        id, limits
+      },
+      width:'50%'
+    });
   }
 }
 

@@ -7,6 +7,7 @@ import { RouteInstanceProperty } from 'src/app/models/routeInstanceProperty.mode
 import { MatTable } from '@angular/material/table';
 import { TranslationService } from 'src/app/services/translation.service';
 import { DateAdapter } from '@angular/material/core';
+import { Observable, Subject, BehaviorSubject } from 'rxjs';
 
 @Component({
   selector: 'app-route-instances-edit',
@@ -17,7 +18,8 @@ export class RouteInstancesEditComponent implements OnInit {
   @ViewChild('table') table: MatTable<RouteInstanceProperty>;
   instance: RouteInstance;
   new = false;
-
+  options = ['test', 'test2']
+  filteredOptions: BehaviorSubject<string[]> = new BehaviorSubject<string[]>(this.options);
   constructor(
     public dialogRef: MatDialogRef<RouteInstancesEditComponent>,
     private translateService: TranslateService,
@@ -37,7 +39,17 @@ export class RouteInstancesEditComponent implements OnInit {
 
   ngOnInit() {
     this.dateAdapter.setLocale(this.translationService.dateLocale);
+    this.apiService.getAutocompleteForTags().subscribe(data => {
+      this.options = data;
+      this.updateSuggestions('');
+    })
+  }
+  updateSuggestions(value: string) {
+    const filterValue = value.toLowerCase();
+    const filterBasedOnExisting = this.options.filter(option => !this.instance.routeInstanceProperties.some(x => x.key === option));
 
+    const filterBasedOnTyping = filterBasedOnExisting.filter(option => option.toLowerCase().indexOf(filterValue) === 0);
+    this.filteredOptions.next(filterBasedOnTyping);
   }
 
   cancel() {

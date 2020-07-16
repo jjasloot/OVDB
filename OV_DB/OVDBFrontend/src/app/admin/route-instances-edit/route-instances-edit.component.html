@@ -9,18 +9,23 @@
         <mat-datepicker-toggle matSuffix [for]="pickerDate"></mat-datepicker-toggle>
         <mat-datepicker #pickerDate></mat-datepicker>
     </mat-form-field>
-    <!-- <mat-table [dataSource]="instance.routeInstanceProperties" #table>
+    <mat-table [dataSource]="instance.routeInstanceProperties" #table>
         <ng-container matColumnDef="key">
             <mat-header-cell *matHeaderCellDef> {{'INSTANCE.KEY'|translate}} </mat-header-cell>
             <mat-cell *matCellDef="let row">
                 <mat-form-field>
-                    <input matInput [(ngModel)]="row.key">
+                    <input matInput [(ngModel)]="row.key" [matAutocomplete]="auto" (focus)="updateSuggestions($event.target.value)" (input)="updateSuggestions($event.target.value)">
+                    <mat-autocomplete autoActiveFirstOption #auto="matAutocomplete">
+                        <mat-option *ngFor="let option of filteredOptions|async" [value]="option">
+                            {{option}}
+                        </mat-option>
+                    </mat-autocomplete>
                 </mat-form-field>
             </mat-cell>
             <mat-footer-cell *matFooterCellDef>
                 <button mat-icon-button (click)="addRow() " [disabled]="canAddNewRow">
-                <mat-icon>add</mat-icon>
-              </button>
+          <mat-icon>add</mat-icon>
+        </button>
             </mat-footer-cell>
         </ng-container>
 
@@ -61,10 +66,10 @@
             </mat-cell>
 
         </ng-container>
-    <mat-header-row *matHeaderRowDef="['key', 'string', 'date', 'bool','buttons']"></mat-header-row>
-    <mat-row *matRowDef="let row; columns: ['key', 'string', 'date', 'bool','buttons']"></mat-row>
-    <mat-footer-row *matFooterRowDef="['key']"></mat-footer-row>
-    </mat-table> -->
+        <mat-header-row *matHeaderRowDef="['key', 'string', 'date', 'bool','buttons']"></mat-header-row>
+        <mat-row *matRowDef="let row; columns: ['key', 'string', 'date', 'bool','buttons']"></mat-row>
+        <mat-footer-row *matFooterRowDef="['key']"></mat-footer-row>
+    </mat-table>
 </div>
 <div mat-dialog-actions>
     <button mat-button (click)="cancel()">{{'CANCEL'|translate}}</button>
