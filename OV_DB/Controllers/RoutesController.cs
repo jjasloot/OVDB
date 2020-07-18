@@ -872,18 +872,17 @@ namespace OV_DB.Controllers
         }
 
         [HttpGet("instances/{id}")]
+        [AllowAnonymous]
         public async Task<ActionResult<Route>> GetRouteInstances(int id, [FromQuery] DateTime from, [FromQuery] DateTime to)
         {
-            var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value ?? "-1");
-            if (userIdClaim < 0)
-            {
-                return Forbid();
-            }
+            Claim claim = User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier);
+            var userIdClaim = int.Parse(claim != null ? claim.Value : "-1");
             var route = await _context.Routes
               .Where(r => r.RouteId == id)
               .Include(r => r.RouteType)
               .Include(r => r.RouteInstances)
               .ThenInclude(ri => ri.RouteInstanceProperties)
+              .Where(r => r.RouteMaps.Any(rm => !string.IsNullOrWhiteSpace(rm.Map.SharingLinkName) || rm.Map.UserId == userIdClaim))
               .SingleOrDefaultAsync();
             if (route == null)
             {

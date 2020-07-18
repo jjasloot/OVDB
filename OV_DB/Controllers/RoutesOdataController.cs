@@ -35,7 +35,8 @@ namespace OV_DB.Controllers
         [Produces("application/json")]
         public async Task<ActionResult<FeatureCollection>> GetGeoJsonAsync(string id, ODataQueryOptions<Route> q, [FromQuery] string language)
         {
-            var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value ?? "-1");
+            var userClaim = User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier);
+            var userIdClaim = int.Parse(userClaim != null ? userClaim.Value : "-1");
 
             var guid = Guid.Parse(id);
             var map = await _context.Maps.SingleOrDefaultAsync(m => m.MapGuid == guid);
