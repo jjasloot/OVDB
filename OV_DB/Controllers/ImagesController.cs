@@ -134,7 +134,7 @@ namespace OV_DB.Controllers
 
                 graphics.DrawString(stringToDisplay, font, brush, new PointF(column * totalColumnWidth, postion));
 
-                float spaceNeeded = graphics.MeasureString($"{method.Distance:N0} km", font).Width;
+                spaceNeeded = graphics.MeasureString($"{method.Distance:N0} km", font).Width;
                 graphics.DrawString($"{method.Distance:N0} km", font, brush, new PointF((columnwidth + (distanceColumn - spaceNeeded)) + (column * totalColumnWidth), postion));
                 if (month >= 0)
                 {
@@ -154,7 +154,7 @@ namespace OV_DB.Controllers
             {
                 using var pen = new Pen(Color.Black);
                 graphics.DrawLine(pen, new Point(1, height - 20), new Point((int)(columnwidth + distanceColumn * 2), height - 20));
-                float spaceNeeded = graphics.MeasureString($"{total:N0} km", font).Width;
+                spaceNeeded = graphics.MeasureString($"{total:N0} km", font).Width;
                 graphics.DrawString($"Totaal: ", font, brush, new PointF(0, height - 20));
                 graphics.DrawString($"{total:N0} km", font, brush, new PointF(columnwidth + (distanceColumn - spaceNeeded), height - 20));
                 graphics.DrawString($"{monthTotal:N0} km", font, brush, new PointF(columnwidth + distanceColumn, height - 20));
