@@ -49,7 +49,7 @@ namespace OV_DB.Controllers
             var query = _context.RouteInstances
      .Where(ri => ri.Route.RouteMaps.Any(rm => rm.Map.MapGuid == guid));
 
-            query = query.Where(ri => ri.Date.Year == DateTime.Now.Year - 1);
+            query = query.Where(ri => ri.Date.Year == DateTime.Now.Year);
 
 
             var x = await query.Select(ri => new
@@ -68,17 +68,17 @@ namespace OV_DB.Controllers
             using var bitmap = new Bitmap(width, height, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
             using var graphics = Graphics.FromImage(bitmap);
             using var brush = new SolidBrush(Color.Black);
-            using var font = new Font("Calibri", 12);
-            using var smallfont = new Font("Calibri", 10);
+            using var font = new Font("Ubuntu", 12);
+            using var smallfont = new Font("Ubuntu", 10);
             using var greenbrush = new SolidBrush(Color.Green);
             using var graybrush = new SolidBrush(Color.Gray);
-            graphics.DrawString("ovdb.infinityx.nl", font, greenbrush, new PointF(width - 110, height - 20));
+            var spaceNeeded = graphics.MeasureString("ovdb.infinityx.nl", font).Width;
+            graphics.DrawString("ovdb.infinityx.nl", font, greenbrush, new PointF(width - spaceNeeded, height - 20));
 
             var postion = 0;
             var columnwidth = 10.0f;
             var distanceColumn = 10.0f;
             var distanceMonthColumn = 10.0f;
-            var skipped = false;
 
             if (!string.IsNullOrWhiteSpace(title))
             {
@@ -92,7 +92,7 @@ namespace OV_DB.Controllers
 
                 string name = (!string.IsNullOrWhiteSpace(method.NameNL) ? method.NameNL : method.Name);
                 string stringToDisplay = $"{name}: ";
-                float spaceNeeded = graphics.MeasureString(stringToDisplay, font).Width;
+                spaceNeeded = graphics.MeasureString(stringToDisplay, font).Width;
                 columnwidth = Math.Max(columnwidth, spaceNeeded);
                 distanceColumn = Math.Max(distanceColumn, graphics.MeasureString($"{method.Distance:N0} km ", font).Width);
             }
