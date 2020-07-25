@@ -134,11 +134,11 @@ namespace OV_DB.Controllers
 
                 graphics.DrawString(stringToDisplay, font, brush, new PointF(column * totalColumnWidth, postion));
 
-                spaceNeeded = graphics.MeasureString($"{method.Distance:N0} km", font).Width;
-                graphics.DrawString($"{method.Distance:N0} km", font, brush, new PointF((columnwidth + (distanceColumn - spaceNeeded)) + (column * totalColumnWidth), postion));
+                spaceNeeded = graphics.MeasureString($"{method.Distance:N0} km ", font).Width;
+                graphics.DrawString($"{method.Distance:N0} km ", font, brush, new PointF((columnwidth + (distanceColumn - spaceNeeded)) + (column * totalColumnWidth), postion));
                 if (month >= 0)
                 {
-                    string toShow = $"{x4[month].Distance:N0} km";
+                    string toShow = $"{x4[month].Distance:N0} km ";
                     spaceNeeded = graphics.MeasureString(toShow, font).Width;
 
                     graphics.DrawString(toShow, font, brush, new PointF((columnwidth + distanceColumn + (distanceMonthColumn - spaceNeeded)) + (column * totalColumnWidth), postion));
