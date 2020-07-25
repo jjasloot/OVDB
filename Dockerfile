@@ -1,4 +1,5 @@
 FROM jjasloot/build AS build-env
+RUN apt-get update && apt-get install -y libc6-dev libgdiplus
 WORKDIR /app
 ARG UserAgent
 ARG JWTSigningKey
