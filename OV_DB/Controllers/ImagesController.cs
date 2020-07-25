@@ -73,7 +73,7 @@ namespace OV_DB.Controllers
             using var greenbrush = new SolidBrush(Color.Green);
             using var graybrush = new SolidBrush(Color.Gray);
             var spaceNeeded = graphics.MeasureString("ovdb.infinityx.nl", font).Width;
-            graphics.DrawString("ovdb.infinityx.nl", font, greenbrush, new PointF(width - spaceNeeded, height - 20));
+            graphics.DrawString("ovdb.infinityx.nl", font, greenbrush, new PointF(width - spaceNeeded - 8, height - 20));
 
             var postion = 0;
             var columnwidth = 10.0f;
@@ -93,8 +93,8 @@ namespace OV_DB.Controllers
                 string name = (!string.IsNullOrWhiteSpace(method.NameNL) ? method.NameNL : method.Name);
                 string stringToDisplay = $"{name}: ";
                 spaceNeeded = graphics.MeasureString(stringToDisplay, font).Width;
-                columnwidth = Math.Max(columnwidth, spaceNeeded);
-                distanceColumn = Math.Max(distanceColumn, graphics.MeasureString($"{method.Distance:N0} km ", font).Width);
+                columnwidth = Math.Max(columnwidth, spaceNeeded + 8);
+                distanceColumn = Math.Max(distanceColumn, graphics.MeasureString($"{method.Distance:N0} km ", font).Width + 8);
             }
             foreach (var method in x4)
             {
