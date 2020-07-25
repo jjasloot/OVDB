@@ -14,5 +14,5 @@ WORKDIR /app
 ENV UserAgent=$UserAgent
 ENV JWTSigningKey=$JWTSigningKey
 COPY --from=build-env /app/out .
-SET LD_DEBUG=all
+ENV LD_DEBUG=all
 ENTRYPOINT ["dotnet", "OV_DB.dll"]
