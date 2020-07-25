@@ -1,5 +1,5 @@
 FROM jjasloot/build AS build-env
-RUN apt-get update &&  apt-get install -y libc6-dev libgdiplus glibc-locale-source libx11-dev
+RUN apt-get update &&  apt-get install -y libc6-dev libgdiplus libx11-dev
 WORKDIR /app
 ARG UserAgent
 ARG JWTSigningKey
@@ -14,4 +14,5 @@ WORKDIR /app
 ENV UserAgent=$UserAgent
 ENV JWTSigningKey=$JWTSigningKey
 COPY --from=build-env /app/out .
+SET LD_DEBUG=all
 ENTRYPOINT ["dotnet", "OV_DB.dll"]
