@@ -186,7 +186,7 @@ export class MapComponent implements OnInit, AfterViewInit {
       if (!!this.to && !!this.from) {
         filter += filter += '(RouteInstances/any(tag: tag/Date ge '
           + this.from.format('YYYY-MM-DD')
-          + ')) and (RouteInstances/any(tag: tag/Date lt '
+          + ' and tag/Date lt '
           + this.to.format('YYYY-MM-DD') + '))  and ';
       }
       if (this.selectedCountries && this.selectedCountries.length > 0) {
@@ -221,7 +221,7 @@ export class MapComponent implements OnInit, AfterViewInit {
 
             filter += '(RouteInstances/any(tag: tag/Date ge '
               + start.format('YYYY-MM-DD')
-              + ')) and (RouteInstances/any(tag: tag/Date lt '
+              + ' and tag/Date lt '
               + end.format('YYYY-MM-DD') + ')) or ';
           }
         });
