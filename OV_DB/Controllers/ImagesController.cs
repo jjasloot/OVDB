@@ -141,12 +141,12 @@ namespace OV_DB.Controllers
                     string toShow = $"{x4[month].Distance:N0} km ";
                     spaceNeeded = graphics.MeasureString(toShow, font).Width;
 
-                    graphics.DrawString(toShow, font, brush, new PointF((columnwidth + distanceColumn + (distanceMonthColumn - spaceNeeded)) + (column * totalColumnWidth), postion));
+                    graphics.DrawString(toShow, font, brush, new PointF((columnwidth + distanceColumn + (distanceMonthColumn - spaceNeeded)) + 3 + (column * totalColumnWidth), postion));
                 }
                 else
                 {
                     spaceNeeded = graphics.MeasureString("0 km", font).Width;
-                    graphics.DrawString("0 km", font, brush, new PointF((columnwidth + distanceColumn + (distanceMonthColumn - spaceNeeded)) + (column * totalColumnWidth), postion));
+                    graphics.DrawString("0 km", font, brush, new PointF((columnwidth + distanceColumn + (distanceMonthColumn - spaceNeeded)) + 3 + (column * totalColumnWidth), postion));
                 }
                 postion += 20;
             }

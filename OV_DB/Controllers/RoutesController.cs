@@ -369,9 +369,9 @@ namespace OV_DB.Controllers
             var parser = new Parser();
             parser.ParseString(body, false);
             var kml = parser.Root as Kml;
-            var placeMarks = kml.Flatten().Where(e => e.GetType() == typeof(Placemark)).ToList();
+            var placeMarks = kml.Flatten().Where(e => e.GetType() == typeof(Placemark)).Select(p => (Placemark)p).ToList();
             var routes = new List<Route>();
-            foreach (Placemark placeMark in placeMarks)
+            foreach (Placemark placeMark in placeMarks.Where(pl => pl.Geometry is LineString))
             {
                 var child = (LineString)placeMark.Flatten().Single(e => e.GetType() == typeof(LineString));
                 var coordinates = child.Coordinates.Select(c => "" + c.Longitude.ToString(CultureInfo.InvariantCulture) + "," + c.Latitude.ToString(CultureInfo.InvariantCulture)).ToList();
@@ -526,11 +526,15 @@ namespace OV_DB.Controllers
         {
 
             var gpxReader = new Gpx.GpxReader(stream.BaseStream);
-            var read = gpxReader.Read();
-            if (!read)
+            do
             {
-                throw new Exception("Cannot read file");
-            }
+                var read = gpxReader.Read();
+                if (!read)
+                {
+                    throw new Exception("Cannot read file");
+                }
+            } while (gpxReader.ObjectType != Gpx.GpxObjectType.Track);
+
             var name = gpxReader.Track.Name;
             if (string.Equals(name, "Tessellated", StringComparison.OrdinalIgnoreCase))
             {
