@@ -141,12 +141,12 @@ namespace OV_DB.Controllers
                     string toShow = $"{x4[month].Distance:N0} km ";
                     spaceNeeded = graphics.MeasureString(toShow, font).Width;
 
-                    graphics.DrawString(toShow, font, brush, new PointF((columnwidth + distanceColumn + (distanceMonthColumn - spaceNeeded)) + 3 + (column * totalColumnWidth), postion));
+                    graphics.DrawString(toShow, font, brush, new PointF((columnwidth + distanceColumn + (distanceMonthColumn - spaceNeeded)) + 8 + (column * totalColumnWidth), postion));
                 }
                 else
                 {
                     spaceNeeded = graphics.MeasureString("0 km", font).Width;
-                    graphics.DrawString("0 km", font, brush, new PointF((columnwidth + distanceColumn + (distanceMonthColumn - spaceNeeded)) + 3 + (column * totalColumnWidth), postion));
+                    graphics.DrawString("0 km", font, brush, new PointF((columnwidth + distanceColumn + (distanceMonthColumn - spaceNeeded)) + 8 + (column * totalColumnWidth), postion));
                 }
                 postion += 20;
             }
@@ -157,7 +157,7 @@ namespace OV_DB.Controllers
                 spaceNeeded = graphics.MeasureString($"{total:N0} km", font).Width;
                 graphics.DrawString($"Totaal: ", font, brush, new PointF(0, height - 20));
                 graphics.DrawString($"{total:N0} km", font, brush, new PointF(columnwidth + (distanceColumn - spaceNeeded), height - 20));
-                graphics.DrawString($"{monthTotal:N0} km", font, brush, new PointF(columnwidth + distanceColumn, height - 20));
+                graphics.DrawString($"{monthTotal:N0} km", font, brush, new PointF(columnwidth + distanceColumn + 8, height - 20));
                 postion += 20;
             }
 
