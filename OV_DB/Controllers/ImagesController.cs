@@ -31,20 +31,20 @@ namespace OV_DB.Controllers
 
 
         [HttpGet("{guid:Guid}")]
-        public async Task<ActionResult> GetImageAsync(Guid guid, [FromQuery] int width = 300, [FromQuery] int height = 100, [FromQuery] string title = null, [FromQuery] bool includeTotal = false)
+        public async Task<ActionResult> GetImageAsync(Guid guid, [FromQuery] int width = 300, [FromQuery] int height = 100, [FromQuery] string title = null, [FromQuery] bool includeTotal = false, [FromQuery] string language = "NL")
         {
-            var id = "image|" + guid.ToString() + "|" + width + "|" + height + "|" + includeTotal + "|" + title;
+            var id = "image|" + guid.ToString() + "|" + width + "|" + height + "|" + includeTotal + "|" + title + "|" + language;
 
             var fileContents = await _memoryCache.GetOrCreateAsync(id, async entry =>
             {
                 entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(15);
-                return await GenerateImageAsync(width, height, title, guid, includeTotal);
+                return await GenerateImageAsync(width, height, title, guid, includeTotal, language);
             });
             //var fileContents = await GenerateImageAsync(width, height, title, guid, includeTotal);
             return File(fileContents, "image/png");
         }
 
-        private async Task<byte[]> GenerateImageAsync(int width, int height, string title, Guid guid, bool includeTotal)
+        private async Task<byte[]> GenerateImageAsync(int width, int height, string title, Guid guid, bool includeTotal, string language)
         {
             var query = _context.RouteInstances
      .Where(ri => ri.Route.RouteMaps.Any(rm => rm.Map.MapGuid == guid));
@@ -90,7 +90,7 @@ namespace OV_DB.Controllers
             foreach (var method in x2)
             {
 
-                string name = (!string.IsNullOrWhiteSpace(method.NameNL) ? method.NameNL : method.Name);
+                string name = (!string.IsNullOrWhiteSpace(method.NameNL) && string.Equals(language, "NL", StringComparison.OrdinalIgnoreCase) ? method.NameNL : method.Name);
                 string stringToDisplay = $"{name}: ";
                 spaceNeeded = graphics.MeasureString(stringToDisplay, font).Width;
                 columnwidth = Math.Max(columnwidth, spaceNeeded + 8);
@@ -127,7 +127,7 @@ namespace OV_DB.Controllers
                         postion = 20;
                     }
                 }
-                string name = !string.IsNullOrWhiteSpace(method.NameNL) ? method.NameNL : method.Name;
+                string name = !string.IsNullOrWhiteSpace(method.NameNL) && string.Equals(language, "NL", StringComparison.OrdinalIgnoreCase) ? method.NameNL : method.Name;
                 string stringToDisplay = $"{name}: ";
                 var month = x4.FindIndex(x => x.Name == method.Name);
 
@@ -155,7 +155,14 @@ namespace OV_DB.Controllers
                 using var pen = new Pen(Color.Black);
                 graphics.DrawLine(pen, new Point(1, height - 20), new Point((int)(columnwidth + distanceColumn * 2), height - 20));
                 spaceNeeded = graphics.MeasureString($"{total:N0} km", font).Width;
-                graphics.DrawString($"Totaal: ", font, brush, new PointF(0, height - 20));
+                if (string.Equals(language, "NL", StringComparison.OrdinalIgnoreCase))
+                {
+                    graphics.DrawString($"Totaal: ", font, brush, new PointF(0, height - 20));
+                }
+                else
+                {
+                    graphics.DrawString($"Total: ", font, brush, new PointF(0, height - 20));
+                }
                 graphics.DrawString($"{total:N0} km", font, brush, new PointF(columnwidth + (distanceColumn - spaceNeeded), height - 20));
                 graphics.DrawString($"{monthTotal:N0} km", font, brush, new PointF(columnwidth + distanceColumn + 8, height - 20));
                 postion += 20;
