@@ -11,6 +11,26 @@
 }
 
 button:not(.mat-fab) {
-    min-width: 100px;
-    margin: 0 12px;
+    margin: 0 8px;
+}
+
+.desktop {
+    display: none;
+}
+
+.mobile {
+    display: unset;
+}
+
+@media (min-width:600px) {
+    .desktop {
+        display: unset;
+    }
+    .mobile {
+        display: none;
+    }
+    button:not(.mat-fab) {
+        min-width: 100px;
+        margin: 0 12px;
+    }
 }

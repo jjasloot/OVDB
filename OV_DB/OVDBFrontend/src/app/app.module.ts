@@ -70,8 +70,13 @@ import { MapInstanceDialogComponent } from './map-instance-dialog/map-instance-d
 import { StatsComponent } from './stats/stats.component';
 import 'hammerjs';
 import 'chartjs-plugin-zoom';
-import {MatAutocompleteModule} from '@angular/material/autocomplete';
+import { MatAutocompleteModule } from '@angular/material/autocomplete';
+import { MapsListBottomsheetComponent } from './admin/maps-list/maps-list-bottomsheet/maps-list-bottomsheet.component';
 
+
+import { MatBottomSheetModule } from '@angular/material/bottom-sheet';
+import { RoutesListBottomsheetComponent } from './admin/routes-list/routes-list-bottomsheet/routes-list-bottomsheet.component';
+import {MatCardModule} from '@angular/material/card';
 
 registerLocaleData(localeNl, 'nl-NL');
 export function HttpLoaderFactory(http: HttpClient) {
@@ -114,6 +119,8 @@ export function HttpLoaderFactory(http: HttpClient) {
     RouteInstancesEditComponent,
     MapInstanceDialogComponent,
     StatsComponent,
+    MapsListBottomsheetComponent,
+    RoutesListBottomsheetComponent,
   ],
   imports: [
     BrowserModule,
@@ -151,7 +158,9 @@ export function HttpLoaderFactory(http: HttpClient) {
       }
     }),
     ChartsModule,
-    MatAutocompleteModule
+    MatAutocompleteModule,
+    MatBottomSheetModule,
+    MatCardModule
   ],
   providers: [
     { provide: MAT_MOMENT_DATE_ADAPTER_OPTIONS, useValue: { useUtc: true } },

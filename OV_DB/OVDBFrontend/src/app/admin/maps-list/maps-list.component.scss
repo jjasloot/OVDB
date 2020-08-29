@@ -2,7 +2,7 @@
     position: fixed;
     bottom: 50px;
     right: 50px;
-    z-index: 10000;
+    z-index: 500;
     -webkit-transform: translateZ(0);
     transform: translateZ(0);
 }
@@ -20,4 +20,21 @@ button:not(.mat-fab) {
     position: fixed;
     bottom: 50px;
     right: 150px;
+}
+
+.desktop {
+    display: none;
+}
+
+.mobile {
+    display: unset;
+}
+
+@media (min-width:600px) {
+    .desktop {
+        display: unset;
+    }
+    .mobile {
+        display: none;
+    }
 }

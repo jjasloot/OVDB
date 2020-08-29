@@ -1,0 +1,14 @@
+<mat-action-list>
+    <button mat-list-item color="primary" (click)="view()">
+  <mat-icon matListIcon>pageview</mat-icon>
+  <span matLine> {{'HOME.VIEW'|translate}}</span>
+</button>
+    <button mat-list-item (click)="edit()">
+    <mat-icon matListIcon>create</mat-icon>
+    <span matLine> {{'EDIT'|translate}}</span>
+</button>
+    <button mat-list-item color="error" (click)="instances()">
+  <mat-icon matListIcon>list</mat-icon>
+  <span matLine> {{'ROUTESLIST.INSTANCES'|translate}}</span>
+</button>
+</mat-action-list>

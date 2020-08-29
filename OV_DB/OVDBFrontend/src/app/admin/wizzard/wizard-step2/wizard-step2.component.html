@@ -1,12 +1,23 @@
-<div *ngIf="!data">
-    <mat-spinner></mat-spinner>
-
-    {{'IMPORTER.THISMAYTAKEAWHILE'|translate}}
-</div>
 <button mat-icon-button (click)="goback()" *ngIf="data">
-<mat-icon>arrow_back</mat-icon>
+  <mat-icon>arrow_back</mat-icon>
 </button>
-<div class="row" *ngIf="data">
+
+<div class="loading" *ngIf="loading">
+
+    <mat-card>
+        {{'IMPORTER.THISMAYTAKEAWHILE'|translate}}
+        <mat-spinner></mat-spinner>
+    </mat-card>
+
+</div>
+
+<div class="loading" *ngIf="error">
+    <mat-card>
+        {{'ERROR'|translate}}
+    </mat-card>
+
+</div>
+<div class="content" *ngIf="data">
     <div style="flex: 3">
         <div class="map" leaflet style="height: 350px;" [leafletOptions]="options" [leafletLayers]="layers" [leafletFitBounds]="bounds">
         </div>
@@ -28,10 +39,10 @@
     </div>
     <div style="flex: 2">
         <div class="buttons">
-            <button mat-raised-button style="margin-right: 8px;" (click)="cut()">{{'IMPORTER.CUT'|translate}}</button>
-            <button mat-raised-button style="margin-right: 8px;" (click)="uncut()">{{'IMPORTER.RESTORE'|translate}}</button>
+            <button mat-raised-button (click)="cut()">{{'IMPORTER.CUT'|translate}}</button>
+            <button mat-raised-button (click)="uncut()">{{'IMPORTER.RESTORE'|translate}}</button>
 
-            <button mat-raised-button style="margin-right: 8px;" (click)="save()" color="primary">{{'IMPORTER.SAVE'|translate}}</button>
+            <button mat-raised-button (click)="save()" color="primary">{{'IMPORTER.SAVE'|translate}}</button>
 
             <button mat-raised-button color="primary" (click)="export()">{{'IMPORTER.EXPORT'|translate}}</button>
 

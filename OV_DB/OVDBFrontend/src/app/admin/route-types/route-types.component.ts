@@ -41,7 +41,7 @@ export class RouteTypesComponent implements OnInit {
 
   add() {
     const dialogRef = this.dialog.open(RouteTypesAddComponent, {
-      width: '50%',
+      width: this.getWidth(),
     });
     dialogRef.afterClosed().subscribe((result: boolean) => {
       if (!!result) {
@@ -51,7 +51,7 @@ export class RouteTypesComponent implements OnInit {
   }
   sort() {
     const dialogRef = this.dialog.open(SortItemsDialogComponent, {
-      width: '50%',
+      width: this.getWidth(),
       data: {
         list: Object.assign([], this.data),
         title: this.translateService.instant('ROUTETYPES.SORTTITLE')
@@ -66,13 +66,13 @@ export class RouteTypesComponent implements OnInit {
 
     });
   }
-  name(routeType: RouteType){
+  name(routeType: RouteType) {
     return this.translationService.getNameForItem(routeType);
   }
 
   edit(routeType: RouteType) {
     const dialogRef = this.dialog.open(RouteTypesAddComponent, {
-      width: '50%',
+      width: this.getWidth(),
       data: { routeType }
     });
     dialogRef.afterClosed().subscribe((result: boolean) => {
@@ -83,7 +83,7 @@ export class RouteTypesComponent implements OnInit {
   }
   delete(routeType: RouteType) {
     const dialogRef = this.dialog.open(AreYouSureDialogComponent, {
-      width: '50%',
+      width: this.getWidth(),
       data: {
         item: this.translateService.instant('ROUTETYPES.DELETEFRONT') + ' ' + routeType.name + ' ' + this.translateService.instant('ROUTETYPES.DELETEBACK')
       }
@@ -96,5 +96,13 @@ export class RouteTypesComponent implements OnInit {
         });
       }
     });
+  }
+
+  private getWidth() {
+    let width = '90%';
+    if (window.innerWidth > 600) {
+      width = '50%';
+    }
+    return width;
   }
 }

@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild, AfterViewInit, ElementRef } from '@angular/core';
+import { Component, OnInit, ViewChild, AfterViewInit, ElementRef, HostListener } from '@angular/core';
 import { ApiService } from 'src/app/services/api.service';
 import { Route } from 'src/app/models/route.model';
 import { Router } from '@angular/router';
@@ -15,6 +15,9 @@ import { TranslationService } from 'src/app/services/translation.service';
 import { MatCheckboxChange } from '@angular/material/checkbox';
 import { MatDialog } from '@angular/material/dialog';
 import { EditMultipleComponent } from '../edit-multiple/edit-multiple.component';
+import { RoutesListBottomsheetComponent } from './routes-list-bottomsheet/routes-list-bottomsheet.component';
+import { RoutesListActions } from 'src/app/models/routes-list-actions.enum';
+import { MatBottomSheet } from '@angular/material/bottom-sheet';
 
 @Component({
   selector: 'app-routes-list',
@@ -31,23 +34,37 @@ export class RoutesListComponent implements OnInit, AfterViewInit {
   @ViewChild(MatPaginator, { static: true }) paginator: MatPaginator;
   @ViewChild(MatSort) sort: MatSort;
   @ViewChild('input') input: ElementRef;
-
   count: number;
+  @HostListener('window:resize', ['$event'])
+  onResize(event) {
+    this.restrictColumnsOnWidth();
+  }
 
   constructor(
     private apiService: ApiService,
     private router: Router,
     private translateService: TranslateService,
     private translationService: TranslationService,
-    private dialog: MatDialog) { }
+    private dialog: MatDialog,
+    private bottomSheet: MatBottomSheet) { }
 
   ngOnInit() {
     this.loadCount();
     this.dataSource = new RoutesDataSource(this.apiService);
     this.dataSource.loadRoutes();
     this.loading = true;
+    this.restrictColumnsOnWidth();
 
+  }
 
+  restrictColumnsOnWidth() {
+    if (window.innerWidth > 1200) {
+      this.displayedColumns = ['select', 'name', 'date', 'instances', 'maps', 'type', 'edit'];
+
+    } else {
+      this.displayedColumns = ['select', 'name', 'type', 'edit'];
+
+    }
   }
 
   private loadCount() {
@@ -120,6 +137,23 @@ export class RoutesListComponent implements OnInit, AfterViewInit {
   name(item) {
     return this.translationService.getNameForItem(item);
   }
+  openBottomSheet(route: Route): void {
+    const ref = this.bottomSheet.open(RoutesListBottomsheetComponent);
+    ref.afterDismissed().subscribe((action: RoutesListActions) => {
+      switch (action) {
+        case RoutesListActions.View:
+          this.view(route);
+          return;
+        case RoutesListActions.Instances:
+          this.instances(route);
+          return;
+        case RoutesListActions.Edit:
+          this.edit(route.routeId);
+          return;
+      }
+    })
+  }
+
 
   view(route: Route) {
     this.router.navigate(['/route', route.routeId, route.share]);
@@ -139,7 +173,7 @@ export class RoutesListComponent implements OnInit, AfterViewInit {
 
   editMultiple() {
     const dialog = this.dialog.open(EditMultipleComponent, {
-      width: '80%',
+      width: this.getWidth(),
       data: {
         selectedRoutes: this.selectedRoutes
       }
@@ -160,5 +194,13 @@ export class RoutesListComponent implements OnInit, AfterViewInit {
 
   instances(route: Route) {
     this.router.navigate(['/', 'admin', 'routes', 'instances', route.routeId]);
+  }
+
+  private getWidth() {
+    let width = '90%';
+    if (window.innerWidth > 600) {
+      width = '80%';
+    }
+    return width;
   }
 }

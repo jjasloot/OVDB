@@ -8,6 +8,9 @@ import { AreYouSureDialogComponent } from 'src/app/are-you-sure-dialog/are-you-s
 import { MapsAddComponent } from '../maps-add/maps-add.component';
 import { TranslateService } from '@ngx-translate/core';
 import { SortItemsDialogComponent } from '../sort-items-dialog/sort-items-dialog.component';
+import { MatBottomSheet } from '@angular/material/bottom-sheet';
+import { MapsListBottomsheetComponent } from './maps-list-bottomsheet/maps-list-bottomsheet.component';
+import { MapListActions } from 'src/app/models/maps-list-actions.enum';
 
 @Component({
   selector: 'app-maps-list',
@@ -24,7 +27,9 @@ export class MapsListComponent implements OnInit {
     private router: Router,
     private dialog: MatDialog,
     private translateService: TranslateService,
-    private dataUpdateService: DataUpdateService) { }
+    private dataUpdateService: DataUpdateService,
+    private bottomSheet: MatBottomSheet
+  ) { }
 
   ngOnInit() {
     this.loadData();
@@ -40,7 +45,7 @@ export class MapsListComponent implements OnInit {
 
   add() {
     const dialogRef = this.dialog.open(MapsAddComponent, {
-      width: '50%',
+      width: this.getWidth(),
     });
     dialogRef.afterClosed().subscribe((result: boolean) => {
       if (!!result) {
@@ -51,7 +56,7 @@ export class MapsListComponent implements OnInit {
 
   edit(map: Map) {
     const dialogRef = this.dialog.open(MapsAddComponent, {
-      width: '50%',
+      width: this.getWidth(),
       data: { map }
     });
     dialogRef.afterClosed().subscribe((result: boolean) => {
@@ -60,6 +65,23 @@ export class MapsListComponent implements OnInit {
       }
     });
   }
+  openBottomSheet(map: Map): void {
+    const ref = this.bottomSheet.open(MapsListBottomsheetComponent, { data: { map } });
+    ref.afterDismissed().subscribe((action: MapListActions) => {
+      switch (action) {
+        case MapListActions.View:
+          this.view(map);
+          return;
+        case MapListActions.Delete:
+          this.delete(map);
+          return;
+        case MapListActions.Edit:
+          this.edit(map);
+          return;
+      }
+    })
+  }
+
 
   getLink(map: Map) {
     return location.origin + '/link/' + map.sharingLinkName;
@@ -69,7 +91,7 @@ export class MapsListComponent implements OnInit {
   }
   delete(map: Map) {
     const dialogRef = this.dialog.open(AreYouSureDialogComponent, {
-      width: '50%',
+      width: this.getWidth(),
       data: {
         item: this.translateService.instant('MAPLIST.DELETEFRONT') + ' ' + map.name + ' '
           + this.translateService.instant('MAPLIST.DELETEREAR')
@@ -85,9 +107,17 @@ export class MapsListComponent implements OnInit {
     });
   }
 
+  private getWidth() {
+    let width = '90%';
+    if (window.innerWidth > 600) {
+      width = '50%';
+    }
+    return width;
+  }
+
   sort() {
     const dialogRef = this.dialog.open(SortItemsDialogComponent, {
-      width: '50%',
+      width: this.getWidth(),
       data: {
         list: Object.assign([], this.data),
         title: this.translateService.instant('MAPLIST.SORTTITLE')

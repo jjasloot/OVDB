@@ -1,3 +1,6 @@
+2020-08-29:
+- Improvements in mobile display
+
 2020-07-16:
 - Add properties to trips
 - Added edit and edit trips buttons to map

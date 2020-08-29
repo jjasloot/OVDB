@@ -127,7 +127,7 @@ export class RouteDetailComponent implements OnInit {
   }
   delete() {
     const dialogRef = this.dialog.open(AreYouSureDialogComponent, {
-      width: '50%',
+      width: this.getWidth(),
       data: {
         item: this.translateService.instant('ROUTE.DELETEFRONT') + ' ' + this.route.name + ' ' + this.translateService.instant('ROUTE.DELETEBACK')
       }
@@ -175,5 +175,13 @@ export class RouteDetailComponent implements OnInit {
     this.apiService.getExport(this.route.routeId).subscribe(data => {
       saveAs(data, this.route.name.trim().replace(' ', '_') + '.kml');
     });
+  }
+
+  private getWidth() {
+    let width = '90%';
+    if (window.innerWidth > 600) {
+      width = '50%';
+    }
+    return width;
   }
 }

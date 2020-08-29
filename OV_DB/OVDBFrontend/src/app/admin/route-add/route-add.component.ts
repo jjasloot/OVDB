@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild, ElementRef } from '@angular/core';
 import { ApiService } from 'src/app/services/api.service';
 import { Router } from '@angular/router';
 import { Route } from 'src/app/models/route.model';
@@ -12,7 +12,6 @@ import { TranslateService } from '@ngx-translate/core';
   styleUrls: ['./route-add.component.scss']
 })
 export class RouteAddComponent implements OnInit {
-
   inputString: string;
   fileToUpload: FileList;
   text: string;

@@ -1,8 +1,17 @@
 textarea {
-    width: 80%;
+    width: 95%;
     height: 100px;
 }
 
 .container {
-    margin: 64px;
+    margin: 16px;
+}
+
+@media (min-width:600px) {
+    .container {
+        margin: 64px;
+    }
+    textarea {
+        width: 80%;
+    }
 }

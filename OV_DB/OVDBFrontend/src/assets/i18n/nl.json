@@ -166,5 +166,6 @@
 	"FILTER.STARTDATE":"Vanaf",
 	"FILTER.ENDDATE":"Tot",
   "ROUTESLIST.INSTANCES": "Ritten",
-  "INSTANCES.EDITINSTANCE": "Ritten bewerken"
+  "INSTANCES.EDITINSTANCE": "Ritten bewerken",
+  "MAPOPTIONS.TITLE":"Filter opties"
 }

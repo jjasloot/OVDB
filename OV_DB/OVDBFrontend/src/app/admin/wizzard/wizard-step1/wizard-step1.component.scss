@@ -1,5 +1,8 @@
 .container {
-    margin: 48px;
+    margin: 16px;
+    @media (min-width: 600px) {
+        margin: 48px;
+    }
 }
 
 form {
@@ -13,9 +16,12 @@ form {
 }
 
 .form {
-    width: 50%;
+    width: 90%;
     margin: auto;
     margin-bottom: 24px;
+    @media (min-width: 600px) {
+        width: 50%;
+    }
 }
 
 .line {

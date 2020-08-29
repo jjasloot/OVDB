@@ -1,8 +1,11 @@
 form {
     display: flex;
     flex-direction: column;
-    width: 200px;
+    width: 90%;
     margin: auto;
+    @media (min-width: 400px) {
+        width: 200px;
+    }
 }
 
 .failed {

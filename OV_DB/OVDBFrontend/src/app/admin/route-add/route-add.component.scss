@@ -10,3 +10,22 @@ textarea {
 .error {
     color: red;
 }
+
+.buttons {
+    display: flex;
+    flex-direction: column;
+    input {
+        margin-top: 8px;
+        height: 36px;
+    }
+}
+
+.container {
+    margin: 0 10%;
+}
+
+@media (min-width:600px) {
+    .container {
+        margin: 0 30%;
+    }
+}

@@ -59,7 +59,7 @@ export class CountriesComponent implements OnInit {
 
   add() {
     const dialogRef = this.dialog.open(CountryAddComponent, {
-      width: '50%',
+      width: this.getWidth(),
     });
     dialogRef.afterClosed().subscribe((result: boolean) => {
       if (!!result) {
@@ -70,7 +70,7 @@ export class CountriesComponent implements OnInit {
 
   edit(country: Country) {
     const dialogRef = this.dialog.open(CountryAddComponent, {
-      width: '50%',
+      width: this.getWidth(),
       data: { country }
     });
     dialogRef.afterClosed().subscribe((result: boolean) => {
@@ -81,7 +81,7 @@ export class CountriesComponent implements OnInit {
   }
   delete(country: Country) {
     const dialogRef = this.dialog.open(AreYouSureDialogComponent, {
-      width: '50%',
+      width: this.getWidth(),
       data: { item: this.translateService.instant('COUNTRIES.DELETEFRONT') + ' ' + country.name + ' ' + this.translateService.instant('COUNTRIES.DELETEREAR') }
     });
     dialogRef.afterClosed().subscribe((result: boolean) => {
@@ -92,5 +92,13 @@ export class CountriesComponent implements OnInit {
         });
       }
     });
+  }
+
+  private getWidth() {
+    let width = '90%';
+    if (window.innerWidth > 600) {
+      width = '50%';
+    }
+    return width;
   }
 }

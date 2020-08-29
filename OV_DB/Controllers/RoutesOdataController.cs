@@ -204,19 +204,19 @@ namespace OV_DB.Controllers
             else
                 feature.Properties.Add("name", route.Name);
             if (language == "nl" && !string.IsNullOrWhiteSpace(route.RouteType.NameNL))
-                feature.Properties.Add("type", route.RouteType.NameNL);
+                feature.Properties.Add("type", route.RouteType?.NameNL);
             else
-                feature.Properties.Add("type", route.RouteType.Name);
+                feature.Properties.Add("type", route.RouteType?.Name);
             if (language == "nl" && !string.IsNullOrWhiteSpace(route.DescriptionNL))
                 feature.Properties.Add("description", route.DescriptionNL);
             else
-                feature.Properties.Add("description", route.Description);
+                feature.Properties.Add("description", route.Description ?? "Unknown");
             feature.Properties.Add("lineNumber", route.LineNumber);
             feature.Properties.Add("operatingCompany", route.OperatingCompany); ;
             if (!string.IsNullOrWhiteSpace(route.OverrideColour))
                 feature.Properties.Add("stroke", route.OverrideColour);
             else
-                feature.Properties.Add("stroke", route.RouteType.Colour);
+                feature.Properties.Add("stroke", route.RouteType?.Colour??"#000");
 
             collection.Features.Add(feature);
 

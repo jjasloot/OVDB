@@ -10,8 +10,14 @@
                 <mat-list-item *ngFor="let map of maps">
                     <h4 mat-line><b>{{map.name}}</b></h4>
                     <div mat-line *ngIf="!map.sharingLinkName">{{'HOME.CREATELINKTOSHARE'|translate}}</div>
-                    <button mat-raised-button color="primary" (click)="view(map)">{{'HOME.VIEW'|translate}}</button>
-                    <button mat-button *ngIf="!!map.sharingLinkName" [cdkCopyToClipboard]="getLink(map)">{{'HOME.COPY'|translate}}</button>
+                    <div class="desktop buttons">
+                        <button mat-raised-button color="primary" (click)="view(map)">{{'HOME.VIEW'|translate}}</button>
+                        <button mat-button *ngIf="!!map.sharingLinkName" [cdkCopyToClipboard]="getLink(map)">{{'HOME.COPY'|translate}}</button>
+                    </div>
+                    <div class="mobile buttons">
+                        <button mat-icon-button color="primary" (click)="view(map)"><mat-icon>visibility</mat-icon></button>
+                        <button mat-icon-button *ngIf="!!map.sharingLinkName" [cdkCopyToClipboard]="getLink(map)"><mat-icon>content_copy</mat-icon></button>
+                    </div>
                 </mat-list-item>
             </mat-list>
         </div>
@@ -21,9 +27,10 @@
     <ng-template #notLoggedIn>
         <h1>{{'HOME.WELCOME'|translate}}</h1>
         <p>{{'HOME.INFONOTLOGGEDIN'|translate}}</p>
-        <button mat-raised-button [routerLink]="['/login']">{{'HOME.LOGIN'|translate}}</button>
-        <button mat-raised-button [routerLink]="['/register']">{{'HOME.REGISTER'|translate}}</button>
-        <br>
+        <div class="buttons">
+            <button mat-raised-button [routerLink]="['/login']">{{'HOME.LOGIN'|translate}}</button>
+            <button mat-raised-button [routerLink]="['/register']">{{'HOME.REGISTER'|translate}}</button>
+        </div>
     </ng-template>
 
     <ng-template #noData>

@@ -33,7 +33,8 @@ export class WizzardStep2Component implements OnInit {
   layers = [];
   bounds: L.LatLngBounds;
   stops: OSMLineStop[];
-
+  loading = false;
+  error = false;
   from: number;
   to: number;
   dateTime: Moment;
@@ -56,13 +57,15 @@ export class WizzardStep2Component implements OnInit {
   }
 
   ngOnInit(): void {
+    this.loading = true;
     this.apiService.importerGetLine(this.id, null, null, this.dateTime).subscribe(data => {
       this.data = data;
       this.apiService.importerGetStops(this.id, this.dateTime).subscribe(stops => {
+        this.loading = false;
         this.stops = stops;
         this.from = this.stops[0].id;
         this.to = this.stops[this.stops.length - 1].id;
-      });
+      }, () => { this.error = true; this.loading = false; });
       this.addTrackToMap();
 
     });
@@ -81,9 +84,11 @@ export class WizzardStep2Component implements OnInit {
     });
     dialogRef.afterClosed().subscribe((result: boolean) => {
       if (!!result) {
+        this.loading = true;
+
         this.apiService.importerAddRoute(this.data).subscribe(route => {
           this.router.navigate(['/', 'admin', 'routes', route.routeId]);
-        });
+        }, () => { this.error = true; this.loading = false; });
       }
     });
   }
@@ -134,17 +139,24 @@ export class WizzardStep2Component implements OnInit {
 
 
   cut() {
+    this.loading = true;
+
     this.apiService.importerGetLine(this.id, this.from, this.to, this.dateTime).subscribe(data => {
       this.data = data;
       this.addTrackToMap();
-    });
+      this.loading = false;
+    }, () => { this.error = true; this.loading = false; });
   }
   uncut() {
+    this.loading = true;
+
     this.apiService.importerGetLine(this.id, null, null, this.dateTime).subscribe(data => {
       this.data = data;
       this.addTrackToMap();
       this.from = this.stops[0].id;
       this.to = this.stops[this.stops.length - 1].id;
-    });
+      this.loading = false;
+
+    }, () => { this.error = true; this.loading = false; });
   }
 }

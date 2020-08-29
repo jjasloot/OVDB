@@ -1,8 +1,10 @@
-<div style="width: 70%; margin-left:15%;">
-    <button mat-raised-button [routerLink]="['/','admin','wizard']">{{'ADMINPAGES.WIZARD'|translate}}</button>
+<div class="container">
+    <div class="buttons">
+        <input type="file" multiple (change)="handleFileInput($event.target.files)">
+        <button mat-raised-button (click)="saveFiles()">{{'ADDROUTE.SAVEFILES'|translate}}</button>
+    </div>
     <div *ngIf="!filesLoading; else loading">
-        <input matinput type="file" multiple (change)="handleFileInput($event.target.files)">
-        <button mat-raised-button (click)="saveFiles()">{{'ADDROUTE.SAVEFILES'|translate}}</button> <br>{{text}}
+        <br>{{text}}
         <ul>
             <li *ngFor="let file of files" [ngClass]="{'error':file.failed}">{{file.filename}} <button *ngIf="!file.failed" mat-button (click)="edit(file)">{{'EDIT'|translate}}</button></li>
         </ul>

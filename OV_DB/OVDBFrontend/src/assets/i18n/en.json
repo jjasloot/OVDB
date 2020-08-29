@@ -166,5 +166,6 @@
   "FILTER.STARTDATE": "From",
   "FILTER.ENDDATE": "Up to (excluding)",
   "ROUTESLIST.INSTANCES": "Trips",
-  "INSTANCES.EDITINSTANCE": "Edit trips"
+  "INSTANCES.EDITINSTANCE": "Edit trips",
+  "MAPOPTIONS.TITLE":"Filter options"
 }

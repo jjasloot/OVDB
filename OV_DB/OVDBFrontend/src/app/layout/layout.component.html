@@ -4,8 +4,7 @@
             <h2 style="cursor: pointer;" (click)="gotoHome()">OVDβ</h2>
 
             <div class="icons" *ngIf="isLoggedIn">
-                <!-- <p>{{email}}</p> -->
-                <button mat-icon-button [routerLink]="['/administrator']" *ngIf="isAdmin">
+                <button mat-icon-button class="desktop" [routerLink]="['/administrator']" *ngIf="isAdmin">
           <mat-icon>supervisor_account</mat-icon>
         </button>
                 <button mat-icon-button [routerLink]="['/']">

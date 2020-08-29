@@ -10,26 +10,17 @@ mat-table {
     min-height: 300px;
 }
 
-.filter {
-    padding: 12px;
-    margin-left: 12px;
-    display: block;
-}
-
 .mat-column-date {
     max-width: 100px;
 }
 
+.mat-column-edit,
 .mat-column-type {
-    max-width: 150px;
+    max-width: 25px;
 }
 
 .mat-column-name {
     flex: 3
-}
-
-.mat-column-edit {
-    max-width: 170px;
 }
 
 button:not(.mat-fab) {
@@ -38,4 +29,53 @@ button:not(.mat-fab) {
 
 .container {
     padding: 8px;
+}
+
+.buttons {
+    display: flex;
+    flex-direction: column;
+    button {
+        margin-bottom: 8px;
+    }
+    button:last-child {
+        margin-bottom: 0;
+    }
+}
+
+.filter {
+    display: block;
+    padding: 0 8px;
+}
+
+.desktop {
+    display: none;
+}
+
+.mobile {
+    display: unset;
+}
+
+@media (min-width:600px) {
+    .desktop {
+        display: unset;
+    }
+    .mobile {
+        display: none;
+    }
+    .mat-column-type {
+        max-width: 150px;
+    }
+    .mat-column-edit {
+        max-width: 170px;
+    }
+    .buttons {
+        flex-direction: row;
+        button {
+            margin-bottom: 0;
+        }
+    }
+    .filter {
+        padding: 12px;
+        margin-left: 12px;
+    }
 }

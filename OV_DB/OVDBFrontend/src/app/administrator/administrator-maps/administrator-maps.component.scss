@@ -16,3 +16,20 @@ mat-table {
 button:not(.mat-fab) {
     margin: 0 8px;
 }
+
+.desktop {
+    display: none;
+}
+
+.mobile {
+    display: unset;
+}
+
+@media (min-width:600px) {
+    .desktop {
+        display: unset;
+    }
+    .mobile {
+        display: none;
+    }
+}

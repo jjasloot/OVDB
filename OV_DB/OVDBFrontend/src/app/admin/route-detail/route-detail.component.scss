@@ -4,11 +4,30 @@ form {
 }
 
 .form {
-    width: 50%;
+    width: 90%;
     margin: auto;
-    margin-bottom: 24px;
 }
 
 .countries {
     margin-bottom: 12px;
+}
+
+.back {
+    margin: 0 0 8px 8px;
+}
+
+.buttons {
+    display: flex;
+    flex-direction: row;
+    button {
+        flex: 1;
+    }
+}
+
+@media (min-width:600px) {
+    .form {
+        width: 50%;
+        margin: auto;
+        margin-bottom: 24px;
+    }
 }

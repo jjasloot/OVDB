@@ -1,3 +1,6 @@
+2020-08-29:
+- Verbeteringen voor mobiele weergave
+
 2020-07-16:
 - Eigenschappen toevoegen aan ritten
 - Bewerken en rit bewerken knop toegevoegd aan kaart
