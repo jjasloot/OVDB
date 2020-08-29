@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { MatBottomSheetRef } from '@angular/material/bottom-sheet';
-import {RoutesListActions} from 'src/app/models/routes-list-actions.enum'
+import {RoutesListActions} from 'src/app/models/routes-list-actions.enum';
 @Component({
   selector: 'app-routes-list-bottomsheet',
   templateUrl: './routes-list-bottomsheet.component.html',

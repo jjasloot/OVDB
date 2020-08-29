@@ -79,7 +79,7 @@ export class MapsListComponent implements OnInit {
           this.edit(map);
           return;
       }
-    })
+    });
   }
 
 

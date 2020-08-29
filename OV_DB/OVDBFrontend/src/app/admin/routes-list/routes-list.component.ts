@@ -151,7 +151,7 @@ export class RoutesListComponent implements OnInit, AfterViewInit {
           this.edit(route.routeId);
           return;
       }
-    })
+    });
   }
 
 
