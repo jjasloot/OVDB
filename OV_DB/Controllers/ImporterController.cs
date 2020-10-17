@@ -163,7 +163,7 @@ namespace OV_DB.Controllers
             {
                 if (way.Role.Contains("Platform", StringComparison.OrdinalIgnoreCase) || way.Role.Contains("Stop", StringComparison.OrdinalIgnoreCase))
                 {
-                    var stop = osm.Elements.SingleOrDefault(e => e.Id == way.Ref);
+                    var stop = osm.Elements.FirstOrDefault(e => e.Id == way.Ref);
                     if (stop != null && stop.Lon != null && stop.Lat != null)
                     {
                         AddRelevantStops(stops, stop);
@@ -171,13 +171,14 @@ namespace OV_DB.Controllers
                 }
                 else
                 {
-                    var nodes = osm.Elements.Single(e => e.Id == way.Ref).Nodes;
+                    var wayOsm = osm.Elements.Where(e => e.Id == way.Ref).ToList();
+                    var nodes = wayOsm.FirstOrDefault().Nodes;
                     var subList = new List<IPosition>();
                     if (nodes != null)
                     {
                         nodes.ForEach(n =>
                         {
-                            var node = osm.Elements.Single(e => e.Id == n);
+                            var node = osm.Elements.FirstOrDefault(e => e.Id == n);
                             subList.Add(new Position(node.Lat.GetValueOrDefault(), node.Lon.GetValueOrDefault()));
 
                         });
@@ -206,6 +207,10 @@ namespace OV_DB.Controllers
                 element.PotentialErrors = relation.Tags["fixme"];
             if (relation.Tags.ContainsKey("colour"))
                 element.Colour = relation.Tags["colour"];
+            if (relation.Tags.ContainsKey("ref") && relation.Tags.ContainsKey("to") && relation.Tags.ContainsKey("to"))
+            {
+                element.Name = relation.Tags["ref"] + ": " + relation.Tags["from"] + " => " + relation.Tags["to"];
+            }
             lists = SortListOfList(lists);
             var oneList = lists.SelectMany(i => i).ToList();
             var pointts2 = oneList.Select(l => l.Longitude.ToString(CultureInfo.InvariantCulture) + ", " + l.Latitude.ToString(CultureInfo.InvariantCulture)).ToList();
@@ -217,6 +222,10 @@ namespace OV_DB.Controllers
             {
                 element.GeoJson = CoordsToGeoJson(oneList);
                 return Ok(element);
+            }
+            if (relation.Tags.ContainsKey("ref") && relation.Tags.ContainsKey("to") && relation.Tags.ContainsKey("to"))
+            {
+                element.Name = relation.Tags["ref"] + ": " + fromStop.Tags["name"] + " => " + toStop.Tags["name"];
             }
             var min = double.MaxValue;
             IPosition minPosition = null;
