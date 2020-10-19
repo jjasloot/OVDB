@@ -91,18 +91,14 @@ namespace OV_DB.Controllers
             {
                 if (way.Role.Contains("Platform", StringComparison.OrdinalIgnoreCase) || way.Role.Contains("Stop", StringComparison.OrdinalIgnoreCase))
                 {
-                    var stop = osm.Elements.SingleOrDefault(e => e.Id == way.Ref);
-                    if (stop != null && stop.Lon != null && stop.Lat != null)
-                    {
-                        AddRelevantStops(stops, stop);
-                    }
+                    HandleNewStop(way, osm, stops);
                 }
 
             });
             var listOfStops = stops.Select(s => new OSMLineStop
             {
                 Id = s.Id,
-                Name = s.Tags.GetValueOrDefault("name"),
+                Name = s.Tags.GetValueOrDefault("friendlyName"),
                 Ref = s.Tags.GetValueOrDefault("ref")
             }).ToList();
             return Ok(listOfStops);
@@ -123,11 +119,11 @@ namespace OV_DB.Controllers
 
         private async Task<string> GetRelationFromOSMAsync(int id, DateTime? dateTime)
         {
-            var query = $"<osm-script output=\"json\"";
+            var query = $"[out:json]";
             if (dateTime != null)
-                query += $" date=\"{dateTime:o}\"";
-            query += $"><id-query type=\"relation\" ref=\"" + id + $"\"/>  <union into=\"_\">    <item from=\"_\" into=\"_\"/>    <recurse from=\"_\" into=\"_\" type=\"down\"/>  </union>  <print from=\"_\" /></osm-script>";
-
+                query += $"[date:\"{dateTime:o}\"]";
+            query += $";relation({id});";
+            query += "(._;>;);out;node(r)->.nodes;.nodes is_in;area._[boundary=administrative][admin_level=10]->.areas;foreach.areas -> .a {  node.nodes(area.a);  convert node ::id = id(), is_in= a.set(t[\"name\"]);  out; }";
             string text = null;
             using (var httpClient = new HttpClient())
             {
@@ -163,11 +159,7 @@ namespace OV_DB.Controllers
             {
                 if (way.Role.Contains("Platform", StringComparison.OrdinalIgnoreCase) || way.Role.Contains("Stop", StringComparison.OrdinalIgnoreCase))
                 {
-                    var stop = osm.Elements.FirstOrDefault(e => e.Id == way.Ref);
-                    if (stop != null && stop.Lon != null && stop.Lat != null)
-                    {
-                        AddRelevantStops(stops, stop);
-                    }
+                    HandleNewStop(way, osm, stops);
                 }
                 else
                 {
@@ -216,8 +208,8 @@ namespace OV_DB.Controllers
             var pointts2 = oneList.Select(l => l.Longitude.ToString(CultureInfo.InvariantCulture) + ", " + l.Latitude.ToString(CultureInfo.InvariantCulture)).ToList();
             var pointts2String = string.Join("\n", pointts2);
 
-            var fromStop = stops.SingleOrDefault(s => s.Id == from);
-            var toStop = stops.SingleOrDefault(s => s.Id == to);
+            var fromStop = stops.FirstOrDefault(s => s.Id == from);
+            var toStop = stops.LastOrDefault(s => s.Id == to);
             if (fromStop == null || toStop == null)
             {
                 element.GeoJson = CoordsToGeoJson(oneList);
@@ -225,7 +217,7 @@ namespace OV_DB.Controllers
             }
             if (relation.Tags.ContainsKey("ref") && relation.Tags.ContainsKey("to") && relation.Tags.ContainsKey("to"))
             {
-                element.Name = relation.Tags["ref"] + ": " + fromStop.Tags["name"] + " => " + toStop.Tags["name"];
+                element.Name = relation.Tags["ref"] + ": " + fromStop.Tags["friendlyName"] + " => " + toStop.Tags["friendlyName"];
             }
             var min = double.MaxValue;
             IPosition minPosition = null;
@@ -271,6 +263,47 @@ namespace OV_DB.Controllers
             var filteredPointsList = string.Join("\n", filteredPoints);
             element.GeoJson = CoordsToGeoJson(filteredList);
             return Ok(element);
+        }
+
+        private static void HandleNewStop(Member way, OSM osm, List<Element> stops)
+        {
+            var bothStops = osm.Elements.Where(e => e.Id == way.Ref).ToList();
+            var stop = bothStops.FirstOrDefault(s => s.Lat.HasValue);
+            if (stop == null)
+            {
+                return;
+            }
+            bothStops.Remove(stop);
+            var currentName = "";
+            if (stop.Tags == null)
+            {
+                stop.Tags = new Dictionary<string, string>();
+            }
+            if (stop.Tags.ContainsKey("name"))
+            {
+                currentName = stop.Tags["name"];
+            }
+            var cityElement = bothStops.Where(s => s.Tags.ContainsKey("is_in")).FirstOrDefault();
+            if (cityElement != null)
+            {
+                var city = cityElement.Tags["is_in"];
+                if (!currentName.Contains(city))
+                {
+                    currentName = city + ", " + currentName;
+                }
+            }
+            if (stop.Tags.ContainsKey("friendlyName"))
+            {
+                stop.Tags["friendlyName"] = currentName;
+            }
+            else
+            {
+                stop.Tags.Add("friendlyName", currentName);
+            }
+            if (stop != null && stop.Lon != null && stop.Lat != null)
+            {
+                AddRelevantStops(stops, stop);
+            }
         }
 
         private FeatureCollection CoordsToGeoJson(List<IPosition> coordinates)
