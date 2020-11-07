@@ -134,7 +134,13 @@ namespace OV_DB.Controllers
 
             routes.ForEach(route =>
             {
-                DistanceCalculationHelper.ComputeDistance(route);
+                try
+                {
+                    DistanceCalculationHelper.ComputeDistance(route);
+                } catch(Exception ex)
+                {
+                    Console.WriteLine(ex.Message);
+                }
             });
             await _dbContext.SaveChangesAsync();
             return Ok();

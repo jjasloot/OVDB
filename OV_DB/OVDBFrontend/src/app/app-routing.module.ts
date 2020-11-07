@@ -27,6 +27,7 @@ import { AdministratorUsersComponent } from './administrator/administrator-users
 import { AdministratorGuard } from './guards/administrator.guard';
 import { RouteInstancesComponent } from './admin/route-instances/route-instances.component';
 import { StatsComponent } from './stats/stats.component';
+import { StationMapComponent } from './stations/station-map/station-map.component';
 
 
 const routes: Routes = [
@@ -54,6 +55,11 @@ const routes: Routes = [
           { path: 'missingData', component: FillMissingDataListComponent },
           { path: 'wizard/:id', component: WizzardStep2Component },
           { path: 'wizard', component: WizzardStep1Component },
+        ]
+      },
+      {
+        path: 'stations', canActivate: [LoginGuard], children: [
+          { path: '', component: StationMapComponent },
         ]
       },
       {

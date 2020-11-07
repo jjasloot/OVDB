@@ -23,6 +23,9 @@ namespace OVDB_database.Database
         public DbSet<InviteCode> InviteCodes { get; set; }
         public DbSet<RouteInstance> RouteInstances { get; set; }
         public DbSet<RouteInstanceProperty> RouteInstanceProperties { get; set; }
+        public DbSet<StationCountry> StationCountries { get; set; }
+        public DbSet<Station> Stations { get; set; }
+        public DbSet<StationVisit> StationVisits { get; set; }
         protected override void OnConfiguring(DbContextOptionsBuilder options)
         {
             if (!options.IsConfigured)

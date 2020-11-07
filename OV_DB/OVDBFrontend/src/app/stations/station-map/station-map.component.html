@@ -1,0 +1,9 @@
+<div class="map-container" #mapContainer>
+    <div class="map" leaflet [leafletOptions]="options" [leafletLayers]="layers" [leafletLayersControl]="leafletLayersControl" [leafletFitBounds]="bounds">
+    </div>
+    <div [ngClass]="{'loading':loading,'loading-indicator':true}">
+        <mat-spinner></mat-spinner>
+    </div>
+
+
+</div>

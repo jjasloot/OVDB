@@ -20,6 +20,8 @@ import { RouteInstance } from '../models/routeInstance.model';
 export class ApiService {
 
 
+
+
   getRoutesWithMissingSettings(): Observable<Route[]> {
     return this.httpClient.get<Route[]>(environment.backend + 'api/routes/missingInfo');
   }
@@ -274,6 +276,19 @@ export class ApiService {
     const url = environment.backend + 'api/routes/instances/tags/autocomplete';
 
     return this.httpClient.get<string[]>(url);
+  }
+
+  getStations(countries: number[] = []) {
+    let url = environment.backend + 'api/station';
+    if (!!countries && countries.length > 0) {
+      url += '?countryIds=' + countries.join(',');
+    }
+    return this.httpClient.get<string>(url);
+  }
+
+  updateStation(id: any, value: any) {
+    const url = environment.backend + 'api/station/' + id;
+    return this.httpClient.put(url, {value});
   }
 
 }
