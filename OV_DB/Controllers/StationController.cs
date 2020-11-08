@@ -64,6 +64,7 @@ namespace OV_DB.Controllers
                 if (s.Elevation.HasValue)
                     properties.elevation = s.Elevation.Value;
                 properties.visited = s.Visited;
+                properties.id = s.Id;
                 Position coordinates = new Position(s.Lattitude, s.Longitude, s.Elevation);
                 Point geometry = new Point(coordinates);
                 var item = new Feature(geometry, properties, null);

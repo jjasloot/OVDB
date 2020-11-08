@@ -65,12 +65,12 @@ export class StationMapComponent implements OnInit {
     const track = L.geoJSON(text as any, {
       pointToLayer(feature, latlng) {
         return L.circleMarker(latlng, {
-          radius: 8,
+          radius: feature.properties.visited ? 8 : 4,
           fillColor: feature.properties.visited ? '#00FF00' : '#FF0000',
           color: "#000",
           weight: 1,
           opacity: 1,
-          fillOpacity: 0.8
+          fillOpacity: feature.properties.visited ? 0.8 : 0.5
         });
 
       },
@@ -81,9 +81,17 @@ export class StationMapComponent implements OnInit {
           } else {
             feature.properties.visited = false;
           }
-          f.target.setStyle({ fillColor: '#FF7F00' });
-          await parent.apiService.updateStation(feature.properties.id, feature.properties.value).toPromise()
-          f.target.setStyle({ fillColor: feature.properties.visited ? '#00FF00' : '#FF0000' });
+          f.target.setStyle({
+            fillColor: '#FF7F00',
+            fillOpacity: 0.65,
+            radius: 6
+          });
+          await parent.apiService.updateStation(feature.properties.id, feature.properties.visited).toPromise()
+          f.target.setStyle({
+            fillColor: feature.properties.visited ? '#00FF00' : '#FF0000',
+            fillOpacity: feature.properties.visited ? 0.8 : 0.5,
+            radius: feature.properties.visited ? 8 : 4
+          });
 
         })
       }

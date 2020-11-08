@@ -42,15 +42,16 @@ namespace OV_DB.Controllers
                     list = await GetStationList(country.OsmId);
                 }
 
+                var dbStations = await DbContext.Stations.Where(s => s.StationCountryId == country.Id).ToListAsync();
+                var names = new List<string>();
                 if (!string.IsNullOrWhiteSpace(list))
                 {
                     var parsedList = JsonConvert.DeserializeObject<OSMStationList>(list);
 
-                    var dbStations = await DbContext.Stations.Where(s => s.StationCountryId == country.Id).ToListAsync();
 
                     parsedList.Elements.ForEach(station =>
                     {
-                        if (station.Tags.ContainsKey("name") && !string.IsNullOrWhiteSpace(station.Tags["name"]))
+                        if (station.Tags.ContainsKey("name") && !string.IsNullOrWhiteSpace(station.Tags["name"]) && !(station.Lat == 0 && station.Lon == 0))
                         {
                             Station stationToUpdate = null;
 
@@ -73,18 +74,81 @@ namespace OV_DB.Controllers
                                 stationToUpdate.Network = station.Tags["network"];
                             if (station.Tags.ContainsKey("operator"))
                                 stationToUpdate.Operator = station.Tags["operator"];
+                            names.Add(station.Tags["name"]);
                         }
                     });
-                    await DbContext.SaveChangesAsync();
+                    await Task.Delay(1000);
+                }
+
+                var wayList = await GetStationWayList(country.OsmId);
+                if (wayList == null)
+                {
+                    await Task.Delay(2000);
+                    wayList = await GetStationWayList(country.OsmId);
+                }
+
+                if (!string.IsNullOrWhiteSpace(wayList))
+                {
+                    var parsedWayList = JsonConvert.DeserializeObject<OSMStationWayList>(wayList);
+
+                    parsedWayList.Elements.ForEach(station =>
+                    {
+                        if (station.Tags.ContainsKey("name") && !string.IsNullOrWhiteSpace(station.Tags["name"]) && station.Center != null && !(station.Center.Lat == 0 && station.Center.Lon == 0) && !names.Contains(station.Tags["name"]))
+                        {
+                            Station stationToUpdate = null;
+
+                            if (dbStations.Any(s => s.OsmId == station.Id))
+                            {
+                                stationToUpdate = dbStations.SingleOrDefault(s => s.OsmId == station.Id);
+                            }
+                            else
+                            {
+                                stationToUpdate = new Station { OsmId = station.Id, StationCountryId = country.Id };
+                                DbContext.Add(stationToUpdate);
+                            }
+                            stationToUpdate.Lattitude = station.Center.Lat;
+                            stationToUpdate.Longitude = station.Center.Lon;
+                            if (station.Tags.ContainsKey("name"))
+                                stationToUpdate.Name = station.Tags["name"];
+                            if (station.Tags.ContainsKey("ele"))
+                                stationToUpdate.Elevation = double.Parse(station.Tags["ele"]);
+                            if (station.Tags.ContainsKey("network"))
+                                stationToUpdate.Network = station.Tags["network"];
+                            if (station.Tags.ContainsKey("operator"))
+                                stationToUpdate.Operator = station.Tags["operator"];
+                        }
+                    });
                     await Task.Delay(1000);
                 }
             }
+            await DbContext.SaveChangesAsync();
+
             return Ok();
         }
 
         public async Task<string> GetStationList(string osmId)
         {
-            var query = $"[out:json][timeout:240];\narea({osmId})->.searchArea;\n(node[\"railway\"=\"station\"][!\"subway\"][!\"light_rail\"][!\"funicular\"][!\"station\"][!\"tram\"](area.searchArea);\nnode[\"railway\"=\"halt\"][!\"subway\"][!\"light_rail\"][!\"funicular\"][!\"station\"][!\"tram\"](area.searchArea););\nout body;";
+            var query = $"[out:json][timeout:240];\narea({osmId})->.searchArea;\n(node[\"railway\"=\"station\"][!\"subway\"][!\"light_rail\"][!\"funicular\"][!\"station\"][!\"tram\"](area.searchArea);\nnode[\"railway\"=\"station\"][\"train\"=\"yes\"](area.searchArea);\nnode[\"railway\"=\"halt\"][!\"subway\"][!\"light_rail\"][!\"funicular\"][!\"station\"][!\"tram\"](area.searchArea);node[\"railway\"=\"halt\"][\"train\"=\"yes\"](area.searchArea););\nout body;";
+            string text = null;
+            using (var httpClient = new HttpClient())
+            {
+                httpClient.Timeout = TimeSpan.FromSeconds(240);
+                httpClient.DefaultRequestHeaders.Add("User-Agent", "OVDB");
+
+                var response = await httpClient.PostAsync("https://overpass-api.de/api/interpreter", new StringContent(query));
+                if (response.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
+                {
+                    return null;
+                }
+                text = await response.Content.ReadAsStringAsync();
+            }
+
+            return text;
+        }
+
+        public async Task<string> GetStationWayList(string osmId)
+        {
+            var query = $"[out:json][timeout:240];\narea({osmId})->.searchArea;\n(way[\"railway\"=\"station\"][!\"subway\"][!\"light_rail\"][!\"funicular\"][!\"station\"][!\"tram\"](area.searchArea);\nway[\"railway\"=\"station\"][\"train\"=\"yes\"](area.searchArea);\nway[\"railway\"=\"halt\"][!\"subway\"][!\"light_rail\"][!\"funicular\"][!\"station\"][!\"tram\"](area.searchArea);way[\"railway\"=\"halt\"][\"train\"=\"yes\"](area.searchArea););\nout center;";
             string text = null;
             using (var httpClient = new HttpClient())
             {
