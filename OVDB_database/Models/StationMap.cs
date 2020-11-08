@@ -6,18 +6,22 @@ using System.Text;
 
 namespace OVDB_database.Models
 {
-    public class StationCountry
+    public class StationMap
     {
         [Key]
         [JsonProperty]
-        public int Id { get; set; }
-        public string OsmId { get; set; }
+        public int StationMapId { get; set; }
+        public int UserId { get; set; }
         [JsonProperty]
         public string Name { get; set; }
         [JsonProperty]
         public string NameNL { get; set; }
+        [JsonProperty]
+        public Guid MapGuid { get; set; }
+        [JsonProperty]
+        public string? SharingLinkName { get; set; }
+        public int OrderNr { get; set; }
+        public User? User { get; set; }
         public List<StationMapCountry> StationMapCountries { get; set; }
-        public List<Station> Stations { get; set; }
-
     }
 }

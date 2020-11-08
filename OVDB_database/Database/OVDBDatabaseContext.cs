@@ -26,6 +26,8 @@ namespace OVDB_database.Database
         public DbSet<StationCountry> StationCountries { get; set; }
         public DbSet<Station> Stations { get; set; }
         public DbSet<StationVisit> StationVisits { get; set; }
+        public DbSet<StationMap> StationMaps { get; set; }
+        public DbSet<StationMapCountry> StationMapCountries { get; set; }
         protected override void OnConfiguring(DbContextOptionsBuilder options)
         {
             if (!options.IsConfigured)
@@ -40,6 +42,10 @@ namespace OVDB_database.Database
             base.OnModelCreating(modelBuilder);
 
             modelBuilder.Entity<RouteCountry>().HasOne(rc => rc.Route).WithMany(r => r.RouteCountries).OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Station>().Property(s => s.Hidden).HasDefaultValue(false);
+            modelBuilder.Entity<Station>().Property(s => s.Special).HasDefaultValue(false);
+
         }
     }
 }

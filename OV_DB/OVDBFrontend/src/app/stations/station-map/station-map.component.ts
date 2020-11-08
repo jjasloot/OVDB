@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, Input, OnInit } from '@angular/core';
 import { TranslateService } from '@ngx-translate/core';
 import * as L from 'leaflet';
 import { tileLayer } from 'leaflet';
@@ -23,7 +23,7 @@ export class StationMapComponent implements OnInit {
           attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ, TomTom, Intermap, iPC, USGS, FAO, NPS, NRCAN, GeoBase, Kadaster NL, Ordnance Survey, Esri Japan, METI, Esri China (Hong Kong), and the GIS User Community'
         })
     };
-
+  @Input() guid: string;
   options = {
     layers: [
       this.baseLayers['OpenStreetMap Mat']
@@ -31,6 +31,8 @@ export class StationMapComponent implements OnInit {
     zoom: 5
   };
   private _bounds: L.LatLngBounds;
+  total: number;
+  visited: number;
   get bounds(): L.LatLngBounds {
     return this._bounds;
   }
@@ -50,9 +52,15 @@ export class StationMapComponent implements OnInit {
   loading = true;
   constructor(
     private apiService: ApiService,
-    private translateService: TranslateService
+    private translateService: TranslateService,
+    private cd: ChangeDetectorRef
   ) { }
-
+  get percentage() {
+    if (this.total === 0) {
+      return '?';
+    }
+    return Math.round(this.visited / this.total * 1000) / 10;
+  }
   ngOnInit(): void {
     this.getData();
   }
@@ -60,9 +68,11 @@ export class StationMapComponent implements OnInit {
   async getData() {
     this.loading = true;
 
-    const text = await this.apiService.getStations().toPromise();
+    const text = await this.apiService.getStationMap(this.guid).toPromise();
     const parent = this;
-    const track = L.geoJSON(text as any, {
+    this.total = text.total;
+    this.visited = text.visited;
+    const track = L.geoJSON(text.geoJson as any, {
       pointToLayer(feature, latlng) {
         return L.circleMarker(latlng, {
           radius: feature.properties.visited ? 8 : 4,
@@ -86,7 +96,13 @@ export class StationMapComponent implements OnInit {
             fillOpacity: 0.65,
             radius: 6
           });
-          await parent.apiService.updateStation(feature.properties.id, feature.properties.visited).toPromise()
+          await parent.apiService.updateStation(feature.properties.id, feature.properties.visited).toPromise();
+          if (feature.properties.visited) {
+            parent.visited++;
+          } else {
+            parent.visited--;
+          }
+          parent.cd.detectChanges();
           f.target.setStyle({
             fillColor: feature.properties.visited ? '#00FF00' : '#FF0000',
             fillOpacity: feature.properties.visited ? 0.8 : 0.5,

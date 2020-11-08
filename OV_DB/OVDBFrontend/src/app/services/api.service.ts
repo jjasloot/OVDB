@@ -13,6 +13,8 @@ import { AdminMap } from '../models/adminMap.model';
 import { AdminUser } from '../models/adminUser.model';
 import { MultipleEdit } from '../models/multipleEdit.model';
 import { RouteInstance } from '../models/routeInstance.model';
+import { StationMap } from '../models/stationMap.model';
+import { StationView } from '../models/stationView.model';
 
 @Injectable({
   providedIn: 'root'
@@ -278,17 +280,18 @@ export class ApiService {
     return this.httpClient.get<string[]>(url);
   }
 
-  getStations(countries: number[] = []) {
-    let url = environment.backend + 'api/station';
-    if (!!countries && countries.length > 0) {
-      url += '?countryIds=' + countries.join(',');
-    }
-    return this.httpClient.get<string>(url);
+  getStationMap(guid) {
+    let url = environment.backend + 'api/stationmaps/map/' + guid;
+    return this.httpClient.get<StationView>(url);
   }
 
   updateStation(id: any, value: any) {
     const url = environment.backend + 'api/station/' + id;
-    return this.httpClient.put(url, {value});
+    return this.httpClient.put(url, { value });
   }
 
+  listStationMaps() {
+    let url = environment.backend + 'api/stationmaps';
+    return this.httpClient.get<StationMap[]>(url);
+  }
 }

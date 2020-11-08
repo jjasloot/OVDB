@@ -39,7 +39,7 @@
     "ROUTESLIST.NOROUTES": "Geen routes gevonden, voeg er een toe via het tabblad \"Route toevoegen\"",
     "IMPORTER.THISMAYTAKEAWHILE": "Dit kan even duren...",
     "ERROR": "Fout...",
-    "IMPORTER.STEP1": "Zoek op een naam en een type. Voeg een netwerk toe om resultaten te beperken. Er is niet echt ruimte voor fouten, je kunt de juiste teksten op OpenStreetMaps vinden.",
+    "IMPORTER.STEP1": "Zoek op een naam en een type. Voeg een netwerk toe om resultaten te beperken.",
     "IMPORTER.REFERENCE": "Naam van de lijn",
     "IMPORTER.NETWORK": "Netwerk",
     "IMPORTER.DIFFERENTTIME": "Zoeken op een andere datum?",
@@ -162,10 +162,10 @@
     "INSTANCES": "rit(ten) totaal",
     "INSTANCE.LOADALL": "Alles laden",
     "MAPINSTANCES.INPERIOD": "in gekozen periode",
-	"FILTER.EXPLAINDATES":"Data hebben voorrang boven gekozen jaren",
-	"FILTER.STARTDATE":"Vanaf",
-	"FILTER.ENDDATE":"Tot",
-  "ROUTESLIST.INSTANCES": "Ritten",
-  "INSTANCES.EDITINSTANCE": "Ritten bewerken",
-  "MAPOPTIONS.TITLE":"Filter opties"
+    "FILTER.EXPLAINDATES": "Data hebben voorrang boven gekozen jaren",
+    "FILTER.STARTDATE": "Vanaf",
+    "FILTER.ENDDATE": "Tot",
+    "ROUTESLIST.INSTANCES": "Ritten",
+    "INSTANCES.EDITINSTANCE": "Ritten bewerken",
+    "MAPOPTIONS.TITLE": "Filter opties"
 }

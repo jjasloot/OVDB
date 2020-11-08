@@ -2,15 +2,17 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using OVDB_database.Database;
 
 namespace OVDB_database.Migrations
 {
     [DbContext(typeof(OVDBDatabaseContext))]
-    partial class OVDBDatabaseContextModelSnapshot : ModelSnapshot
+    [Migration("20201108201834_stationMaps")]
+    partial class stationMaps
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -247,11 +249,16 @@ namespace OVDB_database.Migrations
                     b.Property<int>("RouteId")
                         .HasColumnType("int");
 
+                    b.Property<int?>("StationMapMapId")
+                        .HasColumnType("int");
+
                     b.HasKey("RouteMapId");
 
                     b.HasIndex("MapId");
 
                     b.HasIndex("RouteId");
+
+                    b.HasIndex("StationMapMapId");
 
                     b.ToTable("RoutesMaps");
                 });
@@ -355,9 +362,12 @@ namespace OVDB_database.Migrations
 
             modelBuilder.Entity("OVDB_database.Models.StationMap", b =>
                 {
-                    b.Property<int>("StationMapId")
+                    b.Property<int>("MapId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
+
+                    b.Property<bool>("Default")
+                        .HasColumnType("tinyint(1)");
 
                     b.Property<Guid>("MapGuid")
                         .HasColumnType("char(36)");
@@ -374,10 +384,16 @@ namespace OVDB_database.Migrations
                     b.Property<string>("SharingLinkName")
                         .HasColumnType("longtext CHARACTER SET utf8mb4");
 
+                    b.Property<bool>("ShowRouteInfo")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<bool>("ShowRouteOutline")
+                        .HasColumnType("tinyint(1)");
+
                     b.Property<int>("UserId")
                         .HasColumnType("int");
 
-                    b.HasKey("StationMapId");
+                    b.HasKey("MapId");
 
                     b.HasIndex("UserId");
 
@@ -540,6 +556,10 @@ namespace OVDB_database.Migrations
                         .HasForeignKey("RouteId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.HasOne("OVDB_database.Models.StationMap", null)
+                        .WithMany("RouteMaps")
+                        .HasForeignKey("StationMapMapId");
                 });
 
             modelBuilder.Entity("OVDB_database.Models.RouteType", b =>
@@ -554,7 +574,7 @@ namespace OVDB_database.Migrations
             modelBuilder.Entity("OVDB_database.Models.Station", b =>
                 {
                     b.HasOne("OVDB_database.Models.StationCountry", "StationCountry")
-                        .WithMany("Stations")
+                        .WithMany()
                         .HasForeignKey("StationCountryId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -572,13 +592,13 @@ namespace OVDB_database.Migrations
             modelBuilder.Entity("OVDB_database.Models.StationMapCountry", b =>
                 {
                     b.HasOne("OVDB_database.Models.StationCountry", "StationCountry")
-                        .WithMany("StationMapCountries")
+                        .WithMany()
                         .HasForeignKey("StationCountryId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("OVDB_database.Models.StationMap", "StationMap")
-                        .WithMany("StationMapCountries")
+                        .WithMany()
                         .HasForeignKey("StationMapId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();

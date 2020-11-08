@@ -6,20 +6,42 @@
             <button mat-raised-button [routerLink]="['/admin']">{{'HOME.DATA'|translate}}</button>
         </div>
         <div *ngIf="!!maps">
-            <mat-list *ngIf="maps.length>0;else noData">
+            <mat-list *ngIf="maps.length>0 || stationMaps.length>0;else noData">
                 <mat-list-item *ngFor="let map of maps">
-                    <h4 mat-line><b>{{map.name}}</b></h4>
+                    <h4 mat-line><b>{{getName(map)}}</b></h4>
                     <div mat-line *ngIf="!map.sharingLinkName">{{'HOME.CREATELINKTOSHARE'|translate}}</div>
                     <div class="desktop buttons">
                         <button mat-raised-button color="primary" (click)="view(map)">{{'HOME.VIEW'|translate}}</button>
                         <button mat-button *ngIf="!!map.sharingLinkName" [cdkCopyToClipboard]="getLink(map)">{{'HOME.COPY'|translate}}</button>
                     </div>
                     <div class="mobile buttons">
-                        <button mat-icon-button color="primary" (click)="view(map)"><mat-icon>visibility</mat-icon></button>
-                        <button mat-icon-button *ngIf="!!map.sharingLinkName" [cdkCopyToClipboard]="getLink(map)"><mat-icon>content_copy</mat-icon></button>
+                        <button mat-icon-button color="primary" (click)="view(map)">
+              <mat-icon>visibility</mat-icon>
+            </button>
+                        <button mat-icon-button *ngIf="!!map.sharingLinkName" [cdkCopyToClipboard]="getLink(map)">
+              <mat-icon>content_copy</mat-icon>
+            </button>
+                    </div>
+                </mat-list-item>
+                <mat-list-item *ngFor="let map of stationMaps">
+                    <h4 mat-line>
+                        <mat-icon>location_on</mat-icon><b>{{getName(map)}}</b></h4>
+                    <div mat-line *ngIf="!map.sharingLinkName">{{'HOME.CREATELINKTOSHARE'|translate}}</div>
+                    <div class="desktop buttons">
+                        <button mat-raised-button color="primary" (click)="viewStation(map)">{{'HOME.VIEW'|translate}}</button>
+                        <button mat-button *ngIf="!!map.sharingLinkName" [cdkCopyToClipboard]="getLinkStation(map)">{{'HOME.COPY'|translate}}</button>
+                    </div>
+                    <div class="mobile buttons">
+                        <button mat-icon-button color="primary" (click)="viewStation(map)">
+              <mat-icon>visibility</mat-icon>
+            </button>
+                        <button mat-icon-button *ngIf="!!map.sharingLinkName" [cdkCopyToClipboard]="getLinkStation(map)">
+              <mat-icon>content_copy</mat-icon>
+            </button>
                     </div>
                 </mat-list-item>
             </mat-list>
+            <mat-spinner *ngIf="loading"></mat-spinner>
         </div>
     </div>
     <br>

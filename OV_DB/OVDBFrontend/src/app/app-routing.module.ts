@@ -28,6 +28,7 @@ import { AdministratorGuard } from './guards/administrator.guard';
 import { RouteInstancesComponent } from './admin/route-instances/route-instances.component';
 import { StatsComponent } from './stats/stats.component';
 import { StationMapComponent } from './stations/station-map/station-map.component';
+import { StationMapViewComponent } from './stations/station-map-view/station-map-view.component';
 
 
 const routes: Routes = [
@@ -59,7 +60,7 @@ const routes: Routes = [
       },
       {
         path: 'stations', canActivate: [LoginGuard], children: [
-          { path: '', component: StationMapComponent },
+          { path: 'map/:guid', component: StationMapViewComponent },
         ]
       },
       {

@@ -440,7 +440,7 @@ namespace OV_DB.Controllers
             var query = $"<osm-script output=\"json\"><query type=\"relation\">";
             if (dateTime.HasValue)
                 query = $"<osm-script output=\"json\" date=\"{dateTime:o}\"><query type=\"relation\">";
-            query += $"<has-kv k=\"network\" v=\"" + network + "\"/>";
+            query += $"<has-kv k=\"network\" modv=\"\" regv=\"" + network + "\"/>";
             query += $"<has-kv k=\"route\"/>";
             query += $"</query><print mode=\"tags\" order=\"quadtile\"/></osm-script>";
             string text = null;
@@ -500,7 +500,7 @@ namespace OV_DB.Controllers
             }
             if (!string.IsNullOrWhiteSpace(network))
             {
-                query += $"<has-kv k=\"network\" v=\"" + network + "\"/>";
+                query += $"<has-kv k=\"network\" modv=\"\" regv=\"" + network + "\"/>";
             }
             query += $"</query><print mode=\"tags\" geometry=\"center\" order=\"quadtile\"/></osm-script>";
             string text = null;

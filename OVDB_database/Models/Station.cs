@@ -19,5 +19,7 @@ namespace OVDB_database.Models
         public int StationCountryId { get; set; }
         public StationCountry StationCountry { get; set; }
         public List<StationVisit> StationVisits { get; set; }
+        public bool Hidden { get; set; }
+        public bool Special { get; set; }
     }
 }
