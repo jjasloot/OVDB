@@ -29,6 +29,7 @@ import { RouteInstancesComponent } from './admin/route-instances/route-instances
 import { StatsComponent } from './stats/stats.component';
 import { StationMapComponent } from './stations/station-map/station-map.component';
 import { StationMapViewComponent } from './stations/station-map-view/station-map-view.component';
+import { AdminStationsMapComponent } from './stations/admin-stations-map/admin-stations-map.component';
 
 
 const routes: Routes = [
@@ -67,7 +68,8 @@ const routes: Routes = [
         path: 'administrator', component: AdministratorLayoutComponent, canActivate: [LoginGuard, AdministratorGuard], children: [
           { path: '', pathMatch: 'full', redirectTo: 'users' },
           { path: 'maps', component: AdministratorMapsComponent },
-          { path: 'users', component: AdministratorUsersComponent }
+          { path: 'users', component: AdministratorUsersComponent },
+          { path: 'stations', component: AdminStationsMapComponent }
         ]
       },
     ]

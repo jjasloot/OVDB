@@ -57,7 +57,7 @@ namespace OV_DB.Controllers
 
                             if (dbStations.Any(s => s.OsmId == station.Id))
                             {
-                                stationToUpdate = dbStations.SingleOrDefault(s => s.OsmId == station.Id);
+                                stationToUpdate = dbStations.FirstOrDefault(s => s.OsmId == station.Id);
                             }
                             else
                             {
@@ -74,6 +74,10 @@ namespace OV_DB.Controllers
                                 stationToUpdate.Network = station.Tags["network"];
                             if (station.Tags.ContainsKey("operator"))
                                 stationToUpdate.Operator = station.Tags["operator"];
+                            if (station.Tags.ContainsKey("usage") && station.Tags["usage"] == "tourism")
+                            {
+                                stationToUpdate.Special = true;
+                            }
                             names.Add(station.Tags["name"]);
                         }
                     });
@@ -99,7 +103,7 @@ namespace OV_DB.Controllers
 
                             if (dbStations.Any(s => s.OsmId == station.Id))
                             {
-                                stationToUpdate = dbStations.SingleOrDefault(s => s.OsmId == station.Id);
+                                stationToUpdate = dbStations.FirstOrDefault(s => s.OsmId == station.Id);
                             }
                             else
                             {
@@ -116,6 +120,10 @@ namespace OV_DB.Controllers
                                 stationToUpdate.Network = station.Tags["network"];
                             if (station.Tags.ContainsKey("operator"))
                                 stationToUpdate.Operator = station.Tags["operator"];
+                            if (station.Tags.ContainsKey("usage") && station.Tags["usage"] == "tourism")
+                            {
+                                stationToUpdate.Special = true;
+                            }
                         }
                     });
                     await Task.Delay(1000);

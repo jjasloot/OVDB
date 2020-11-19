@@ -79,6 +79,7 @@ import { RoutesListBottomsheetComponent } from './admin/routes-list/routes-list-
 import {MatCardModule} from '@angular/material/card';
 import { StationMapComponent } from './stations/station-map/station-map.component';
 import { StationMapViewComponent } from './stations/station-map-view/station-map-view.component';
+import { AdminStationsMapComponent } from './stations/admin-stations-map/admin-stations-map.component';
 
 registerLocaleData(localeNl, 'nl-NL');
 export function HttpLoaderFactory(http: HttpClient) {
@@ -125,6 +126,7 @@ export function HttpLoaderFactory(http: HttpClient) {
     RoutesListBottomsheetComponent,
     StationMapComponent,
     StationMapViewComponent,
+    AdminStationsMapComponent,
   ],
   imports: [
     BrowserModule,

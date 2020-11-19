@@ -284,13 +284,20 @@ export class ApiService {
     let url = environment.backend + 'api/stationmaps/map/' + guid;
     return this.httpClient.get<StationView>(url);
   }
+  getStationsAdminMap() {
+    let url = environment.backend + 'api/station/map/';
+    return this.httpClient.get<string>(url);
+  }
 
   updateStation(id: any, value: any) {
     const url = environment.backend + 'api/station/' + id;
     return this.httpClient.put(url, { value });
   }
-
-  listStationMaps() {
+  updateStationAdmin(id: any, special: any, hidden) {
+    const url = environment.backend + 'api/station/admin/' + id;
+    return this.httpClient.put(url, { special, hidden });
+  }
+  listStationMapsAdmin() {
     let url = environment.backend + 'api/stationmaps';
     return this.httpClient.get<StationMap[]>(url);
   }

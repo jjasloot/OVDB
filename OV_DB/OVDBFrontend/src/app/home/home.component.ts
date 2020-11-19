@@ -28,7 +28,7 @@ export class HomeComponent implements OnInit {
         this.loading--;
       });
       this.loading++;
-      this.apiService.listStationMaps().subscribe(maps => {
+      this.apiService.listStationMapsAdmin().subscribe(maps => {
         this.stationMaps = maps;
         this.loading--;
       });

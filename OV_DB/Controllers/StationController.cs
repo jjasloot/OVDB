@@ -32,7 +32,7 @@ namespace OV_DB.Controllers
             {
                 return Forbid();
             }
-            var stationsQuery = DbContext.Stations.AsQueryable();
+            var stationsQuery = DbContext.Stations.AsNoTracking().AsQueryable();
             if (!string.IsNullOrWhiteSpace(countryIds))
             {
                 var countries = countryIds.Split(',').Select(s => int.Parse(s)).ToList();
@@ -102,6 +102,64 @@ namespace OV_DB.Controllers
                 }
             }
             await DbContext.SaveChangesAsync();
+            return Ok();
+        }
+
+        [HttpGet("map")]
+        public async Task<IActionResult> GetAdminMap()
+        {
+            var adminClaim = (User.Claims.SingleOrDefault(c => c.Type == "admin").Value ?? "false");
+            if (string.Equals(adminClaim, "false", StringComparison.OrdinalIgnoreCase))
+            {
+                return Forbid();
+            }
+
+            var stations = DbContext.Stations.AsNoTracking().AsQueryable();
+
+            var collection = new FeatureCollection();
+            await stations.ForEachAsync(s =>
+            {
+                var properties = new StationAdminPropertiesDTO();
+                if (!string.IsNullOrWhiteSpace(s.Name))
+                    properties.name = s.Name;
+                if (!string.IsNullOrWhiteSpace(s.Network))
+                    properties.network = s.Network;
+                if (!string.IsNullOrWhiteSpace(s.Operator))
+                    properties.operatingCompany = s.Operator;
+                if (s.Elevation.HasValue)
+                    properties.elevation = s.Elevation.Value;
+                properties.hidden = s.Hidden;
+                properties.special = s.Special;
+                properties.id = s.Id;
+                Position coordinates = new Position(s.Lattitude, s.Longitude, s.Elevation);
+                Point geometry = new Point(coordinates);
+                var item = new Feature(geometry, properties, null);
+
+                collection.Features.Add(item);
+            });
+            return Ok(collection);
+        }
+
+        [HttpPut("admin/{id:int}")]
+        public async Task<IActionResult> AdminUpdateStation(int id, [FromBody] StationVisibilityAdmin stationVisibility)
+        {
+            var adminClaim = (User.Claims.SingleOrDefault(c => c.Type == "admin").Value ?? "false");
+            if (string.Equals(adminClaim, "false", StringComparison.OrdinalIgnoreCase))
+            {
+                return Forbid();
+            }
+
+            var station = await DbContext.Stations.SingleOrDefaultAsync(s => s.Id == id);
+            if (station == null)
+            {
+                return NotFound();
+            }
+
+            station.Hidden = stationVisibility.Hidden;
+            station.Special = stationVisibility.Special;
+
+            await DbContext.SaveChangesAsync();
+
             return Ok();
         }
     }
