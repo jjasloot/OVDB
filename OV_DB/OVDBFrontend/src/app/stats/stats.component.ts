@@ -209,4 +209,10 @@ export class StatsComponent implements OnInit {
   name(item) {
     return this.translationService.getNameForItem(item);
   }
+
+  download(){
+    this.apiService.getTripReport(this.selectedMap,this.selectedYear).subscribe(data => {
+      saveAs(data, 'tripreport.xlsx');
+    });
+  }
 }

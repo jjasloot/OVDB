@@ -13,6 +13,8 @@ namespace OV_DB.Models
         public string Description { get; set; }
         public string NameNL { get; set; }
         public string DescriptionNL { get; set; }
+        public string From { get; set; }
+        public string To { get; set; }
         public string OverrideColour { get; set; }
         public string LineNumber { get; set; }
         public string OperatingCompany { get; set; }

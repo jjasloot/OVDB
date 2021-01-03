@@ -23,8 +23,8 @@
     </mat-card>
 
     <div class="row">
-        <table>
-            <tr *ngIf="!!tableData">
+        <table *ngIf="!!tableData">
+            <tr>
                 <th>{{'NAME'|translate}}</th>
                 <th>{{'DISTANCE'|translate}}</th>
             </tr>
@@ -32,6 +32,7 @@
                 <td>{{name(row)}}</td>
                 <td>{{row.distance}} km</td>
             </tr>
+            <button mat-raised-button (click)="download()">{{'TRIPREPORT.DOWNLOAD'|translate}}</button>
         </table>
         <div *ngIf="!!data" class="container graph">
             <canvas baseChart height="300" [datasets]="data.datasets" [options]="lineChartOptions" chartType="line"></canvas>
@@ -41,7 +42,6 @@
             <canvas #singleChart baseChart height="400" [datasets]="singleData.datasets" [options]="barChartOptions" chartType="bar"></canvas>
         </div> -->
     </div>
-
     <div class="map-container" #mapContainer>
         <div class="map" leaflet [leafletOptions]="options" [leafletLayers]="layers" [leafletLayersControl]="leafletLayersControl" [leafletFitBounds]="bounds">
         </div>

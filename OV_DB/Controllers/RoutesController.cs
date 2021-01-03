@@ -117,7 +117,7 @@ namespace OV_DB.Controllers
         }
 
         [HttpGet("missingInfo")]
-        public async Task<ActionResult<IEnumerable<Route>>> GetRoutesWithMissingInfo()
+        public async Task<ActionResult<IEnumerable<RouteDTO>>> GetRoutesWithMissingInfo()
         {
             var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value ?? "-1");
             if (userIdClaim < 0)
@@ -126,7 +126,9 @@ namespace OV_DB.Controllers
             }
             return await _context.Routes
                 .Where(r => r.RouteMaps.Any(rm => rm.Map.UserId == userIdClaim))
-                .Where(r => r.RouteTypeId == null)
+                .Where(r => r.RouteTypeId == null || (string.IsNullOrWhiteSpace(r.From) && string.IsNullOrWhiteSpace(r.To)))
+                .OrderByDescending(r => r.RouteInstances.Max(ri => ri.Date))
+                .ProjectTo<RouteDTO>(_mapper.ConfigurationProvider)
                 .ToListAsync();
         }
 
@@ -194,6 +196,8 @@ namespace OV_DB.Controllers
             dbRoute.LineNumber = route.LineNumber;
             dbRoute.Name = route.Name;
             dbRoute.NameNL = route.NameNL;
+            dbRoute.From = route.From;
+            dbRoute.To = route.To;
             dbRoute.OverrideColour = route.OverrideColour;
             dbRoute.OperatingCompany = route.OperatingCompany;
             dbRoute.RouteTypeId = route.RouteTypeId;
@@ -447,7 +451,14 @@ namespace OV_DB.Controllers
                     {
                         route.OperatingCompany = extendedData.Single(d => d.Name == "company").Value;
                     }
-
+                    if (extendedData.Any(d => d.Name == "from"))
+                    {
+                        route.From = extendedData.Single(d => d.Name == "from").Value;
+                    }
+                    if (extendedData.Any(d => d.Name == "to"))
+                    {
+                        route.To = extendedData.Single(d => d.Name == "to").Value;
+                    }
                     if (extendedData.Any(d => d.Name == "countries"))
                     {
                         route.RouteCountries = new List<RouteCountry>();
@@ -752,6 +763,14 @@ namespace OV_DB.Controllers
             if (!string.IsNullOrWhiteSpace(route.OverrideColour))
             {
                 placemark.ExtendedData.AddData(new Data { Name = "color", Value = route.OverrideColour });
+            }
+            if (!string.IsNullOrWhiteSpace(route.From))
+            {
+                placemark.ExtendedData.AddData(new Data { Name = "from", Value = route.From });
+            }
+            if (!string.IsNullOrWhiteSpace(route.To))
+            {
+                placemark.ExtendedData.AddData(new Data { Name = "to", Value = route.To });
             }
             if (route.RouteMaps.Any())
             {

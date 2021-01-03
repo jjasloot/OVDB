@@ -184,5 +184,8 @@
 	"EXTREMES.SOUTH":"Southernmost point",
 	"EXTREMES.WEST":"Westernmost point",
 	"EXTREMES.NORTH":"Southernmost point",
-	"HOME.STATS":"Statistics"
+	"HOME.STATS":"Statistics",
+	"FROM":"From",
+	"TO":"To",
+	"TRIPREPORT.DOWNLOAD":"Download report"
 }

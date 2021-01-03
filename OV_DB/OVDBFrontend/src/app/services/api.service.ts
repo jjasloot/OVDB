@@ -20,10 +20,6 @@ import { StationView } from '../models/stationView.model';
   providedIn: 'root'
 })
 export class ApiService {
-
-
-
-
   getRoutesWithMissingSettings(): Observable<Route[]> {
     return this.httpClient.get<Route[]>(environment.backend + 'api/routes/missingInfo');
   }
@@ -301,4 +297,9 @@ export class ApiService {
     let url = environment.backend + 'api/stationmaps';
     return this.httpClient.get<StationMap[]>(url);
   }
+  getTripReport(selectedMap: string, selectedYear: number) {
+    let url = `${environment.backend}api/tripreport?guid=${selectedMap}&year=${selectedYear}`;
+    return this.httpClient.get(url, { responseType: 'blob' });
+  }
+
 }

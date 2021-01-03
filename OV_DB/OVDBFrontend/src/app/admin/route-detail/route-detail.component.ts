@@ -52,6 +52,8 @@ export class RouteDetailComponent implements OnInit {
       nameNL: '',
       description: '',
       descriptionNL: '',
+      from: '',
+      to: '',
       lineNumber: null,
       operatingCompany: null,
       overrideColour: null,

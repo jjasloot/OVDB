@@ -184,5 +184,8 @@
 	"EXTREMES.SOUTH":"Meest zuidelijk",
 	"EXTREMES.WEST":"Meest westelijk",
 	"EXTREMES.NORTH":"Meest noordelijk",
-	"HOME.STATS":"Statistieken"
+	"HOME.STATS":"Statistieken",
+	"FROM":"Van",
+	"TO":"Naar",
+	"TRIPREPORT.DOWNLOAD":"Download overzicht"
 }

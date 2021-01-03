@@ -25,4 +25,6 @@ export interface Route {
   calculatedDistance: number;
   routeInstancesCount: number;
   routeInstances: RouteInstance[];
+  from?: string;
+  to?: string;
 }

@@ -262,6 +262,8 @@ namespace OV_DB.Controllers
             var filteredPoints = filteredList.Select(l => l.Longitude.ToString(CultureInfo.InvariantCulture) + ", " + l.Latitude.ToString(CultureInfo.InvariantCulture)).ToList();
             var filteredPointsList = string.Join("\n", filteredPoints);
             element.GeoJson = CoordsToGeoJson(filteredList);
+            element.From = fromStop.Tags["friendlyName"];
+            element.To = toStop.Tags["friendlyName"];
             return Ok(element);
         }
 
@@ -605,7 +607,14 @@ namespace OV_DB.Controllers
             {
                 route.LineNumber = line.Ref;
             }
-
+            if (!string.IsNullOrWhiteSpace(line.From))
+            {
+                route.From = line.From;
+            }
+            if (!string.IsNullOrWhiteSpace(line.To))
+            {
+                route.To = line.To;
+            }
             var maps = await _context.Maps.Where(m => m.UserId == userIdClaim).ToListAsync();
 
             var defaultMap = maps.Where(m => m.Default == true).FirstOrDefault();

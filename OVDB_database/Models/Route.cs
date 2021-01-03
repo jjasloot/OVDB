@@ -21,6 +21,10 @@ namespace OVDB_database.Models
         [JsonProperty]
         public string DescriptionNL { get; set; }
         [JsonProperty]
+        public string From { get; set; }
+        [JsonProperty]
+        public string To { get; set; }
+        [JsonProperty]
         public string OverrideColour { get; set; }
         [JsonProperty]
         public string LineNumber { get; set; }

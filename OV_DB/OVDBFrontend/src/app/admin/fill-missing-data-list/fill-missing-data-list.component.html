@@ -3,6 +3,9 @@
     <mat-list *ngIf="data.length>0;else noData">
         <mat-list-item *ngFor="let route of data">
             <h4 mat-line><b>{{route.name}}</b></h4>
+            <h6>{{(!route.routeType?'routeType ':'')}}</h6>
+            <h6>{{(!route.from?'from ':'')}}</h6>
+            <h6>{{(!route.to?'to ':'')}}</h6>
             <button mat-button color="primary" (click)="edit(route.routeId)">{{'EDIT'|translate}}</button>
         </mat-list-item>
     </mat-list>
