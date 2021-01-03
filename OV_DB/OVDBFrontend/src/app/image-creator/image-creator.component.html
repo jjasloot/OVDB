@@ -1,0 +1,25 @@
+<div class="container">
+    <p>{{'IMAGES.DESCRIPTION'|translate}}</p>
+    <mat-card>
+        <b>{{'ADMINPAGES.MAPS'|translate}}</b>
+        <div class="column">
+            <mat-checkbox *ngFor="let map of maps" [checked]="isMapChecked(map.mapGuid)" (change)="selectMap(map.mapGuid,$event)">
+                {{name(map)}}</mat-checkbox>
+        </div>
+        <mat-form-field>
+            <input matInput (change)="setImage()" [(ngModel)]="title" [placeholder]="translateService.instant('IMAGES.TITLE')">
+        </mat-form-field><br>
+        <mat-form-field>
+            <input matInput (change)="setImage()" type="number" [(ngModel)]="width" [placeholder]="translateService.instant('IMAGES.WIDTH')">
+        </mat-form-field><br>
+        <mat-form-field>
+            <input matInput (change)="setImage()" type="number" [(ngModel)]="height" [placeholder]="translateService.instant('IMAGES.HEIGHT')">
+        </mat-form-field><br>
+        <mat-checkbox (change)="setImage()" [(ngModel)]="includeTotals">{{'IMAGES.INCLUDETOTALS'|translate}}</mat-checkbox>
+    </mat-card>
+    <br>
+    <mat-card>
+        <p>{{imageSrc}}</p>
+        <img [src]="imageSrc">
+    </mat-card>
+</div>

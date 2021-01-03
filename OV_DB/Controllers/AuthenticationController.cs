@@ -117,12 +117,12 @@ namespace OV_DB.Controllers
             {
                 return BadRequest("Wachtwoord te kort");
             }
-            var inviteCode = await _dbContext.InviteCodes.FirstOrDefaultAsync(c => c.Code == createAccount.InviteCode && c.IsUsed == false);
+            //var inviteCode = await _dbContext.InviteCodes.FirstOrDefaultAsync(c => c.Code == createAccount.InviteCode && c.IsUsed == false);
 
-            if (inviteCode == null)
-            {
-                return BadRequest("Ongeldige invite code");
-            }
+            //if (inviteCode == null)
+            //{
+            //    return BadRequest("Ongeldige invite code");
+            //}
 
             var userSameEmail = await _dbContext.Users.AnyAsync(u => u.Email.ToLower() == createAccount.Email.ToLower());
             if (userSameEmail)
@@ -135,11 +135,11 @@ namespace OV_DB.Controllers
                 Guid = Guid.NewGuid()
 
             };
-            if (inviteCode.DoesNotExpire == false)
-            {
-                inviteCode.IsUsed = true;
-                inviteCode.User = user;
-            }
+            //if (inviteCode.DoesNotExpire == false)
+            //{
+            //    inviteCode.IsUsed = true;
+            //    inviteCode.User = user;
+            //}
             var map = new Map
             {
                 MapGuid = Guid.NewGuid(),

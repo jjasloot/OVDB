@@ -37,7 +37,7 @@ namespace OV_DB.Controllers
 
 
         [HttpGet("years/{id}")]
-        public async Task<ActionResult<List<int?>>> GetYearsAsync(string id)
+        public async Task<ActionResult<List<int>>> GetYearsAsync(string id)
         {
             var guid = Guid.Parse(id);
             var map = await DatabaseContext.Maps.SingleOrDefaultAsync(u => u.MapGuid == guid);
@@ -48,10 +48,10 @@ namespace OV_DB.Controllers
             var years = await DatabaseContext.Routes
              .Where(r => r.RouteTypeId != null)
              .Where(r => r.RouteMaps.Any(rm => rm.MapId == map.MapId))
-             .Select(r => r.FirstDateTime.HasValue ? (int?)r.FirstDateTime.Value.Year : null)
+             .SelectMany(r => r.RouteInstances.Select(ri => ri.Date.Year))
              .Distinct()
              .ToListAsync();
-            return years;
+            return Ok(years);
         }
 
         [HttpGet("types/{id}")]

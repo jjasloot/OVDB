@@ -80,6 +80,7 @@ import {MatCardModule} from '@angular/material/card';
 import { StationMapComponent } from './stations/station-map/station-map.component';
 import { StationMapViewComponent } from './stations/station-map-view/station-map-view.component';
 import { AdminStationsMapComponent } from './stations/admin-stations-map/admin-stations-map.component';
+import { ImageCreatorComponent } from './image-creator/image-creator.component';
 
 registerLocaleData(localeNl, 'nl-NL');
 export function HttpLoaderFactory(http: HttpClient) {
@@ -127,6 +128,7 @@ export function HttpLoaderFactory(http: HttpClient) {
     StationMapComponent,
     StationMapViewComponent,
     AdminStationsMapComponent,
+    ImageCreatorComponent,
   ],
   imports: [
     BrowserModule,

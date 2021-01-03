@@ -8,10 +8,10 @@
         <mat-label>{{'REGISTER.PASSWORD'|translate}}</mat-label>
         <input matInput type="password" formControlName="password">
     </mat-form-field>
-    <mat-form-field>
+    <!-- <mat-form-field>
         <mat-label>{{'REGISTER.INVITECODE'|translate}}</mat-label>
         <input matInput formControlName="inviteCode">
-    </mat-form-field>
+    </mat-form-field> -->
     <div class="failed" *ngIf="failed">{{error}}</div>
     <button mat-raised-button (click)="submit()">{{'REGISTER.REGISTER'|translate}}</button>
 </form>

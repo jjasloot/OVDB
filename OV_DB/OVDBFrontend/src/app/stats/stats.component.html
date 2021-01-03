@@ -1,31 +1,32 @@
 <div class="container">
-
-    <mat-form-field appearance="fill">
-        <mat-label>Choose map</mat-label>
-        <mat-select (selectionChange)="changeMap($event.value)">
-            <mat-option *ngFor="let map of maps" [value]="map.mapGuid">
-                {{map.name}}
-            </mat-option>
-        </mat-select>
-    </mat-form-field>
-    <mat-form-field appearance="fill">
-        <mat-label>Choose year</mat-label>
-        <mat-select (selectionChange)="getData($event.value)" [(ngModel)]="selectedYear">
-            <mat-option *ngFor="let year of years" [value]="year">
-                {{year}}
-            </mat-option>
-            <mat-option [value]="null">
-                All
-            </mat-option>
-        </mat-select>
-    </mat-form-field>
-
+    <mat-card>
+        <mat-card-title>{{'SELECTION'|translate}}</mat-card-title>
+        <mat-form-field>
+            <mat-label>{{'CHOOSEMAP'|translate}}</mat-label>
+            <mat-select (selectionChange)="changeMap($event.value)">
+                <mat-option *ngFor="let map of maps" [value]="map.mapGuid">
+                    {{map.name}}
+                </mat-option>
+            </mat-select>
+        </mat-form-field>
+        <mat-form-field>
+            <mat-label>{{'CHOOSEYEAR'|translate}}</mat-label>
+            <mat-select (selectionChange)="getData($event.value)" [(ngModel)]="selectedYear">
+                <mat-option *ngFor="let year of years" [value]="year">
+                    {{year}}
+                </mat-option>
+                <mat-option [value]="null">
+                    {{'ALL'|translate}}
+                </mat-option>
+            </mat-select>
+        </mat-form-field>
+    </mat-card>
 
     <div class="row">
         <table>
-            <tr>
-                <th>Name</th>
-                <th>Distance</th>
+            <tr *ngIf="!!tableData">
+                <th>{{'NAME'|translate}}</th>
+                <th>{{'DISTANCE'|translate}}</th>
             </tr>
             <tr *ngFor="let row of tableData">
                 <td>{{name(row)}}</td>
@@ -33,7 +34,7 @@
             </tr>
         </table>
         <div *ngIf="!!data" class="container graph">
-            <canvas baseChart height="400" [datasets]="data.datasets" [options]="lineChartOptions" chartType="line"></canvas>
+            <canvas baseChart height="300" [datasets]="data.datasets" [options]="lineChartOptions" chartType="line"></canvas>
         </div>
         <!-- <div *ngIf="!!data" class="container graph">
             <button (click)="resetZoom()">Reset zoom</button>

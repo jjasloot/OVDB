@@ -12,7 +12,7 @@ export class RegistrationComponent implements OnInit {
   form = this.formBuilder.group({
     email: ['', [Validators.required, Validators.email]],
     password: ['', Validators.required],
-    inviteCode: ['', Validators.required]
+    // inviteCode: ['', Validators.required]
   });
   failed = false;
   error = '';

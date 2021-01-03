@@ -1,5 +1,5 @@
 export interface RegistrationRequest {
     email: string;
     password: string;
-    inviteCode: string;
+    // inviteCode: string;
 }

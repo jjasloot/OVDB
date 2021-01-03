@@ -5,6 +5,7 @@ import { tileLayer, marker, icon } from 'leaflet';
 import * as L from 'leaflet';
 import { Map } from '../models/map.model';
 import { TranslationService } from '../services/translation.service';
+import { TranslateService } from '@ngx-translate/core';
 @Component({
   selector: 'app-stats',
   templateUrl: './stats.component.html',
@@ -102,7 +103,8 @@ export class StatsComponent implements OnInit {
 
   constructor(
     private apiService: ApiService,
-    private translationService: TranslationService
+    private translationService: TranslationService,
+    public translateService: TranslateService
   ) { }
 
   ngOnInit(): void {
@@ -142,7 +144,8 @@ export class StatsComponent implements OnInit {
           shadowUrl: 'assets/marker-shadow.png'
         })
       });
-      let popup = '<h2>Southernmost point</h2>';
+      console.log(this.translateService.instant('EXTREMES.SOUTH'));
+      let popup = `<h2>${this.translateService.instant('EXTREMES.SOUTH')}</h2>`;
       popup += '<p>Latitude: ' + data.latMin.lat + '<br>';
       popup += 'Longitude: ' + data.latMin.long + '<br>';
       popup += 'Route: ' + data.latMin.route.name + '</p>';
@@ -156,7 +159,7 @@ export class StatsComponent implements OnInit {
           shadowUrl: 'assets/marker-shadow.png'
         })
       });
-      popup = '<h2>Northernmost point</h2>';
+      popup = `<h2>${this.translateService.instant('EXTREMES.NORTH')}</h2>`;
       popup += '<p>Latitude: ' + data.latMax.lat + '<br>';
       popup += 'Longitude: ' + data.latMax.long + '<br>';
       popup += 'Route: ' + data.latMax.route.name + '</p>';
@@ -170,7 +173,7 @@ export class StatsComponent implements OnInit {
           shadowUrl: 'assets/marker-shadow.png'
         })
       });
-      popup = '<h2>Westernmost point</h2>';
+      popup = `<h2>${this.translateService.instant('EXTREMES.WEST')}</h2>`;
       popup += '<p>Latitude: ' + data.longMin.lat + '<br>';
       popup += 'Longitude: ' + data.longMin.long + '<br>';
       popup += 'Route: ' + data.longMin.route.name + '</p>';
@@ -184,7 +187,7 @@ export class StatsComponent implements OnInit {
           shadowUrl: 'assets/marker-shadow.png'
         })
       });
-      popup = '<h2>Easternmost point</h2>';
+      popup = `<h2>${this.translateService.instant('EXTREMES.EAST')}</h2>`;
       popup += '<p>Latitude: ' + data.longMax.lat + '<br>';
       popup += 'Longitude: ' + data.longMax.long + '<br>';
       popup += 'Route: ' + data.longMax.route.name + '</p>';

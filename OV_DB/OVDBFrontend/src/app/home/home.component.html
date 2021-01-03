@@ -4,6 +4,8 @@
         <p>{{'HOME.EXPLANATION'|translate}}</p>
         <div class="buttons">
             <button mat-raised-button [routerLink]="['/admin']">{{'HOME.DATA'|translate}}</button>
+            <button mat-raised-button [routerLink]="['/images']">{{'HOME.IMAGES'|translate}}</button>
+            <button mat-raised-button [routerLink]="['/stats']">{{'HOME.STATS'|translate}}</button>
         </div>
         <div *ngIf="!!maps">
             <mat-list *ngIf="maps.length>0 || stationMaps.length>0;else noData">

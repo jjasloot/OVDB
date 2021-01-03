@@ -30,10 +30,10 @@ namespace OV_DB.Controllers
         }
 
 
-        [HttpGet("{guid:Guid}")]
-        public async Task<ActionResult> GetImageAsync(Guid guid, [FromQuery] int width = 300, [FromQuery] int height = 100, [FromQuery] string title = null, [FromQuery] bool includeTotal = false, [FromQuery] string language = "NL")
+        [HttpGet]
+        public async Task<ActionResult> GetImageAsync([FromQuery] List<Guid> guid, [FromQuery] int width = 300, [FromQuery] int height = 100, [FromQuery] string title = null, [FromQuery] bool includeTotal = false, [FromQuery] string language = "NL")
         {
-            var id = "image|" + guid.ToString() + "|" + width + "|" + height + "|" + includeTotal + "|" + title + "|" + language;
+            var id = "image|" + string.Join(',', guid.Select(g => g.ToString())) + "|" + width + "|" + height + "|" + includeTotal + "|" + title + "|" + language;
 
             var fileContents = await _memoryCache.GetOrCreateAsync(id, async entry =>
             {
@@ -44,10 +44,10 @@ namespace OV_DB.Controllers
             return File(fileContents, "image/png");
         }
 
-        private async Task<byte[]> GenerateImageAsync(int width, int height, string title, Guid guid, bool includeTotal, string language)
+        private async Task<byte[]> GenerateImageAsync(int width, int height, string title, List<Guid> guids, bool includeTotal, string language)
         {
             var query = _context.RouteInstances
-     .Where(ri => ri.Route.RouteMaps.Any(rm => rm.Map.MapGuid == guid));
+     .Where(ri => ri.Route.RouteMaps.Any(rm => guids.Contains(rm.Map.MapGuid)));
 
             query = query.Where(ri => ri.Date.Year == DateTime.Now.Year);
 

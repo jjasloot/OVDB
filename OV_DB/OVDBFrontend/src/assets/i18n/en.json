@@ -167,5 +167,22 @@
     "FILTER.ENDDATE": "Up to (excluding)",
     "ROUTESLIST.INSTANCES": "Trips",
     "INSTANCES.EDITINSTANCE": "Edit trips",
-    "MAPOPTIONS.TITLE": "Filter options"
+    "MAPOPTIONS.TITLE": "Filter options",
+	"IMAGES.DESCRIPTION":"Here you can generate a dynamic image of the distances you have covered this year on your maps. Choose the maps you want to show, choose a title and select the dimensions of the image. You can also include totals if you want. At the bottom you can find a preview and the link you can use to embed the image. Images are generated at most every 15 minutes",
+	"HOME.IMAGES":"Images",
+	"IMAGES.TITLE":"Title",
+	"IMAGES.WIDTH":"Width",
+	"IMAGES.HEIGHT":"Height",
+	"IMAGES.INCLUDETOTALS":"Include totals",
+	"SELECTION":"Selection",
+	"CHOOSEMAP":"Choose map",
+	"CHOOSEYEAR":"Choose year",
+	"ALL":"All",
+	"NAME":"Name",
+	"DISTANCE":"Distance",
+	"EXTREMES.EAST":"Easternmost point",
+	"EXTREMES.SOUTH":"Southernmost point",
+	"EXTREMES.WEST":"Westernmost point",
+	"EXTREMES.NORTH":"Southernmost point",
+	"HOME.STATS":"Statistics"
 }

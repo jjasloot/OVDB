@@ -30,6 +30,7 @@ import { StatsComponent } from './stats/stats.component';
 import { StationMapComponent } from './stations/station-map/station-map.component';
 import { StationMapViewComponent } from './stations/station-map-view/station-map-view.component';
 import { AdminStationsMapComponent } from './stations/admin-stations-map/admin-stations-map.component';
+import { ImageCreatorComponent } from './image-creator/image-creator.component';
 
 
 const routes: Routes = [
@@ -44,6 +45,7 @@ const routes: Routes = [
       { path: 'help', component: HelpComponent },
       { path: 'route/:routeId/:guid', component: SingleRouteMapComponent },
       { path: 'stats', component: StatsComponent, canActivate: [LoginGuard] },
+      { path: 'images', component: ImageCreatorComponent, canActivate: [LoginGuard] },
       {
         path: 'admin', component: RoutesComponent, canActivate: [LoginGuard], children: [
           { path: '', pathMatch: 'full', redirectTo: 'maps' },

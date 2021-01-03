@@ -167,5 +167,22 @@
     "FILTER.ENDDATE": "Tot",
     "ROUTESLIST.INSTANCES": "Ritten",
     "INSTANCES.EDITINSTANCE": "Ritten bewerken",
-    "MAPOPTIONS.TITLE": "Filter opties"
+    "MAPOPTIONS.TITLE": "Filter opties",
+	"IMAGES.DESCRIPTION":"Hier kun je een dynamische afbeelding maken met de afstanden die dit jaar op bepaalde kaarten hebt afgelegd. Kies de kaarten die je wilt tonen en de titel en afmetingen. Daarnaast kun je nog een totaal laten toevoegen. Onderaan vind je een voorbeeld en de link die je kunt gebruiken. Afbeeldingen worden maximaal iedere 15 minuten opnieuw opgebouwd.",
+	"HOME.IMAGES":"Afbeeldingen",
+	"IMAGES.TITLE":"Titel",
+	"IMAGES.WIDTH":"Breedte",
+	"IMAGES.HEIGHT":"Hoogte",
+	"IMAGES.INCLUDETOTALS":"Laat totalen zien",
+	"SELECTION":"Selectie",
+	"CHOOSEMAP":"Kies kaart",
+	"CHOOSEYEAR":"Kies jaar",
+	"ALL":"Alles",
+	"NAME":"Naam",
+	"DISTANCE":"Afstand",
+	"EXTREMES.EAST":"Meest oostelijk",
+	"EXTREMES.SOUTH":"Meest zuidelijk",
+	"EXTREMES.WEST":"Meest westelijk",
+	"EXTREMES.NORTH":"Meest noordelijk",
+	"HOME.STATS":"Statistieken"
 }
