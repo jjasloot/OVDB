@@ -47,7 +47,8 @@ namespace OV_DB
             services.AddSingleton(mapper);
             services.AddDbContext<OVDBDatabaseContext>(options =>
             {
-                options.UseMySql(Configuration["DBCONNECTIONSTRING"]);
+                var connectionString = Configuration["DBCONNECTIONSTRING"];
+                options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString));
             });
             services.AddAuthentication(options =>
             {

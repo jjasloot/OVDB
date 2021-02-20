@@ -25,7 +25,6 @@ namespace OV_DB.Controllers
             _context = context;
         }
 
-        // GET: api/Maps
         [HttpGet]
         public async Task<ActionResult<IEnumerable<StationMap>>> GetMaps()
         {
@@ -37,7 +36,6 @@ namespace OV_DB.Controllers
             return await _context.StationMaps.Where(m => m.UserId == userIdClaim).OrderBy(m => m.OrderNr).ToListAsync();
         }
 
-        // GET: api/Maps/5
         [HttpGet("{id}")]
         public async Task<ActionResult<StationMap>> GetMap(int id)
         {
@@ -56,7 +54,6 @@ namespace OV_DB.Controllers
             return map;
         }
 
-        // PUT: api/Maps/5
         [HttpPut]
         public async Task<IActionResult> PutMap(StationMapDTO stationMap)
         {
@@ -131,7 +128,6 @@ namespace OV_DB.Controllers
             return CreatedAtAction("StationMap", new { id = dbStationMap.StationMapId }, dbStationMap);
         }
 
-        // DELETE: api/Maps/5
         [HttpDelete("{id}")]
         public async Task<ActionResult<StationMap>> DeleteMap(int id)
         {
@@ -210,8 +206,8 @@ namespace OV_DB.Controllers
                     properties.elevation = s.Elevation.Value;
                 properties.visited = s.Visited;
                 properties.id = s.Id;
-                Position coordinates = new Position(s.Lattitude, s.Longitude, s.Elevation);
-                Point geometry = new Point(coordinates);
+                var coordinates = new Position(s.Lattitude, s.Longitude, s.Elevation);
+                var geometry = new Point(coordinates);
                 var item = new Feature(geometry, properties, null);
 
                 collection.Features.Add(item);
