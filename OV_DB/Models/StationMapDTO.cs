@@ -8,10 +8,10 @@ namespace OV_DB.Models
     public class StationMapDTO
     {
         public int StationMapId { get; set; }
-        public int UserId { get; set; }
         public string Name { get; set; }
         public string NameNL { get; set; }
-        public String SharingLinkName { get; set; }
+        public string MapGuid { get; set; }
+        public string? SharingLinkName { get; set; }
         public List<StationMapCountryDTO> StationMapCountries { get; set; }
     }
 

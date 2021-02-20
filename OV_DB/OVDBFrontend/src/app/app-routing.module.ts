@@ -31,6 +31,7 @@ import { StationMapComponent } from './stations/station-map/station-map.componen
 import { StationMapViewComponent } from './stations/station-map-view/station-map-view.component';
 import { AdminStationsMapComponent } from './stations/admin-stations-map/admin-stations-map.component';
 import { ImageCreatorComponent } from './image-creator/image-creator.component';
+import { StationMapsComponent } from './admin/station-maps/station-maps.component';
 
 
 const routes: Routes = [
@@ -59,6 +60,7 @@ const routes: Routes = [
           { path: 'missingData', component: FillMissingDataListComponent },
           { path: 'wizard/:id', component: WizzardStep2Component },
           { path: 'wizard', component: WizzardStep1Component },
+          { path: 'stationmaps', component: StationMapsComponent }
         ]
       },
       {

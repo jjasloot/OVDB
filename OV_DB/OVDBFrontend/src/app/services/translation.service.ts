@@ -27,6 +27,9 @@ export class TranslationService {
   private _language: 'nl' | 'en' = 'nl';
 
   getNameForItem(item: any) {
+    if (!item) {
+      return '';
+    }
     if (this.language === 'nl' && !!item.nameNL) {
       return item.nameNL;
     }

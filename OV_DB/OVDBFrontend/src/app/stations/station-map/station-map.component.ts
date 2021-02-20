@@ -3,6 +3,7 @@ import { TranslateService } from '@ngx-translate/core';
 import * as L from 'leaflet';
 import { tileLayer } from 'leaflet';
 import { ApiService } from 'src/app/services/api.service';
+import { TranslationService } from 'src/app/services/translation.service';
 
 @Component({
   selector: 'app-station-map',
@@ -33,6 +34,7 @@ export class StationMapComponent implements OnInit {
   private _bounds: L.LatLngBounds;
   total: number;
   visited: number;
+  names: { name: any; nameNL: any; };
   get bounds(): L.LatLngBounds {
     return this._bounds;
   }
@@ -53,10 +55,11 @@ export class StationMapComponent implements OnInit {
   constructor(
     private apiService: ApiService,
     private translateService: TranslateService,
+    private translationService: TranslationService,
     private cd: ChangeDetectorRef
   ) { }
   get percentage() {
-    if (this.total === 0) {
+    if (!this.total || this.visited == undefined) {
       return '?';
     }
     return Math.round(this.visited / this.total * 1000) / 10;
@@ -72,6 +75,10 @@ export class StationMapComponent implements OnInit {
     const parent = this;
     this.total = text.total;
     this.visited = text.visited;
+    this.names = {
+      name: text.name,
+      nameNL: text.nameNL
+    }
     const track = L.geoJSON(text.geoJson as any, {
       pointToLayer(feature, latlng) {
         return L.circleMarker(latlng, {
@@ -120,4 +127,8 @@ export class StationMapComponent implements OnInit {
     this.loading = false;
   }
 
+
+  getName(object){
+    return this.translationService.getNameForItem(object);
+  }
 }

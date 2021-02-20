@@ -11,12 +11,14 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OData.Edm;
+using Microsoft.OpenApi.Models;
 using Newtonsoft.Json;
 using OV_DB.Mappings;
 using OVDB_database.Database;
 using OVDB_database.Models;
 using SharpKml.Dom;
 using System;
+using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -43,8 +45,30 @@ namespace OV_DB
                 mc.AddProfile(new MappingProfile());
             });
 
-            IMapper mapper = mappingConfig.CreateMapper();
+            var mapper = mappingConfig.CreateMapper();
             services.AddSingleton(mapper);
+            services.AddSwaggerGen(c =>
+            {
+                c.SwaggerDoc("v1", new OpenApiInfo { Title = "Toegangspassen_backend", Version = "v1" });
+                c.AddSecurityDefinition("Bearer",
+                    new OpenApiSecurityScheme
+                    {
+                        Description = "JWT Authorization header using the Bearer scheme.",
+                        Type = SecuritySchemeType.Http,
+                        Scheme = "bearer"
+                    }
+                );
+                c.AddSecurityRequirement(new OpenApiSecurityRequirement{
+                    {
+                        new OpenApiSecurityScheme{
+                            Reference = new OpenApiReference{
+                                Id = "Bearer",
+                                Type = ReferenceType.SecurityScheme
+                            }
+                        },new List<string>()
+                    }
+                });
+            });
             services.AddDbContext<OVDBDatabaseContext>(options =>
             {
                 var connectionString = Configuration["DBCONNECTIONSTRING"];
@@ -105,11 +129,11 @@ namespace OV_DB
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
+                app.UseSwagger();
+                app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "OVDB"));
             }
             else
             {
-                app.UseDeveloperExceptionPage();
-
                 //app.UseExceptionHandler("/Error");
                 //The default HSTS value is 30 days.You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
                 app.UseHttpsRedirection();
@@ -120,14 +144,21 @@ namespace OV_DB
             {
                 app.UseSpaStaticFiles();
             }
-            app.UseAuthentication();
             app.UseRouting();
             app.UseCors();
-            app.UseMvc(routeBuilder =>
+            app.UseXfo(o => o.SameOrigin());
+            app.UseXContentTypeOptions();
+            app.UseReferrerPolicy(opts => opts.NoReferrer());
+            app.UseXXssProtection(options => options.EnabledWithBlockMode());
+            app.UseCors();
+            app.UseAuthentication();
+            app.UseAuthorization();
+            app.UseEndpoints(r =>
             {
-                routeBuilder.Select().Filter();
-                routeBuilder.MapODataServiceRoute("odata", "odata", GetEdmModel());
-                routeBuilder.EnableDependencyInjection();
+                r.Select().Filter();
+                r.MapODataRoute("odata", "odata", GetEdmModel());
+                r.EnableDependencyInjection();
+                r.MapSwagger();
             });
             using (var serviceScope = app.ApplicationServices.GetRequiredService<IServiceScopeFactory>().CreateScope())
             {

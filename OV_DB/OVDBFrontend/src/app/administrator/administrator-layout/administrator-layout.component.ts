@@ -21,6 +21,11 @@ export class AdministratorLayoutComponent implements OnInit {
         label: 'Maps',
         link: '/administrator/maps',
         index: 1
+      },
+      {
+        label: 'Stations',
+        link: '/administrator/stations',
+        index: 2
       }
     ];
   }

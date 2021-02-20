@@ -15,6 +15,7 @@ import { MultipleEdit } from '../models/multipleEdit.model';
 import { RouteInstance } from '../models/routeInstance.model';
 import { StationMap } from '../models/stationMap.model';
 import { StationView } from '../models/stationView.model';
+import { StationCountry } from '../models/stationCountry.model';
 
 @Injectable({
   providedIn: 'root'
@@ -289,13 +290,33 @@ export class ApiService {
     const url = environment.backend + 'api/station/' + id;
     return this.httpClient.put(url, { value });
   }
+
   updateStationAdmin(id: any, special: any, hidden) {
     const url = environment.backend + 'api/station/admin/' + id;
     return this.httpClient.put(url, { special, hidden });
   }
+
   listStationMapsAdmin() {
     let url = environment.backend + 'api/stationmaps';
     return this.httpClient.get<StationMap[]>(url);
+  }
+
+  updateStationMapOrder(newOrder: number[]) {
+    return this.httpClient.post<Map>(environment.backend + 'api/stationmaps/order', newOrder);
+  }
+
+  addStationMap(stationMap: StationMap): Observable<any> {
+    return this.httpClient.post<RouteType>(environment.backend + 'api/stationmaps', stationMap);
+  }
+  updateStationMap(stationMap: StationMap) {
+    return this.httpClient.put<RouteType>(environment.backend + 'api/stationmaps', stationMap);
+  }
+
+  deleteStationMap(stationMapId: number) {
+    return this.httpClient.delete(environment.backend + 'api/stationmaps/' + stationMapId);
+  }
+  getStationCountries(): Observable<StationCountry[]> {
+    return this.httpClient.get<StationCountry[]>(environment.backend + 'api/stationmaps/countries');
   }
   getTripReport(selectedMap: string, selectedYear: number) {
     let url = `${environment.backend}api/tripreport?guid=${selectedMap}&year=${selectedYear}`;

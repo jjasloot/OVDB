@@ -81,6 +81,8 @@ import { StationMapComponent } from './stations/station-map/station-map.componen
 import { StationMapViewComponent } from './stations/station-map-view/station-map-view.component';
 import { AdminStationsMapComponent } from './stations/admin-stations-map/admin-stations-map.component';
 import { ImageCreatorComponent } from './image-creator/image-creator.component';
+import { StationMapsComponent } from './admin/station-maps/station-maps.component';
+import { StationMapsEditComponent } from './admin/station-maps-edit/station-maps-edit.component';
 
 registerLocaleData(localeNl, 'nl-NL');
 export function HttpLoaderFactory(http: HttpClient) {
@@ -129,6 +131,8 @@ export function HttpLoaderFactory(http: HttpClient) {
     StationMapViewComponent,
     AdminStationsMapComponent,
     ImageCreatorComponent,
+    StationMapsComponent,
+    StationMapsEditComponent,
   ],
   imports: [
     BrowserModule,

@@ -1,4 +1,4 @@
-<button class="back" mat-button (click)="goBack()">Terug</button>
+<button class="back" mat-button (click)="goBack()">{{'BACK'|translate}}</button>
 <div class="form">
     <form [formGroup]="form" (ngSubmit)="onSubmit(form.value)">
         <mat-form-field>

@@ -1,0 +1,32 @@
+<h3 mat-dialog-title>
+    <span *ngIf="!map.stationMapId">{{'STATIONMAP.NEWTITLE'|translate}}</span>
+    <span *ngIf="!!map.stationMapId">{{'STATIONMAP.TITLE'|translate}}</span>
+</h3>
+<form [formGroup]="form" (ngSubmit)="onSubmit(form.value)">
+    <div mat-dialog-content>
+        <div class="form">
+            <mat-form-field>
+                <mat-label>{{'ROUTEDETAILS.NAME'|translate}}</mat-label>
+                <input matInput formControlName="name" required>
+            </mat-form-field><br>
+            <mat-form-field>
+                <mat-label>{{'ROUTEDETAILS.NAME'|translate}} ({{'LANGUAGES.DUTCH'|translate}})</mat-label>
+                <input matInput formControlName="nameNL">
+            </mat-form-field><br>
+            <mat-form-field>
+                <mat-label>{{'ADDMAP.SHARENAME'|translate}}</mat-label>
+                <input matInput formControlName="sharingLinkName">
+            </mat-form-field>
+
+            <mat-selection-list [(ngModel)]="selectedOptions" [ngModelOptions]="{standalone: true}" #countriesSelection>
+                <mat-list-option *ngFor="let country of countries" [value]="country.id">
+                    {{name(country)}}
+                </mat-list-option>
+            </mat-selection-list>
+        </div>
+    </div>
+    <div mat-dialog-actions>
+        <button mat-button type="button" (click)="goBack()">{{'CANCEL'|translate}}</button>
+        <button mat-button type="submit" [disabled]="form.invalid || selectedOptions.length<1">{{'SAVE'|translate}}</button>
+    </div>
+</form>

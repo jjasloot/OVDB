@@ -18,29 +18,33 @@ export class RoutesComponent implements OnInit {
         link: '/admin/maps',
         index: 0
       }, {
+        label: this.translateService.instant('ADMINPAGES.STATIONMAPS'),
+        link: '/admin/stationmaps',
+        index: 1
+      }, {
         label: this.translateService.instant('ADMINPAGES.ROUTES'),
         link: '/admin/routes',
-        index: 1
+        index: 2
       }, {
         label: this.translateService.instant('ADMINPAGES.ADDROUTE'),
         link: '/admin/addRoute',
-        index: 2
+        index: 3
       }, {
         label: this.translateService.instant('ADMINPAGES.WIZARD'),
         link: '/admin/wizard',
-        index: 3
+        index: 4
       }, {
         label: this.translateService.instant('ADMINPAGES.ROUTESMISSINGINFORMATION'),
         link: '/admin/missingData',
-        index: 4
+        index: 5
       }, {
         label: this.translateService.instant('ADMINPAGES.COUNTRIES'),
         link: '/admin/countries',
-        index: 5
+        index: 6
       }, {
         label: this.translateService.instant('ADMINPAGES.TYPES'),
         link: '/admin/types',
-        index: 6
+        index: 7
       }
     ];
   }
@@ -55,33 +59,34 @@ export class RoutesComponent implements OnInit {
           link: '/admin/maps',
           index: 0
         }, {
+          label: this.translateService.instant('ADMINPAGES.STATIONMAPS'),
+          link: '/admin/stationmaps',
+          index: 1
+        }, {
           label: this.translateService.instant('ADMINPAGES.ROUTES'),
           link: '/admin/routes',
-          index: 1
+          index: 2
         }, {
           label: this.translateService.instant('ADMINPAGES.ADDROUTE'),
           link: '/admin/addRoute',
-          index: 2
-        },
-        {
+          index: 3
+        }, {
           label: this.translateService.instant('ADMINPAGES.WIZARD'),
           link: '/admin/wizard',
-          index: 3
-        },
-        {
+          index: 4
+        }, {
           label: this.translateService.instant('ADMINPAGES.ROUTESMISSINGINFORMATION'),
           link: '/admin/missingData',
-          index: 4
+          index: 5
         }, {
           label: this.translateService.instant('ADMINPAGES.COUNTRIES'),
           link: '/admin/countries',
-          index: 5
+          index: 6
         }, {
           label: this.translateService.instant('ADMINPAGES.TYPES'),
           link: '/admin/types',
-          index: 6
+          index: 7
         }
-
       ];
     });
   }

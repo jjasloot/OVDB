@@ -25,7 +25,7 @@ namespace OV_DB.Helpers
                 distance += start.GetDistanceTo(end);
             }
             distance = Math.Round(distance / 1000, 3);
-            route.CalculatedDistance = distance*1.0064;
+            route.CalculatedDistance = Math.Round(distance * 1.0064, 2);
 
         }
 

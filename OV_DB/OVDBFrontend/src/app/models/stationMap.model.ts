@@ -4,4 +4,10 @@ export interface StationMap {
   nameNL: string;
   mapGuid: string;
   sharingLinkName: string | null;
+  stationMapCountries: StationMapCountryDTO[]
+}
+
+export interface StationMapCountryDTO {
+  stationCountryId: number;
+  includeSpecials: boolean;
 }

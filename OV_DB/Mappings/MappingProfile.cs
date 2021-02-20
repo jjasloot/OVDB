@@ -20,7 +20,9 @@ namespace OV_DB.Mappings
             CreateMap<RouteMap, RouteMapDTO>()
                 .ForMember(dest => dest.Name, ops => ops.MapFrom(rm => rm.Map.Name))
                 .ForMember(dest => dest.NameNL, ops => ops.MapFrom(rm => rm.Map.NameNL));
-
+            CreateMap<StationMap, StationMapDTO>()
+                .ForMember(dest => dest.StationMapCountries, ops => ops.MapFrom(src => src.StationMapCountries));
+            CreateMap<StationMapCountry, StationMapCountryDTO>();
         }
     }
 }

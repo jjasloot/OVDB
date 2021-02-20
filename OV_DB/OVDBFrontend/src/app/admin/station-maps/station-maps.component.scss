@@ -1,0 +1,44 @@
+.add {
+    position: fixed;
+    bottom: 50px;
+    right: 50px;
+    z-index: 500;
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+}
+
+.title {
+    margin: 8px 16px;
+}
+
+button:not(.mat-fab) {
+    margin: 0 12px;
+}
+
+.space {
+    min-width: 40px;
+    margin: 0 12px;
+}
+
+.sort {
+    position: fixed;
+    bottom: 50px;
+    right: 150px;
+}
+
+.desktop {
+    display: none;
+}
+
+.mobile {
+    display: unset;
+}
+
+@media (min-width:600px) {
+    .desktop {
+        display: unset;
+    }
+    .mobile {
+        display: none;
+    }
+}

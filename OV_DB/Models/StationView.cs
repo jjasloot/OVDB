@@ -11,5 +11,7 @@ namespace OV_DB.Models
         public FeatureCollection GeoJson { get; set; }
         public int Total { get; set; }
         public int Visited { get; set; }
+        public string Name { get; set; }
+        public string NameNL { get; set; }
     }
 }
