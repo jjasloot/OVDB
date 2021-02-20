@@ -1,3 +1,6 @@
+2021-02-20:
+- stationskaarten toegevoegd
+
 2020-11-08:
 - Zoeken op netwerk is nu iets minder strikt
 - Werk aan nieuwe features

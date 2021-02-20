@@ -1,3 +1,6 @@
+2021-02-20:
+- added stationmaps
+
 2020-11-08:
 - Made network searching a bit more lenient
 - Background work on new features
