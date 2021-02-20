@@ -1,4 +1,4 @@
-import { async, ComponentFixture, TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 
 import { FillMissingDataListComponent } from './fill-missing-data-list.component';
 
@@ -6,7 +6,7 @@ describe('FillMissingDataListComponent', () => {
   let component: FillMissingDataListComponent;
   let fixture: ComponentFixture<FillMissingDataListComponent>;
 
-  beforeEach(async(() => {
+  beforeEach(waitForAsync(() => {
     TestBed.configureTestingModule({
       declarations: [ FillMissingDataListComponent ]
     })

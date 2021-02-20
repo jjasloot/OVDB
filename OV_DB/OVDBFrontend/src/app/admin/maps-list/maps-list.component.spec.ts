@@ -1,4 +1,4 @@
-import { async, ComponentFixture, TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 
 import { MapsListComponent } from './maps-list.component';
 
@@ -6,7 +6,7 @@ describe('MapsComponent', () => {
   let component: MapsListComponent;
   let fixture: ComponentFixture<MapsListComponent>;
 
-  beforeEach(async(() => {
+  beforeEach(waitForAsync(() => {
     TestBed.configureTestingModule({
       declarations: [ MapsListComponent ]
     })

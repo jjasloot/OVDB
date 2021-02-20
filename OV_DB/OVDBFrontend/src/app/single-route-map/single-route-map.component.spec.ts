@@ -1,4 +1,4 @@
-import { async, ComponentFixture, TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 
 import { SingleRouteMapComponent } from './single-route-map.component';
 
@@ -6,7 +6,7 @@ describe('SingleRouteMapComponent', () => {
   let component: SingleRouteMapComponent;
   let fixture: ComponentFixture<SingleRouteMapComponent>;
 
-  beforeEach(async(() => {
+  beforeEach(waitForAsync(() => {
     TestBed.configureTestingModule({
       declarations: [ SingleRouteMapComponent ]
     })
