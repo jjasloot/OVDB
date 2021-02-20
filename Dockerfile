@@ -1,4 +1,4 @@
-FROM jjasloot/build AS build-env
+FROM jjasloot/build:5.0 AS build-env
 WORKDIR /app
 ARG UserAgent
 ARG JWTSigningKey
@@ -8,7 +8,7 @@ RUN dotnet restore
 RUN dotnet publish -c Release -o out
 
 # Build runtime image
-FROM mcr.microsoft.com/dotnet/core/aspnet:3.1
+FROM mcr.microsoft.com/dotnet/core/aspnet:5.0
 WORKDIR /app
 RUN apt-get update &&  apt-get install -y libc6-dev libgdiplus
 ENV UserAgent=$UserAgent
