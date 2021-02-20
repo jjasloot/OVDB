@@ -35,3 +35,30 @@ body {
 .mat-tab-body {
     height: calc(100vh - 128px);
 }
+
+.green {
+    background-color: #00FF00;
+    padding: 8px;
+    border-radius: 100px;
+    display: flex !important;
+    justify-content: center;
+    align-items: center;
+}
+
+.red {
+    background-color: #FF0000;
+    padding: 8px;
+    border-radius: 100px;
+    display: flex !important;
+    justify-content: center;
+    align-items: center;
+}
+
+.orange {
+    background-color: #FF7F00;
+    padding: 8px;
+    border-radius: 100px;
+    display: flex !important;
+    justify-content: center;
+    align-items: center;
+}

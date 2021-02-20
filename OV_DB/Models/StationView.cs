@@ -8,7 +8,7 @@ namespace OV_DB.Models
 {
     public class StationView
     {
-        public FeatureCollection GeoJson { get; set; }
+        public List<StationDTO> Stations { get; set; }
         public int Total { get; set; }
         public int Visited { get; set; }
         public string Name { get; set; }

@@ -71,9 +71,9 @@ namespace OV_DB.Controllers
             {
                 return Forbid();
             }
-            var dbStationMap = await _context.StationMaps.Where(m => m.UserId == userIdClaim).Include(s=>s.StationMapCountries)
+            var dbStationMap = await _context.StationMaps.Where(m => m.UserId == userIdClaim).Include(s => s.StationMapCountries)
                 .SingleOrDefaultAsync(m => m.StationMapId == stationMap.StationMapId);
-            if(dbStationMap is null)
+            if (dbStationMap is null)
             {
                 return NotFound();
             }
@@ -212,30 +212,11 @@ namespace OV_DB.Controllers
                 Visited = s.StationVisits.Any(sv => sv.UserId == userIdClaim)
             }).ToListAsync();
 
-            var collection = new FeatureCollection();
-            stations.ForEach(s =>
-            {
-                var properties = new StationPropertiesDTO();
-                if (!string.IsNullOrWhiteSpace(s.Name))
-                    properties.name = s.Name;
-                if (!string.IsNullOrWhiteSpace(s.Network))
-                    properties.network = s.Network;
-                if (!string.IsNullOrWhiteSpace(s.Operator))
-                    properties.operatingCompany = s.Operator;
-                if (s.Elevation.HasValue)
-                    properties.elevation = s.Elevation.Value;
-                properties.visited = s.Visited;
-                properties.id = s.Id;
-                var coordinates = new Position(s.Lattitude, s.Longitude, s.Elevation);
-                var geometry = new Point(coordinates);
-                var item = new Feature(geometry, properties, null);
 
-                collection.Features.Add(item);
-            });
 
             var response = new StationView
             {
-                GeoJson = collection,
+                Stations = stations,
                 Total = stations.Count,
                 Name = stationMap.Name,
                 NameNL = stationMap.NameNL,

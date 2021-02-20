@@ -16,6 +16,7 @@ import { RouteInstance } from '../models/routeInstance.model';
 import { StationMap } from '../models/stationMap.model';
 import { StationView } from '../models/stationView.model';
 import { StationCountry } from '../models/stationCountry.model';
+import { StationAdminProperties } from '../models/stationAdminProperties.model';
 
 @Injectable({
   providedIn: 'root'
@@ -281,9 +282,9 @@ export class ApiService {
     let url = environment.backend + 'api/stationmaps/map/' + guid;
     return this.httpClient.get<StationView>(url);
   }
-  getStationsAdminMap() {
+  getStationsAdminMap(): Observable<StationAdminProperties[]> {
     let url = environment.backend + 'api/station/map/';
-    return this.httpClient.get<string>(url);
+    return this.httpClient.get<StationAdminProperties[]>(url);
   }
 
   updateStation(id: any, value: any) {

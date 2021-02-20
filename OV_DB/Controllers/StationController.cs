@@ -116,26 +116,24 @@ namespace OV_DB.Controllers
 
             var stations = DbContext.Stations.AsNoTracking().AsQueryable();
 
-            var collection = new FeatureCollection();
+            var collection = new List<StationAdminPropertiesDTO>();
             await stations.ForEachAsync(s =>
             {
                 var properties = new StationAdminPropertiesDTO();
                 if (!string.IsNullOrWhiteSpace(s.Name))
-                    properties.name = s.Name;
+                    properties.Name = s.Name;
                 if (!string.IsNullOrWhiteSpace(s.Network))
-                    properties.network = s.Network;
+                    properties.Network = s.Network;
                 if (!string.IsNullOrWhiteSpace(s.Operator))
-                    properties.operatingCompany = s.Operator;
+                    properties.OperatingCompany = s.Operator;
                 if (s.Elevation.HasValue)
-                    properties.elevation = s.Elevation.Value;
-                properties.hidden = s.Hidden;
-                properties.special = s.Special;
-                properties.id = s.Id;
-                Position coordinates = new Position(s.Lattitude, s.Longitude, s.Elevation);
-                Point geometry = new Point(coordinates);
-                var item = new Feature(geometry, properties, null);
-
-                collection.Features.Add(item);
+                    properties.Elevation = s.Elevation.Value;
+                properties.Hidden = s.Hidden;
+                properties.Special = s.Special;
+                properties.Id = s.Id;
+                properties.Lattitude = s.Lattitude;
+                properties.Longitude = s.Longitude;
+                collection.Add(properties);
             });
             return Ok(collection);
         }

@@ -76,13 +76,14 @@ import { MapsListBottomsheetComponent } from './admin/maps-list/maps-list-bottom
 
 import { MatBottomSheetModule } from '@angular/material/bottom-sheet';
 import { RoutesListBottomsheetComponent } from './admin/routes-list/routes-list-bottomsheet/routes-list-bottomsheet.component';
-import {MatCardModule} from '@angular/material/card';
+import { MatCardModule } from '@angular/material/card';
 import { StationMapComponent } from './stations/station-map/station-map.component';
 import { StationMapViewComponent } from './stations/station-map-view/station-map-view.component';
 import { AdminStationsMapComponent } from './stations/admin-stations-map/admin-stations-map.component';
 import { ImageCreatorComponent } from './image-creator/image-creator.component';
 import { StationMapsComponent } from './admin/station-maps/station-maps.component';
 import { StationMapsEditComponent } from './admin/station-maps-edit/station-maps-edit.component';
+import { LeafletMarkerClusterModule } from '@asymmetrik/ngx-leaflet-markercluster';
 
 registerLocaleData(localeNl, 'nl-NL');
 export function HttpLoaderFactory(http: HttpClient) {
@@ -172,7 +173,8 @@ export function HttpLoaderFactory(http: HttpClient) {
     ChartsModule,
     MatAutocompleteModule,
     MatBottomSheetModule,
-    MatCardModule
+    MatCardModule,
+    LeafletMarkerClusterModule
   ],
   providers: [
     { provide: MAT_MOMENT_DATE_ADAPTER_OPTIONS, useValue: { useUtc: true } },

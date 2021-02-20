@@ -4,7 +4,6 @@ import * as L from 'leaflet';
 import { tileLayer } from 'leaflet';
 import { ApiService } from 'src/app/services/api.service';
 import { TranslationService } from 'src/app/services/translation.service';
-
 @Component({
   selector: 'app-station-map',
   templateUrl: './station-map.component.html',
@@ -79,56 +78,71 @@ export class StationMapComponent implements OnInit {
       name: text.name,
       nameNL: text.nameNL
     }
-    const track = L.geoJSON(text.geoJson as any, {
-      pointToLayer(feature, latlng) {
-        return L.circleMarker(latlng, {
-          radius: feature.properties.visited ? 8 : 4,
-          fillColor: feature.properties.visited ? '#00FF00' : '#FF0000',
-          color: "#000",
-          weight: 1,
-          opacity: 1,
-          fillOpacity: feature.properties.visited ? 0.8 : 0.5
+    var markers = L.markerClusterGroup({
+      iconCreateFunction: cluster => {
+        return L.divIcon({
+          html: '<b>' + cluster.getChildCount() + '</b>', className:
+            cluster.getAllChildMarkers().every(r => r.feature.properties.visited) ? 'green' :
+              cluster.getAllChildMarkers().every(r => !r.feature.properties.visited) ? 'red' : 'orange'
         });
-
-      },
-      onEachFeature(feature, layer) {
-        layer.addEventListener('click', async (f) => {
-          if (!feature.properties.visited) {
-            feature.properties.visited = true;
-          } else {
-            feature.properties.visited = false;
-          }
-          f.target.setStyle({
-            fillColor: '#FF7F00',
-            fillOpacity: 0.65,
-            radius: 6
-          });
-          await parent.apiService.updateStation(feature.properties.id, feature.properties.visited).toPromise();
-          if (feature.properties.visited) {
-            parent.visited++;
-          } else {
-            parent.visited--;
-          }
-          parent.cd.detectChanges();
-          f.target.setStyle({
-            fillColor: feature.properties.visited ? '#00FF00' : '#FF0000',
-            fillOpacity: feature.properties.visited ? 0.8 : 0.5,
-            radius: feature.properties.visited ? 8 : 4
-          });
-
-        })
-      }
-
-
-
+      }, disableClusteringAtZoom: 10, maxClusterRadius: 40
     });
-    this.layers = [track];
-    this.bounds = track.getBounds();
+    text.stations.forEach(station => {
+      const marker = L.circleMarker(new L.LatLng(station.lattitude, station.longitude, station.elevation), {
+        radius: station.visited ? 8 : 4,
+        fillColor: station.visited ? '#00FF00' : '#FF0000',
+        color: "#000",
+        weight: 1,
+        opacity: 1,
+        fillOpacity: station.visited ? 0.8 : 0.5,
+      });
+      marker.feature = {
+        properties:
+        {
+          id: station.id,
+          visited: station.visited
+        },
+        type: 'Feature',
+        geometry: null
+      }
+      markers.addLayer(marker);
+    })
+    markers.addEventListener('click', async (f: L.LeafletEvent) => {
+      console.log(f, f.propagatedFrom);
+      if (!f.propagatedFrom.feature.properties.visited) {
+        f.propagatedFrom.feature.properties.visited = true;
+      } else {
+        f.propagatedFrom.feature.properties.visited = false;
+      }
+      console.log(f.propagatedFrom.feature.properties)
+      f.propagatedFrom.setStyle({
+        fillColor: '#FF7F00',
+        fillOpacity: 0.65,
+        radius: 6
+      });
+      (this.layers[0] as L.MarkerClusterGroup).refreshClusters();
+      await parent.apiService.updateStation(f.propagatedFrom.feature.properties.id, f.propagatedFrom.feature.properties.visited).toPromise();
+      if (f.propagatedFrom.feature.properties.visited) {
+        parent.visited++;
+      } else {
+        parent.visited--;
+      }
+      parent.cd.detectChanges();
+      console.log(f.propagatedFrom);
+      f.propagatedFrom.setStyle({
+        fillColor: f.propagatedFrom.feature.properties.visited ? '#00FF00' : '#FF0000',
+        fillOpacity: f.propagatedFrom.feature.properties.visited ? 0.8 : 0.5,
+        radius: f.propagatedFrom.feature.properties.visited ? 8 : 4
+      });
+      (this.layers[0] as L.MarkerClusterGroup).refreshClusters();
+    });
+    this.layers = [markers];
+    this.bounds = markers.getBounds();
     this.loading = false;
   }
 
 
-  getName(object){
+  getName(object) {
     return this.translationService.getNameForItem(object);
   }
 }

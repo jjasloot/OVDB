@@ -71,57 +71,73 @@ export class AdminStationsMapComponent implements OnInit {
 
     const text = await this.apiService.getStationsAdminMap().toPromise();
     const parent = this;
-    const track = L.geoJSON(text as any, {
-      pointToLayer(feature, latlng) {
-        return L.circleMarker(latlng, {
-          radius: 6,
-          fillColor: feature.properties.hidden ? '#FF0000' : (feature.properties.special ? '#0000FF' : '#00FF00'),
-          color: "#000",
-          weight: 1,
-          opacity: 1,
-          fillOpacity: 0.65
+    var markers = L.markerClusterGroup({
+      iconCreateFunction: cluster => {
+        return L.divIcon({
+          html: '<b>' + cluster.getChildCount() + '</b>', className:
+            cluster.getAllChildMarkers().every(r => r.feature.properties.visited) ? 'green' :
+              cluster.getAllChildMarkers().every(r => !r.feature.properties.visited) ? 'red' : 'orange'
         });
-
-      },
-      onEachFeature(feature, layer) {
-        layer.addEventListener('click', async (f) => {
-          if (!feature.properties.special && !feature.properties.hidden) {
-            feature.properties.special = true;
-            feature.properties.hidden = false;
-          } else {
-            if (!!feature.properties.special && !feature.properties.hidden) {
-              feature.properties.special = false;
-              feature.properties.hidden = true;
-            }
-            else {
-              if (!feature.properties.special && !!feature.properties.hidden) {
-                feature.properties.special = false;
-                feature.properties.hidden = false;
-              }
-            }
-          }
-          f.target.setStyle({
-            fillColor: '#FF7F00',
-          });
-          await parent.apiService.updateStationAdmin(feature.properties.id, feature.properties.special, feature.properties.hidden).toPromise();
-          if (feature.properties.visited) {
-            parent.visited++;
-          } else {
-            parent.visited--;
-          }
-          parent.cd.detectChanges();
-          f.target.setStyle({
-            fillColor: feature.properties.hidden ? '#FF0000' : (feature.properties.special ? '#0000FF' : '#00FF00'),
-          });
-
-        })
-      }
-
-
-
+      }, disableClusteringAtZoom: 10, maxClusterRadius: 40
     });
-    this.layers = [track];
-    this.bounds = track.getBounds();
+    text.forEach(station => {
+      const marker = L.circleMarker(new L.LatLng(station.lattitude, station.longitude, station.elevation), {
+        radius: 6,
+        fillColor: station.hidden ? '#FF0000' : (station.special ? '#0000FF' : '#00FF00'),
+        color: "#000",
+        weight: 1,
+        opacity: 1,
+        fillOpacity: 0.65
+      });
+      marker.feature = {
+        properties:
+        {
+          id: station.id,
+          hidden: station.hidden,
+          special: station.special
+        },
+        type: 'Feature',
+        geometry: null
+      }
+      markers.addLayer(marker);
+    })
+    markers.addEventListener('click', async (f) => {
+      if (!f.propagatedFrom.feature.properties.special && !f.propagatedFrom.feature.properties.hidden) {
+        f.propagatedFrom.feature.properties.special = true;
+        f.propagatedFrom.feature.properties.hidden = false;
+      } else {
+        if (!!f.propagatedFrom.feature.properties.special && !f.propagatedFrom.feature.properties.hidden) {
+          f.propagatedFrom.feature.properties.special = false;
+          f.propagatedFrom.feature.properties.hidden = true;
+        }
+        else {
+          if (!f.propagatedFrom.feature.properties.special && !!f.propagatedFrom.feature.properties.hidden) {
+            f.propagatedFrom.feature.properties.special = false;
+            f.propagatedFrom.feature.properties.hidden = false;
+          }
+        }
+      }
+      f.target.setStyle({
+        fillColor: '#FF7F00',
+      });
+      await parent.apiService.updateStationAdmin(
+        f.propagatedFrom.feature.properties.id,
+        f.propagatedFrom.feature.properties.special,
+        f.propagatedFrom.feature.properties.hidden).toPromise();
+      if (f.propagatedFrom.feature.properties.visited) {
+        parent.visited++;
+      } else {
+        parent.visited--;
+      }
+      parent.cd.detectChanges();
+      f.propagatedFrom.setStyle({
+        fillColor: f.propagatedFrom.feature.properties.hidden ? '#FF0000' : (f.propagatedFrom.feature.properties.special ? '#0000FF' : '#00FF00'),
+      });
+
+    })
+
+    this.layers = [markers];
+    this.bounds = markers.getBounds();
     this.loading = false;
   }
 
