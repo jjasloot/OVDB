@@ -8,7 +8,7 @@ RUN dotnet restore
 RUN dotnet publish -c Release -o out
 
 # Build runtime image
-FROM mcr.microsoft.com/dotnet/core/aspnet:5.0
+FROM mcr.microsoft.com/dotnet/aspnet:5.0
 WORKDIR /app
 RUN apt-get update &&  apt-get install -y libc6-dev libgdiplus
 ENV UserAgent=$UserAgent
