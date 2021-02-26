@@ -194,5 +194,5 @@
     "STATIONMAP.TITLE": "Stationskaart bijwerken",
     "STATIONMAP.DELETEFRONT": "de stationskaart",
     "STATIONMAP.DELETEREAR": "uit de database wilt verwijderen",
-    "STATIONMAP.DESCRIPTION": "Hier kun je stationskaarten aanmaken. Dat zijn kaarten waarop alle stations in een regio staan. Deze kun je dan afvinken. Mis je een gebied dat je wel graag wilt gebruiken, stuur me dan een berichtje."
+    "STATIONMAP.DESCRIPTION": "Hier kun je stationskaarten aanmaken. Dat zijn kaarten waarop alle stations in een regio staan. Deze kun je dan afvinken. Mis je een gebied dat je wel graag wilt gebruiken, maak dan een issue aan op <a href=\"https://github.com/jjasloot/OVDB/\">GitHub</a> of stuur me een bericht."
 }

@@ -1,6 +1,6 @@
 <mat-spinner *ngIf="loading"></mat-spinner>
 <div class="container" *ngIf="!loading">
-    <div class="title">{{'STATIONMAP.DESCRIPTION'|translate}}</div>
+    <div class="title" [innerHTML]="'STATIONMAP.DESCRIPTION'|translate"></div>
     <mat-list *ngIf="data.length>0;else noData">
         <mat-list-item *ngFor="let map of data">
             <h4 mat-line><b>{{getName(map)}}</b> <em><small

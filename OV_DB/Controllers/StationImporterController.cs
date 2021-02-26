@@ -32,13 +32,15 @@ namespace OV_DB.Controllers
                 return Forbid();
             }
             var countries = await DbContext.StationCountries.ToListAsync();
-
             foreach (var country in countries)
             {
+                var stationOsmIdsFound = new List<long>();
                 var list = await GetStationList(country.OsmId);
-                if (list == null)
+                var tryCount = 1;
+                while (list == null && tryCount < 6)
                 {
-                    await Task.Delay(2000);
+                    tryCount++;
+                    await Task.Delay((int)(10000 * (Math.Pow(2, tryCount))));
                     list = await GetStationList(country.OsmId);
                 }
 
@@ -80,14 +82,17 @@ namespace OV_DB.Controllers
                             }
                             names.Add(station.Tags["name"]);
                         }
+                        stationOsmIdsFound.Add(station.Id);
                     });
                     await Task.Delay(1000);
                 }
 
                 var wayList = await GetStationWayList(country.OsmId);
-                if (wayList == null)
+                tryCount = 1;
+                while (wayList == null && tryCount<6)
                 {
-                    await Task.Delay(2000);
+                    tryCount++;
+                    await Task.Delay((int)(10000 * (Math.Pow(2, tryCount))));
                     wayList = await GetStationWayList(country.OsmId);
                 }
 
@@ -125,8 +130,17 @@ namespace OV_DB.Controllers
                                 stationToUpdate.Special = true;
                             }
                         }
+                        stationOsmIdsFound.Add(station.Id);
                     });
                     await Task.Delay(1000);
+                }
+                if (list != null && wayList != null)
+                {
+                    var stationsToDisable = await DbContext.Stations.Where(s => s.StationCountryId == country.Id && !stationOsmIdsFound.Contains(s.OsmId)).ToListAsync();
+                    stationsToDisable.ForEach(station =>
+                    {
+                        station.Hidden = true;
+                    });
                 }
             }
             await DbContext.SaveChangesAsync();
@@ -136,7 +150,7 @@ namespace OV_DB.Controllers
 
         public async Task<string> GetStationList(string osmId)
         {
-            var query = $"[out:json][timeout:240];\narea({osmId})->.searchArea;\n(node[\"railway\"=\"station\"][!\"subway\"][!\"light_rail\"][!\"funicular\"][!\"station\"][!\"tram\"](area.searchArea);\nnode[\"railway\"=\"station\"][\"train\"=\"yes\"](area.searchArea);\nnode[\"railway\"=\"halt\"][!\"subway\"][!\"light_rail\"][!\"funicular\"][!\"station\"][!\"tram\"](area.searchArea);node[\"railway\"=\"halt\"][\"train\"=\"yes\"](area.searchArea););\nout body;";
+            var query = $"[out:json][timeout:240];area({osmId})->.searchArea;(node[\"railway\"=\"station\"][!\"subway\"][!\"funicular\"][!\"tram\"][\"station\"!=\"monorail\"][\"station\"!=\"subway\"][\"station\"!=\"tram\"](area.searchArea);node[\"railway\"=\"station\"][\"train\"=\"yes\"](area.searchArea);node[\"railway\"=\"halt\"][!\"subway\"][!\"funicular\"][!\"tram\"][\"station\"!=\"monorail\"][\"station\"!=\"subway\"][\"station\"!=\"tram\"](area.searchArea);node[\"railway\"=\"halt\"][\"train\"=\"yes\"](area.searchArea););out body;";
             string text = null;
             using (var httpClient = new HttpClient())
             {
@@ -156,7 +170,7 @@ namespace OV_DB.Controllers
 
         public async Task<string> GetStationWayList(string osmId)
         {
-            var query = $"[out:json][timeout:240];\narea({osmId})->.searchArea;\n(way[\"railway\"=\"station\"][!\"subway\"][!\"light_rail\"][!\"funicular\"][!\"station\"][!\"tram\"](area.searchArea);\nway[\"railway\"=\"station\"][\"train\"=\"yes\"](area.searchArea);\nway[\"railway\"=\"halt\"][!\"subway\"][!\"light_rail\"][!\"funicular\"][!\"station\"][!\"tram\"](area.searchArea);way[\"railway\"=\"halt\"][\"train\"=\"yes\"](area.searchArea););\nout center;";
+            var query = $"[out:json][timeout:240];area({osmId})->.searchArea;(way[\"railway\"=\"station\"][!\"subway\"][!\"funicular\"][!\"tram\"][\"station\"!=\"monorail\"][\"station\"!=\"subway\"][\"station\"!=\"tram\"](area.searchArea);node[\"railway\"=\"station\"][\"train\"=\"yes\"](area.searchArea);node[\"railway\"=\"halt\"][!\"subway\"][!\"funicular\"][!\"tram\"][\"station\"!=\"monorail\"][\"station\"!=\"subway\"][\"station\"!=\"tram\"](area.searchArea);way[\"railway\"=\"halt\"][\"train\"=\"yes\"](area.searchArea););out center;";
             string text = null;
             using (var httpClient = new HttpClient())
             {
