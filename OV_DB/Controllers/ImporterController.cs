@@ -363,7 +363,7 @@ namespace OV_DB.Controllers
                         if (startIndex >= 0 && endIndex >= 0)
                         {
                             var points = new List<IPosition>();
-                            if (startIndex > endIndex)
+                            if (startIndex >= endIndex)
                             {
                                 points.AddRange(test[index].Skip(startIndex));
                                 points.AddRange(test[index].Take(endIndex + 1));
