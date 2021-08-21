@@ -145,6 +145,7 @@ export function HttpLoaderFactory(http: HttpClient) {
     LeafletModule,
     MatToolbarModule,
     MatButtonModule,
+    MatDialogModule,
     MatCheckboxModule,
     MatDatepickerModule,
     MatMomentDateModule,
