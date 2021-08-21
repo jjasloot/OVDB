@@ -93,7 +93,7 @@ export class RouteInstancesComponent implements OnInit {
   add() {
     const dialogRef = this.dialog.open(RouteInstancesEditComponent, {
       width: '100%',
-      data: { instance: { routeId: this.routeId } as RouteInstance, new: true }
+      data: { instance: { routeId: this.routeId, routeInstanceMaps: [], routeInstanceProperties: [] } as RouteInstance, new: true }
     });
     dialogRef.afterClosed().subscribe((result: RouteInstance) => {
       if (!!result) {

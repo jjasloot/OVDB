@@ -31,7 +31,7 @@ namespace OV_DB.Controllers
             {
                 return NotFound();
             }
-            var list = await DatabaseContext.Countries.Where(c => c.RouteCountries.Any(r => r.Route.RouteMaps.Any(rm => rm.Map.MapId == map.MapId))).OrderBy(c => c.Name).ToListAsync();
+            var list = await DatabaseContext.Countries.Where(c => c.RouteCountries.Any(r => r.Route.RouteMaps.Any(rm => rm.Map.MapId == map.MapId) || r.Route.RouteInstances.Any(ri => ri.RouteInstanceMaps.Any(rim => rim.MapId == map.MapId)))).OrderBy(c => c.Name).ToListAsync();
             return list;
         }
 
@@ -47,7 +47,7 @@ namespace OV_DB.Controllers
             }
             var years = await DatabaseContext.Routes
              .Where(r => r.RouteTypeId != null)
-             .Where(r => r.RouteMaps.Any(rm => rm.MapId == map.MapId))
+             .Where(r => r.RouteMaps.Any(rm => rm.MapId == map.MapId) || r.RouteInstances.Any(ri => ri.RouteInstanceMaps.Any(rim => rim.MapId == map.MapId)))
              .SelectMany(r => r.RouteInstances.Select(ri => ri.Date.Year))
              .Distinct()
              .ToListAsync();
@@ -63,7 +63,9 @@ namespace OV_DB.Controllers
             {
                 return NotFound();
             }
-            var list = await DatabaseContext.RouteTypes.Where(rt => rt.Routes.Any(r => r.RouteMaps.Any(rm => rm.MapId == map.MapId))).OrderBy(r => r.OrderNr).ToListAsync();
+            var list = await DatabaseContext.RouteTypes
+                .Where(rt => rt.Routes.Any(r => r.RouteMaps.Any(rm => rm.MapId == map.MapId) || r.RouteInstances.Any(ri => ri.RouteInstanceMaps.Any(rim => rim.MapId == map.MapId))))
+                .OrderBy(r => r.OrderNr).ToListAsync();
             return list;
         }
     }

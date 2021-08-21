@@ -59,7 +59,6 @@ namespace OV_DB.Controllers
             }
 
             var routes = _context.RouteInstances
-                .Where(r => r.Route.RouteMaps.Any(rm => rm.Map.UserId == userIdClaim))
                 .Include(ri => ri.Route)
                 .ThenInclude(r => r.RouteType)
                 .AsQueryable();
