@@ -31,7 +31,6 @@ export class RouteInstancesComponent implements OnInit {
     private apiService: ApiService,
     private translationService: TranslationService,
     private translateService: TranslateService,
-    private datePipe: DatePipe,
     private dialog: MatDialog
   ) { }
 
@@ -60,15 +59,12 @@ export class RouteInstancesComponent implements OnInit {
     if (property.bool !== null && property.bool !== undefined) {
       return property.bool ? this.translateService.instant('YES') : this.translateService.instant('NO');
     }
-    if (!!property.date) {
-      return this.datePipe.transform(property.date, 'mediumDate', null, this.currentLocale);
-    }
     return '';
   }
 
   edit(instance: RouteInstance) {
     const dialogRef = this.dialog.open(RouteInstancesEditComponent, {
-      width: '80%',
+      width: '100%',
       data: { instance }
     });
     dialogRef.afterClosed().subscribe((result: RouteInstance) => {
@@ -96,7 +92,7 @@ export class RouteInstancesComponent implements OnInit {
   }
   add() {
     const dialogRef = this.dialog.open(RouteInstancesEditComponent, {
-      width: '80%',
+      width: '100%',
       data: { instance: { routeId: this.routeId } as RouteInstance, new: true }
     });
     dialogRef.afterClosed().subscribe((result: RouteInstance) => {

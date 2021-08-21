@@ -13,5 +13,6 @@ namespace OVDB_database.Models
         public Route Route { get; set; }
         public DateTime Date { get; set; }
         public List<RouteInstanceProperty> RouteInstanceProperties { get; set; }
+        public List<RouteInstanceMap> RouteInstanceMaps { get; set; }
     }
 }

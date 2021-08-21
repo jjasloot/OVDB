@@ -895,7 +895,6 @@ namespace OV_DB.Controllers
         }
 
         [HttpGet("instances/{id}")]
-        [AllowAnonymous]
         public async Task<ActionResult<Route>> GetRouteInstances(int id, [FromQuery] DateTime from, [FromQuery] DateTime to)
         {
             Claim claim = User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier);
@@ -905,7 +904,9 @@ namespace OV_DB.Controllers
               .Include(r => r.RouteType)
               .Include(r => r.RouteInstances)
               .ThenInclude(ri => ri.RouteInstanceProperties)
-              .Where(r => r.RouteMaps.Any(rm => !string.IsNullOrWhiteSpace(rm.Map.SharingLinkName) || rm.Map.UserId == userIdClaim))
+              .Include(r => r.RouteInstances)
+              .ThenInclude(ri => ri.RouteInstanceMaps)
+              .Where(r => r.RouteMaps.Any(rm => rm.Map.UserId == userIdClaim))
               .SingleOrDefaultAsync();
             if (route == null)
             {
@@ -916,6 +917,42 @@ namespace OV_DB.Controllers
             {
                 route.RouteInstances = route.RouteInstances.Where(ri => ri.Date >= from && ri.Date < to).ToList();
             }
+
+            return route;
+        }
+
+        [HttpGet("instances/{mapGuid}/{id}")]
+        [AllowAnonymous]
+        public async Task<ActionResult<Route>> GetRouteInstances(Guid mapGuid, int id, [FromQuery] DateTime from, [FromQuery] DateTime to)
+        {
+            Claim claim = User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier);
+            var userIdClaim = int.Parse(claim != null ? claim.Value : "-1");
+            var route = await _context.Routes
+              .Where(r => r.RouteId == id)
+              .Include(r => r.RouteType)
+              .Include(r => r.RouteMaps)
+              .ThenInclude(rm => rm.Map)
+              .Include(r => r.RouteInstances)
+              .ThenInclude(ri => ri.RouteInstanceProperties)
+              .Include(r => r.RouteInstances)
+              .ThenInclude(ri => ri.RouteInstanceMaps)
+              .ThenInclude(rim => rim.Map)
+              .Where(r => r.RouteMaps.Any(rm => !string.IsNullOrWhiteSpace(rm.Map.SharingLinkName) || rm.Map.UserId == userIdClaim))
+              .SingleOrDefaultAsync();
+            if (route == null)
+            {
+                return NotFound();
+            }
+            route.RouteInstances = route.RouteInstances.Where(ri => (ri.RouteInstanceMaps.Any(rim => rim.Map.MapGuid == mapGuid)
+                                                            || ri.Route.RouteMaps.Any(rm => rm.Map.MapGuid == mapGuid))).ToList();
+            route.RouteInstances = route.RouteInstances.OrderByDescending(ri => ri.Date).ToList();
+            if (from != null && from != default && to != null && to != default)
+            {
+                route.RouteInstances = route.RouteInstances.Where(ri =>
+                ri.Date >= from &&
+                ri.Date < to).ToList();
+            }
+   
 
             return route;
         }
@@ -932,6 +969,8 @@ namespace OV_DB.Controllers
                 .Where(r => r.RouteId == update.RouteId && r.RouteMaps.Any(rm => rm.Map.UserId == userIdClaim))
                 .Include(r => r.RouteInstances)
                 .ThenInclude(ri => ri.RouteInstanceProperties)
+                .Include(r => r.RouteInstances)
+                .ThenInclude(ri => ri.RouteInstanceMaps)
                 .SingleOrDefaultAsync();
 
             if (route == null)
@@ -958,7 +997,6 @@ namespace OV_DB.Controllers
                             var currentProp = current.RouteInstanceProperties.Single(rp => rp.RouteInstancePropertyId == rip.RouteInstancePropertyId);
                             currentProp.Key = rip.Key;
                             currentProp.Bool = rip.Bool;
-                            currentProp.Date = rip.Date;
                             currentProp.Value = rip.Value;
                         }
                         else
@@ -967,11 +1005,17 @@ namespace OV_DB.Controllers
                             {
                                 Key = rip.Key,
                                 Bool = rip.Bool,
-                                Date = rip.Date,
                                 Value = rip.Value
                             });
                         }
                     });
+
+                    var mapsToDelete = current.RouteInstanceMaps.Where(ri => !update.RouteInstanceMaps.Any(uri => uri.MapId == ri.MapId)).ToList();
+                    current.RouteInstanceMaps = current.RouteInstanceMaps.Where(ri => !mapsToDelete.Any(dri => dri.MapId == ri.MapId)).ToList();
+
+                    var toAdd = update.RouteInstanceMaps.Where(ri => !current.RouteInstanceMaps.Any(uri => uri.MapId == ri.MapId)).ToList();
+                    toAdd.ForEach(mapToAdd => current.RouteInstanceMaps.Add(new RouteInstanceMap { MapId = mapToAdd.MapId }));
+
                 }
             }
             else
@@ -988,7 +1032,6 @@ namespace OV_DB.Controllers
                         {
                             Key = rip.Key,
                             Bool = rip.Bool,
-                            Date = rip.Date,
                             Value = rip.Value
                         });
                 });

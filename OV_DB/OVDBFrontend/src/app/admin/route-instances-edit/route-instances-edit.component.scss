@@ -1,7 +1,8 @@
-mat-checkbox {
-    margin-left: 24px;
-}
-
 mat-form-field {
     width: 80%;
+}
+
+.mat-column-buttons,
+.mat-column-bool {
+    max-width: 20px;
 }

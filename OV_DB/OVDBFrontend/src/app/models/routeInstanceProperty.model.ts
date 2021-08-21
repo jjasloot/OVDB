@@ -3,6 +3,5 @@ export interface RouteInstanceProperty {
   routeInstanceId: number;
   key: string;
   value: string;
-  date: Date;
   bool: boolean;
 }

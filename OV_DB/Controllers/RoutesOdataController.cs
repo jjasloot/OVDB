@@ -33,7 +33,7 @@ namespace OV_DB.Controllers
 
         [HttpGet("{id}")]
         [Produces("application/json")]
-        public async Task<ActionResult<FeatureCollection>> GetGeoJsonAsync(string id, ODataQueryOptions<Route> q, [FromQuery] string language)
+        public async Task<ActionResult<FeatureCollection>> GetGeoJsonAsync(string id, ODataQueryOptions<RouteInstance> q, [FromQuery] string language)
         {
             var userClaim = User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier);
             var userIdClaim = int.Parse(userClaim != null ? userClaim.Value : "-1");
@@ -46,7 +46,7 @@ namespace OV_DB.Controllers
             }
             if (string.IsNullOrWhiteSpace(map.SharingLinkName))
             {
-                if (User.Claims.Count() == 0)
+                if (!User.Claims.Any())
                 {
                     return Forbid();
                 }
@@ -58,10 +58,10 @@ namespace OV_DB.Controllers
                 }
             }
 
-            var routes = _context.Routes
-                .Include(r => r.RouteType)
-                .Include(r => r.RouteInstances)
-                .Where(r => r.RouteTypeId.HasValue && r.RouteMaps.Any(rm => rm.MapId == map.MapId))
+            var routes = _context.RouteInstances
+                .Where(r => r.Route.RouteMaps.Any(rm => rm.Map.UserId == userIdClaim))
+                .Include(ri => ri.Route)
+                .ThenInclude(r => r.RouteType)
                 .AsQueryable();
 
             var types = await _context.RouteTypes.ToListAsync();
@@ -74,17 +74,29 @@ namespace OV_DB.Controllers
             if (q.Filter != null)
             {
                 var model = Startup.GetEdmModel();
-                IEdmType type = model.FindDeclaredType("OVDB_database.Models.Route");
+                IEdmType type = model.FindDeclaredType("OVDB_database.Models.RouteInstance");
                 IEdmNavigationSource source = model.FindDeclaredEntitySet("Products");
                 var parser = new ODataQueryOptionParser(model, type, source, new Dictionary<string, string> { { "$filter", q.Filter.RawValue } });
-                var context = new ODataQueryContext(model, typeof(Route), q.Context.Path);
+                var context = new ODataQueryContext(model, typeof(RouteInstance), q.Context.Path);
                 var filter = new FilterQueryOption(q.Filter.RawValue, context, parser);
-
-                routes = q.Filter.ApplyTo(routes, new ODataQuerySettings()) as IQueryable<Route>;
+                routes = q.Filter.ApplyTo(routes, new ODataQuerySettings()) as IQueryable<RouteInstance>;
             }
-
+            routes = routes.Where(r => r.RouteInstanceMaps.Any(rim => rim.MapId == map.MapId) || r.Route.RouteMaps.Any(rm => rm.MapId == map.MapId));
             var collection = new FeatureCollection();
+            var routesList = new List<Route>();
+            var routesToReturn = new Dictionary<int, int>();
             await routes.ForEachAsync(r =>
+            {
+                if (!routesToReturn.ContainsKey(r.RouteId))
+                {
+                    routesToReturn.Add(r.RouteId, 0);
+                    routesList.Add(r.Route);
+                }
+                routesToReturn[r.RouteId] += 1;
+            });
+
+
+            routesList.ForEach(r =>
             {
                 try
                 {
@@ -111,7 +123,7 @@ namespace OV_DB.Controllers
                         feature = new GeoJSON.Net.Feature.Feature(multiLineString);
                     }
                     feature.Properties.Add("id", r.RouteId);
-                    feature.Properties.Add("totalInstances", r.RouteInstances.Count);
+                    feature.Properties.Add("totalInstances", routesToReturn[r.RouteId]);
 
                     if (map.ShowRouteOutline)
                     {
@@ -216,7 +228,7 @@ namespace OV_DB.Controllers
             if (!string.IsNullOrWhiteSpace(route.OverrideColour))
                 feature.Properties.Add("stroke", route.OverrideColour);
             else
-                feature.Properties.Add("stroke", route.RouteType?.Colour??"#000");
+                feature.Properties.Add("stroke", route.RouteType?.Colour ?? "#000");
 
             collection.Features.Add(feature);
 

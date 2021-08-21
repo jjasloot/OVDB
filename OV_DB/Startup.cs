@@ -188,10 +188,10 @@ namespace OV_DB
         public static IEdmModel GetEdmModel()
         {
             var builder = new ODataConventionModelBuilder();
+            builder.EntitySet<RouteInstance>("RouteInstances");
             builder.EntitySet<Route>("Routes");
             builder.EntitySet<Country>("Countries");
-            builder.EntitySet<OVDB_database.Models.RouteType>("Types");
-            builder.EntitySet<RouteInstance>("RouteInstances");
+            builder.EntitySet<RouteType>("Types");
             return builder.GetEdmModel();
         }
     }

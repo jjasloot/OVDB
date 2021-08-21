@@ -184,15 +184,15 @@ export class MapComponent implements OnInit, AfterViewInit {
       this.loading = true;
       let filter = '';
       if (!!this.to && !!this.from) {
-        filter += filter += '(RouteInstances/any(tag: tag/Date ge '
+        filter += filter += '(Date ge '
           + this.from.format('YYYY-MM-DD')
-          + ' and tag/Date lt '
-          + this.to.format('YYYY-MM-DD') + '))  and ';
+          + ' and Date lt '
+          + this.to.format('YYYY-MM-DD') + ')  and ';
       }
       if (this.selectedCountries && this.selectedCountries.length > 0) {
         filter += '(';
         this.selectedCountries.forEach(option => {
-          filter += 'RouteCountries/any(routeCountry: routeCountry/CountryId eq ' + option + ') or ';
+          filter += 'Route/RouteCountries/any(routeCountry: routeCountry/CountryId eq ' + option + ') or ';
         });
         if (filter.endsWith(' or ')) {
           filter = filter.slice(0, filter.length - 4);
@@ -202,7 +202,7 @@ export class MapComponent implements OnInit, AfterViewInit {
       if (this.selectedTypes && this.selectedTypes.length > 0) {
         filter += '(';
         this.selectedTypes.forEach(option => {
-          filter += 'RouteTypeId eq ' + option + ' or ';
+          filter += 'Route/RouteTypeId eq ' + option + ' or ';
         });
         if (filter.endsWith(' or ')) {
           filter = filter.slice(0, filter.length - 4);
@@ -214,15 +214,15 @@ export class MapComponent implements OnInit, AfterViewInit {
         filter += '(';
         this.selectedYears.forEach(option => {
           if (!option) {
-            filter += 'FirstDateTime eq null or ';
+            filter += 'Route/FirstDateTime eq null or ';
           } else {
             const start = moment().year(option).startOf('year');
             const end = moment().year(option + 1).startOf('year');
 
-            filter += '(RouteInstances/any(tag: tag/Date ge '
+            filter += '(Date ge '
               + start.format('YYYY-MM-DD')
-              + ' and tag/Date lt '
-              + end.format('YYYY-MM-DD') + ')) or ';
+              + ' and Date lt '
+              + end.format('YYYY-MM-DD') + ') or ';
           }
         });
         if (filter.endsWith(' or ')) {
@@ -353,7 +353,7 @@ export class MapComponent implements OnInit, AfterViewInit {
     }
     const dialog = this.dialog.open(MapInstanceDialogComponent, {
       data: {
-        id, limits
+        id, limits, mapGuid: this.guid
       },
       width: '50%'
     });

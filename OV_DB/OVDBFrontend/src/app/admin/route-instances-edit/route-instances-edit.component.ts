@@ -1,13 +1,12 @@
 import { Component, OnInit, Inject, ViewChild } from '@angular/core';
 import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
-import { TranslateService } from '@ngx-translate/core';
 import { ApiService } from 'src/app/services/api.service';
 import { RouteInstance } from 'src/app/models/routeInstance.model';
 import { RouteInstanceProperty } from 'src/app/models/routeInstanceProperty.model';
 import { MatTable } from '@angular/material/table';
+import { BehaviorSubject } from 'rxjs';
+import { Map } from '../../models/map.model'
 import { TranslationService } from 'src/app/services/translation.service';
-import { DateAdapter } from '@angular/material/core';
-import { Observable, Subject, BehaviorSubject } from 'rxjs';
 
 @Component({
   selector: 'app-route-instances-edit',
@@ -20,11 +19,11 @@ export class RouteInstancesEditComponent implements OnInit {
   new = false;
   options = [];
   filteredOptions: BehaviorSubject<string[]> = new BehaviorSubject<string[]>(this.options);
+  maps: Map[];
+  selectedMaps: number[] = [];
   constructor(
     public dialogRef: MatDialogRef<RouteInstancesEditComponent>,
-    private translateService: TranslateService,
     private translationService: TranslationService,
-    private dateAdapter: DateAdapter<any>,
     private apiService: ApiService,
     @Inject(MAT_DIALOG_DATA) data) {
     if (!!data && data.instance) {
@@ -34,15 +33,18 @@ export class RouteInstancesEditComponent implements OnInit {
       if (data.new) {
         this.new = true;
       }
+      this.selectedMaps = this.instance.routeInstanceMaps.map(rim => rim.mapId);
     }
   }
 
   ngOnInit() {
-    this.dateAdapter.setLocale(this.translationService.dateLocale);
     this.apiService.getAutocompleteForTags().subscribe(data => {
       this.options = data;
       this.updateSuggestions('');
     });
+    this.apiService.getMaps().subscribe(data => {
+      this.maps = data;
+    })
   }
   updateSuggestions(value: string) {
     const filterValue = value.toLowerCase();
@@ -64,17 +66,15 @@ export class RouteInstancesEditComponent implements OnInit {
       this.instance.routeInstanceProperties =
         this.instance.routeInstanceProperties.slice(0, this.instance.routeInstanceProperties.length - 1);
     }
+    this.instance.routeInstanceMaps = this.selectedMaps.map(s => { return { mapId: s } });
     this.dialogRef.close(this.instance);
   }
 
   disableValue(row: RouteInstanceProperty) {
-    return !!row.date || (row.bool !== undefined && row.bool !== null);
-  }
-  disableDate(row: RouteInstanceProperty) {
-    return !!row.value || (row.bool !== undefined && row.bool !== null);
+    return (row.bool !== undefined && row.bool !== null);
   }
   disableBool(row: RouteInstanceProperty) {
-    return !!row.value || !!row.date;
+    return !!row.value;
   }
   addRow() {
     this.instance.routeInstanceProperties.push({} as RouteInstanceProperty);
@@ -96,5 +96,9 @@ export class RouteInstancesEditComponent implements OnInit {
 
   get incomplete() {
     return !this.instance.date;
+  }
+
+  name(item: any) {
+    return this.translationService.getNameForItem(item);
   }
 }

@@ -123,10 +123,6 @@ namespace OV_DB.Controllers
                         else
                             ws.Cell(row, index).Value = ri.Bool.Value ? "waar" : "onwaar";
                     }
-                    else if (ri.Date.HasValue)
-                    {
-                        ws.Cell(row, index).Value = ri.Date;
-                    }
                     else
                     {
                         ws.Cell(row, index).Value = ri.Value;

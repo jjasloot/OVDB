@@ -62,3 +62,11 @@ body {
     justify-content: center;
     align-items: center;
 }
+
+.cdk-overlay-pane {
+    max-width: 95vw !important;
+}
+
+.mat-dialog-container {
+    max-height: 90vh !important;
+}

@@ -94,6 +94,13 @@ export class ApiService {
     }
     return this.httpClient.get<Route>(url);
   }
+  getRouteInstancesForMap(mapGuid: string, routeId: number, from?, to?) {
+    let url = environment.backend + 'api/routes/instances/' + mapGuid + "/" + routeId;
+    if (!!from && !!to) {
+      url += `?from=${from}&to=${to}`;
+    }
+    return this.httpClient.get<Route>(url);
+  }
   updateRouteInstance(instance: RouteInstance) {
     return this.httpClient.put(environment.backend + 'api/routes/instances', instance);
   }
@@ -133,10 +140,14 @@ export class ApiService {
     let url = '';
 
     url = environment.backend + 'odata/' + guid;
+    let params = new HttpParams();
     if (!!filter) {
-      url += '?$filter=' + filter + '&language=' + language;
+      params = params.append('$filter', filter)
     }
-    return this.httpClient.get<string>(url);
+    if (!!language) {
+      params = params.append('language', language)
+    }
+    return this.httpClient.get<string>(url, { params });
   }
 
   getSingleRoute(routeId: number, guid: string, language: string): Observable<string> {

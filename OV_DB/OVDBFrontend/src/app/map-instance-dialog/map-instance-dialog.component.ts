@@ -19,6 +19,7 @@ export class MapInstanceDialogComponent implements OnInit {
   instances: RouteInstance[] = [];
   loading = true;
   loadAll = false;
+  mapGuid: string = '';
   constructor(
     private apiService: ApiService,
     private translationService: TranslationService,
@@ -28,6 +29,7 @@ export class MapInstanceDialogComponent implements OnInit {
     @Inject(MAT_DIALOG_DATA) public data) {
     this.id = data.id;
     this.limits = data.limits;
+    this.mapGuid = data.mapGuid;
   }
   get currentLocale() {
     return this.translationService.dateLocale;
@@ -52,20 +54,18 @@ export class MapInstanceDialogComponent implements OnInit {
     if (property.bool !== null && property.bool !== undefined) {
       return property.bool ? this.translateService.instant('YES') : this.translateService.instant('NO');
     }
-    if (!!property.date) {
-      return this.datePipe.transform(property.date, 'mediumDate', null, this.currentLocale);
-    }
     return '';
   }
   getData() {
     if (this.loadAll) {
-      this.apiService.getRouteInstances(this.id).subscribe(data => {
+      this.apiService.getRouteInstancesForMap(this.mapGuid, this.id).subscribe(data => {
         this.instances = data.routeInstances;
       });
       return;
     }
     let completed = 0;
-    merge(...this.limits.map(l => this.apiService.getRouteInstances(
+    merge(...this.limits.map(l => this.apiService.getRouteInstancesForMap(
+      this.mapGuid,
       this.id,
       l.start.format('YYYY-MM-DD'),
       l.end.format('YYYY-MM-DD')

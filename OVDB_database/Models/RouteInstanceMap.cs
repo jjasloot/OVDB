@@ -5,14 +5,13 @@ using System.Text;
 
 namespace OVDB_database.Models
 {
-    public class RouteInstanceProperty
+    public class RouteInstanceMap
     {
         [Key]
-        public long RouteInstancePropertyId { get; set; }
+        public long RouteMapId { get; set; }
         public int RouteInstanceId { get; set; }
+        public int MapId { get; set; }
         public RouteInstance RouteInstance { get; set; }
-        public string Key { get; set; }
-        public string? Value { get; set; }
-        public bool? Bool { get; set; }
+        public Map Map { get; set; }
     }
 }
