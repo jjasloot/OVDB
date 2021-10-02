@@ -47,7 +47,7 @@ namespace OV_DB.Controllers
         private async Task<byte[]> GenerateImageAsync(int width, int height, string title, List<Guid> guids, bool includeTotal, string language)
         {
             var query = _context.RouteInstances
-     .Where(ri => ri.Route.RouteMaps.Any(rm => guids.Contains(rm.Map.MapGuid)));
+     .Where(ri => ri.Route.RouteMaps.Any(rm => guids.Contains(rm.Map.MapGuid)) || ri.RouteInstanceMaps.Any(rim => guids.Contains(rim.Map.MapGuid)));
 
             query = query.Where(ri => ri.Date.Year == DateTime.Now.Year);
 
