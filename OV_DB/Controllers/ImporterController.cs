@@ -258,12 +258,35 @@ namespace OV_DB.Controllers
             {
                 return Ok(element);
             }
+            var reverseFromToOrder = false;
+            if (startIndex > toIndex)
+            {
+                var temp = startIndex;
+                startIndex = toIndex;
+                toIndex = temp;
+                reverseFromToOrder = true;
+
+                if (relation.Tags.ContainsKey("ref") && relation.Tags.ContainsKey("to") && relation.Tags.ContainsKey("to"))
+                {
+                    element.Name = relation.Tags["ref"] + ": " + toStop.Tags["friendlyName"] + " => " + fromStop.Tags["friendlyName"];
+                }
+            }
+
+
             var filteredList = oneList.Take(toIndex + 1).Skip(startIndex).ToList();
             var filteredPoints = filteredList.Select(l => l.Longitude.ToString(CultureInfo.InvariantCulture) + ", " + l.Latitude.ToString(CultureInfo.InvariantCulture)).ToList();
             var filteredPointsList = string.Join("\n", filteredPoints);
             element.GeoJson = CoordsToGeoJson(filteredList);
-            element.From = fromStop.Tags["friendlyName"];
-            element.To = toStop.Tags["friendlyName"];
+            if (reverseFromToOrder)
+            {
+                element.From = toStop.Tags["friendlyName"];
+                element.To = fromStop.Tags["friendlyName"];
+            }
+            else
+            {
+                element.From = fromStop.Tags["friendlyName"];
+                element.To = toStop.Tags["friendlyName"];
+            }
             return Ok(element);
         }
 
