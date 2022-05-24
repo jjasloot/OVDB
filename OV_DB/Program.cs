@@ -1,9 +1,6 @@
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using OVDB_database.Database;
-using System;
 
 namespace OV_DB
 {
