@@ -663,20 +663,30 @@ namespace OV_DB.Controllers
             return File(Encoding.UTF8.GetBytes(serializer.Xml), "application/xml");
         }
         [HttpGet("export")]
-        public async Task<ActionResult<string>> ExportAllRoutes(int id)
+        public async Task<ActionResult<string>> ExportAllRoutes(int id, [FromQuery] Guid? map, [FromQuery] int? year)
         {
             var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value ?? "-1");
             if (userIdClaim < 0)
             {
                 return Forbid();
             }
-            var routes = await _context.Routes
-                .Include(r => r.RouteType)
-                .Include(r => r.RouteCountries)
-                .ThenInclude(rc => rc.Country)
-                .Include(r => r.RouteMaps)
-                .ThenInclude(rm => rm.Map)
-                .Where(r => r.RouteMaps.Any(rm => rm.Map.UserId == userIdClaim))
+
+            var query = _context.Routes
+                            .Include(r => r.RouteType)
+                            .Include(r => r.RouteCountries)
+                            .ThenInclude(rc => rc.Country)
+                            .Include(r => r.RouteMaps)
+                            .ThenInclude(rm => rm.Map)
+                            .Where(r => r.RouteMaps.Any(rm => rm.Map.UserId == userIdClaim));
+            if (map.HasValue)
+            {
+                query = query.Where(r => r.RouteInstances.Any(ri => ri.RouteInstanceMaps.Any(rim => rim.Map.MapGuid == map)) || r.RouteMaps.Any(rm => rm.Map.MapGuid == map));
+            }
+            if (year.HasValue)
+            {
+                query = query.Where(r => r.RouteInstances.Any(ri => ri.Date.Year == year));
+            }
+            var routes = await query
                 .ToListAsync();
             if (routes == null)
             {
@@ -952,7 +962,7 @@ namespace OV_DB.Controllers
                 ri.Date >= from &&
                 ri.Date < to).ToList();
             }
-   
+
 
             return route;
         }

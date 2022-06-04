@@ -1,3 +1,7 @@
+2022-06-04:
+- fix: Stats now also work for routes that are linked via an instance
+- Allow exporting a combination of map and year as kml on the statisticspage
+
 2021-02-20:
 - added stationmaps
 

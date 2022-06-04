@@ -181,8 +181,15 @@ export class ApiService {
   getExport(routeId: number) {
     return this.httpClient.get(environment.backend + 'api/routes/' + routeId + '/export', { responseType: 'blob' });
   }
-  getCompleteExport() {
-    return this.httpClient.get(environment.backend + 'api/routes/export', { responseType: 'blob' });
+  getCompleteExport(map?: string, year?: number) {
+    let params = new HttpParams();
+    if (map != null) {
+      params = params.append('map', map);
+    }
+    if (year != null) {
+      params = params.append('year', year);
+    }
+    return this.httpClient.get(environment.backend + 'api/routes/export', { params, responseType: 'blob' });
   }
 
   updateRouteTypeOrder(newOrder: number[]): Observable<any> {

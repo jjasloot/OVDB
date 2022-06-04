@@ -10,6 +10,7 @@ using Microsoft.EntityFrameworkCore;
 using OV_DB.Models;
 using OV_DB.Models.Graphs;
 using OVDB_database.Database;
+using OVDB_database.Models;
 
 namespace OV_DB.Controllers
 {
@@ -33,13 +34,7 @@ namespace OV_DB.Controllers
                 return Forbid();
             }
 
-            var query = _context.RouteInstances
-                .Where(ri => ri.Route.RouteMaps.Any(rm => rm.Map.UserId == userIdClaim) && ri.Route.RouteMaps.Any(rm => rm.Map.MapGuid == map));
-
-            if (year.HasValue)
-            {
-                query = query.Where(ri => ri.Date.Year == year);
-            }
+            var query = QueryForInstances(map, year, userIdClaim);
 
             var x = await query.Select(ri => new
             {
@@ -53,6 +48,19 @@ namespace OV_DB.Controllers
             return Ok(x2);
         }
 
+        private IQueryable<RouteInstance> QueryForInstances(Guid map, int? year, int userIdClaim)
+        {
+            var query = _context.RouteInstances
+                .Where(ri => ri.Route.RouteMaps.Any(rm => rm.Map.UserId == userIdClaim) && (ri.Route.RouteMaps.Any(rm => rm.Map.MapGuid == map) || ri.RouteInstanceMaps.Any(rim => rim.Map.MapGuid == map)));
+
+            if (year.HasValue)
+            {
+                query = query.Where(ri => ri.Date.Year == year);
+            }
+
+            return query;
+        }
+
         [HttpGet("time/{map}")]
         public async Task<ActionResult> GetTimedStats(Guid map, [FromQuery] int? year, [FromQuery] string language = "nl")
         {
@@ -62,13 +70,7 @@ namespace OV_DB.Controllers
                 return Forbid();
             }
 
-            var query = _context.RouteInstances
-                .Where(ri => ri.Route.RouteMaps.Any(rm => rm.Map.UserId == userIdClaim) && ri.Route.RouteMaps.Any(rm => rm.Map.MapGuid == map));
-
-            if (year.HasValue)
-            {
-                query = query.Where(ri => ri.Date.Year == year);
-            }
+            var query = QueryForInstances(map, year, userIdClaim);
 
             var x = await query.Select(ri => new
             {
@@ -166,13 +168,7 @@ namespace OV_DB.Controllers
                 return Forbid();
             }
 
-            var query = _context.RouteInstances
-                .Where(ri => ri.Route.RouteMaps.Any(rm => rm.Map.UserId == userIdClaim) && ri.Route.RouteMaps.Any(rm => rm.Map.MapGuid == map));
-
-            if (year.HasValue)
-            {
-                query = query.Where(ri => ri.Date.Year == year);
-            }
+            var query = QueryForInstances(map, year, userIdClaim);
 
             var x = await query.Select(ri => ri.Route).Distinct().ToListAsync();
             if (!x.Any())

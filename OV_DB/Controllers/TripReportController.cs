@@ -37,7 +37,11 @@ namespace OV_DB.Controllers
             var ws = workbook.AddWorksheet("trips");
             var row = 1;
             var routes = await _databaseContext.RouteInstances
-                .Where(ri => ri.Date.Year == year && ri.Route.RouteMaps.Any(rm => rm.Map.UserId == userIdClaim && guid.Contains(rm.Map.MapGuid)))
+                .Where(ri => ri.Date.Year == year &&
+                (
+                    ri.Route.RouteMaps.Any(rm => rm.Map.UserId == userIdClaim && guid.Contains(rm.Map.MapGuid)) ||
+                    ri.RouteInstanceMaps.Any(rm => rm.Map.UserId == userIdClaim && guid.Contains(rm.Map.MapGuid)))
+                )
                 .Select(ri => new TripReportEntity
                 {
                     Date = ri.Date,

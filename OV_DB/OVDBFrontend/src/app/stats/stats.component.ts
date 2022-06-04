@@ -104,7 +104,7 @@ export class StatsComponent implements OnInit {
   constructor(
     private apiService: ApiService,
     private translationService: TranslationService,
-    public translateService: TranslateService
+    public translateService: TranslateService,
   ) { }
 
   ngOnInit(): void {
@@ -210,9 +210,15 @@ export class StatsComponent implements OnInit {
     return this.translationService.getNameForItem(item);
   }
 
-  download(){
-    this.apiService.getTripReport(this.selectedMap,this.selectedYear).subscribe(data => {
+  download() {
+    this.apiService.getTripReport(this.selectedMap, this.selectedYear).subscribe(data => {
       saveAs(data, 'tripreport.xlsx');
+    });
+  }
+
+  export() {
+    this.apiService.getCompleteExport(this.selectedMap, this.selectedYear).subscribe(data => {
+      saveAs(data, 'export.kml');
     });
   }
 }
