@@ -45,6 +45,18 @@ namespace OV_DB.Controllers
                 return NotFound();
             }
             return Ok(map.MapGuid);
+        } 
+
+        [HttpGet("station-link/{name}")]
+        [AllowAnonymous]
+        public async Task<ActionResult<string>> GetGuidFromNameForStationsAsync(string name)
+        {
+            var map = await DatabaseContext.StationMaps.Where(m => m.SharingLinkName == name).SingleOrDefaultAsync();
+            if (map == null)
+            {
+                return NotFound();
+            }
+            return Ok(map.MapGuid);
         }
 
         //[HttpGet("overwriteGUIDs")]

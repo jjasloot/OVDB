@@ -64,8 +64,9 @@ const routes: Routes = [
         ]
       },
       {
-        path: 'stations', canActivate: [LoginGuard], children: [
-          { path: 'map/:guid', component: StationMapViewComponent },
+        path: 'stations', children: [
+          { path: 'map/:guid', component: StationMapViewComponent, canActivate: [LoginGuard], },
+          { path: 'link/:name', component: StationMapViewComponent },
         ]
       },
       {

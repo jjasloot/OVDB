@@ -174,10 +174,14 @@ export class ApiService {
       .post(environment.backend + 'api/routes/kmlfile', formData);
   }
 
-
   getGuidFromMapName(name: string): Observable<string> {
     return this.httpClient.get<string>(environment.backend + 'api/user/link/' + name);
   }
+
+  getGuidFromStationMapName(name: string): Observable<string> {
+    return this.httpClient.get<string>(environment.backend + 'api/user/station-link/' + name);
+  }
+
   getExport(routeId: number) {
     return this.httpClient.get(environment.backend + 'api/routes/' + routeId + '/export', { responseType: 'blob' });
   }

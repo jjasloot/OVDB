@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, ParamMap } from '@angular/router';
+import { ApiService } from 'src/app/services/api.service';
 
 @Component({
   selector: 'app-station-map-view',
@@ -9,11 +10,21 @@ import { ActivatedRoute, ParamMap } from '@angular/router';
 export class StationMapViewComponent implements OnInit {
   guid: string;
 
-  constructor(private activatedRoute: ActivatedRoute) { }
+  constructor(
+    private activatedRoute: ActivatedRoute,
+    private apiService: ApiService
+  ) { }
 
   ngOnInit() {
     this.activatedRoute.paramMap.subscribe((paramMap: ParamMap) => {
-      this.guid = paramMap.get('guid');
+      const name = paramMap.get('name');
+      if (name != null) {
+        this.apiService.getGuidFromStationMapName(name).subscribe(guid => {
+          this.guid = guid;
+        })
+      } else {
+        this.guid = paramMap.get('guid');
+      }
     });
   }
 
