@@ -1,6 +1,6 @@
 import { Route } from '@angular/compiler/src/core';
 import { Component, Inject, OnInit, ViewChild } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
 import { DateAdapter } from '@angular/material/core';
 import { MatDialog, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { MatSelectionList } from '@angular/material/list';
@@ -20,7 +20,7 @@ import { TranslationService } from 'src/app/services/translation.service';
   styleUrls: ['./station-maps-edit.component.scss']
 })
 export class StationMapsEditComponent implements OnInit {
-  form: FormGroup;
+  form: UntypedFormGroup;
   countries: StationCountry[];
   @ViewChild('countriesSelection') countriesSelection: MatSelectionList;
   selectedOptions: number[] = [];
@@ -30,7 +30,7 @@ export class StationMapsEditComponent implements OnInit {
     private apiService: ApiService,
     private translateService: TranslateService,
     private translationService: TranslationService,
-    private formBuilder: FormBuilder,
+    private formBuilder: UntypedFormBuilder,
     private dateAdapter: DateAdapter<any>,
     private dialog: MatDialog,
     private router: Router,

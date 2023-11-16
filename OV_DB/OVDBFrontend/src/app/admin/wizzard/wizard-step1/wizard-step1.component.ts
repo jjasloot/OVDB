@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
 import { ApiService } from 'src/app/services/api.service';
 import { OSMDataLine } from 'src/app/models/osmDataLine.model';
 import { Router } from '@angular/router';
@@ -13,7 +13,7 @@ import { TranslationService } from 'src/app/services/translation.service';
   styleUrls: ['./wizard-step1.component.scss']
 })
 export class WizzardStep1Component implements OnInit {
-  form: FormGroup;
+  form: UntypedFormGroup;
   lines: OSMDataLine[];
   step = 1;
   loading = false;
@@ -22,7 +22,7 @@ export class WizzardStep1Component implements OnInit {
   dateTime: moment.Moment = null;
   error: boolean;
   constructor(
-    private formBuilder: FormBuilder,
+    private formBuilder: UntypedFormBuilder,
     private apiService: ApiService,
     private router: Router,
     private dateAdapter: DateAdapter<any>,

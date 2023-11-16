@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { FormBuilder, Validators, FormGroup } from '@angular/forms';
+import { UntypedFormBuilder, Validators, UntypedFormGroup } from '@angular/forms';
 import { AuthenticationService } from '../services/authentication.service';
 import { ActivatedRoute, Data } from '@angular/router';
 
@@ -9,14 +9,14 @@ import { ActivatedRoute, Data } from '@angular/router';
   styleUrls: ['./login.component.scss']
 })
 export class LoginComponent implements OnInit {
-  form: FormGroup;
+  form: UntypedFormGroup;
   failed: boolean;
   loading: boolean;
   error: any;
 
   constructor(
     private authService: AuthenticationService,
-    private formBuilder: FormBuilder,
+    private formBuilder: UntypedFormBuilder,
     private activatedRoute: ActivatedRoute) { }
 
   ngOnInit() {

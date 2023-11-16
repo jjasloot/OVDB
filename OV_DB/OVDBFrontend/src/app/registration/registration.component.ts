@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { FormBuilder, Validators } from '@angular/forms';
+import { UntypedFormBuilder, Validators } from '@angular/forms';
 import { AuthenticationService } from '../services/authentication.service';
 import { RegistrationRequest } from '../models/registrationRequest.model';
 
@@ -16,7 +16,7 @@ export class RegistrationComponent implements OnInit {
   });
   failed = false;
   error = '';
-  constructor(private formBuilder: FormBuilder, private authService: AuthenticationService) { }
+  constructor(private formBuilder: UntypedFormBuilder, private authService: AuthenticationService) { }
 
   ngOnInit(): void {
   }

@@ -2,7 +2,7 @@ import { Component, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Route } from 'src/app/models/route.model';
 import { ApiService } from 'src/app/services/api.service';
-import { FormBuilder, Validators, FormGroup } from '@angular/forms';
+import { UntypedFormBuilder, Validators, UntypedFormGroup } from '@angular/forms';
 import * as moment from 'moment';
 import { RouteType } from 'src/app/models/routeType.model';
 import { Location } from '@angular/common';
@@ -24,7 +24,7 @@ import { AreYouSureDialogComponent } from 'src/app/are-you-sure-dialog/are-you-s
 export class RouteDetailComponent implements OnInit {
   routeId: number;
   route: Route;
-  form: FormGroup;
+  form: UntypedFormGroup;
   types: RouteType[];
   countries: Country[];
   maps: Map[];
@@ -41,7 +41,7 @@ export class RouteDetailComponent implements OnInit {
     private apiService: ApiService,
     private translateService: TranslateService,
     private translationService: TranslationService,
-    private formBuilder: FormBuilder,
+    private formBuilder: UntypedFormBuilder,
     private dateAdapter: DateAdapter<any>,
     private dialog: MatDialog,
     private router: Router) {
