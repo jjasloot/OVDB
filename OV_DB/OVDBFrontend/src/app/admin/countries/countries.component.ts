@@ -1,5 +1,4 @@
 import { Component, OnInit } from '@angular/core';
-import { Route } from '@angular/compiler/src/core';
 import { ApiService } from 'src/app/services/api.service';
 import { Router } from '@angular/router';
 import { Country } from 'src/app/models/country.model';

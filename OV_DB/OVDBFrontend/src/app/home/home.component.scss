@@ -20,7 +20,9 @@ textarea {
     margin: 8px;
   }
 }
-
+mat-list-item {
+  height: 4rem !important;
+}
 .desktop {
   display: none;
 }

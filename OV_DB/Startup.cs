@@ -153,7 +153,7 @@ namespace OV_DB
             app.UseAuthorization();
             app.UseEndpoints(r =>
             {
-              
+                r.MapControllers();
                 r.MapSwagger();
             });
             using (var serviceScope = app.ApplicationServices.GetRequiredService<IServiceScopeFactory>().CreateScope())
@@ -176,7 +176,7 @@ namespace OV_DB
 
                 if (env.IsDevelopment())
                 {
-                    spa.UseAngularCliServer(npmScript: "start");
+                    //spa.UseAngularCliServer(npmScript: "start");
                 }
             });
         }

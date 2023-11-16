@@ -146,7 +146,7 @@ export class MapFilterComponent implements OnInit {
   }
 
   get countriesString(): string {
-    const countriesNames = this.countries.filter(c => this.selectedCountries.includes(c.countryId)).map(c => c.name);
+    const countriesNames = this.countries.filter(c => this.selectedCountries.includes(c.countryId)).map(c => this.name(c));
     let countriesString = countriesNames.join(', ');
     if (countriesNames.length > 2) {
       countriesString = countriesNames.length + ' ' + this.translateService.instant('FILTER.SELECTED');
@@ -155,7 +155,7 @@ export class MapFilterComponent implements OnInit {
   }
 
   get typesString(): string {
-    const typesNames = this.routeTypes.filter(c => this.selectedTypes.includes(c.typeId)).map(c => c.name);
+    const typesNames = this.routeTypes.filter(c => this.selectedTypes.includes(c.typeId)).map(c => this.name(c));
     let typesString = typesNames.join(', ');
     if (typesNames.length > 2) {
       typesString = typesNames.length + ' ' + this.translateService.instant('FILTER.SELECTED');

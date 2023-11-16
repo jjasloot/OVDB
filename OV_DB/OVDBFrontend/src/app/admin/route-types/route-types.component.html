@@ -1,31 +1,63 @@
 <mat-spinner *ngIf="loading"></mat-spinner>
 <div class="container" *ngIf="!loading">
-    <mat-list *ngIf="data.length>0;else noData">
-        <mat-list-item *ngFor="let routeType of data">
-            <h4 mat-line><b>{{name(routeType)}}</b></h4>
-            <mat-chip-listbox *ngIf="routeType">
-                <mat-chip-option [color]="routeType.colour" [style.background]="routeType.colour">
-                    <span class="desktop">{{routeType.colour}}</span>
-                </mat-chip-option>
-            </mat-chip-listbox>
-            <button class="desktop" mat-button color="primary" (click)="edit(routeType)">{{'EDIT'|translate}}</button>
-            <button class="desktop" mat-button color="error" (click)="delete(routeType)">{{'DELETE'|translate}}</button>
-            <button class="mobile" mat-icon-button color="primary" (click)="edit(routeType)">
-        <mat-icon>create</mat-icon>
-      </button>
-            <button class="mobile" mat-icon-button color="error" (click)="delete(routeType)">
-        <mat-icon>delete</mat-icon>
-      </button>
-        </mat-list-item>
-    </mat-list>
-    <button class="sort" mat-fab (click)="sort()">
+  <mat-list *ngIf="data.length > 0; else noData">
+    <mat-list-item *ngFor="let routeType of data">
+      <div style="display: flex; align-items: center">
+        <h4 mat-line>
+          <b>{{ name(routeType) }}</b>
+        </h4>
+        <mat-chip-listbox *ngIf="routeType" style="margin-left:1rem">
+          <mat-chip-option
+            [color]="routeType.colour"
+            [style.background]="routeType.colour"
+          >
+            <span class="desktop">{{ routeType.colour }}</span>
+          </mat-chip-option>
+        </mat-chip-listbox>
+        <div style="flex: 1"></div>
+        <button
+          class="desktop"
+          mat-button
+          color="primary"
+          (click)="edit(routeType)"
+        >
+          {{ "EDIT" | translate }}
+        </button>
+        <button
+          class="desktop"
+          mat-button
+          color="error"
+          (click)="delete(routeType)"
+        >
+          {{ "DELETE" | translate }}
+        </button>
+        <button
+          class="mobile"
+          mat-icon-button
+          color="primary"
+          (click)="edit(routeType)"
+        >
+          <mat-icon>create</mat-icon>
+        </button>
+        <button
+          class="mobile"
+          mat-icon-button
+          color="error"
+          (click)="delete(routeType)"
+        >
+          <mat-icon>delete</mat-icon>
+        </button>
+      </div>
+    </mat-list-item>
+  </mat-list>
+  <button class="sort" mat-fab (click)="sort()">
     <mat-icon>sort</mat-icon>
   </button>
-    <button class="add" mat-fab (click)="add()">
+  <button class="add" mat-fab (click)="add()">
     <mat-icon>add</mat-icon>
   </button>
 </div>
 
 <ng-template #noData>
-    {{'ROUTETYPES.NODATA'|translate}}
+  {{ "ROUTETYPES.NODATA" | translate }}
 </ng-template>

@@ -16,7 +16,7 @@ button:not(.mat-mdc-fab) {
 }
 
 .space {
-    min-width: 40px;
+    min-width: 3rem;
     margin: 0 12px;
 }
 
@@ -41,4 +41,8 @@ button:not(.mat-mdc-fab) {
     .mobile {
         display: none;
     }
+}
+
+mat-list-item {
+    height: 4rem !important;
 }

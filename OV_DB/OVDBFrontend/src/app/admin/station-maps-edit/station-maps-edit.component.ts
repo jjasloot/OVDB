@@ -1,4 +1,3 @@
-import { Route } from '@angular/compiler/src/core';
 import { Component, Inject, OnInit, ViewChild } from '@angular/core';
 import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
 import { DateAdapter } from '@angular/material/core';
@@ -6,11 +5,8 @@ import { MatDialog, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dial
 import { MatSelectionList } from '@angular/material/list';
 import { ActivatedRoute, Router } from '@angular/router';
 import { TranslateService } from '@ngx-translate/core';
-import * as moment from 'moment';
-import { AreYouSureDialogComponent } from 'src/app/are-you-sure-dialog/are-you-sure-dialog.component';
 import { StationCountry } from 'src/app/models/stationCountry.model';
 import { StationMap, StationMapCountryDTO } from 'src/app/models/stationMap.model';
-import { UpdateRoute } from 'src/app/models/updateRoute.model';
 import { ApiService } from 'src/app/services/api.service';
 import { TranslationService } from 'src/app/services/translation.service';
 

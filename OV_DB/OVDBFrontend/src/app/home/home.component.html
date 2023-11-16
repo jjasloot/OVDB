@@ -1,62 +1,122 @@
 <div class="container">
-    <div *ngIf="isLoggedIn;else notLoggedIn">
-        <h1>{{'HOME.WELCOME'|translate}}</h1>
-        <p>{{'HOME.EXPLANATION'|translate}}</p>
-        <div class="buttons">
-            <button mat-raised-button [routerLink]="['/admin']">{{'HOME.DATA'|translate}}</button>
-            <button mat-raised-button [routerLink]="['/images']">{{'HOME.IMAGES'|translate}}</button>
-            <button mat-raised-button [routerLink]="['/stats']">{{'HOME.STATS'|translate}}</button>
-        </div>
-        <div *ngIf="!!maps">
-            <mat-list *ngIf="maps.length>0 || stationMaps.length>0;else noData">
-                <mat-list-item *ngFor="let map of maps">
-                    <h4 mat-line><b>{{getName(map)}}</b></h4>
-                    <div mat-line *ngIf="!map.sharingLinkName">{{'HOME.CREATELINKTOSHARE'|translate}}</div>
-                    <div class="desktop buttons">
-                        <button mat-raised-button color="primary" (click)="view(map)">{{'HOME.VIEW'|translate}}</button>
-                        <button mat-button *ngIf="!!map.sharingLinkName" [cdkCopyToClipboard]="getLink(map)">{{'HOME.COPY'|translate}}</button>
-                    </div>
-                    <div class="mobile buttons">
-                        <button mat-icon-button color="primary" (click)="view(map)">
-              <mat-icon>visibility</mat-icon>
-            </button>
-                        <button mat-icon-button *ngIf="!!map.sharingLinkName" [cdkCopyToClipboard]="getLink(map)">
-              <mat-icon>content_copy</mat-icon>
-            </button>
-                    </div>
-                </mat-list-item>
-                <mat-list-item *ngFor="let map of stationMaps">
-                    <h4 mat-line>
-                        <mat-icon>location_on</mat-icon><b>{{getName(map)}}</b></h4>
-                    <div mat-line *ngIf="!map.sharingLinkName">{{'HOME.CREATELINKTOSHARE'|translate}}</div>
-                    <div class="desktop buttons">
-                        <button mat-raised-button color="primary" (click)="viewStation(map)">{{'HOME.VIEW'|translate}}</button>
-                        <button mat-button *ngIf="!!map.sharingLinkName" [cdkCopyToClipboard]="getLinkStation(map)">{{'HOME.COPY'|translate}}</button>
-                    </div>
-                    <div class="mobile buttons">
-                        <button mat-icon-button color="primary" (click)="viewStation(map)">
-              <mat-icon>visibility</mat-icon>
-            </button>
-                        <button mat-icon-button *ngIf="!!map.sharingLinkName" [cdkCopyToClipboard]="getLinkStation(map)">
-              <mat-icon>content_copy</mat-icon>
-            </button>
-                    </div>
-                </mat-list-item>
-            </mat-list>
-            <mat-spinner *ngIf="loading"></mat-spinner>
-        </div>
+  <div *ngIf="isLoggedIn; else notLoggedIn">
+    <h1>{{ "HOME.WELCOME" | translate }}</h1>
+    <p>{{ "HOME.EXPLANATION" | translate }}</p>
+    <div class="buttons">
+      <button mat-raised-button [routerLink]="['/admin']">
+        {{ "HOME.DATA" | translate }}
+      </button>
+      <button mat-raised-button [routerLink]="['/images']">
+        {{ "HOME.IMAGES" | translate }}
+      </button>
+      <button mat-raised-button [routerLink]="['/stats']">
+        {{ "HOME.STATS" | translate }}
+      </button>
     </div>
-    <br>
+    <div *ngIf="!!maps">
+      <mat-list *ngIf="maps.length > 0 || stationMaps.length > 0; else noData">
+        <mat-list-item *ngFor="let map of maps">
+          <div
+            style="
+              display: flex;
+              flex-direction: row;
+              justify-content: space-between;
+            "
+          >
+            <h4 mat-line>
+              <b>{{ getName(map) }}</b>
+            </h4>
+            <div class="desktop buttons">
+              <button mat-raised-button color="primary" (click)="view(map)">
+                {{ "HOME.VIEW" | translate }}
+              </button>
+              <button
+                mat-button
+                *ngIf="!!map.sharingLinkName"
+                [cdkCopyToClipboard]="getLink(map)"
+              >
+                {{ "HOME.COPY" | translate }}
+              </button>
+            </div>
+            <div class="mobile buttons">
+              <button mat-icon-button color="primary" (click)="view(map)">
+                <mat-icon>visibility</mat-icon>
+              </button>
+              <button
+                mat-icon-button
+                *ngIf="!!map.sharingLinkName"
+                [cdkCopyToClipboard]="getLink(map)"
+              >
+                <mat-icon>content_copy</mat-icon>
+              </button>
+            </div>
+          </div>
+        </mat-list-item>
+        <mat-list-item *ngFor="let map of stationMaps">
+          <div
+            style="
+              display: flex;
+              flex-direction: row;
+              justify-content: space-between;
+            "
+          >
+            <h4 mat-line>
+              <mat-icon>location_on</mat-icon><b>{{ getName(map) }}</b>
+            </h4>
+            <div class="desktop buttons">
+              <button
+                mat-raised-button
+                color="primary"
+                (click)="viewStation(map)"
+              >
+                {{ "HOME.VIEW" | translate }}
+              </button>
+              <button
+                mat-button
+                *ngIf="!!map.sharingLinkName"
+                [cdkCopyToClipboard]="getLinkStation(map)"
+              >
+                {{ "HOME.COPY" | translate }}
+              </button>
+            </div>
+            <div class="mobile buttons">
+              <button
+                mat-icon-button
+                color="primary"
+                (click)="viewStation(map)"
+              >
+                <mat-icon>visibility</mat-icon>
+              </button>
+              <button
+                mat-icon-button
+                *ngIf="!!map.sharingLinkName"
+                [cdkCopyToClipboard]="getLinkStation(map)"
+              >
+                <mat-icon>content_copy</mat-icon>
+              </button>
+            </div>
+          </div>
+        </mat-list-item>
+      </mat-list>
+      <mat-spinner *ngIf="loading"></mat-spinner>
+    </div>
+  </div>
+  <br />
 
-    <ng-template #notLoggedIn>
-        <h1>{{'HOME.WELCOME'|translate}}</h1>
-        <p>{{'HOME.INFONOTLOGGEDIN'|translate}}</p>
-        <div class="buttons">
-            <button mat-raised-button [routerLink]="['/login']">{{'HOME.LOGIN'|translate}}</button>
-            <button mat-raised-button [routerLink]="['/register']">{{'HOME.REGISTER'|translate}}</button>
-        </div>
-    </ng-template>
+  <ng-template #notLoggedIn>
+    <h1>{{ "HOME.WELCOME" | translate }}</h1>
+    <p>{{ "HOME.INFONOTLOGGEDIN" | translate }}</p>
+    <div class="buttons">
+      <button mat-raised-button [routerLink]="['/login']">
+        {{ "HOME.LOGIN" | translate }}
+      </button>
+      <button mat-raised-button [routerLink]="['/register']">
+        {{ "HOME.REGISTER" | translate }}
+      </button>
+    </div>
+  </ng-template>
 
-    <ng-template #noData>
-        <h3>{{'HOME.NOMAPS'|translate}}</h3>
-    </ng-template>
+  <ng-template #noData>
+    <h3>{{ "HOME.NOMAPS" | translate }}</h3>
+  </ng-template>
+</div>

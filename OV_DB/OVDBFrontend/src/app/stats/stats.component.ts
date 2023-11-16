@@ -24,21 +24,21 @@ export class StatsComponent implements OnInit {
   public lineChartOptions: ChartOptions = {
     responsive: true,
     maintainAspectRatio: false,
-    tooltips: {
-      enabled: true
-    },
-    scales: {
-      xAxes: [{
-        type: 'time',
-        time: {
-          tooltipFormat: 'DD-MM-YYYY',
-          unit: 'month',
-          displayFormats: {
-            month: 'MMM\'YY'
-          }
-        },
-      }],
-    }
+    // tooltips: {
+    //   enabled: true
+    // },
+    // scales: {
+    //   xAxes: [{
+    //     type: 'time',
+    //     time: {
+    //       tooltipFormat: 'DD-MM-YYYY',
+    //       unit: 'month',
+    //       displayFormats: {
+    //         month: 'MMM\'YY'
+    //       }
+    //     },
+    //   }],
+    // }
   };
   public barChartOptions: any = {
     responsive: true,
