@@ -76,18 +76,18 @@
                 "serve": {
                     "builder": "@angular-devkit/build-angular:dev-server",
                     "options": {
-                        "browserTarget": "OVDBFrontend:build"
+                      "buildTarget": "OVDBFrontend:build"
                     },
                     "configurations": {
                         "production": {
-                            "browserTarget": "OVDBFrontend:build:production"
+                          "buildTarget": "OVDBFrontend:build:production"
                         }
                     }
                 },
                 "extract-i18n": {
                     "builder": "@angular-devkit/build-angular:extract-i18n",
                     "options": {
-                        "browserTarget": "OVDBFrontend:build"
+                      "buildTarget": "OVDBFrontend:build"
                     }
                 },
                 "test": {
