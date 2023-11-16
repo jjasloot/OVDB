@@ -14,13 +14,10 @@ using Newtonsoft.Json;
 using OV_DB.Mappings;
 using OVDB_database.Database;
 using OVDB_database.Models;
-using SharpKml.Dom;
 using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
-using Microsoft.AspNet.OData.Extensions;
-using Microsoft.AspNet.OData.Builder;
 
 namespace OV_DB
 {
