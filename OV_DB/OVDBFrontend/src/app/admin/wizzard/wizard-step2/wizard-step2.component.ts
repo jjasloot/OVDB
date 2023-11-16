@@ -7,7 +7,7 @@ import * as L from 'leaflet';
 import { OSMLineStop } from 'src/app/models/osmLineStop.model';
 import { saveAs } from 'file-saver';
 import { TranslateService } from '@ngx-translate/core';
-import { MatLegacyDialog as MatDialog } from '@angular/material/legacy-dialog';
+import { MatDialog } from '@angular/material/dialog';
 import { AreYouSureDialogComponent } from 'src/app/are-you-sure-dialog/are-you-sure-dialog.component';
 import { Moment } from 'moment';
 import * as moment from 'moment';

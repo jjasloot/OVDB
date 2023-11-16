@@ -3,11 +3,11 @@
     <mat-list *ngIf="data.length>0;else noData">
         <mat-list-item *ngFor="let routeType of data">
             <h4 mat-line><b>{{name(routeType)}}</b></h4>
-            <mat-chip-list *ngIf="routeType">
-                <mat-chip [color]="routeType.colour" [style.background]="routeType.colour">
+            <mat-chip-listbox *ngIf="routeType">
+                <mat-chip-option [color]="routeType.colour" [style.background]="routeType.colour">
                     <span class="desktop">{{routeType.colour}}</span>
-                </mat-chip>
-            </mat-chip-list>
+                </mat-chip-option>
+            </mat-chip-listbox>
             <button class="desktop" mat-button color="primary" (click)="edit(routeType)">{{'EDIT'|translate}}</button>
             <button class="desktop" mat-button color="error" (click)="delete(routeType)">{{'DELETE'|translate}}</button>
             <button class="mobile" mat-icon-button color="primary" (click)="edit(routeType)">

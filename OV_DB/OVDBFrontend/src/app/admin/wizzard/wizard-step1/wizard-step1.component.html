@@ -78,9 +78,9 @@
             <div *ngFor="let line of lines" class="line">
                 <div class="info">
                     <b>{{line.name}}</b>
-                    <mat-chip-list *ngIf="!!line.colour">
-                        <mat-chip [color]="line.colour" [style.background]="line.colour" selected></mat-chip>
-                    </mat-chip-list>
+                    <mat-chip-listbox *ngIf="!!line.colour">
+                        <mat-chip-option [color]="line.colour" [style.background]="line.colour" selected></mat-chip-option>
+                    </mat-chip-listbox>
                     <br>
                     <i>{{line.from}} &rarr; {{line.to}}</i><br> {{'IMPORTER.NETWORK'|translate}}: {{line.network}}<br> {{'IMPORTER.OPERATOR'|translate}}: {{line.operator }}
                 </div>

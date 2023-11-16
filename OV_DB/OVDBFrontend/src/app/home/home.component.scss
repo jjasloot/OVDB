@@ -28,6 +28,7 @@ textarea {
 .mobile {
   display: unset;
 }
+/* TODO(mdc-migration): The following rule targets internal classes of list that may no longer apply for the MDC version. */
 mat-list-item {
   border-bottom: solid 1px rgba(#cccccc, 0.5);
 }

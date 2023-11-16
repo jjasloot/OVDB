@@ -10,7 +10,7 @@
     right: 150px;
 }
 
-button:not(.mat-fab) {
+button:not(.mat-mdc-fab) {
     margin: 0 8px;
 }
 
@@ -29,7 +29,7 @@ button:not(.mat-fab) {
     .mobile {
         display: none;
     }
-    button:not(.mat-fab) {
+    button:not(.mat-mdc-fab) {
         min-width: 100px;
         margin: 0 12px;
     }

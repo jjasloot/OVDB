@@ -9,6 +9,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OData.Edm;
+using Microsoft.OData.ModelBuilder;
+using Microsoft.AspNetCore.OData;
 using Microsoft.OpenApi.Models;
 using Newtonsoft.Json;
 using OV_DB.Mappings;
@@ -99,8 +101,7 @@ namespace OV_DB
                     }
                 };
             });
-            services.AddOData();
-            services.AddControllers();
+            services.AddControllers().AddOData(r => r.Select().Filter().AddRouteComponents("odata", GetEdmModel()));
             services.AddSpaStaticFiles(configuration =>
             {
                 configuration.RootPath = "OVDBFrontend/dist/OVDBFrontend";
@@ -152,9 +153,7 @@ namespace OV_DB
             app.UseAuthorization();
             app.UseEndpoints(r =>
             {
-                r.Select().Filter();
-                r.MapODataRoute("odata", "odata", GetEdmModel());
-                r.EnableDependencyInjection();
+              
                 r.MapSwagger();
             });
             using (var serviceScope = app.ApplicationServices.GetRequiredService<IServiceScopeFactory>().CreateScope())

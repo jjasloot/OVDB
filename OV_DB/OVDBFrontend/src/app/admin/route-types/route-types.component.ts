@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { RouteType } from 'src/app/models/routeType.model';
 import { ApiService } from 'src/app/services/api.service';
 import { Router } from '@angular/router';
-import { MatLegacyDialog as MatDialog } from '@angular/material/legacy-dialog';
+import { MatDialog } from '@angular/material/dialog';
 import { AreYouSureDialogComponent } from 'src/app/are-you-sure-dialog/are-you-sure-dialog.component';
 import { RouteTypesAddComponent } from '../route-types-add/route-types-add.component';
 import { DataUpdateService } from 'src/app/services/data-update.service';

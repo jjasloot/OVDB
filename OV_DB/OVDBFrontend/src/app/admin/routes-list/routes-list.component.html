@@ -40,15 +40,15 @@
         <ng-container matColumnDef="type">
             <mat-header-cell *matHeaderCellDef mat-sort-header> {{'ROUTESLIST.TYPE'|translate}} </mat-header-cell>
             <mat-cell *matCellDef="let element">
-                <mat-chip-list *ngIf="element.routeType" class="desktop">
-                    <mat-chip [color]="element.routeType.colour" [style.background]="element.routeType.colour">
+                <mat-chip-listbox *ngIf="element.routeType" class="desktop">
+                    <mat-chip-option [color]="element.routeType.colour" [style.background]="element.routeType.colour">
                         {{name(element.routeType)}}
-                    </mat-chip>
-                </mat-chip-list>
-                <mat-chip-list *ngIf="element.routeType" class="mobile">
-                    <mat-chip [color]="element.routeType.colour" [matTooltip]="name(element.routeType)" [style.background]="element.routeType.colour">
-                    </mat-chip>
-                </mat-chip-list>
+                    </mat-chip-option>
+                </mat-chip-listbox>
+                <mat-chip-listbox *ngIf="element.routeType" class="mobile">
+                    <mat-chip-option [color]="element.routeType.colour" [matTooltip]="name(element.routeType)" [style.background]="element.routeType.colour">
+                    </mat-chip-option>
+                </mat-chip-listbox>
             </mat-cell>
         </ng-container>
 

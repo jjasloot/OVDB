@@ -4,7 +4,7 @@
 
 <div class="loading" *ngIf="loading">
 
-    <mat-card>
+    <mat-card appearance="outlined">
         {{'IMPORTER.THISMAYTAKEAWHILE'|translate}}
         <mat-spinner></mat-spinner>
     </mat-card>
@@ -12,7 +12,7 @@
 </div>
 
 <div class="loading" *ngIf="error">
-    <mat-card>
+    <mat-card appearance="outlined">
         {{'ERROR'|translate}}
     </mat-card>
 
@@ -29,10 +29,10 @@
                 <mat-list-item> {{'IMPORTER.LINENUMBER'|translate}}: {{data.ref}} </mat-list-item>
                 <mat-list-item> {{'IMPORTER.OPERATOR'|translate}}: {{data.operator}} </mat-list-item>
                 <mat-list-item *ngIf="!!data.colour"> {{'IMPORTER.COLOUR'|translate}}:&nbsp;
-                    <mat-chip-list>
-                        <mat-chip [color]="data.colour" [style.background]="data.colour" selected>{{data.colour}}</mat-chip>
+                    <mat-chip-listbox>
+                        <mat-chip-option [color]="data.colour" [style.background]="data.colour" selected>{{data.colour}}</mat-chip-option>
 
-                    </mat-chip-list>
+                    </mat-chip-listbox>
                 </mat-list-item>
             </mat-list>
         </div>

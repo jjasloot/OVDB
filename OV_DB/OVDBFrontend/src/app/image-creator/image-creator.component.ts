@@ -3,7 +3,7 @@ import { environment } from 'src/environments/environment';
 import { ApiService } from '../services/api.service';
 import { Map } from '../models/map.model';
 import { TranslationService } from '../services/translation.service';
-import { MatLegacyCheckboxChange as MatCheckboxChange } from '@angular/material/legacy-checkbox';
+import { MatCheckboxChange } from '@angular/material/checkbox';
 import { HttpParams } from '@angular/common/http';
 import { TranslateService } from '@ngx-translate/core';
 @Component({

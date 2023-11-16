@@ -1,7 +1,10 @@
+
+/* TODO(mdc-migration): The following rule targets internal classes of tabs that may no longer apply for the MDC version. */
 mat-tab-group {
     height: calc(100vh - 64px);
 }
 
+/* TODO(mdc-migration): The following rule targets internal classes of tabs that may no longer apply for the MDC version. */
 mat-tab {
     height: calc(100vh - 128px);
 }
