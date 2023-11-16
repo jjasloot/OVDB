@@ -32,6 +32,7 @@ export class RoutesDataSource implements DataSource<Route> {
             finalize(() => this.loadingSubject.next(false))
         )
             .subscribe(routes => {
+              console.log(routes);
                 this.routesSubject.next(routes);
             });
     }

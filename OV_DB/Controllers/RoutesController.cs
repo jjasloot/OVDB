@@ -39,8 +39,6 @@ namespace OV_DB.Controllers
 
         // GET: api/RoutesAPI
         [HttpGet]
-        [EnableQuery]
-
         public async Task<ActionResult<IEnumerable<RouteDTO>>> GetRoutes([FromQuery] int? start, [FromQuery] int? count, [FromQuery] string sortColumn, [FromQuery] bool? descending, [FromQuery] string filter)
         {
             var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value ?? "-1");
