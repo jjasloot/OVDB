@@ -3,7 +3,7 @@ import { Route } from '@angular/compiler/src/core';
 import { ApiService } from 'src/app/services/api.service';
 import { Router } from '@angular/router';
 import { Country } from 'src/app/models/country.model';
-import { MatDialog } from '@angular/material/dialog';
+import { MatLegacyDialog as MatDialog } from '@angular/material/legacy-dialog';
 import { CountryAddComponent } from '../country-add/country-add.component';
 import { AreYouSureDialogComponent } from 'src/app/are-you-sure-dialog/are-you-sure-dialog.component';
 import { DataUpdateService } from 'src/app/services/data-update.service';

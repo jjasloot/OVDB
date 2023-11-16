@@ -4,7 +4,7 @@ import { tileLayer } from 'leaflet';
 import { ApiService } from '../services/api.service';
 import * as L from 'leaflet';
 import { FilterSettings } from '../models/filterSettings';
-import { MatDialog } from '@angular/material/dialog';
+import { MatLegacyDialog as MatDialog } from '@angular/material/legacy-dialog';
 import { Country } from '../models/country.model';
 import { MapFilterComponent } from '../map-filter/map-filter.component';
 import { TranslateService } from '@ngx-translate/core';

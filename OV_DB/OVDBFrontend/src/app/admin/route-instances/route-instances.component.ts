@@ -6,7 +6,7 @@ import { TranslationService } from 'src/app/services/translation.service';
 import { RouteInstanceProperty } from 'src/app/models/routeInstanceProperty.model';
 import { TranslateService } from '@ngx-translate/core';
 import { DatePipe } from '@angular/common';
-import { MatDialog } from '@angular/material/dialog';
+import { MatLegacyDialog as MatDialog } from '@angular/material/legacy-dialog';
 import { RouteInstancesEditComponent } from '../route-instances-edit/route-instances-edit.component';
 import { Route } from 'src/app/models/route.model';
 import { AreYouSureDialogComponent } from 'src/app/are-you-sure-dialog/are-you-sure-dialog.component';

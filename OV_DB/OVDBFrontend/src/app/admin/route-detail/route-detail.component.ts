@@ -7,13 +7,13 @@ import * as moment from 'moment';
 import { RouteType } from 'src/app/models/routeType.model';
 import { Location } from '@angular/common';
 import { Country } from 'src/app/models/country.model';
-import { MatSelectionList } from '@angular/material/list';
+import { MatLegacySelectionList as MatSelectionList } from '@angular/material/legacy-list';
 import { UpdateRoute } from 'src/app/models/updateRoute.model';
 import { Map } from 'src/app/models/map.model';
 import { TranslateService } from '@ngx-translate/core';
 import { DateAdapter } from '@angular/material/core';
 import { TranslationService } from 'src/app/services/translation.service';
-import { MatDialog } from '@angular/material/dialog';
+import { MatLegacyDialog as MatDialog } from '@angular/material/legacy-dialog';
 import { AreYouSureDialogComponent } from 'src/app/are-you-sure-dialog/are-you-sure-dialog.component';
 
 @Component({

@@ -1,5 +1,5 @@
 import { Component, OnInit, Inject, ViewChild } from '@angular/core';
-import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
+import { MatLegacyDialogRef as MatDialogRef, MAT_LEGACY_DIALOG_DATA as MAT_DIALOG_DATA } from '@angular/material/legacy-dialog';
 import { ApiService } from 'src/app/services/api.service';
 import { TranslateService } from '@ngx-translate/core';
 import { RouteType } from 'src/app/models/routeType.model';
@@ -7,7 +7,7 @@ import { Country } from 'src/app/models/country.model';
 import { TranslationService } from 'src/app/services/translation.service';
 import { DateAdapter } from '@angular/material/core';
 import { Map } from 'src/app/models/map.model';
-import { MatSelectionList } from '@angular/material/list';
+import { MatLegacySelectionList as MatSelectionList } from '@angular/material/legacy-list';
 import { MatAccordionTogglePosition } from '@angular/material/expansion';
 import { MultipleEdit } from 'src/app/models/multipleEdit.model';
 

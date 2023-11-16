@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { Map } from 'src/app/models/map.model';
 import { ApiService } from 'src/app/services/api.service';
 import { Router } from '@angular/router';
-import { MatDialog } from '@angular/material/dialog';
+import { MatLegacyDialog as MatDialog } from '@angular/material/legacy-dialog';
 import { DataUpdateService } from 'src/app/services/data-update.service';
 import { AreYouSureDialogComponent } from 'src/app/are-you-sure-dialog/are-you-sure-dialog.component';
 import { MapsAddComponent } from '../maps-add/maps-add.component';
