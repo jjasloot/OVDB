@@ -122,7 +122,6 @@
             }
         }
     },
-    "defaultProject": "OVDBFrontend",
     "cli": {
         "analytics": false
     }
