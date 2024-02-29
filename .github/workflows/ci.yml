@@ -1,0 +1,23 @@
+name: OVDB build
+
+on:
+  push:
+
+jobs:
+  build-frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build frontend
+        run: |
+          cd OV_DB/OVDBFrontend
+          npm install
+          npm run build
+  build-backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build backend
+        run: |
+          cd OV_DB
+          dotnet build
