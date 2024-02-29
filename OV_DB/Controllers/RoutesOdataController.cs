@@ -125,7 +125,6 @@ namespace OV_DB.Controllers
                         feature = new GeoJSON.Net.Feature.Feature(multiLineString);
                     }
 
-                    var elapsedMilliseconds = sw2.ElapsedMilliseconds;
                     AddFeatures(language, r, userIdClaim, map, routesToReturn, feature);
                     collection.Features.Add(feature);
                 }
