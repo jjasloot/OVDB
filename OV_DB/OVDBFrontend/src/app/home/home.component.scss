@@ -41,6 +41,9 @@ mat-list-item {
   }
   .desktop {
     display: unset;
+    &.buttons{
+      display: flex;
+    }
   }
   .mobile {
     display: none;
