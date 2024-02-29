@@ -2,7 +2,8 @@ name: OVDB build
 
 on:
   push:
-    branches: [ master ]
+    tags:
+      - "*"
 
 jobs:
 
