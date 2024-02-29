@@ -1,4 +1,4 @@
-name: OVDB build
+name: OVDB CI
 
 on:
   push:
