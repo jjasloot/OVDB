@@ -13,9 +13,11 @@ using SharpKml.Base;
 using SharpKml.Dom;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using System.Security.Claims;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace OV_DB.Controllers
@@ -33,13 +35,13 @@ namespace OV_DB.Controllers
 
         [HttpGet("{id}")]
         [Produces("application/json")]
-        public async Task<ActionResult<FeatureCollection>> GetGeoJsonAsync(string id, ODataQueryOptions<RouteInstance> q, [FromQuery] string language)
+        public async Task<ActionResult<FeatureCollection>> GetGeoJsonAsync(string id, ODataQueryOptions<RouteInstance> q, [FromQuery] string language, CancellationToken cancellationToken)
         {
             var userClaim = User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier);
             var userIdClaim = int.Parse(userClaim != null ? userClaim.Value : "-1");
 
             var guid = Guid.Parse(id);
-            var map = await _context.Maps.SingleOrDefaultAsync(m => m.MapGuid == guid);
+            var map = await _context.Maps.SingleOrDefaultAsync(m => m.MapGuid == guid, cancellationToken: cancellationToken);
             if (map == null)
             {
                 return NotFound();
@@ -57,13 +59,12 @@ namespace OV_DB.Controllers
                     return Forbid();
                 }
             }
-
             var routes = _context.RouteInstances
                 .Include(ri => ri.Route)
                 .ThenInclude(r => r.RouteType)
                 .AsQueryable();
 
-            var types = await _context.RouteTypes.ToListAsync();
+            var types = await _context.RouteTypes.ToListAsync(cancellationToken: cancellationToken);
             var colours = new Dictionary<int, LineStyle>();
             types.ForEach(t =>
             {
@@ -86,17 +87,19 @@ namespace OV_DB.Controllers
             var routesToReturn = new Dictionary<int, int>();
             await routes.ForEachAsync(r =>
             {
-                if (!routesToReturn.ContainsKey(r.RouteId))
+                if (routesToReturn.TryAdd(r.RouteId, 0))
                 {
-                    routesToReturn.Add(r.RouteId, 0);
                     routesList.Add(r.Route);
                 }
                 routesToReturn[r.RouteId] += 1;
-            });
-
+            }, cancellationToken: cancellationToken);
 
             routesList.ForEach(r =>
             {
+                if (cancellationToken.IsCancellationRequested)
+                {
+                    return;
+                }
                 try
                 {
                     var multi = r.Coordinates.Split("###").ToList();
@@ -121,46 +124,9 @@ namespace OV_DB.Controllers
                         var multiLineString = new MultiLineString(lines);
                         feature = new GeoJSON.Net.Feature.Feature(multiLineString);
                     }
-                    feature.Properties.Add("id", r.RouteId);
-                    feature.Properties.Add("totalInstances", routesToReturn[r.RouteId]);
 
-                    if (map.ShowRouteOutline)
-                    {
-                        feature.Properties.Add("o", 1);
-                    }
-                    if (map.ShowRouteInfo)
-                    {
-                        if (language == "nl" && !string.IsNullOrWhiteSpace(r.NameNL))
-                            feature.Properties.Add("name", r.NameNL);
-                        else
-                            feature.Properties.Add("name", r.Name);
-                        if (language == "nl" && !string.IsNullOrWhiteSpace(r.RouteType.NameNL))
-                            feature.Properties.Add("type", r.RouteType.NameNL);
-                        else
-                            feature.Properties.Add("type", r.RouteType.Name);
-                        if (language == "nl" && !string.IsNullOrWhiteSpace(r.DescriptionNL))
-                            feature.Properties.Add("description", r.DescriptionNL);
-                        else
-                            feature.Properties.Add("description", r.Description);
-                        feature.Properties.Add("lineNumber", r.LineNumber);
-                        feature.Properties.Add("operatingCompany", r.OperatingCompany);
-                        if (r.OverrideDistance.HasValue)
-                        {
-                            feature.Properties.Add("distance", r.OverrideDistance);
-                        }
-                        else
-                        {
-                            feature.Properties.Add("distance", r.CalculatedDistance);
-                        }
-                    }
-                    if (map.UserId == userIdClaim)
-                    {
-                        feature.Properties.Add("owner", true);
-                    }
-                    if (!string.IsNullOrWhiteSpace(r.OverrideColour))
-                        feature.Properties.Add("stroke", r.OverrideColour);
-                    else
-                        feature.Properties.Add("stroke", r.RouteType.Colour);
+                    var elapsedMilliseconds = sw2.ElapsedMilliseconds;
+                    AddFeatures(language, r, userIdClaim, map, routesToReturn, feature);
                     collection.Features.Add(feature);
                 }
                 catch (Exception ex)
@@ -169,8 +135,51 @@ namespace OV_DB.Controllers
                     throw;
                 }
             });
-
             return collection;
+        }
+
+        private static void AddFeatures(string language, Route r, int userIdClaim, Map map, Dictionary<int, int> routesToReturn, GeoJSON.Net.Feature.Feature feature)
+        {
+            feature.Properties.Add("id", r.RouteId);
+            feature.Properties.Add("totalInstances", routesToReturn[r.RouteId]);
+
+            if (map.ShowRouteOutline)
+            {
+                feature.Properties.Add("o", 1);
+            }
+            if (map.ShowRouteInfo)
+            {
+                if (language == "nl" && !string.IsNullOrWhiteSpace(r.NameNL))
+                    feature.Properties.Add("name", r.NameNL);
+                else
+                    feature.Properties.Add("name", r.Name);
+                if (language == "nl" && !string.IsNullOrWhiteSpace(r.RouteType.NameNL))
+                    feature.Properties.Add("type", r.RouteType.NameNL);
+                else
+                    feature.Properties.Add("type", r.RouteType.Name);
+                if (language == "nl" && !string.IsNullOrWhiteSpace(r.DescriptionNL))
+                    feature.Properties.Add("description", r.DescriptionNL);
+                else
+                    feature.Properties.Add("description", r.Description);
+                feature.Properties.Add("lineNumber", r.LineNumber);
+                feature.Properties.Add("operatingCompany", r.OperatingCompany);
+                if (r.OverrideDistance.HasValue)
+                {
+                    feature.Properties.Add("distance", r.OverrideDistance);
+                }
+                else
+                {
+                    feature.Properties.Add("distance", r.CalculatedDistance);
+                }
+            }
+            if (map.UserId == userIdClaim)
+            {
+                feature.Properties.Add("owner", true);
+            }
+            if (!string.IsNullOrWhiteSpace(r.OverrideColour))
+                feature.Properties.Add("stroke", r.OverrideColour);
+            else
+                feature.Properties.Add("stroke", r.RouteType.Colour);
         }
 
         [HttpGet("single/{id:int}/{guid:Guid}")]

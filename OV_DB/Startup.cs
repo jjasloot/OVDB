@@ -72,6 +72,12 @@ namespace OV_DB
             {
                 var connectionString = Configuration["DBCONNECTIONSTRING"];
                 options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString));
+#if DEBUG
+                //Log all sql commands
+                options.LogTo(Console.WriteLine, Microsoft.Extensions.Logging.LogLevel.Information);
+                options.EnableSensitiveDataLogging();
+#endif
+
             });
             services.AddAuthentication(options =>
             {
