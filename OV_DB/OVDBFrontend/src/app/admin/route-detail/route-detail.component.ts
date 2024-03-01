@@ -15,6 +15,7 @@ import { DateAdapter } from '@angular/material/core';
 import { TranslationService } from 'src/app/services/translation.service';
 import { MatDialog } from '@angular/material/dialog';
 import { AreYouSureDialogComponent } from 'src/app/are-you-sure-dialog/are-you-sure-dialog.component';
+import * as saveAs from 'file-saver';
 
 @Component({
   selector: 'app-route-detail',

@@ -6,6 +6,7 @@ import * as L from 'leaflet';
 import { Map } from '../models/map.model';
 import { TranslationService } from '../services/translation.service';
 import { TranslateService } from '@ngx-translate/core';
+import * as saveAs from 'file-saver';
 @Component({
   selector: 'app-stats',
   templateUrl: './stats.component.html',
