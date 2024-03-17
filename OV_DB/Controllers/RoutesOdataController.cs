@@ -35,7 +35,7 @@ namespace OV_DB.Controllers
 
         [HttpGet("{id}")]
         [Produces("application/json")]
-        public async Task<ActionResult<FeatureCollection>> GetGeoJsonAsync(string id, ODataQueryOptions<RouteInstance> q, [FromQuery] string language, CancellationToken cancellationToken)
+        public async Task<ActionResult<FeatureCollection>> GetGeoJsonAsync(string id, ODataQueryOptions<RouteInstance> q, [FromQuery] string language, [FromQuery] bool includeLineColours, CancellationToken cancellationToken)
         {
             var userClaim = User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier);
             var userIdClaim = int.Parse(userClaim != null ? userClaim.Value : "-1");
@@ -125,7 +125,7 @@ namespace OV_DB.Controllers
                         feature = new GeoJSON.Net.Feature.Feature(multiLineString);
                     }
 
-                    AddFeatures(language, r, userIdClaim, map, routesToReturn, feature);
+                    AddFeatures(language, r, userIdClaim, map, routesToReturn, feature, includeLineColours);
                     collection.Features.Add(feature);
                 }
                 catch (Exception ex)
@@ -137,7 +137,7 @@ namespace OV_DB.Controllers
             return collection;
         }
 
-        private static void AddFeatures(string language, Route r, int userIdClaim, Map map, Dictionary<int, int> routesToReturn, GeoJSON.Net.Feature.Feature feature)
+        private static void AddFeatures(string language, Route r, int userIdClaim, Map map, Dictionary<int, int> routesToReturn, GeoJSON.Net.Feature.Feature feature, bool includeLineColours)
         {
             feature.Properties.Add("id", r.RouteId);
             feature.Properties.Add("totalInstances", routesToReturn[r.RouteId]);
@@ -175,7 +175,7 @@ namespace OV_DB.Controllers
             {
                 feature.Properties.Add("owner", true);
             }
-            if (!string.IsNullOrWhiteSpace(r.OverrideColour))
+            if (!string.IsNullOrWhiteSpace(r.OverrideColour) && includeLineColours)
                 feature.Properties.Add("stroke", r.OverrideColour);
             else
                 feature.Properties.Add("stroke", r.RouteType.Colour);

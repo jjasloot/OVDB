@@ -34,5 +34,7 @@
     </ng-container>
     <button mat-button *ngIf="active!='filter'" color="primary" (click)="openDialog()">{{'MAP.FILTER'|translate}}</button>
     <button mat-stroked-button *ngIf="active=='filter'" color="primary" (click)="openDialog()">{{'MAP.FILTER'|translate}}</button>
-
+    <button mat-button color="primary" id="refresh" (click)="refresh()" [disabled]="loading">
+      <mat-icon>refresh</mat-icon>
+    </button>
 </ng-template>

@@ -1,26 +1,30 @@
-import { Component, OnInit, ViewChild } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
-import { Route } from 'src/app/models/route.model';
-import { ApiService } from 'src/app/services/api.service';
-import { UntypedFormBuilder, Validators, UntypedFormGroup } from '@angular/forms';
-import * as moment from 'moment';
-import { RouteType } from 'src/app/models/routeType.model';
-import { Location } from '@angular/common';
-import { Country } from 'src/app/models/country.model';
-import { MatSelectionList } from '@angular/material/list';
-import { UpdateRoute } from 'src/app/models/updateRoute.model';
-import { Map } from 'src/app/models/map.model';
-import { TranslateService } from '@ngx-translate/core';
-import { DateAdapter } from '@angular/material/core';
-import { TranslationService } from 'src/app/services/translation.service';
-import { MatDialog } from '@angular/material/dialog';
-import { AreYouSureDialogComponent } from 'src/app/are-you-sure-dialog/are-you-sure-dialog.component';
-import * as saveAs from 'file-saver';
+import { Component, OnInit, ViewChild } from "@angular/core";
+import { ActivatedRoute, Router } from "@angular/router";
+import { Route } from "src/app/models/route.model";
+import { ApiService } from "src/app/services/api.service";
+import {
+  UntypedFormBuilder,
+  Validators,
+  UntypedFormGroup,
+} from "@angular/forms";
+import * as moment from "moment";
+import { RouteType } from "src/app/models/routeType.model";
+import { Location } from "@angular/common";
+import { Country } from "src/app/models/country.model";
+import { MatSelectionList } from "@angular/material/list";
+import { UpdateRoute } from "src/app/models/updateRoute.model";
+import { Map } from "src/app/models/map.model";
+import { TranslateService } from "@ngx-translate/core";
+import { DateAdapter } from "@angular/material/core";
+import { TranslationService } from "src/app/services/translation.service";
+import { MatDialog } from "@angular/material/dialog";
+import { AreYouSureDialogComponent } from "src/app/are-you-sure-dialog/are-you-sure-dialog.component";
+import * as saveAs from "file-saver";
 
 @Component({
-  selector: 'app-route-detail',
-  templateUrl: './route-detail.component.html',
-  styleUrls: ['./route-detail.component.scss']
+  selector: "app-route-detail",
+  templateUrl: "./route-detail.component.html",
+  styleUrls: ["./route-detail.component.scss"],
 })
 export class RouteDetailComponent implements OnInit {
   routeId: number;
@@ -31,8 +35,8 @@ export class RouteDetailComponent implements OnInit {
   maps: Map[];
   colour: string;
 
-  @ViewChild('countriesSelection') countriesSelection: MatSelectionList;
-  @ViewChild('mapsSelection') mapsSelection: MatSelectionList;
+  @ViewChild("countriesSelection") countriesSelection: MatSelectionList;
+  @ViewChild("mapsSelection") mapsSelection: MatSelectionList;
 
   selectedOptions: number[];
   selectedMaps: number[];
@@ -45,23 +49,24 @@ export class RouteDetailComponent implements OnInit {
     private formBuilder: UntypedFormBuilder,
     private dateAdapter: DateAdapter<any>,
     private dialog: MatDialog,
-    private router: Router) {
+    private router: Router
+  ) {
     this.dateAdapter.setLocale(this.translationService.dateLocale);
 
     this.form = this.formBuilder.group({
-      name: ['', Validators.required],
-      nameNL: '',
-      description: '',
-      descriptionNL: '',
-      from: '',
-      to: '',
+      name: ["", Validators.required],
+      nameNL: "",
+      description: "",
+      descriptionNL: "",
+      from: "",
+      to: "",
       lineNumber: null,
       operatingCompany: null,
       overrideColour: null,
-      firstDateTime: '',
+      firstDateTime: "",
       routeTypeId: [null, Validators.required],
       calculatedDistance: [null],
-      overrideDistance: [null]
+      overrideDistance: [null],
     });
   }
 
@@ -70,26 +75,28 @@ export class RouteDetailComponent implements OnInit {
       this.sortOrder();
       this.dateAdapter.setLocale(this.translationService.dateLocale);
     });
-    this.apiService.getTypes().subscribe(types => {
+    this.apiService.getTypes().subscribe((types) => {
       this.types = types;
     });
-    this.apiService.getCountries().subscribe(countries => {
+    this.apiService.getCountries().subscribe((countries) => {
       this.countries = countries;
       this.sortOrder();
     });
-    this.apiService.getMaps().subscribe(maps => {
+    this.apiService.getMaps().subscribe((maps) => {
       this.maps = maps;
     });
-    this.activatedRoute.paramMap.subscribe(p => {
-      this.routeId = +p.get('routeId');
-      this.apiService.getRoute(this.routeId).subscribe(data => {
+    this.activatedRoute.paramMap.subscribe((p) => {
+      this.routeId = +p.get("routeId");
+      this.apiService.getRoute(this.routeId).subscribe((data) => {
         this.route = data;
         if (!this.route.firstDateTime) {
           this.route.firstDateTime = moment();
         }
         this.colour = this.route.overrideColour;
-        this.selectedOptions = this.route.routeCountries.map(r => r.countryId);
-        this.selectedMaps = this.route.routeMaps.map(r => r.mapId);
+        this.selectedOptions = this.route.routeCountries.map(
+          (r) => r.countryId
+        );
+        this.selectedMaps = this.route.routeMaps.map((r) => r.mapId);
         this.form.patchValue(this.route);
         if (this.route.routeInstancesCount > 1) {
           this.form.controls.firstDateTime.disable();
@@ -109,7 +116,7 @@ export class RouteDetailComponent implements OnInit {
     });
   }
 
-  onSubmit(values) {
+  onSubmit(values, goToInstances: boolean) {
     if (this.form.invalid) {
       return;
     }
@@ -119,25 +126,39 @@ export class RouteDetailComponent implements OnInit {
     const route = values as UpdateRoute;
     route.routeId = this.route.routeId;
     route.overrideColour = this.colour;
-    route.countries = this.countriesSelection.selectedOptions.selected.map(s => s.value);
-    route.maps = this.mapsSelection.selectedOptions.selected.map(s => s.value);
-    this.apiService.updateRoute(values as Route).subscribe(_ => this.goBack());
+    route.countries = this.countriesSelection.selectedOptions.selected.map(
+      (s) => s.value
+    );
+    route.maps = this.mapsSelection.selectedOptions.selected.map(
+      (s) => s.value
+    );
+    this.apiService.updateRoute(values as Route).subscribe((_) => {
+      if (!goToInstances) {
+        this.goBack();
+      }else{
+        this.router.navigate(["/", "admin", "routes","instances", this.route.routeId]);
+      }
+    });
   }
 
-
   goBack(): void {
-    this.router.navigate(['/', 'admin', 'routes']);
+    this.router.navigate(["/", "admin", "routes"]);
   }
   delete() {
     const dialogRef = this.dialog.open(AreYouSureDialogComponent, {
       width: this.getWidth(),
       data: {
-        item: this.translateService.instant('ROUTE.DELETEFRONT') + ' ' + this.route.name + ' ' + this.translateService.instant('ROUTE.DELETEBACK')
-      }
+        item:
+          this.translateService.instant("ROUTE.DELETEFRONT") +
+          " " +
+          this.route.name +
+          " " +
+          this.translateService.instant("ROUTE.DELETEBACK"),
+      },
     });
     dialogRef.afterClosed().subscribe((result: boolean) => {
       if (!!result) {
-        this.apiService.deleteRoute(this.route.routeId).subscribe(_ => {
+        this.apiService.deleteRoute(this.route.routeId).subscribe((_) => {
           this.goBack();
         });
       }
@@ -146,28 +167,46 @@ export class RouteDetailComponent implements OnInit {
 
   get countriesString() {
     if (!this.countriesSelection || !this.countries) {
-      return '';
+      return "";
     }
     const countries = this.countries
-      .filter(c => this.countriesSelection.selectedOptions.selected.some(rc => rc.value === c.countryId))
-      .map(c => this.name(c));
+      .filter((c) =>
+        this.countriesSelection.selectedOptions.selected.some(
+          (rc) => rc.value === c.countryId
+        )
+      )
+      .map((c) => this.name(c));
     if (countries.length > 3) {
-      return '' + countries.length + ' ' + this.translateService.instant('ROUTEDETAILS.COUNTRIESINSTRING');
+      return (
+        "" +
+        countries.length +
+        " " +
+        this.translateService.instant("ROUTEDETAILS.COUNTRIESINSTRING")
+      );
     }
-    return countries.join(', ');
+    return countries.join(", ");
   }
 
   get mapsString() {
     if (!this.mapsSelection || !this.maps) {
-      return '';
+      return "";
     }
     const maps = this.maps
-      .filter(m => this.mapsSelection.selectedOptions.selected.some(rm => rm.value === m.mapId))
-      .map(m => this.name(m));
+      .filter((m) =>
+        this.mapsSelection.selectedOptions.selected.some(
+          (rm) => rm.value === m.mapId
+        )
+      )
+      .map((m) => this.name(m));
     if (maps.length > 3) {
-      return '' + maps.length + ' ' + this.translateService.instant('ROUTEDETAILS.MAPSINSTRING');
+      return (
+        "" +
+        maps.length +
+        " " +
+        this.translateService.instant("ROUTEDETAILS.MAPSINSTRING")
+      );
     }
-    return maps.join(', ');
+    return maps.join(", ");
   }
 
   name(item: any) {
@@ -175,15 +214,15 @@ export class RouteDetailComponent implements OnInit {
   }
 
   export() {
-    this.apiService.getExport(this.route.routeId).subscribe(data => {
-      saveAs(data, this.route.name.trim().replace(' ', '_') + '.kml');
+    this.apiService.getExport(this.route.routeId).subscribe((data) => {
+      saveAs(data, this.route.name.trim().replace(" ", "_") + ".kml");
     });
   }
 
   private getWidth() {
-    let width = '90%';
+    let width = "90%";
     if (window.innerWidth > 600) {
-      width = '50%';
+      width = "50%";
     }
     return width;
   }

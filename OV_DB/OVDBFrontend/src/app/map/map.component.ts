@@ -42,6 +42,7 @@ export class MapComponent implements OnInit, AfterViewInit {
   error: boolean;
   active: string;
   selectedRoute;
+  includeLineColours: boolean = true;
   get bounds(): L.LatLngBounds {
     return this._bounds;
   }
@@ -63,6 +64,7 @@ export class MapComponent implements OnInit, AfterViewInit {
       "ThisMonth",
       new FilterSettings(
         "ThisMonth",
+        true,
         moment().startOf("month"),
         moment().startOf("month").add(1, "month"),
         []
@@ -70,13 +72,29 @@ export class MapComponent implements OnInit, AfterViewInit {
     ],
     [
       "ThisYear",
-      new FilterSettings("ThisYear", null, null, [], [], [moment().year()]),
+      new FilterSettings(
+        "ThisYear",
+        true,
+        null,
+        null,
+        [],
+        [],
+        [moment().year()]
+      ),
     ],
     [
       "LastYear",
-      new FilterSettings("LastYear", null, null, [], [], [moment().year() - 1]),
+      new FilterSettings(
+        "LastYear",
+        true,
+        null,
+        null,
+        [],
+        [],
+        [moment().year() - 1]
+      ),
     ],
-    ["All", new FilterSettings("All", null, null, [])],
+    ["All", new FilterSettings("All", true, null, null, [])],
   ]);
 
   get mapHeight() {
@@ -201,7 +219,8 @@ export class MapComponent implements OnInit, AfterViewInit {
     return this.apiService.getRoutes(
       filter,
       this.guid,
-      this.translationService.language
+      this.translationService.language,
+      this.includeLineColours
     );
   }
   private showRoutes(text) {
@@ -398,6 +417,7 @@ export class MapComponent implements OnInit, AfterViewInit {
     this.selectedCountries = [...option.selectedCountries];
     this.selectedTypes = [...option.selectedTypes];
     this.selectedYears = [...option.selectedYears];
+    this.includeLineColours = option.includeLineColours;
     this.active = option.name;
     this.getRoutes$.next(this.getFilter());
   }
@@ -405,6 +425,7 @@ export class MapComponent implements OnInit, AfterViewInit {
   openDialog() {
     const settings = new FilterSettings(
       "",
+      this.includeLineColours,
       this.from,
       this.to,
       this.selectedCountries,
@@ -454,5 +475,9 @@ export class MapComponent implements OnInit, AfterViewInit {
 
   editInstances(id: number) {
     this.router.navigate(["/", "admin", "routes", "instances", id]);
+  }
+
+  refresh() {
+    this.getRoutes$.next(this.getFilter());
   }
 }

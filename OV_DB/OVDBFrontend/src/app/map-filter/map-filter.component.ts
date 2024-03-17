@@ -1,19 +1,19 @@
-import { Component, OnInit, Inject } from '@angular/core';
-import { MatCheckboxChange } from '@angular/material/checkbox';
-import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
-import { FilterSettings } from '../models/filterSettings';
-import { ApiService } from '../services/api.service';
-import { Country } from '../models/country.model';
-import { RouteType } from '../models/routeType.model';
-import { TranslateService } from '@ngx-translate/core';
-import { TranslationService } from '../services/translation.service';
-import { DateAdapter } from '@angular/material/core';
-import { Moment } from 'moment';
+import { Component, OnInit, Inject } from "@angular/core";
+import { MatCheckboxChange } from "@angular/material/checkbox";
+import { MatDialogRef, MAT_DIALOG_DATA } from "@angular/material/dialog";
+import { FilterSettings } from "../models/filterSettings";
+import { ApiService } from "../services/api.service";
+import { Country } from "../models/country.model";
+import { RouteType } from "../models/routeType.model";
+import { TranslateService } from "@ngx-translate/core";
+import { TranslationService } from "../services/translation.service";
+import { DateAdapter } from "@angular/material/core";
+import { Moment } from "moment";
 
 @Component({
-  selector: 'app-map-filter',
-  templateUrl: './map-filter.component.html',
-  styleUrls: ['./map-filter.component.scss']
+  selector: "app-map-filter",
+  templateUrl: "./map-filter.component.html",
+  styleUrls: ["./map-filter.component.scss"],
 })
 export class MapFilterComponent implements OnInit {
   settings: FilterSettings;
@@ -27,13 +27,15 @@ export class MapFilterComponent implements OnInit {
   years: number[];
   ownMap = false;
   guid: string;
+  includeLineColours: boolean = true;
   constructor(
     private apiService: ApiService,
     private translateService: TranslateService,
     private translationService: TranslationService,
     private dateAdapter: DateAdapter<any>,
     public dialogRef: MatDialogRef<MapFilterComponent>,
-    @Inject(MAT_DIALOG_DATA) public data) {
+    @Inject(MAT_DIALOG_DATA) public data
+  ) {
     this.settings = data.settings;
     this.ownMap = data.ownMap;
     this.guid = data.guid;
@@ -50,14 +52,16 @@ export class MapFilterComponent implements OnInit {
     this.selectedYears = this.settings.selectedYears;
     this.from = this.settings.from;
     this.to = this.settings.to;
-    this.apiService.getCountries(this.guid).subscribe(countries => {
+    this.includeLineColours = this.settings.includeLineColours;
+
+    this.apiService.getCountries(this.guid).subscribe((countries) => {
       this.countries = countries;
       this.sortNames();
     });
-    this.apiService.getTypes(this.guid).subscribe(types => {
+    this.apiService.getTypes(this.guid).subscribe((types) => {
       this.routeTypes = types;
     });
-    this.apiService.getYears(this.guid).subscribe(types => {
+    this.apiService.getYears(this.guid).subscribe((types) => {
       this.years = types.sort().reverse();
     });
   }
@@ -84,7 +88,8 @@ export class MapFilterComponent implements OnInit {
   return() {
     if (this.from !== null && this.from.isValid()) {
       const settings = new FilterSettings(
-        'filter',
+        "filter",
+        this.includeLineColours,
         this.from,
         this.to,
         this.selectedCountries,
@@ -94,7 +99,8 @@ export class MapFilterComponent implements OnInit {
       this.dialogRef.close(settings);
     } else {
       const settings = new FilterSettings(
-        'filter',
+        "filter",
+        this.includeLineColours,
         null,
         null,
         this.selectedCountries,
@@ -103,7 +109,6 @@ export class MapFilterComponent implements OnInit {
       );
       this.dialogRef.close(settings);
     }
-
   }
 
   isCountryChecked(id: number) {
@@ -115,7 +120,7 @@ export class MapFilterComponent implements OnInit {
       this.selectedCountries.push(id);
     }
     if (!event.checked && this.selectedCountries.includes(id)) {
-      this.selectedCountries = this.selectedCountries.filter(i => i !== id);
+      this.selectedCountries = this.selectedCountries.filter((i) => i !== id);
     }
   }
 
@@ -128,7 +133,7 @@ export class MapFilterComponent implements OnInit {
       this.selectedTypes.push(id);
     }
     if (!event.checked && this.selectedTypes.includes(id)) {
-      this.selectedTypes = this.selectedTypes.filter(i => i !== id);
+      this.selectedTypes = this.selectedTypes.filter((i) => i !== id);
     }
   }
 
@@ -141,33 +146,46 @@ export class MapFilterComponent implements OnInit {
       this.selectedYears.push(year);
     }
     if (!event.checked && this.selectedYears.includes(year)) {
-      this.selectedYears = this.selectedYears.filter(i => i !== year);
+      this.selectedYears = this.selectedYears.filter((i) => i !== year);
     }
   }
 
   get countriesString(): string {
-    const countriesNames = this.countries.filter(c => this.selectedCountries.includes(c.countryId)).map(c => this.name(c));
-    let countriesString = countriesNames.join(', ');
+    const countriesNames = this.countries
+      .filter((c) => this.selectedCountries.includes(c.countryId))
+      .map((c) => this.name(c));
+    let countriesString = countriesNames.join(", ");
     if (countriesNames.length > 2) {
-      countriesString = countriesNames.length + ' ' + this.translateService.instant('FILTER.SELECTED');
+      countriesString =
+        countriesNames.length +
+        " " +
+        this.translateService.instant("FILTER.SELECTED");
     }
     return countriesString;
   }
 
   get typesString(): string {
-    const typesNames = this.routeTypes.filter(c => this.selectedTypes.includes(c.typeId)).map(c => this.name(c));
-    let typesString = typesNames.join(', ');
+    const typesNames = this.routeTypes
+      .filter((c) => this.selectedTypes.includes(c.typeId))
+      .map((c) => this.name(c));
+    let typesString = typesNames.join(", ");
     if (typesNames.length > 2) {
-      typesString = typesNames.length + ' ' + this.translateService.instant('FILTER.SELECTED');
+      typesString =
+        typesNames.length +
+        " " +
+        this.translateService.instant("FILTER.SELECTED");
     }
     return typesString;
   }
 
   get yearsString(): string {
-    const displayedYears = this.selectedYears.map(y => this.displayYear(y));
-    let yearsString = displayedYears.join(', ');
+    const displayedYears = this.selectedYears.map((y) => this.displayYear(y));
+    let yearsString = displayedYears.join(", ");
     if (displayedYears.length > 3) {
-      yearsString = displayedYears.length + ' ' + this.translateService.instant('FILTER.SELECTED');
+      yearsString =
+        displayedYears.length +
+        " " +
+        this.translateService.instant("FILTER.SELECTED");
     }
     return yearsString;
   }
@@ -176,7 +194,7 @@ export class MapFilterComponent implements OnInit {
     if (!!year) {
       return year;
     }
-    return this.translateService.instant('FILTER.UNKNOWNYEAR');
+    return this.translateService.instant("FILTER.UNKNOWNYEAR");
   }
 
   resetYears() {
