@@ -71,7 +71,7 @@ namespace OV_DB
             services.AddDbContext<OVDBDatabaseContext>(options =>
             {
                 var connectionString = Configuration["DBCONNECTIONSTRING"];
-                options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString));
+                options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString), options => options.UseNetTopologySuite());
 #if DEBUG
                 //Log all sql commands
                 options.LogTo(Console.WriteLine, Microsoft.Extensions.Logging.LogLevel.Information);

@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using NetTopologySuite.Geometries;
 using OV_DB.Helpers;
 using OV_DB.Models;
 using OVDB_database.Database;
@@ -137,7 +139,8 @@ namespace OV_DB.Controllers
                 try
                 {
                     DistanceCalculationHelper.ComputeDistance(route);
-                } catch(Exception ex)
+                }
+                catch (Exception ex)
                 {
                     Console.WriteLine(ex.Message);
                 }
@@ -169,6 +172,33 @@ namespace OV_DB.Controllers
             });
 
             await _dbContext.SaveChangesAsync();
+            return Ok();
+        }
+
+        [HttpGet("convertToLineStrings")]
+        public async Task<ActionResult> ConvertToLineStrings()
+        {
+            //var adminClaim = (User.Claims.SingleOrDefault(c => c.Type == "admin").Value ?? "false");
+            //if (string.Equals(adminClaim, "false", StringComparison.OrdinalIgnoreCase))
+            //{
+            //    return Forbid();
+            //}
+            var routes = new List<OVDB_database.Models.Route>();
+            do
+            {
+                routes = await _dbContext.Routes.OrderBy(r => r.RouteId).Where(r => r.LineString == null && r.Coordinates != null).Take(50).ToListAsync();
+
+                foreach (var route in routes)
+                {
+                    var coordinates = route.Coordinates.Split('\n').Where(a => !string.IsNullOrWhiteSpace(a)).ToList();
+                    var coords = coordinates.Select(r => new Coordinate(double.Parse(r.Split(',')[1], CultureInfo.InvariantCulture), double.Parse(r.Split(',')[0], CultureInfo.InvariantCulture))).ToList();
+                    route.LineString = new LineString(coords.ToArray());
+
+                    Console.WriteLine($"Route {route.Name} converted");
+                    await _dbContext.SaveChangesAsync();
+                }
+            } while (routes.Count > 0);
+
             return Ok();
         }
     }

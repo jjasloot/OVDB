@@ -102,28 +102,9 @@ namespace OV_DB.Controllers
                 }
                 try
                 {
-                    var multi = r.Coordinates.Split("###").ToList();
-                    var lines = new List<GeoJSON.Net.Geometry.LineString>();
-                    multi.ForEach(block =>
-                    {
-                        var coordinates = block.Split('\n').Where(a => !string.IsNullOrWhiteSpace(a)).ToList();
-                        var coords = coordinates.Select(r => new Position(double.Parse(r.Split(',')[1], CultureInfo.InvariantCulture), double.Parse(r.Split(',')[0], CultureInfo.InvariantCulture))).ToList();
-                        if (coords.Count >= 2)
-                        {
-                            var geo = new GeoJSON.Net.Geometry.LineString(coords);
-                            lines.Add(geo);
-                        }
-                    });
-                    GeoJSON.Net.Feature.Feature feature;
-                    if (lines.Count == 1)
-                    {
-                        feature = new GeoJSON.Net.Feature.Feature(lines.Single());
-                    }
-                    else
-                    {
-                        var multiLineString = new MultiLineString(lines);
-                        feature = new GeoJSON.Net.Feature.Feature(multiLineString);
-                    }
+
+                    var feature = new GeoJSON.Net.Feature.Feature(new GeoJSON.Net.Geometry.LineString(r.LineString.Coordinates.Select(loc => new Position(loc.X, loc.Y))));
+
 
                     AddFeatures(language, r, userIdClaim, map, routesToReturn, feature, includeLineColours);
                     collection.Features.Add(feature);
@@ -196,28 +177,8 @@ namespace OV_DB.Controllers
 
             var collection = new FeatureCollection();
 
-            var multi = route.Coordinates.Split("###").ToList();
-            var lines = new List<GeoJSON.Net.Geometry.LineString>();
-            multi.ForEach(block =>
-            {
-                var coordinates = block.Split('\n').Where(a => !string.IsNullOrWhiteSpace(a)).ToList();
-                var coords = coordinates.Select(r => new Position(double.Parse(r.Split(',')[1], CultureInfo.InvariantCulture), double.Parse(r.Split(',')[0], CultureInfo.InvariantCulture))).ToList();
-                if (coords.Count >= 2)
-                {
-                    var geo = new GeoJSON.Net.Geometry.LineString(coords);
-                    lines.Add(geo);
-                }
-            });
-            GeoJSON.Net.Feature.Feature feature;
-            if (lines.Count == 1)
-            {
-                feature = new GeoJSON.Net.Feature.Feature(lines.Single());
-            }
-            else
-            {
-                var multiLineString = new MultiLineString(lines);
-                feature = new GeoJSON.Net.Feature.Feature(multiLineString);
-            }
+            var feature = new GeoJSON.Net.Feature.Feature(new GeoJSON.Net.Geometry.LineString(route.LineString.Coordinates.Select(loc => new Position(loc.X, loc.Y))));
+
             if (language == "nl" && !string.IsNullOrWhiteSpace(route.NameNL))
                 feature.Properties.Add("name", route.NameNL);
             else

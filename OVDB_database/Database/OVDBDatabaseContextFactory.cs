@@ -12,9 +12,9 @@ namespace OVDB_database.Database
         public OVDBDatabaseContext CreateDbContext(string[] args)
         {
             var optionsBuilder = new DbContextOptionsBuilder<OVDBDatabaseContext>();
-            optionsBuilder.UseMySql(ConnectionString, 
-                ServerVersion.AutoDetect(ConnectionString), 
-                options => { });
+            optionsBuilder.UseMySql(ConnectionString,
+                ServerVersion.AutoDetect(ConnectionString),
+                options => options.UseNetTopologySuite());
 
             return new OVDBDatabaseContext(optionsBuilder.Options);
         }
