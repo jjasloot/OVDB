@@ -119,6 +119,12 @@ export class ApiService {
       environment.backend + "api/routes/" + routeId
     );
   }
+  assignRegionsToRoute(routeId: number) {
+    return this.httpClient.patch(
+      environment.backend + "api/routes/" + routeId + "/assignRegions",
+      {}
+    );
+  }
   deleteRoute(routeId: number) {
     return this.httpClient.delete(
       environment.backend + "api/routes/" + routeId

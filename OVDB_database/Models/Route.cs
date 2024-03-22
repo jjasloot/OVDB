@@ -53,5 +53,6 @@ namespace OVDB_database.Models
         public Guid Share { get; set; }
         [JsonProperty]
         public List<RouteInstance> RouteInstances { get; set; }
+        public List<Region> Regions { get; set;}
     }
 }

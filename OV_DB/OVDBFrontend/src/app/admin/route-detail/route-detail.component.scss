@@ -1,34 +1,40 @@
 form {
-    display: flex;
-    flex-direction: column;
+  display: flex;
+  flex-direction: column;
 }
 
 .form {
-    width: 90%;
-    margin: auto;
+  width: 90%;
+  margin: auto;
 }
 
 .countries {
-    margin-bottom: 12px;
+  margin-bottom: 12px;
 }
 
 .back {
-    margin: 0 0 8px 8px;
+  margin: 0 0 8px 8px;
 }
 
 .buttons {
-    display: flex;
-    flex-direction: row;
-    button {
-        flex: 1;
-        margin: 0 8px;
-    }
+  display: flex;
+  flex-direction: row;
+  button {
+    flex: 1;
+    margin: 0 8px;
+  }
 }
 
-@media (min-width:600px) {
-    .form {
-        width: 50%;
-        margin: auto;
-        margin-bottom: 24px;
-    }
+@media (min-width: 600px) {
+  .form {
+    width: 50%;
+    margin: auto;
+    margin-bottom: 24px;
+  }
+}
+
+:host::ng-deep {
+  .mat-mdc-standard-chip.mdc-evolution-chip--disabled {
+    --mat-chip-disabled-container-opacity: 1 !important;
+  }
 }

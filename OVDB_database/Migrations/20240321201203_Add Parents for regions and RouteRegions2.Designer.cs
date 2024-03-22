@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using NetTopologySuite.Geometries;
 using OVDB_database.Database;
@@ -12,9 +13,11 @@ using OVDB_database.Database;
 namespace OVDB_database.Migrations
 {
     [DbContext(typeof(OVDBDatabaseContext))]
-    partial class OVDBDatabaseContextModelSnapshot : ModelSnapshot
+    [Migration("20240321201203_Add Parents for regions and RouteRegions2")]
+    partial class AddParentsforregionsandRouteRegions2
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -140,9 +143,6 @@ namespace OVDB_database.Migrations
                         .HasColumnType("longtext");
 
                     b.Property<string>("NameNL")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("OriginalName")
                         .HasColumnType("longtext");
 
                     b.Property<long>("OsmRelationId")
@@ -611,7 +611,7 @@ namespace OVDB_database.Migrations
             modelBuilder.Entity("OVDB_database.Models.Region", b =>
                 {
                     b.HasOne("OVDB_database.Models.Region", "ParentRegion")
-                        .WithMany("SubRegions")
+                        .WithMany()
                         .HasForeignKey("ParentRegionId");
 
                     b.Navigation("ParentRegion");
@@ -797,11 +797,6 @@ namespace OVDB_database.Migrations
             modelBuilder.Entity("OVDB_database.Models.Map", b =>
                 {
                     b.Navigation("RouteMaps");
-                });
-
-            modelBuilder.Entity("OVDB_database.Models.Region", b =>
-                {
-                    b.Navigation("SubRegions");
                 });
 
             modelBuilder.Entity("OVDB_database.Models.Route", b =>

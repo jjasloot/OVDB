@@ -1,24 +1,48 @@
 <h3 mat-dialog-title>Aangepaste selectie</h3>
 <div mat-dialog-content>
   <mat-accordion>
-    <mat-expansion-panel *ngIf="countries">
+    <mat-expansion-panel *ngIf="regions">
       <mat-expansion-panel-header>
         <mat-panel-title>
           {{ "FILTER.COUNTRIES" | translate }}
         </mat-panel-title>
         <mat-panel-description class="ellipsis">
-          {{ countriesString }}
+          {{ regionsString }}
         </mat-panel-description>
       </mat-expansion-panel-header>
 
-      <div class="grid">
-        <mat-checkbox
-          *ngFor="let country of countries"
-          [checked]="isCountryChecked(country.countryId)"
-          (change)="setCountry(country.countryId, $event)"
-          >{{ name(country) }}</mat-checkbox
-        >
-      </div>
+      @for (region of regions; track region.id) {
+      <mat-expansion-panel [disabled]="region.subRegions.length === 0">
+        <mat-expansion-panel-header>
+          <mat-checkbox
+            (click)="$event.stopPropagation()"
+            [checked]="isCountryChecked(region.id)"
+            (change)="setCountry(region.id, $event, region.subRegions)"
+            [indeterminate]="anyChecked(region.subRegions)"
+          >
+            <mat-tooltip-component [textContent]="name(region)">
+              {{ region.originalName }}
+            </mat-tooltip-component>
+          </mat-checkbox>
+        </mat-expansion-panel-header>
+        <div>
+          @for(subRegion of region.subRegions; track subRegion.id) {
+          <mat-checkbox
+            style="margin-left: 1rem"
+            [checked]="
+              isCountryChecked(subRegion.id) || isCountryChecked(region.id)
+            "
+            [disabled]="isCountryChecked(region.id)"
+            (change)="setCountry(subRegion.id, $event)"
+          >
+            <div [matTooltip]="name(subRegion)">
+              {{ subRegion.originalName }}
+            </div>
+          </mat-checkbox>
+          }
+        </div>
+      </mat-expansion-panel>
+      }
     </mat-expansion-panel>
     <mat-expansion-panel *ngIf="routeTypes">
       <mat-expansion-panel-header>

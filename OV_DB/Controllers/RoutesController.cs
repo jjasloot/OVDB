@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.OData.Query;
 using Microsoft.EntityFrameworkCore;
 using OV_DB.Helpers;
 using OV_DB.Models;
+using OV_DB.Services;
 using OVDB_database.Database;
 using OVDB_database.Models;
 using SharpKml.Base;
@@ -1092,5 +1093,15 @@ namespace OV_DB.Controllers
 
             return Ok(tags);
         }
+
+        [HttpPatch("{id:int}/assignRegions")]
+        public async Task<IActionResult> AssignRegionsToRouteAsync(int id, [FromServices] IRouteRegionsService routeRegionsService)
+        {
+            var route = await _context.Routes.Include(r => r.Regions).SingleAsync(r => r.RouteId == id);
+            await routeRegionsService.AssignRegionsToRouteAsync(route);
+            await _context.SaveChangesAsync();
+            return Ok();
+        }
+
     }
 }

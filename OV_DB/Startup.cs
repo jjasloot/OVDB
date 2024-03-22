@@ -20,6 +20,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
+using OV_DB.Services;
 
 namespace OV_DB
 {
@@ -71,10 +72,10 @@ namespace OV_DB
             services.AddDbContext<OVDBDatabaseContext>(options =>
             {
                 var connectionString = Configuration["DBCONNECTIONSTRING"];
-                options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString), options => options.UseNetTopologySuite());
+                options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString), options => options.UseNetTopologySuite().EnableRetryOnFailure());
 #if DEBUG
                 //Log all sql commands
-                options.LogTo(Console.WriteLine, Microsoft.Extensions.Logging.LogLevel.Information);
+                //options.LogTo(Console.WriteLine, Microsoft.Extensions.Logging.LogLevel.Information);
                 options.EnableSensitiveDataLogging();
 #endif
 
@@ -107,7 +108,12 @@ namespace OV_DB
                     }
                 };
             });
-            services.AddControllers().AddOData(r => r.Select().Filter().AddRouteComponents("odata", GetEdmModel()));
+            services.AddControllers()
+                .AddOData(r => r.Select().Filter().AddRouteComponents("odata", GetEdmModel()))
+                .AddJsonOptions(options =>
+                {
+                    options.JsonSerializerOptions.Converters.Add(new NetTopologySuite.IO.Converters.GeoJsonConverterFactory());
+                });
             services.AddSpaStaticFiles(configuration =>
             {
                 configuration.RootPath = "OVDBFrontend/dist/OVDBFrontend";
@@ -125,6 +131,8 @@ namespace OV_DB
             {
                 options.EnableEndpointRouting = false;
             }).AddNewtonsoftJson(ops => ops.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore);
+
+            services.AddTransient<IRouteRegionsService, RouteRegionsService>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -192,7 +200,7 @@ namespace OV_DB
             var builder = new ODataConventionModelBuilder();
             builder.EntitySet<RouteInstance>("RouteInstances");
             builder.EntitySet<Route>("Routes");
-            builder.EntitySet<Country>("Countries");
+            builder.EntitySet<Region>("Regions");
             builder.EntitySet<RouteType>("Types");
             return builder.GetEdmModel();
         }

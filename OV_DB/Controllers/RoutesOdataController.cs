@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.OData.Routing.Controllers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OData.Edm;
 using Microsoft.OData.UriParser;
+using NetTopologySuite.Operation.Union;
 using OVDB_database.Database;
 using OVDB_database.Models;
 using SharpKml.Base;
@@ -17,6 +18,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using System.Security.Claims;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -35,7 +37,7 @@ namespace OV_DB.Controllers
 
         [HttpGet("{id}")]
         [Produces("application/json")]
-        public async Task<ActionResult<FeatureCollection>> GetGeoJsonAsync(string id, ODataQueryOptions<RouteInstance> q, [FromQuery] string language, [FromQuery] bool includeLineColours, CancellationToken cancellationToken)
+        public async Task<ActionResult<FeatureCollection>> GetGeoJsonAsync(string id, ODataQueryOptions<RouteInstance> q, [FromQuery] string language, [FromQuery] bool includeLineColours, [FromQuery] bool limitToRegions = false, CancellationToken cancellationToken = default)
         {
             var userClaim = User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier);
             var userIdClaim = int.Parse(userClaim != null ? userClaim.Value : "-1");
@@ -70,7 +72,7 @@ namespace OV_DB.Controllers
             {
                 colours.Add(t.TypeId, new LineStyle { Color = Color32.Parse(t.Colour) });
             });
-
+            NetTopologySuite.Geometries.Geometry? limitingArea = null;
             if (q.Filter != null)
             {
                 var model = Startup.GetEdmModel();
@@ -80,6 +82,11 @@ namespace OV_DB.Controllers
                 var context = new ODataQueryContext(model, typeof(RouteInstance), q.Context.Path);
                 var filter = new FilterQueryOption(q.Filter.RawValue, context, parser);
                 routes = q.Filter.ApplyTo(routes, new ODataQuerySettings()) as IQueryable<RouteInstance>;
+
+                if (limitToRegions)
+                {
+                    limitingArea = await ExtractAreaFromQueryAsync(q, cancellationToken);
+                }
             }
             routes = routes.Where(r => r.RouteInstanceMaps.Any(rim => rim.MapId == map.MapId) || r.Route.RouteMaps.Any(rm => rm.MapId == map.MapId));
             var collection = new FeatureCollection();
@@ -94,28 +101,88 @@ namespace OV_DB.Controllers
                 routesToReturn[r.RouteId] += 1;
             }, cancellationToken: cancellationToken);
 
+
+
             routesList.ForEach(r =>
             {
-                if (cancellationToken.IsCancellationRequested)
+                if (limitingArea != null)
                 {
-                    return;
+                    if (cancellationToken.IsCancellationRequested)
+                    {
+                        return;
+                    }
+                    var clippedRoute = r.LineString.Intersection(limitingArea);
+                    if (clippedRoute.IsEmpty)
+                    {
+                        return;
+                    }
+                    var numGeometries = clippedRoute.NumGeometries;
+                    for (var i = 0; i < numGeometries; i++)
+                    {
+
+                        var geometry = clippedRoute.GetGeometryN(i);
+
+                        if (geometry is NetTopologySuite.Geometries.LineString lineString)
+                        {
+                            AddLineToCollection(language, includeLineColours, r, lineString, userIdClaim, map, collection, routesToReturn);
+
+                        }
+                        else
+                        {
+                            throw
+                            new NotImplementedException(geometry.GeometryType);
+                        }
+                    }
                 }
-                try
+                else
                 {
-
-                    var feature = new GeoJSON.Net.Feature.Feature(new GeoJSON.Net.Geometry.LineString(r.LineString.Coordinates.Select(loc => new Position(loc.X, loc.Y))));
-
-
-                    AddFeatures(language, r, userIdClaim, map, routesToReturn, feature, includeLineColours);
-                    collection.Features.Add(feature);
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine(ex.Message);
-                    throw;
+                    if (cancellationToken.IsCancellationRequested)
+                    {
+                        return;
+                    }
+                    AddLineToCollection(language, includeLineColours, r, r.LineString, userIdClaim, map, collection, routesToReturn);
                 }
             });
             return collection;
+        }
+
+        private static void AddLineToCollection(string language, bool includeLineColours, Route r, NetTopologySuite.Geometries.LineString lineString, int userIdClaim, Map map, FeatureCollection collection, Dictionary<int, int> routesToReturn)
+        {
+            try
+            {
+
+                var feature = new GeoJSON.Net.Feature.Feature(new GeoJSON.Net.Geometry.LineString(lineString.Coordinates.Select(loc => new Position(loc.Y, loc.X))));
+
+
+                AddFeatures(language, r, userIdClaim, map, routesToReturn, feature, includeLineColours);
+                collection.Features.Add(feature);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                throw;
+            }
+        }
+
+        private async Task<NetTopologySuite.Geometries.Geometry> ExtractAreaFromQueryAsync(ODataQueryOptions<RouteInstance> q, CancellationToken cancellationToken)
+        {
+            var pattern = @"region/Id eq (\d+)";
+
+            var matches = Regex.Matches(q.Filter.RawValue, pattern);
+            var areaIds = new List<int>();
+            foreach (Match match in matches)
+            {
+                if (int.TryParse(match.Groups[1].Value, out var newArea))
+                {
+                    areaIds.Add(newArea);
+                }
+            }
+
+
+            var areas = await _context.Regions.Where(a => areaIds.Contains(a.Id)).Select(r => r.Geometry).ToListAsync(cancellationToken: cancellationToken);
+            var area = new CascadedPolygonUnion(areas.SelectMany(a => a.Geometries).ToList());
+            var limitingArea = area.Union();
+            return limitingArea;
         }
 
         private static void AddFeatures(string language, Route r, int userIdClaim, Map map, Dictionary<int, int> routesToReturn, GeoJSON.Net.Feature.Feature feature, bool includeLineColours)
@@ -177,7 +244,7 @@ namespace OV_DB.Controllers
 
             var collection = new FeatureCollection();
 
-            var feature = new GeoJSON.Net.Feature.Feature(new GeoJSON.Net.Geometry.LineString(route.LineString.Coordinates.Select(loc => new Position(loc.X, loc.Y))));
+            var feature = new GeoJSON.Net.Feature.Feature(new GeoJSON.Net.Geometry.LineString(route.LineString.Coordinates.Select(loc => new Position(loc.Y, loc.X))));
 
             if (language == "nl" && !string.IsNullOrWhiteSpace(route.NameNL))
                 feature.Properties.Add("name", route.NameNL);

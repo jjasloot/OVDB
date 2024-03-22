@@ -1,0 +1,16 @@
+@for (region of regions; track region.id) {
+<mat-card style="margin-bottom: 1rem">
+  <mat-card-header>
+    <mat-card-title>{{ region.name }}</mat-card-title>
+    <mat-card-subtitle>{{ region.osmRelationId }}</mat-card-subtitle>
+  </mat-card-header>
+  <mat-card-content>
+    @for(subregion of region.subRegions; track subregion.id) {
+    {{ subregion.name }} ({{ subregion.osmRelationId }}) }
+  </mat-card-content>
+</mat-card>
+}
+
+<button class="fab" mat-fab color="primary" (click)="addNewRegion()">
+  <mat-icon>add</mat-icon>
+</button>

@@ -2,14 +2,17 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Net.Http;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using NetTopologySuite.Geometries;
+using Newtonsoft.Json;
 using OV_DB.Helpers;
 using OV_DB.Models;
+using OV_DB.Services;
 using OVDB_database.Database;
 
 namespace OV_DB.Controllers
@@ -191,7 +194,7 @@ namespace OV_DB.Controllers
                 foreach (var route in routes)
                 {
                     var coordinates = route.Coordinates.Split('\n').Where(a => !string.IsNullOrWhiteSpace(a)).ToList();
-                    var coords = coordinates.Select(r => new Coordinate(double.Parse(r.Split(',')[1], CultureInfo.InvariantCulture), double.Parse(r.Split(',')[0], CultureInfo.InvariantCulture))).ToList();
+                    var coords = coordinates.Select(r => new Coordinate(double.Parse(r.Split(',')[0], CultureInfo.InvariantCulture), double.Parse(r.Split(',')[1], CultureInfo.InvariantCulture))).ToList();
                     route.LineString = new LineString(coords.ToArray());
 
                     Console.WriteLine($"Route {route.Name} converted");
@@ -200,6 +203,71 @@ namespace OV_DB.Controllers
             } while (routes.Count > 0);
 
             return Ok();
+        }
+
+        [HttpGet("addRegions")]
+        public async Task<ActionResult> AddRegionsToAllRoutes([FromServices] IRouteRegionsService routeRegionsService)
+        {
+            _dbContext.Database.SetCommandTimeout(TimeSpan.FromMinutes(3));
+            var batchSize = 50;
+            var count = 4450;
+            var routes = new List<OVDB_database.Models.Route>();
+            do
+            {
+                routes = await _dbContext.Routes.OrderBy(r => r.Name).Where(r => r.LineString != null).Include(r => r.Regions).Skip(count).Take(batchSize).ToListAsync();
+
+                foreach (var route in routes)
+                {
+                    await routeRegionsService.AssignRegionsToRouteAsync(route);
+                    Console.WriteLine($"Route {route.Name} added the following Regions: " + string.Join(", ", route.Regions.Select(r => r.Name)));
+                }
+                await _dbContext.SaveChangesAsync();
+                count += batchSize;
+                Console.WriteLine($"Added regions to {count} routes");
+            } while (routes.Count > 0);
+
+            return Ok();
+        }
+
+        [HttpGet("fixOriginalnames")]
+        public async Task<ActionResult> FixOriginalNames()
+        {
+            _dbContext.Database.SetCommandTimeout(TimeSpan.FromMinutes(3));
+            var regions = await _dbContext.Regions.Where(r => string.IsNullOrWhiteSpace(r.OriginalName)).ToListAsync();
+            foreach (var region in regions)
+            {
+                var tags = await GetTagsAsync(region.OsmRelationId);
+                if (tags != null && tags.ContainsKey("name"))
+                {
+                    region.OriginalName = tags["name"];
+                }
+                await _dbContext.SaveChangesAsync();
+                Console.WriteLine($"Region {region.Name} updated with original name {region.OriginalName}");
+                await Task.Delay(250);
+            }
+
+            return Ok();
+        }
+
+        private static async Task<Dictionary<string, string>> GetTagsAsync(long id)
+        {
+            var query = $"[out:json]";
+            query += $";relation({id});";
+            query += "out tags;";
+            string text = null;
+            using (var httpClient = new HttpClient())
+            {
+                httpClient.DefaultRequestHeaders.Add("User-Agent", "OVDB");
+
+                var response = await httpClient.PostAsync("https://overpass-api.de/api/interpreter", new StringContent(query));
+                if (response.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
+                {
+                    return null;
+                }
+                text = await response.Content.ReadAsStringAsync();
+            }
+            var parsed = JsonConvert.DeserializeObject<OSM>(text.ToString());
+            return parsed.Elements.Single().Tags;
         }
     }
 }

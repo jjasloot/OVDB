@@ -34,7 +34,7 @@ export class MapComponent implements OnInit, AfterViewInit {
   loading = false;
   from: moment.Moment;
   to: moment.Moment;
-  selectedCountries: number[] = [];
+  selectedRegion: number[] = [];
   selectedTypes: number[] = [];
   layers = [];
   countries: Country[];
@@ -200,7 +200,7 @@ export class MapComponent implements OnInit, AfterViewInit {
         .map((c) => +c);
     }
     if (queryParams.has("countries")) {
-      this.selectedCountries = queryParams
+      this.selectedRegion = queryParams
         .get("countries")
         .split(",")
         .map((c) => +c);
@@ -331,8 +331,8 @@ export class MapComponent implements OnInit, AfterViewInit {
       queryParams["to"] = this.to.valueOf();
       queryParams["from"] = this.from.valueOf();
     }
-    if (this.selectedCountries && this.selectedCountries.length > 0) {
-      queryParams["countries"] = this.selectedCountries.join(",");
+    if (this.selectedRegion && this.selectedRegion.length > 0) {
+      queryParams["countries"] = this.selectedRegion.join(",");
     }
     if (this.selectedTypes && this.selectedTypes.length > 0) {
       queryParams["types"] = this.selectedTypes.join(",");
@@ -356,11 +356,11 @@ export class MapComponent implements OnInit, AfterViewInit {
         this.to.format("YYYY-MM-DD") +
         ")  and ";
     }
-    if (this.selectedCountries && this.selectedCountries.length > 0) {
+    if (this.selectedRegion && this.selectedRegion.length > 0) {
       filter += "(";
-      this.selectedCountries.forEach((option) => {
+      this.selectedRegion.forEach((option) => {
         filter +=
-          "Route/RouteCountries/any(routeCountry: routeCountry/CountryId eq " +
+          "Route/Regions/any(region: region/Id eq " +
           option +
           ") or ";
       });
@@ -414,7 +414,7 @@ export class MapComponent implements OnInit, AfterViewInit {
   setOption(option: FilterSettings) {
     this.from = option.from;
     this.to = option.to;
-    this.selectedCountries = [...option.selectedCountries];
+    this.selectedRegion = [...option.selectedCountries];
     this.selectedTypes = [...option.selectedTypes];
     this.selectedYears = [...option.selectedYears];
     this.includeLineColours = option.includeLineColours;
@@ -428,7 +428,7 @@ export class MapComponent implements OnInit, AfterViewInit {
       this.includeLineColours,
       this.from,
       this.to,
-      this.selectedCountries,
+      this.selectedRegion,
       this.selectedTypes,
       this.selectedYears
     );

@@ -83,6 +83,8 @@ import { ImageCreatorComponent } from './image-creator/image-creator.component';
 import { StationMapsComponent } from './admin/station-maps/station-maps.component';
 import { StationMapsEditComponent } from './admin/station-maps-edit/station-maps-edit.component';
 import { LeafletMarkerClusterModule } from '@asymmetrik/ngx-leaflet-markercluster';
+import { AdministratorRegionsComponent } from './administrator/administrator-regions/administrator-regions.component';
+import { AdministratorNewRegionComponent } from './administrator/administrator-new-region/administrator-new-region.component';
 
 registerLocaleData(localeNl, 'nl-NL');
 export function HttpLoaderFactory(http: HttpClient) {
@@ -133,6 +135,8 @@ export function HttpLoaderFactory(http: HttpClient) {
         ImageCreatorComponent,
         StationMapsComponent,
         StationMapsEditComponent,
+        AdministratorRegionsComponent,
+        AdministratorNewRegionComponent
     ],
     imports: [
         BrowserModule,
