@@ -1,44 +1,64 @@
-import { Component, OnInit, ViewChild, AfterViewInit, ElementRef, HostListener } from '@angular/core';
-import { ApiService } from 'src/app/services/api.service';
-import { Route } from 'src/app/models/route.model';
-import { Router } from '@angular/router';
-import { DataUpdateService } from 'src/app/services/data-update.service';
-import { MatPaginator } from '@angular/material/paginator';
-import { MatTableDataSource } from '@angular/material/table';
-import { RoutesDataSource } from '../data-sources/routes-data-source';
-import { tap, debounceTime, distinctUntilChanged, filter } from 'rxjs/operators';
-import { merge, fromEvent } from 'rxjs';
-import { MatSort } from '@angular/material/sort';
-import { saveAs } from 'file-saver';
-import { TranslateService } from '@ngx-translate/core';
-import { TranslationService } from 'src/app/services/translation.service';
-import { MatCheckboxChange } from '@angular/material/checkbox';
-import { MatDialog } from '@angular/material/dialog';
-import { EditMultipleComponent } from '../edit-multiple/edit-multiple.component';
-import { RoutesListBottomsheetComponent } from './routes-list-bottomsheet/routes-list-bottomsheet.component';
-import { RoutesListActions } from 'src/app/models/routes-list-actions.enum';
-import { MatBottomSheet } from '@angular/material/bottom-sheet';
+import {
+  Component,
+  OnInit,
+  ViewChild,
+  AfterViewInit,
+  ElementRef,
+  HostListener,
+} from "@angular/core";
+import { ApiService } from "src/app/services/api.service";
+import { Route } from "src/app/models/route.model";
+import { Router } from "@angular/router";
+import { MatPaginator } from "@angular/material/paginator";
+import { RoutesDataSource } from "../data-sources/routes-data-source";
+import {
+  tap,
+  debounceTime,
+  distinctUntilChanged,
+  switchMap,
+  finalize,
+} from "rxjs/operators";
+import { merge, fromEvent, Subject } from "rxjs";
+import { MatSort } from "@angular/material/sort";
+import { saveAs } from "file-saver";
+import { TranslateService } from "@ngx-translate/core";
+import { TranslationService } from "src/app/services/translation.service";
+import { MatCheckboxChange } from "@angular/material/checkbox";
+import { MatDialog } from "@angular/material/dialog";
+import { EditMultipleComponent } from "../edit-multiple/edit-multiple.component";
+import { RoutesListBottomsheetComponent } from "./routes-list-bottomsheet/routes-list-bottomsheet.component";
+import { RoutesListActions } from "src/app/models/routes-list-actions.enum";
+import { MatBottomSheet } from "@angular/material/bottom-sheet";
 
 @Component({
-  selector: 'app-routes-list',
-  templateUrl: './routes-list.component.html',
-  styleUrls: ['./routes-list.component.scss']
+  selector: "app-routes-list",
+  templateUrl: "./routes-list.component.html",
+  styleUrls: ["./routes-list.component.scss"],
 })
 export class RoutesListComponent implements OnInit, AfterViewInit {
   routes: Route[];
   loading: boolean;
-  displayedColumns: string[] = ['select', 'name', 'date', 'instances', 'maps', 'type', 'edit'];
+  displayedColumns: string[] = [
+    "select",
+    "name",
+    "date",
+    "instances",
+    "maps",
+    "type",
+    "edit",
+  ];
   dataSource: RoutesDataSource;
   selectedRoutes: number[] = [];
 
   @ViewChild(MatPaginator, { static: true }) paginator: MatPaginator;
   @ViewChild(MatSort) sort: MatSort;
-  @ViewChild('input') input: ElementRef;
+  @ViewChild("input") input: ElementRef;
   count: number;
-  @HostListener('window:resize', ['$event'])
+  @HostListener("window:resize", ["$event"])
   onResize(event) {
     this.restrictColumnsOnWidth();
   }
+  filter$ = new Subject<void>();
 
   constructor(
     private apiService: ApiService,
@@ -46,88 +66,100 @@ export class RoutesListComponent implements OnInit, AfterViewInit {
     private translateService: TranslateService,
     private translationService: TranslationService,
     private dialog: MatDialog,
-    private bottomSheet: MatBottomSheet) { }
+    private bottomSheet: MatBottomSheet
+  ) {}
 
   ngOnInit() {
-    this.loadCount();
     this.dataSource = new RoutesDataSource(this.apiService);
     this.dataSource.loadRoutes();
     this.loading = true;
     this.restrictColumnsOnWidth();
-
   }
 
   restrictColumnsOnWidth() {
     if (window.innerWidth > 1200) {
-      this.displayedColumns = ['select', 'name', 'date', 'instances', 'maps', 'type', 'edit'];
-
+      this.displayedColumns = [
+        "select",
+        "name",
+        "date",
+        "instances",
+        "maps",
+        "type",
+        "edit",
+      ];
     } else {
-      this.displayedColumns = ['select', 'name', 'type', 'edit'];
-
+      this.displayedColumns = ["select", "name", "type", "edit"];
     }
   }
 
-  private loadCount() {
-    this.apiService.getRouteCount(this.filterValue).subscribe(count => {
-      this.count = count;
-    });
-  }
-
   edit(id: number) {
-    this.router.navigate(['/admin', 'routes', id]);
+    this.router.navigate(["/admin", "routes", id]);
   }
 
   exportAll() {
-    this.apiService.getCompleteExport().subscribe(data => {
-      saveAs(data, 'Export.kml');
+    this.apiService.getCompleteExport().subscribe((data) => {
+      saveAs(data, "Export.kml");
     });
   }
   get filterValue() {
     if (!this.input || !this.input.nativeElement) {
-      return '';
+      return "";
     }
     return this.input.nativeElement.value;
   }
 
   ngAfterViewInit() {
-    fromEvent(this.input.nativeElement, 'keyup')
+    fromEvent(this.input.nativeElement, "keyup")
       .pipe(
         debounceTime(150),
         distinctUntilChanged(),
         tap(() => {
           this.paginator.pageIndex = 0;
-          this.loadRoutesPage();
-          this.loadCount();
+          this.filter$.next();
         })
       )
       .subscribe();
 
-    this.sort.sortChange.subscribe(() => this.paginator.pageIndex = 0);
+    this.sort.sortChange.subscribe(() => (this.paginator.pageIndex = 0));
 
-    merge(this.sort.sortChange, this.paginator.page)
+    merge(this.sort.sortChange, this.paginator.page, this.filter$)
       .pipe(
-        tap(() => this.loadRoutesPage())
+        tap(() => {
+          this.loading = true;
+        }),
+        switchMap(() => this.loadRoutesPage())
       )
-      .subscribe();
+      .subscribe({
+        next: (routes) => {
+          this.count = routes.count;
+        },
+      });
+
+    this.filter$.next();
   }
 
   loadRoutesPage() {
-    this.dataSource.loadRoutes(
+    return this.dataSource.loadRoutes(
       this.paginator.pageIndex * this.paginator.pageSize,
       this.paginator.pageSize,
       this.sort.active,
-      this.sort.direction === 'desc',
-      this.filterValue);
+      this.sort.direction === "desc",
+      this.filterValue
+    );
   }
 
   getMapsString(element: Route) {
     if (element.routeMaps.length === 0) {
-      return this.translateService.instant('ROUTESLIST.NOMAPS');
+      return this.translateService.instant("ROUTESLIST.NOMAPS");
     }
     if (element.routeMaps.length > 3) {
-      return element.routeMaps.length + ' ' + this.translateService.instant('ROUTESLIST.MAPSFORCOUNT');
+      return (
+        element.routeMaps.length +
+        " " +
+        this.translateService.instant("ROUTESLIST.MAPSFORCOUNT")
+      );
     }
-    return element.routeMaps.map(r => r.name).join(', ');
+    return element.routeMaps.map((r) => r.name).join(", ");
   }
 
   get currentLocale() {
@@ -154,9 +186,8 @@ export class RoutesListComponent implements OnInit, AfterViewInit {
     });
   }
 
-
   view(route: Route) {
-    this.router.navigate(['/route', route.routeId, route.share]);
+    this.router.navigate(["/route", route.routeId, route.share]);
   }
 
   isChecked(route: Route) {
@@ -167,7 +198,9 @@ export class RoutesListComponent implements OnInit, AfterViewInit {
     if (event.checked) {
       this.selectedRoutes.push(route.routeId);
     } else {
-      this.selectedRoutes = this.selectedRoutes.filter(r => r !== route.routeId);
+      this.selectedRoutes = this.selectedRoutes.filter(
+        (r) => r !== route.routeId
+      );
     }
   }
 
@@ -175,8 +208,8 @@ export class RoutesListComponent implements OnInit, AfterViewInit {
     const dialog = this.dialog.open(EditMultipleComponent, {
       width: this.getWidth(),
       data: {
-        selectedRoutes: this.selectedRoutes
-      }
+        selectedRoutes: this.selectedRoutes,
+      },
     });
     dialog.afterClosed().subscribe(() => this.loadRoutesPage());
   }
@@ -193,13 +226,13 @@ export class RoutesListComponent implements OnInit, AfterViewInit {
   }
 
   instances(route: Route) {
-    this.router.navigate(['/', 'admin', 'routes', 'instances', route.routeId]);
+    this.router.navigate(["/", "admin", "routes", "instances", route.routeId]);
   }
 
   private getWidth() {
-    let width = '90%';
+    let width = "90%";
     if (window.innerWidth > 600) {
-      width = '80%';
+      width = "80%";
     }
     return width;
   }

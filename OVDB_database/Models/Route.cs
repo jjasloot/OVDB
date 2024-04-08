@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -6,6 +7,7 @@ using System.ComponentModel.DataAnnotations;
 namespace OVDB_database.Models
 {
     [JsonObject(MemberSerialization.OptIn)]
+    [Index(nameof(Name))]
     public class Route
     {
         [Key]

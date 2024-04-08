@@ -1,9 +1,9 @@
-import { Moment } from 'moment';
-import { RouteType } from './routeType.model';
-import { RouteCountry } from './routeCountry.model';
-import { Map } from './map.model';
-import { RoutesMapsFromRoute } from './routesMapsFromRoute.model';
-import { RouteInstance } from './routeInstance.model';
+import { Moment } from "moment";
+import { RouteType } from "./routeType.model";
+import { RouteCountry } from "./routeCountry.model";
+import { Map } from "./map.model";
+import { RoutesMapsFromRoute } from "./routesMapsFromRoute.model";
+import { RouteInstance } from "./routeInstance.model";
 
 export interface Route {
   share: any;
@@ -27,4 +27,9 @@ export interface Route {
   routeInstances: RouteInstance[];
   from?: string;
   to?: string;
+}
+
+export interface RouteList {
+  count: number;
+  routes: Route[];
 }
