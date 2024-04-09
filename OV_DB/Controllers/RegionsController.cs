@@ -104,7 +104,6 @@ namespace OV_DB.Controllers
             using (var jsonReader = new JsonTextReader(stringReader))
             {
                 var geometry = serializer.Deserialize<NetTopologySuite.Geometries.MultiPolygon>(jsonReader);
-
                 var existingRegion = await _context.Regions.SingleOrDefaultAsync(r => r.OsmRelationId == newRegion.OsmRelationId);
                 if (existingRegion != null)
                 {
@@ -198,6 +197,21 @@ namespace OV_DB.Controllers
                 AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5)
             });
             return Ok(mappedRegions);
+        }
+
+        [HttpGet("refreshAll")]
+        [AllowAnonymous]
+        public async Task RefreshAll()
+        {
+            var regions = await _context.Regions.Where(r=>r.Id>59).Select(r => new NewRegion { OsmRelationId = r.OsmRelationId, ParentRegionId = r.ParentRegionId }).ToListAsync();
+
+            foreach (var region in regions)
+            {
+                await CreateNew(region);
+                Console.WriteLine("Updated region " + region.OsmRelationId + " " + region.ParentRegionId);
+                await Task.Delay(1000);
+            }
+
         }
     }
 }

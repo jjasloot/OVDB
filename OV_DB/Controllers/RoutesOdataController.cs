@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.OData.Routing.Controllers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OData.Edm;
 using Microsoft.OData.UriParser;
+using NetTopologySuite.IO;
 using NetTopologySuite.Operation.Union;
 using OVDB_database.Database;
 using OVDB_database.Models;
@@ -37,7 +38,7 @@ namespace OV_DB.Controllers
 
         [HttpGet("{id}")]
         [Produces("application/json")]
-        public async Task<ActionResult<FeatureCollection>> GetGeoJsonAsync(string id, ODataQueryOptions<RouteInstance> q, [FromQuery] string language, [FromQuery] bool includeLineColours, [FromQuery] bool limitToRegions = false, CancellationToken cancellationToken = default)
+        public async Task<ActionResult<FeatureCollection>> GetGeoJsonAsync(string id, ODataQueryOptions<RouteInstance> q, [FromQuery] string language, [FromQuery] bool includeLineColours, [FromQuery] bool limitToRegions = true, CancellationToken cancellationToken = default)
         {
             var userClaim = User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier);
             var userIdClaim = int.Parse(userClaim != null ? userClaim.Value : "-1");
@@ -86,6 +87,10 @@ namespace OV_DB.Controllers
                 if (limitToRegions)
                 {
                     limitingArea = await ExtractAreaFromQueryAsync(q, cancellationToken);
+                    if (!limitingArea.IsValid)
+                    {
+                        limitingArea = NetTopologySuite.Geometries.Utilities.GeometryFixer.Fix(limitingArea);
+                    }
                 }
             }
             routes = routes.Where(r => r.RouteInstanceMaps.Any(rim => rim.MapId == map.MapId) || r.Route.RouteMaps.Any(rm => rm.MapId == map.MapId));
@@ -101,8 +106,8 @@ namespace OV_DB.Controllers
                 routesToReturn[r.RouteId] += 1;
             }, cancellationToken: cancellationToken);
 
-
-
+            var total = routesList.Count;
+            var processed = 0;
             routesList.ForEach(r =>
             {
                 if (limitingArea != null)
@@ -124,8 +129,18 @@ namespace OV_DB.Controllers
 
                         if (geometry is NetTopologySuite.Geometries.LineString lineString)
                         {
-                            AddLineToCollection(language, includeLineColours, r, lineString, userIdClaim, map, collection, routesToReturn);
+                            var point = (int)geometry.Coordinates.Length / 2;
 
+                            if (limitingArea.Contains(new NetTopologySuite.Geometries.Point(geometry.Coordinates[point])))
+                            {
+                                AddLineToCollection(language, includeLineColours, r, lineString, userIdClaim, map, collection, routesToReturn);
+                            }
+
+
+                        }
+                        else if (geometry is NetTopologySuite.Geometries.Point _)
+                        {
+                            continue;
                         }
                         else
                         {
@@ -142,6 +157,9 @@ namespace OV_DB.Controllers
                     }
                     AddLineToCollection(language, includeLineColours, r, r.LineString, userIdClaim, map, collection, routesToReturn);
                 }
+                processed++;
+                if (processed % 10 == 0)
+                    Console.WriteLine(Math.Round((100.0 * processed) / total, 1) + "%");
             });
             return collection;
         }
@@ -164,7 +182,7 @@ namespace OV_DB.Controllers
             }
         }
 
-        private async Task<NetTopologySuite.Geometries.Geometry> ExtractAreaFromQueryAsync(ODataQueryOptions<RouteInstance> q, CancellationToken cancellationToken)
+        private async Task<NetTopologySuite.Geometries.Geometry?> ExtractAreaFromQueryAsync(ODataQueryOptions<RouteInstance> q, CancellationToken cancellationToken)
         {
             var pattern = @"region/Id eq (\d+)";
 
@@ -177,11 +195,14 @@ namespace OV_DB.Controllers
                     areaIds.Add(newArea);
                 }
             }
-
-
+            if (!areaIds.Any())
+            {
+                return null;
+            }
             var areas = await _context.Regions.Where(a => areaIds.Contains(a.Id)).Select(r => r.Geometry).ToListAsync(cancellationToken: cancellationToken);
-            var area = new CascadedPolygonUnion(areas.SelectMany(a => a.Geometries).ToList());
+            var area = new CascadedPolygonUnion([.. areas]);
             var limitingArea = area.Union();
+
             return limitingArea;
         }
 
