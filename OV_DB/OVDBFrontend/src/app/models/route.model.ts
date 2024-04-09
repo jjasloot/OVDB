@@ -30,3 +30,8 @@ export interface Route {
   to?: string;
   regions: RegionMinimal[];
 }
+
+export interface RouteList {
+  count: number;
+  routes: Route[];
+}

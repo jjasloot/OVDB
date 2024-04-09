@@ -20,6 +20,7 @@ using System.IO;
 using System.Linq;
 using System.Security.Claims;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace OV_DB.Controllers
@@ -40,7 +41,7 @@ namespace OV_DB.Controllers
 
         // GET: api/RoutesAPI
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<RouteDTO>>> GetRoutes([FromQuery] int? start, [FromQuery] int? count, [FromQuery] string sortColumn, [FromQuery] bool? descending, [FromQuery] string filter)
+        public async Task<ActionResult<RouteListDTO>> GetRoutes([FromQuery] int? start, [FromQuery] int? count, [FromQuery] string sortColumn, [FromQuery] bool? descending, [FromQuery] string filter, CancellationToken cancellationToken)
         {
             var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value ?? "-1");
             if (userIdClaim < 0)
@@ -52,7 +53,7 @@ namespace OV_DB.Controllers
 
             if (!string.IsNullOrWhiteSpace(filter))
             {
-                originalQuery = originalQuery.Where(r => EF.Functions.Like(r.Name, "%" + filter + "%") || EF.Functions.Like(r.RouteType.Name, "%" + filter + "%") || r.RouteMaps.Any(rm => EF.Functions.Like(rm.Map.Name, "%" + filter + "%")));
+                originalQuery = originalQuery.Where(r => EF.Functions.Like(r.Name, "%" + filter + "%"));
             }
             var query = originalQuery.ProjectTo<RouteDTO>(_mapper.ConfigurationProvider);
             if (!string.IsNullOrWhiteSpace(sortColumn))
@@ -87,6 +88,7 @@ namespace OV_DB.Controllers
                 }
             }
 
+            var routeCount = await query.CountAsync(cancellationToken: cancellationToken);
 
 
             if (start.HasValue && count.HasValue)
@@ -95,25 +97,17 @@ namespace OV_DB.Controllers
                     .Skip(start.Value)
                     .Take(count.Value);
             }
-            return await query.ToListAsync();
+
+            var response = new RouteListDTO
+            {
+                Count = routeCount,
+                Routes = await query.ToListAsync(cancellationToken: cancellationToken)
+            };
+
+            return response;
 
         }
-        [HttpGet("count")]
-        public async Task<ActionResult<int>> GetRouteCount([FromQuery] string filter)
-        {
-            var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value ?? "-1");
-            if (userIdClaim < 0)
-            {
-                return Forbid();
-            }
-            var query = _context.Routes
-                .Where(r => r.RouteMaps.Any(rm => rm.Map.UserId == userIdClaim));
-            if (!string.IsNullOrWhiteSpace(filter))
-            {
-                query = query.Where(r => EF.Functions.Like(r.Name, "%" + filter + "%") || EF.Functions.Like(r.RouteType.Name, "%" + filter + "%"));
-            }
-            return await query.CountAsync();
-        }
+
 
         [HttpGet("missingInfo")]
         public async Task<ActionResult<IEnumerable<RouteDTO>>> GetRoutesWithMissingInfo()

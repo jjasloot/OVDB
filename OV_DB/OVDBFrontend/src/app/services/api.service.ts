@@ -3,7 +3,7 @@ import { Observable } from "rxjs";
 import { Country } from "../models/country.model";
 import { HttpClient, HttpParams } from "@angular/common/http";
 import { environment } from "src/environments/environment";
-import { Route } from "../models/route.model";
+import { Route, RouteList } from "../models/route.model";
 import { RouteType } from "../models/routeType.model";
 import { Map } from "src/app/models/map.model";
 import { OSMDataLine } from "../models/osmDataLine.model";
@@ -164,7 +164,7 @@ export class ApiService {
     column?: string,
     order?: boolean,
     filter?: string
-  ): Observable<Route[]> {
+  ): Observable<RouteList> {
     let params = new HttpParams();
     if (start !== undefined && count !== undefined) {
       params = params
@@ -180,19 +180,9 @@ export class ApiService {
     if (filter !== undefined) {
       params = params.set("filter", filter);
     }
-    return this.httpClient.get<Route[]>(environment.backend + "api/routes", {
+    return this.httpClient.get<RouteList>(environment.backend + "api/routes", {
       params,
     });
-  }
-  getRouteCount(filter: string): Observable<number> {
-    if (!!filter) {
-      return this.httpClient.get<number>(
-        environment.backend + "api/routes/count?filter=" + filter
-      );
-    }
-    return this.httpClient.get<number>(
-      environment.backend + "api/routes/count"
-    );
   }
 
   getRoutes(
