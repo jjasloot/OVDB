@@ -7,7 +7,8 @@ using Microsoft.AspNetCore.OData.Routing.Controllers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OData.Edm;
 using Microsoft.OData.UriParser;
-using NetTopologySuite.IO;
+using NetTopologySuite.Operation.Overlay;
+using NetTopologySuite.Operation.OverlayNG;
 using NetTopologySuite.Operation.Union;
 using OVDB_database.Database;
 using OVDB_database.Models;
@@ -16,7 +17,6 @@ using SharpKml.Dom;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Globalization;
 using System.Linq;
 using System.Security.Claims;
 using System.Text.RegularExpressions;
@@ -87,10 +87,6 @@ namespace OV_DB.Controllers
                 if (limitToRegions)
                 {
                     limitingArea = await ExtractAreaFromQueryAsync(q, cancellationToken);
-                    if (!limitingArea.IsValid)
-                    {
-                        limitingArea = NetTopologySuite.Geometries.Utilities.GeometryFixer.Fix(limitingArea);
-                    }
                 }
             }
             routes = routes.Where(r => r.RouteInstanceMaps.Any(rim => rim.MapId == map.MapId) || r.Route.RouteMaps.Any(rm => rm.MapId == map.MapId));
@@ -108,6 +104,7 @@ namespace OV_DB.Controllers
 
             var total = routesList.Count;
             var processed = 0;
+
             routesList.ForEach(r =>
             {
                 if (limitingArea != null)
@@ -116,37 +113,46 @@ namespace OV_DB.Controllers
                     {
                         return;
                     }
-                    var clippedRoute = r.LineString.Intersection(limitingArea);
-                    if (clippedRoute.IsEmpty)
+                    var route = r.LineString;
+                    Console.WriteLine(r.Name);
+                    Console.WriteLine(route.IsValid);
+                    Console.WriteLine(limitingArea.IsValid);
+                    try
                     {
-                        return;
-                    }
-                    var numGeometries = clippedRoute.NumGeometries;
-                    for (var i = 0; i < numGeometries; i++)
-                    {
-
-                        var geometry = clippedRoute.GetGeometryN(i);
-
-                        if (geometry is NetTopologySuite.Geometries.LineString lineString)
+                        var clippedRoute = OverlayNG.Overlay(limitingArea, route, SpatialFunction.Intersection);
+                        if (clippedRoute.IsEmpty)
                         {
-                            var point = (int)geometry.Coordinates.Length / 2;
+                            return;
+                        }
+                        var numGeometries = clippedRoute.NumGeometries;
+                        for (var i = 0; i < numGeometries; i++)
+                        {
 
-                            if (limitingArea.Contains(new NetTopologySuite.Geometries.Point(geometry.Coordinates[point])))
+                            var geometry = clippedRoute.GetGeometryN(i);
+
+                            if (geometry is NetTopologySuite.Geometries.LineString lineString)
                             {
+
                                 AddLineToCollection(language, includeLineColours, r, lineString, userIdClaim, map, collection, routesToReturn);
+
+
+
                             }
-
-
+                            else if (geometry is NetTopologySuite.Geometries.Point _)
+                            {
+                                continue;
+                            }
+                            else
+                            {
+                                throw
+                                new NotImplementedException(geometry.GeometryType);
+                            }
                         }
-                        else if (geometry is NetTopologySuite.Geometries.Point _)
-                        {
-                            continue;
-                        }
-                        else
-                        {
-                            throw
-                            new NotImplementedException(geometry.GeometryType);
-                        }
+                    }
+                    catch (NetTopologySuite.Geometries.TopologyException ex)
+                    {
+                        Console.WriteLine(ex.Message);
+                        //Ignore
                     }
                 }
                 else
@@ -200,6 +206,11 @@ namespace OV_DB.Controllers
                 return null;
             }
             var areas = await _context.Regions.Where(a => areaIds.Contains(a.Id)).Select(r => r.Geometry).ToListAsync(cancellationToken: cancellationToken);
+            if (areas.Count == 1)
+            {
+                return areas.First();
+            }
+
             var area = new CascadedPolygonUnion([.. areas]);
             var limitingArea = area.Union();
 

@@ -19,6 +19,7 @@ public class RouteRegionsService(OVDBDatabaseContext dbContext) : IRouteRegionsS
 {
     public async Task AssignRegionsToRouteAsync(Route route)
     {
+        NetTopologySuite.NtsGeometryServices.Instance = new NetTopologySuite.NtsGeometryServices(NetTopologySuite.Geometries.GeometryOverlay.NG);
         route.Regions.Clear();
         var applicableRegions = await dbContext.Regions.Where(r => !r.ParentRegionId.HasValue).Where(r => r.Geometry.Intersects(route.LineString)).ToListAsync();
 
@@ -30,21 +31,10 @@ public class RouteRegionsService(OVDBDatabaseContext dbContext) : IRouteRegionsS
         var usedRegions = applicableRegions.Select(r => r.Id).ToList();
 
         var subRegions = (await dbContext.Regions.Where(r => r.ParentRegionId.HasValue && usedRegions.Contains(r.ParentRegionId.Value)).ToListAsync());
-        //var brandenburg = await dbContext.Regions.FindAsync(10);
-        //var berlin = await dbContext.Regions.FindAsync(9);
-        //var intersection = brandenburg.Geometry.Intersection(route.LineString);
-        //var intersection2 = OverlayNG.Overlay(brandenburg.Geometry, route.LineString, SpatialFunction.Intersection);
-        //var contains = false;
-
-        //var wntWriter = new WKTWriter();
-        //Console.WriteLine(wntWriter.Write(brandenburg.Geometry));
-        //Console.WriteLine(wntWriter.Write(route.LineString));
-        //Console.WriteLine(wntWriter.Write(intersection));
-        //Console.WriteLine(wntWriter.Write(intersection2));
 
         foreach (var region in subRegions)
         {
-            if (route.LineString.Intersects(region.Geometry))
+            if (!OverlayNG.Overlay(region.Geometry,route.LineString,SpatialFunction.Intersection).IsEmpty)
                 route.Regions.Add(region);
         }
     }

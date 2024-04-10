@@ -133,6 +133,10 @@ namespace OV_DB
             }).AddNewtonsoftJson(ops => ops.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore);
 
             services.AddTransient<IRouteRegionsService, RouteRegionsService>();
+
+
+            NetTopologySuite.NtsGeometryServices.Instance = new NetTopologySuite.NtsGeometryServices(
+   NetTopologySuite.Geometries.GeometryOverlay.NG);
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

@@ -6,8 +6,10 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
+using NetTopologySuite.Geometries;
 using NetTopologySuite.IO;
 using Newtonsoft.Json;
+using NuGet.Packaging;
 using OV_DB.Models;
 using OVDB_database.Database;
 using OVDB_database.Models;
@@ -104,6 +106,45 @@ namespace OV_DB.Controllers
             using (var jsonReader = new JsonTextReader(stringReader))
             {
                 var geometry = serializer.Deserialize<NetTopologySuite.Geometries.MultiPolygon>(jsonReader);
+
+                var geometries = geometry.Geometries.OrderByDescending(g => g.Area).Select(g => (NetTopologySuite.Geometries.Polygon)g).ToList();
+                //Find out which geometries are really holes inside another geometry. Then build the MultiPolygon from the outer geometries and the inner geometries.
+                var outerGeometries = new Dictionary<NetTopologySuite.Geometries.Polygon, List<NetTopologySuite.Geometries.Polygon>>();
+                foreach (var geom in geometries)
+                {
+                    var matched = false;
+                    foreach (var outer in outerGeometries)
+                    {
+                        if (outer.Key.Contains(geom))
+                        {
+                            outer.Value.Add(geom);
+                            matched = true;
+                            break;
+                        }
+                    }
+                    if (!matched)
+                    {
+                        outerGeometries.Add(geom, new List<NetTopologySuite.Geometries.Polygon>());
+                    }
+                }
+
+                var factory = new GeometryFactory();
+                var outers = new List<NetTopologySuite.Geometries.Polygon>();
+                //Convert the dictionary of     outerGeometries into polygons and then group into a multi polygon
+                foreach (var outerGeom in outerGeometries)
+                {
+
+                    var holes = outerGeom.Value.Select(v => factory.CreateLinearRing(v.Coordinates)).Concat(outerGeom.Key.Holes).ToArray();
+                    var newOuter = factory.CreatePolygon(factory.CreateLinearRing(outerGeom.Key.ExteriorRing.Coordinates), holes);
+                    outers.Add(newOuter);
+                }
+                var multiPolygon = factory.CreateMultiPolygon(outers.ToArray());
+                var isValidOp = new NetTopologySuite.Operation.Valid.IsValidOp(multiPolygon);
+                if (!isValidOp.IsValid)
+                {
+                    return BadRequest(isValidOp.ValidationError.Message);
+                }
+
                 var existingRegion = await _context.Regions.SingleOrDefaultAsync(r => r.OsmRelationId == newRegion.OsmRelationId);
                 if (existingRegion != null)
                 {
@@ -111,7 +152,7 @@ namespace OV_DB.Controllers
                     existingRegion.Name = name;
                     existingRegion.NameNL = nameNL;
                     existingRegion.OriginalName = originalName;
-                    existingRegion.Geometry = geometry;
+                    existingRegion.Geometry = multiPolygon;
                     _context.Regions.Update(existingRegion);
                 }
                 else
@@ -203,7 +244,7 @@ namespace OV_DB.Controllers
         [AllowAnonymous]
         public async Task RefreshAll()
         {
-            var regions = await _context.Regions.Where(r=>r.Id>59).Select(r => new NewRegion { OsmRelationId = r.OsmRelationId, ParentRegionId = r.ParentRegionId }).ToListAsync();
+            var regions = await _context.Regions.Where(r => r.Id > 59).Select(r => new NewRegion { OsmRelationId = r.OsmRelationId, ParentRegionId = r.ParentRegionId }).ToListAsync();
 
             foreach (var region in regions)
             {
