@@ -5,6 +5,7 @@ using NetTopologySuite.Operation.OverlayNG;
 using OVDB_database.Database;
 using OVDB_database.Models;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -20,7 +21,10 @@ public class RouteRegionsService(OVDBDatabaseContext dbContext) : IRouteRegionsS
     public async Task AssignRegionsToRouteAsync(Route route)
     {
         NetTopologySuite.NtsGeometryServices.Instance = new NetTopologySuite.NtsGeometryServices(NetTopologySuite.Geometries.GeometryOverlay.NG);
-        route.Regions.Clear();
+        if (route.Regions == null)
+            route.Regions = [];
+        else
+            route.Regions.Clear();
         var applicableRegions = await dbContext.Regions.Where(r => !r.ParentRegionId.HasValue).Where(r => r.Geometry.Intersects(route.LineString)).ToListAsync();
 
         foreach (var region in applicableRegions)
@@ -34,7 +38,7 @@ public class RouteRegionsService(OVDBDatabaseContext dbContext) : IRouteRegionsS
 
         foreach (var region in subRegions)
         {
-            if (!OverlayNG.Overlay(region.Geometry,route.LineString,SpatialFunction.Intersection).IsEmpty)
+            if (!OverlayNG.Overlay(region.Geometry, route.LineString, SpatialFunction.Intersection).IsEmpty)
                 route.Regions.Add(region);
         }
     }

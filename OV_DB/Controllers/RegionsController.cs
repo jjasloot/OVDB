@@ -107,42 +107,23 @@ namespace OV_DB.Controllers
             {
                 var geometry = serializer.Deserialize<NetTopologySuite.Geometries.MultiPolygon>(jsonReader);
 
-                var geometries = geometry.Geometries.OrderByDescending(g => g.Area).Select(g => (NetTopologySuite.Geometries.Polygon)g).ToList();
-                //Find out which geometries are really holes inside another geometry. Then build the MultiPolygon from the outer geometries and the inner geometries.
-                var outerGeometries = new Dictionary<NetTopologySuite.Geometries.Polygon, List<NetTopologySuite.Geometries.Polygon>>();
-                foreach (var geom in geometries)
-                {
-                    var matched = false;
-                    foreach (var outer in outerGeometries)
-                    {
-                        if (outer.Key.Contains(geom))
-                        {
-                            outer.Value.Add(geom);
-                            matched = true;
-                            break;
-                        }
-                    }
-                    if (!matched)
-                    {
-                        outerGeometries.Add(geom, new List<NetTopologySuite.Geometries.Polygon>());
-                    }
-                }
-
-                var factory = new GeometryFactory();
-                var outers = new List<NetTopologySuite.Geometries.Polygon>();
-                //Convert the dictionary of     outerGeometries into polygons and then group into a multi polygon
-                foreach (var outerGeom in outerGeometries)
-                {
-
-                    var holes = outerGeom.Value.Select(v => factory.CreateLinearRing(v.Coordinates)).Concat(outerGeom.Key.Holes).ToArray();
-                    var newOuter = factory.CreatePolygon(factory.CreateLinearRing(outerGeom.Key.ExteriorRing.Coordinates), holes);
-                    outers.Add(newOuter);
-                }
-                var multiPolygon = factory.CreateMultiPolygon(outers.ToArray());
+                var multiPolygon = GenerateCorrectMultiPolygon(geometry, []);
                 var isValidOp = new NetTopologySuite.Operation.Valid.IsValidOp(multiPolygon);
                 if (!isValidOp.IsValid)
                 {
-                    return BadRequest(isValidOp.ValidationError.Message);
+                    if (isValidOp.ValidationError.ErrorType == NetTopologySuite.Operation.Valid.TopologyValidationErrors.SelfIntersection)
+                    {
+                        multiPolygon = GenerateCorrectMultiPolygon(geometry, [isValidOp.ValidationError.Coordinate]);
+                        isValidOp = new NetTopologySuite.Operation.Valid.IsValidOp(multiPolygon);
+                        if (!isValidOp.IsValid)
+                        {
+                            return BadRequest(isValidOp.ValidationError.Message);
+                        }
+                    }
+                    else
+                    {
+                        return BadRequest(isValidOp.ValidationError.Message);
+                    }
                 }
 
                 var existingRegion = await _context.Regions.SingleOrDefaultAsync(r => r.OsmRelationId == newRegion.OsmRelationId);
@@ -172,6 +153,84 @@ namespace OV_DB.Controllers
             await _context.SaveChangesAsync();
             return Ok();
 
+        }
+
+        private static NetTopologySuite.Geometries.MultiPolygon GenerateCorrectMultiPolygon(NetTopologySuite.Geometries.MultiPolygon geometry, List<Coordinate> coordinatesToIgnore)
+        {
+            var geometries = geometry.Geometries.OrderByDescending(g => g.Area).Select(g => (NetTopologySuite.Geometries.Polygon)g).ToList();
+            //Find out which geometries are really holes inside another geometry. Then build the MultiPolygon from the outer geometries and the inner geometries.
+            var outerGeometries = new Dictionary<NetTopologySuite.Geometries.Polygon, List<NetTopologySuite.Geometries.Polygon>>();
+            foreach (var geom in geometries)
+            {
+                var matched = false;
+
+                foreach (var outer in outerGeometries)
+                {
+                    foreach (var hole in outer.Key.Holes)
+                    {
+                        if (hole.Equals(geom.ExteriorRing))
+                        {
+                            matched = true;
+                            break;
+                        }
+                    }
+
+                    if (outer.Key.Contains(geom) && !matched)
+                    {
+                        outer.Value.Add(geom);
+                        matched = true;
+                        break;
+                    }
+                }
+                if (!matched)
+                {
+                    outerGeometries.Add(geom, new List<NetTopologySuite.Geometries.Polygon>());
+                }
+            }
+
+            var factory = new GeometryFactory();
+            var outers = new List<NetTopologySuite.Geometries.Polygon>();
+            //Convert the dictionary of     outerGeometries into polygons and then group into a multi polygon
+            foreach (var outerGeom in outerGeometries)
+            {
+
+                var existingHoles = outerGeom.Key.Holes;
+
+                existingHoles = existingHoles.Where(h => !coordinatesToIgnore.Any(c => h.Coordinates.Any(c2 => c2.Equals(c)))).ToArray();
+
+                var holes = outerGeom.Value.Select(v => factory.CreateLinearRing(v.Coordinates)).Concat(existingHoles).ToArray();
+                var newOuter = factory.CreatePolygon(factory.CreateLinearRing(outerGeom.Key.ExteriorRing.Coordinates), holes);
+                outers.Add(newOuter);
+            }
+            //foreach (var outerGeom in outerGeometries)
+            //{
+
+            //    var existingHoles = outerGeom.Key.Holes;
+            //    if (coordinatesToIgnore != null && coordinatesToIgnore.Any())
+            //    {
+            //        var newHoles = new List<NetTopologySuite.Geometries.LinearRing>();
+            //        foreach (var hole in existingHoles)
+            //        {
+            //            newHoles.Add(new LinearRing(GetCoordinates(hole.Coordinates, coordinatesToIgnore)));
+            //        }
+            //        existingHoles = [.. newHoles];
+            //    }
+
+            //    var holes = outerGeom.Value.Select(v => factory.CreateLinearRing(GetCoordinates(v.Coordinates, coordinatesToIgnore))).Concat(existingHoles).ToArray();
+            //    var newOuter = factory.CreatePolygon(factory.CreateLinearRing(GetCoordinates(outerGeom.Key.ExteriorRing.Coordinates, coordinatesToIgnore)), holes);
+            //    outers.Add(newOuter);
+            //}
+            var multiPolygon = factory.CreateMultiPolygon(outers.ToArray());
+            return multiPolygon;
+        }
+
+        private static Coordinate[] GetCoordinates(Coordinate[] coordinates, List<Coordinate> coordinatesToIgnore)
+        {
+            if (coordinatesToIgnore == null || !coordinatesToIgnore.Any())
+            {
+                return coordinates;
+            }
+            return coordinates.Where(c => !coordinatesToIgnore.Any(c2 => c.Equals(c2))).ToArray();
         }
 
         [HttpGet]
@@ -244,12 +303,21 @@ namespace OV_DB.Controllers
         [AllowAnonymous]
         public async Task RefreshAll()
         {
-            var regions = await _context.Regions.Where(r => r.Id > 59).Select(r => new NewRegion { OsmRelationId = r.OsmRelationId, ParentRegionId = r.ParentRegionId }).ToListAsync();
+            var regions = _context.Regions.ToList();
 
             foreach (var region in regions)
             {
-                await CreateNew(region);
-                Console.WriteLine("Updated region " + region.OsmRelationId + " " + region.ParentRegionId);
+                var isValidOp = new NetTopologySuite.Operation.Valid.IsValidOp(region.Geometry);
+
+                if (isValidOp.IsValid)
+                {
+                    Console.WriteLine("Region " + region.Name + " is valid");
+                    continue;
+                }
+
+
+                await CreateNew(new NewRegion { OsmRelationId = region.OsmRelationId, ParentRegionId = region.ParentRegionId });
+                Console.WriteLine("Updated region " + region.Name);
                 await Task.Delay(1000);
             }
 

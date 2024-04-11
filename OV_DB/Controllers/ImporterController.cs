@@ -16,6 +16,7 @@ using Newtonsoft.Json;
 using OV_DB.Enum;
 using OV_DB.Helpers;
 using OV_DB.Models;
+using OV_DB.Services;
 using OVDB_database.Database;
 using OVDB_database.Models;
 
@@ -29,12 +30,14 @@ namespace OV_DB.Controllers
         private IMemoryCache _cache;
         private OVDBDatabaseContext _context;
         private IConfiguration _configuration;
+        private readonly IRouteRegionsService _routeRegionsService;
 
-        public ImporterController(IMemoryCache memoryCache, OVDBDatabaseContext context, IConfiguration configuration)
+        public ImporterController(IMemoryCache memoryCache, OVDBDatabaseContext context, IConfiguration configuration, IRouteRegionsService routeRegionsService)
         {
             _cache = memoryCache;
             _context = context;
             _configuration = configuration;
+            _routeRegionsService = routeRegionsService;
         }
 
         [HttpGet("find")]
@@ -604,9 +607,15 @@ namespace OV_DB.Controllers
                 .ToList();
 
 
+            var lineString = new NetTopologySuite.Geometries.LineString(
+                              ((LineString)geojson.Features.Single().Geometry).Coordinates.Select(c => new NetTopologySuite.Geometries.Coordinate(c.Longitude, c.Latitude)).ToArray()
+                           );
+
+
             var route = new Route
             {
                 Coordinates = string.Join('\n', coordinates),
+                LineString = lineString,
                 Name = line.Name,
                 Share = Guid.NewGuid(),
                 RouteMaps = new List<RouteMap>()
@@ -648,6 +657,7 @@ namespace OV_DB.Controllers
 
             route.RouteMaps.Add(new RouteMap { MapId = defaultMap.MapId });
             DistanceCalculationHelper.ComputeDistance(route);
+            await _routeRegionsService.AssignRegionsToRouteAsync(route);
 
             _context.Routes.Add(route);
             await _context.SaveChangesAsync();

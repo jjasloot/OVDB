@@ -74,15 +74,10 @@ export class RouteDetailComponent implements OnInit {
 
   ngOnInit() {
     this.translationService.languageChanged.subscribe(() => {
-      this.sortOrder();
       this.dateAdapter.setLocale(this.translationService.dateLocale);
     });
     this.apiService.getTypes().subscribe((types) => {
       this.types = types;
-    });
-    this.apiService.getCountries().subscribe((countries) => {
-      this.countries = countries;
-      this.sortOrder();
     });
     this.apiService.getMaps().subscribe((maps) => {
       this.maps = maps;
@@ -99,24 +94,11 @@ export class RouteDetailComponent implements OnInit {
         this.route.firstDateTime = moment();
       }
       this.colour = this.route.overrideColour;
-      this.selectedOptions = this.route.routeCountries.map((r) => r.countryId);
       this.selectedMaps = this.route.routeMaps.map((r) => r.mapId);
       this.form.patchValue(this.route);
       if (this.route.routeInstancesCount > 1) {
         this.form.controls.firstDateTime.disable();
       }
-    });
-  }
-
-  sortOrder() {
-    this.countries = this.countries.sort((a, b) => {
-      if (this.name(a) > this.name(b)) {
-        return 1;
-      }
-      if (this.name(a) < this.name(b)) {
-        return -1;
-      }
-      return 0;
     });
   }
 
@@ -130,9 +112,6 @@ export class RouteDetailComponent implements OnInit {
     const route = values as UpdateRoute;
     route.routeId = this.route.routeId;
     route.overrideColour = this.colour;
-    route.countries = this.countriesSelection.selectedOptions.selected.map(
-      (s) => s.value
-    );
     route.maps = this.mapsSelection.selectedOptions.selected.map(
       (s) => s.value
     );
