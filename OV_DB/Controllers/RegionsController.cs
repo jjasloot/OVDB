@@ -111,7 +111,7 @@ namespace OV_DB.Controllers
                 var isValidOp = new NetTopologySuite.Operation.Valid.IsValidOp(multiPolygon);
                 if (!isValidOp.IsValid)
                 {
-                    if (isValidOp.ValidationError.ErrorType == NetTopologySuite.Operation.Valid.TopologyValidationErrors.SelfIntersection)
+                    if (isValidOp.ValidationError.ErrorType is NetTopologySuite.Operation.Valid.TopologyValidationErrors.SelfIntersection or NetTopologySuite.Operation.Valid.TopologyValidationErrors.NestedHoles)
                     {
                         multiPolygon = GenerateCorrectMultiPolygon(geometry, [isValidOp.ValidationError.Coordinate]);
                         isValidOp = new NetTopologySuite.Operation.Valid.IsValidOp(multiPolygon);
@@ -198,7 +198,7 @@ namespace OV_DB.Controllers
 
                 existingHoles = existingHoles.Where(h => !coordinatesToIgnore.Any(c => h.Coordinates.Any(c2 => c2.Equals(c)))).ToArray();
 
-                var holes = outerGeom.Value.Select(v => factory.CreateLinearRing(v.Coordinates)).Concat(existingHoles).ToArray();
+                var holes = outerGeom.Value.Where(h => !coordinatesToIgnore.Any(c => h.Coordinates.Any(c2 => c2.Equals(c)))).Select(v => factory.CreateLinearRing(v.Coordinates)).Concat(existingHoles).ToArray();
                 var newOuter = factory.CreatePolygon(factory.CreateLinearRing(outerGeom.Key.ExteriorRing.Coordinates), holes);
                 outers.Add(newOuter);
             }

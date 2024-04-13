@@ -10,6 +10,7 @@ using Microsoft.OData.UriParser;
 using NetTopologySuite.Operation.Overlay;
 using NetTopologySuite.Operation.OverlayNG;
 using NetTopologySuite.Operation.Union;
+using OV_DB.Models;
 using OVDB_database.Database;
 using OVDB_database.Models;
 using SharpKml.Base;
@@ -38,7 +39,7 @@ namespace OV_DB.Controllers
 
         [HttpGet("{id}")]
         [Produces("application/json")]
-        public async Task<ActionResult<FeatureCollection>> GetGeoJsonAsync(string id, ODataQueryOptions<RouteInstance> q, [FromQuery] string language, [FromQuery] bool includeLineColours, [FromQuery] bool limitToRegions = true, CancellationToken cancellationToken = default)
+        public async Task<ActionResult<MapDataDTO>> GetGeoJsonAsync(string id, ODataQueryOptions<RouteInstance> q, [FromQuery] string language, [FromQuery] bool includeLineColours, [FromQuery] bool limitToRegions = true, CancellationToken cancellationToken = default)
         {
             var userClaim = User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier);
             var userIdClaim = int.Parse(userClaim != null ? userClaim.Value : "-1");
@@ -167,7 +168,34 @@ namespace OV_DB.Controllers
                 if (processed % 10 == 0)
                     Console.WriteLine(Math.Round((100.0 * processed) / total, 1) + "%");
             });
-            return collection;
+
+            MapBoundsDTO? area = null;
+            if (limitingArea != null)
+            {
+                var envelop = limitingArea.Envelope;
+                if (envelop is NetTopologySuite.Geometries.Polygon bbox)
+                {
+                    //Convert bbox to GeoJSON
+                    var coords = bbox.Coordinates.Select(c => new Position(c.Y, c.X)).ToList();
+                    //Find SouthWest and NorthEast
+                    var southWest = new Position(coords.Min(c => c.Latitude), coords.Min(c => c.Longitude));
+                    var northEast = new Position(coords.Max(c => c.Latitude), coords.Max(c => c.Longitude));
+                    area = new MapBoundsDTO
+                    {
+                        SouthEast = southWest,
+                        NorthWest = northEast
+                    };
+                }
+
+            }
+            var response = new MapDataDTO
+            {
+                Routes = collection,
+                Area = area
+            };
+
+
+            return response;
         }
 
         private static void AddLineToCollection(string language, bool includeLineColours, Route r, NetTopologySuite.Geometries.LineString lineString, int userIdClaim, Map map, FeatureCollection collection, Dictionary<int, int> routesToReturn)

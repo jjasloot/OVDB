@@ -22,6 +22,7 @@ import { Router, ActivatedRoute } from "@angular/router";
 import { MapInstanceDialogComponent } from "../map-instance-dialog/map-instance-dialog.component";
 import { switchMap } from "rxjs/operators";
 import { Observable } from "rxjs";
+import { MapDataDTO } from "../models/map-data.model";
 
 @Component({
   selector: "app-map",
@@ -168,7 +169,7 @@ export class MapComponent implements OnInit, AfterViewInit {
         })
       )
       .subscribe({
-        next: (data) => {
+        next: (data: MapDataDTO) => {
           this.showRoutes(data);
         },
         error: () => {
@@ -215,7 +216,7 @@ export class MapComponent implements OnInit, AfterViewInit {
     this.getRoutes$.next(this.getFilter());
   }
 
-  private getRoutes(filter: string): Observable<string> {
+  private getRoutes(filter: string): Observable<MapDataDTO> {
     return this.apiService.getRoutes(
       filter,
       this.guid,
@@ -223,9 +224,9 @@ export class MapComponent implements OnInit, AfterViewInit {
       this.includeLineColours
     );
   }
-  private showRoutes(text) {
+  private showRoutes(data: MapDataDTO) {
     const parent = this;
-    const track = L.geoJSON(text as any, {
+    const track = L.geoJSON(data.routes, {
       style: (feature) => {
         return {
           color: feature.properties.stroke,
@@ -321,7 +322,20 @@ export class MapComponent implements OnInit, AfterViewInit {
       },
     });
     this.layers = [track];
-    this.bounds = track.getBounds();
+    if (!!data.area && !track.getBounds().isValid()) {
+      this.bounds = new L.LatLngBounds(
+        {
+          lat: data.area.southEast.latitude,
+          lng: data.area.southEast.longitude,
+        } as L.LatLngLiteral,
+        {
+          lat: data.area.northWest.latitude,
+          lng: data.area.northWest.longitude,
+        } as L.LatLngLiteral
+      );
+    } else {
+      this.bounds = track.getBounds();
+    }
     this.loading = false;
   }
   private getFilter() {
@@ -359,10 +373,7 @@ export class MapComponent implements OnInit, AfterViewInit {
     if (this.selectedRegion && this.selectedRegion.length > 0) {
       filter += "(";
       this.selectedRegion.forEach((option) => {
-        filter +=
-          "Route/Regions/any(region: region/Id eq " +
-          option +
-          ") or ";
+        filter += "Route/Regions/any(region: region/Id eq " + option + ") or ";
       });
       if (filter.endsWith(" or ")) {
         filter = filter.slice(0, filter.length - 4);

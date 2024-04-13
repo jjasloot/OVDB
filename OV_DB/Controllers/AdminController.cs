@@ -210,7 +210,7 @@ namespace OV_DB.Controllers
         {
             _dbContext.Database.SetCommandTimeout(TimeSpan.FromMinutes(3));
             var batchSize = 50;
-            var count = 4450;
+            var count = 0;
             var routes = new List<OVDB_database.Models.Route>();
             do
             {
@@ -218,8 +218,9 @@ namespace OV_DB.Controllers
 
                 foreach (var route in routes)
                 {
+                    var regionsBefore = string.Join(", ", route.Regions.Select(r => r.Name));
                     await routeRegionsService.AssignRegionsToRouteAsync(route);
-                    Console.WriteLine($"Route {route.Name} added the following Regions: " + string.Join(", ", route.Regions.Select(r => r.Name)));
+                    Console.WriteLine($"Route {route.Name} from {regionsBefore} the following Regions: " + string.Join(", ", route.Regions.Select(r => r.Name)));
                 }
                 await _dbContext.SaveChangesAsync();
                 count += batchSize;

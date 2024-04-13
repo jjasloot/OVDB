@@ -17,6 +17,7 @@ import { StationMap } from "../models/stationMap.model";
 import { StationView } from "../models/stationView.model";
 import { StationCountry } from "../models/stationCountry.model";
 import { StationAdminProperties } from "../models/stationAdminProperties.model";
+import { MapDataDTO } from "../models/map-data.model";
 
 @Injectable({
   providedIn: "root",
@@ -190,7 +191,7 @@ export class ApiService {
     guid: string,
     language: string,
     includeLineColours: boolean
-  ): Observable<string> {
+  ): Observable<MapDataDTO> {
     let url = "";
 
     url = environment.backend + "odata/" + guid;
@@ -202,7 +203,7 @@ export class ApiService {
       params = params.append("language", language);
     }
     params = params.append("includeLineColours", includeLineColours);
-    return this.httpClient.get<string>(url, { params });
+    return this.httpClient.get<MapDataDTO>(url, { params });
   }
 
   getSingleRoute(
