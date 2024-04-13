@@ -4,12 +4,14 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OData.Query;
 using Microsoft.AspNetCore.OData.Routing.Controllers;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OData.Edm;
 using Microsoft.OData.UriParser;
 using NetTopologySuite.Operation.Overlay;
 using NetTopologySuite.Operation.OverlayNG;
 using NetTopologySuite.Operation.Union;
+using OV_DB.Hubs;
 using OV_DB.Models;
 using OVDB_database.Database;
 using OVDB_database.Models;
@@ -31,15 +33,17 @@ namespace OV_DB.Controllers
     public class RoutesOdataController : ODataController
     {
         private readonly OVDBDatabaseContext _context;
+        private readonly IHubContext<MapGenerationHub> _mapGenerationHubContext;
 
-        public RoutesOdataController(OVDBDatabaseContext context)
+        public RoutesOdataController(OVDBDatabaseContext context, IHubContext<MapGenerationHub> mapGenerationHubContext)
         {
             _context = context;
+            _mapGenerationHubContext = mapGenerationHubContext;
         }
 
         [HttpGet("{id}")]
         [Produces("application/json")]
-        public async Task<ActionResult<MapDataDTO>> GetGeoJsonAsync(string id, ODataQueryOptions<RouteInstance> q, [FromQuery] string language, [FromQuery] bool includeLineColours, [FromQuery] bool limitToRegions = true, CancellationToken cancellationToken = default)
+        public async Task<ActionResult<MapDataDTO>> GetGeoJsonAsync(string id, ODataQueryOptions<RouteInstance> q, [FromQuery] string language, [FromQuery] bool includeLineColours, [FromQuery] bool limitToSelectedArea = false, [FromQuery] Guid? requestIdentifier = null, CancellationToken cancellationToken = default)
         {
             var userClaim = User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier);
             var userIdClaim = int.Parse(userClaim != null ? userClaim.Value : "-1");
@@ -85,7 +89,7 @@ namespace OV_DB.Controllers
                 var filter = new FilterQueryOption(q.Filter.RawValue, context, parser);
                 routes = q.Filter.ApplyTo(routes, new ODataQuerySettings()) as IQueryable<RouteInstance>;
 
-                if (limitToRegions)
+                if (limitToSelectedArea)
                 {
                     limitingArea = await ExtractAreaFromQueryAsync(q, cancellationToken);
                 }
@@ -106,24 +110,21 @@ namespace OV_DB.Controllers
             var total = routesList.Count;
             var processed = 0;
 
-            routesList.ForEach(r =>
+            foreach (var r in routesList)
             {
                 if (limitingArea != null)
                 {
                     if (cancellationToken.IsCancellationRequested)
                     {
-                        return;
+                        break;
                     }
                     var route = r.LineString;
-                    Console.WriteLine(r.Name);
-                    Console.WriteLine(route.IsValid);
-                    Console.WriteLine(limitingArea.IsValid);
                     try
                     {
                         var clippedRoute = OverlayNG.Overlay(limitingArea, route, SpatialFunction.Intersection);
                         if (clippedRoute.IsEmpty)
                         {
-                            return;
+                            continue;
                         }
                         var numGeometries = clippedRoute.NumGeometries;
                         for (var i = 0; i < numGeometries; i++)
@@ -133,11 +134,7 @@ namespace OV_DB.Controllers
 
                             if (geometry is NetTopologySuite.Geometries.LineString lineString)
                             {
-
                                 AddLineToCollection(language, includeLineColours, r, lineString, userIdClaim, map, collection, routesToReturn);
-
-
-
                             }
                             else if (geometry is NetTopologySuite.Geometries.Point _)
                             {
@@ -160,14 +157,14 @@ namespace OV_DB.Controllers
                 {
                     if (cancellationToken.IsCancellationRequested)
                     {
-                        return;
+                        break;
                     }
                     AddLineToCollection(language, includeLineColours, r, r.LineString, userIdClaim, map, collection, routesToReturn);
                 }
                 processed++;
-                if (processed % 10 == 0)
-                    Console.WriteLine(Math.Round((100.0 * processed) / total, 1) + "%");
-            });
+                if (processed % 10 == 0 && requestIdentifier != null)
+                    await _mapGenerationHubContext.Clients.All.SendAsync(MapGenerationHub.GenerationUpdateMethod, requestIdentifier.Value, (int)Math.Round((100.0 * processed) / total, 0), cancellationToken: cancellationToken);
+            };
 
             MapBoundsDTO? area = null;
             if (limitingArea != null)

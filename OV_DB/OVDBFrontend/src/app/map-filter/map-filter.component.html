@@ -26,7 +26,8 @@
           </mat-checkbox>
         </mat-expansion-panel-header>
         <div>
-          @for(subRegion of region.subRegions; track subRegion.id) {
+          @if(region.subRegions.length > 0){ @for(subRegion of
+          region.subRegions; track subRegion.id) {
           <mat-checkbox
             style="margin-left: 1rem"
             [checked]="
@@ -39,7 +40,7 @@
               {{ subRegion.originalName }}
             </div>
           </mat-checkbox>
-          }
+          } }
         </div>
       </mat-expansion-panel>
       }
@@ -115,6 +116,13 @@
     <mat-checkbox [(ngModel)]="includeLineColours">{{
       "FILTER.INCLUDELINECOLOURS" | translate
     }}</mat-checkbox>
+  </div>
+  <div>
+    <mat-checkbox
+      [(ngModel)]="limitToSelectedAreas"
+      [disabled]="selectedCountries.length === 0"
+      >{{ "FILTER.LIMITTOSELECTEDAREAS" | translate }}</mat-checkbox
+    >
   </div>
 </div>
 <div mat-dialog-actions>

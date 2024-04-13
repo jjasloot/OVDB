@@ -21,6 +21,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 using OV_DB.Services;
+using OV_DB.Hubs;
 
 namespace OV_DB
 {
@@ -75,7 +76,7 @@ namespace OV_DB
                 options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString), options => options.UseNetTopologySuite().EnableRetryOnFailure());
 #if DEBUG
                 //Log all sql commands
-                //options.LogTo(Console.WriteLine, Microsoft.Extensions.Logging.LogLevel.Information);
+                options.LogTo(Console.WriteLine, Microsoft.Extensions.Logging.LogLevel.Information);
                 options.EnableSensitiveDataLogging();
 #endif
 
@@ -122,9 +123,10 @@ namespace OV_DB
             {
                 c.AddDefaultPolicy(p =>
                 {
-                    p.AllowAnyOrigin();
+                    p.WithOrigins("http://localhost:4200", "https://ovdb.infinityx.nl");
                     p.AllowAnyHeader();
                     p.AllowAnyMethod();
+                    p.AllowCredentials();
                 });
             });
             services.AddMvc(options =>
@@ -132,6 +134,7 @@ namespace OV_DB
                 options.EnableEndpointRouting = false;
             }).AddNewtonsoftJson(ops => ops.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore);
 
+            services.AddSignalR();
             services.AddTransient<IRouteRegionsService, RouteRegionsService>();
 
 
@@ -171,6 +174,7 @@ namespace OV_DB
             app.UseAuthorization();
             app.UseEndpoints(r =>
             {
+                r.MapHub<MapGenerationHub>("/mapGenerationHub");
                 r.MapControllers();
                 r.MapSwagger();
             });

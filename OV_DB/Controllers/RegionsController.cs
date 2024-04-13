@@ -273,7 +273,11 @@ namespace OV_DB.Controllers
                 return Ok(cachedRegions);
             }
 
-            var regions = await _context.Regions.Where(r => !r.ParentRegionId.HasValue).Where(r => r.Routes.Any(rr => rr.RouteMaps.Any(rm => rm.Map.MapGuid == mapGuid))).OrderBy(r => r.Name).ProjectTo<RegionDTO>(mapper.ConfigurationProvider).ToListAsync();
+            var regions = await _context.Regions
+                .Where(r => !r.ParentRegionId.HasValue)
+                .Where(r => r.Routes.Any(rr => rr.RouteMaps.Any(rm => rm.Map.MapGuid == mapGuid)) || r.Routes.Any(rr => rr.RouteInstances.Any(ri => ri.RouteInstanceMaps.Any(rim => rim.Map.MapGuid == mapGuid))))
+                .OrderBy(r => r.Name)
+                .ProjectTo<RegionDTO>(mapper.ConfigurationProvider).ToListAsync();
 
             var mappedRegions = regions.Select(r => new RegionDTO
             {
@@ -289,7 +293,7 @@ namespace OV_DB.Controllers
                     NameNL = c.NameNL,
                     OriginalName = c.OriginalName,
                     OsmRelationId = c.OsmRelationId
-                })
+                }).OrderBy(s => s.OriginalName)
             });
 
             _cache.Set("regions" + mapGuid, mappedRegions, new MemoryCacheEntryOptions

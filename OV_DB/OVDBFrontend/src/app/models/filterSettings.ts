@@ -4,6 +4,7 @@ export class FilterSettings {
   constructor(
     name: string,
     includeLineColours: boolean,
+    limitToSelectedAreas: boolean,
     from?: Moment,
     to?: Moment,
     selectedCountries?: number[],
@@ -17,6 +18,7 @@ export class FilterSettings {
     this.selectedTypes = selectedTypes || [];
     this.selectedYears = selectedYears || [];
     this.includeLineColours = includeLineColours;
+    this.limitToSelectedAreas = limitToSelectedAreas;
   }
   name: string;
   from: Moment;
@@ -25,4 +27,5 @@ export class FilterSettings {
   selectedTypes: number[] = [];
   selectedYears: number[] = [];
   includeLineColours: boolean;
+  limitToSelectedAreas: boolean;
 }

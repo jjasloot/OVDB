@@ -197,5 +197,6 @@
   "STATIONMAP.DELETEREAR": "from the database",
   "STATIONMAP.DESCRIPTION": "Here you can create stations maps. These are maps showing all stations in a certain region. You can then tick off the stations. If you are missing a certain region please create an issue on <a href=\"https://github.com/jjasloot/OVDB/\">GitHub</a>.",
   "FILTER.INCLUDELINECOLOURS": "Show line colours",
-  "SAVE_GO_TO_INSTANCES": "Save and go to trips"
+  "SAVE_GO_TO_INSTANCES": "Save and go to trips",
+  "FILTER.LIMITTOSELECTEDAREAS": "Cut routes to selected areas. Attention: this will take longer."
 }

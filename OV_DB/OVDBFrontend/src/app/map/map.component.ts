@@ -7,6 +7,7 @@ import {
   ChangeDetectorRef,
   NgZone,
   EventEmitter,
+  OnDestroy,
 } from "@angular/core";
 import * as moment from "moment";
 import { tileLayer } from "leaflet";
@@ -23,16 +24,18 @@ import { MapInstanceDialogComponent } from "../map-instance-dialog/map-instance-
 import { switchMap } from "rxjs/operators";
 import { Observable } from "rxjs";
 import { MapDataDTO } from "../models/map-data.model";
+import { v4 as uuidv4 } from "uuid";
+import { SignalRService } from "../services/signal-r.service";
 
 @Component({
   selector: "app-map",
   templateUrl: "./map.component.html",
   styleUrls: ["./map.component.scss"],
 })
-export class MapComponent implements OnInit, AfterViewInit {
+export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
   @Input() guid: string;
   @ViewChild("mapContainer") mapContainer: HTMLElement;
-  loading = false;
+  loading: boolean | number = false;
   from: moment.Moment;
   to: moment.Moment;
   selectedRegion: number[] = [];
@@ -44,6 +47,8 @@ export class MapComponent implements OnInit, AfterViewInit {
   active: string;
   selectedRoute;
   includeLineColours: boolean = true;
+  requestIdentifier?: string;
+  limitToSelectedArea = false;
   get bounds(): L.LatLngBounds {
     return this._bounds;
   }
@@ -66,6 +71,7 @@ export class MapComponent implements OnInit, AfterViewInit {
       new FilterSettings(
         "ThisMonth",
         true,
+        false,
         moment().startOf("month"),
         moment().startOf("month").add(1, "month"),
         []
@@ -76,6 +82,7 @@ export class MapComponent implements OnInit, AfterViewInit {
       new FilterSettings(
         "ThisYear",
         true,
+        false,
         null,
         null,
         [],
@@ -88,6 +95,7 @@ export class MapComponent implements OnInit, AfterViewInit {
       new FilterSettings(
         "LastYear",
         true,
+        false,
         null,
         null,
         [],
@@ -95,7 +103,7 @@ export class MapComponent implements OnInit, AfterViewInit {
         [moment().year() - 1]
       ),
     ],
-    ["All", new FilterSettings("All", true, null, null, [])],
+    ["All", new FilterSettings("All", true, false, null, null, [])],
   ]);
 
   get mapHeight() {
@@ -151,6 +159,7 @@ export class MapComponent implements OnInit, AfterViewInit {
     private dialog: MatDialog,
     private router: Router,
     private activatedRoute: ActivatedRoute,
+    private signalRService: SignalRService,
     private cd: ChangeDetectorRef,
     ngZone: NgZone
   ) {
@@ -181,7 +190,21 @@ export class MapComponent implements OnInit, AfterViewInit {
     this.translationService.languageChanged.subscribe(() =>
       this.getRoutes$.next(this.getFilter())
     );
+    this.signalRService.connect();
+    this.signalRService.updates$.subscribe({
+      next: (data) => {
+        if (data.requestIdentifier === this.requestIdentifier) {
+          this.loading = data.percentage;
+          this.cd.detectChanges();
+        }
+      },
+    });
   }
+
+  ngOnDestroy() {
+    this.signalRService.disconnect();
+  }
+
   readFromQueryParams() {
     const queryParams = this.activatedRoute.snapshot.queryParamMap;
     if (queryParams.keys.length === 0) {
@@ -212,16 +235,23 @@ export class MapComponent implements OnInit, AfterViewInit {
         .split(",")
         .map((c) => +c);
     }
+    this.includeLineColours = queryParams.has("includeLineColours");
+    this.limitToSelectedArea = queryParams.has("limitToSelectedArea");
     this.active = "filter";
     this.getRoutes$.next(this.getFilter());
   }
 
   private getRoutes(filter: string): Observable<MapDataDTO> {
+    //Generate a GUID
+    this.requestIdentifier = uuidv4();
+
     return this.apiService.getRoutes(
       filter,
       this.guid,
       this.translationService.language,
-      this.includeLineColours
+      this.includeLineColours,
+      this.limitToSelectedArea,
+      this.requestIdentifier
     );
   }
   private showRoutes(data: MapDataDTO) {
@@ -354,6 +384,12 @@ export class MapComponent implements OnInit, AfterViewInit {
     if (this.selectedYears && this.selectedYears.length > 0) {
       queryParams["years"] = this.selectedYears.join(",");
     }
+    if (this.includeLineColours) {
+      queryParams["includeLineColours"] = "true";
+    }
+    if (this.limitToSelectedArea) {
+      queryParams["limitToSelectedArea"] = "true";
+    }
     // tslint:enable: no-string-literal
     this.router.navigate(
       this.activatedRoute.snapshot.url.map((u) => u.path),
@@ -429,7 +465,18 @@ export class MapComponent implements OnInit, AfterViewInit {
     this.selectedTypes = [...option.selectedTypes];
     this.selectedYears = [...option.selectedYears];
     this.includeLineColours = option.includeLineColours;
+    this.limitToSelectedArea = option.limitToSelectedAreas;
     this.active = option.name;
+    if (
+      this.limitToSelectedArea &&
+      this.selectedRegion.length > 0 &&
+      !this.signalRService.connected
+    ) {
+      this.signalRService.connect();
+    }
+    if (!this.limitToSelectedArea && this.signalRService.connected) {
+      this.signalRService.disconnect();
+    }
     this.getRoutes$.next(this.getFilter());
   }
 
@@ -437,6 +484,7 @@ export class MapComponent implements OnInit, AfterViewInit {
     const settings = new FilterSettings(
       "",
       this.includeLineColours,
+      this.limitToSelectedArea,
       this.from,
       this.to,
       this.selectedRegion,
@@ -447,7 +495,7 @@ export class MapComponent implements OnInit, AfterViewInit {
       width: "75%",
       data: { settings, guid: this.guid },
     });
-    dialogRef.afterClosed().subscribe((result) => {
+    dialogRef.afterClosed().subscribe((result: FilterSettings) => {
       if (!!result) {
         result.name = "filter";
         this.setOption(result);

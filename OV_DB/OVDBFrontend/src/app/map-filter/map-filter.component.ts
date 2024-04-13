@@ -30,6 +30,7 @@ export class MapFilterComponent implements OnInit {
   ownMap = false;
   guid: string;
   includeLineColours: boolean = true;
+  limitToSelectedAreas = false;
   constructor(
     private apiService: ApiService,
     private translateService: TranslateService,
@@ -56,7 +57,7 @@ export class MapFilterComponent implements OnInit {
     this.from = this.settings.from;
     this.to = this.settings.to;
     this.includeLineColours = this.settings.includeLineColours;
-
+    this.limitToSelectedAreas = this.settings.limitToSelectedAreas;
     this.regionsService.getMapsRegions(this.guid).subscribe((regions) => {
       this.regions = regions;
       this.sortNames();
@@ -106,6 +107,7 @@ export class MapFilterComponent implements OnInit {
       const settings = new FilterSettings(
         "filter",
         this.includeLineColours,
+        this.limitToSelectedAreas,
         this.from,
         this.to,
         this.selectedCountries,
@@ -117,6 +119,7 @@ export class MapFilterComponent implements OnInit {
       const settings = new FilterSettings(
         "filter",
         this.includeLineColours,
+        this.limitToSelectedAreas,
         null,
         null,
         this.selectedCountries,
@@ -143,6 +146,10 @@ export class MapFilterComponent implements OnInit {
       this.selectedCountries = this.selectedCountries.filter(
         (i) => !subRegions.map((r) => r.id).includes(i)
       );
+    }
+
+    if (this.selectedCountries.length === 0) {
+      this.limitToSelectedAreas = false;
     }
   }
 

@@ -190,7 +190,9 @@ export class ApiService {
     filter: string,
     guid: string,
     language: string,
-    includeLineColours: boolean
+    includeLineColours: boolean,
+    limitToSelectedAreas: boolean,
+    identifier?: string
   ): Observable<MapDataDTO> {
     let url = "";
 
@@ -202,7 +204,11 @@ export class ApiService {
     if (!!language) {
       params = params.append("language", language);
     }
+    params = params.append("limitToSelectedArea", limitToSelectedAreas);
     params = params.append("includeLineColours", includeLineColours);
+    if (!!identifier) {
+      params = params.append("requestIdentifier", identifier);
+    }
     return this.httpClient.get<MapDataDTO>(url, { params });
   }
 
