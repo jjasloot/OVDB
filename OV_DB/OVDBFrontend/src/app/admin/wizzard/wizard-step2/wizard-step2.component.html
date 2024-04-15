@@ -30,7 +30,7 @@
                 <mat-list-item> {{'IMPORTER.OPERATOR'|translate}}: {{data.operator}} </mat-list-item>
                 <mat-list-item *ngIf="!!data.colour"> {{'IMPORTER.COLOUR'|translate}}:&nbsp;
                     <mat-chip-listbox>
-                        <mat-chip-option [color]="data.colour" [style.background]="data.colour" selected>{{data.colour}}</mat-chip-option>
+                        <mat-chip-option [color]="data.colour" [style.background]="data.colour" [selectable]="false">{{data.colour}}</mat-chip-option>
 
                     </mat-chip-listbox>
                 </mat-list-item>

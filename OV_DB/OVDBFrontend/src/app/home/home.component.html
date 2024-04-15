@@ -13,6 +13,16 @@
         {{ "HOME.STATS" | translate }}
       </button>
     </div>
+
+    <mat-card>
+      <mat-card-header>
+        <mat-card-title>{{ "UPDATE.TITLE" | translate }}</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <p>{{ "UPDATE.DESCRIPTION" | translate }}</p>
+      </mat-card-content>
+    </mat-card>
+
     <div *ngIf="!!maps">
       <mat-list *ngIf="maps.length > 0 || stationMaps.length > 0; else noData">
         <mat-list-item *ngFor="let map of maps">
