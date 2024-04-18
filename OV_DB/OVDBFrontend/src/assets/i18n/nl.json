@@ -197,5 +197,13 @@
   "STATIONMAP.DELETEREAR": "uit de database wilt verwijderen",
   "STATIONMAP.DESCRIPTION": "Hier kun je stationskaarten aanmaken. Dat zijn kaarten waarop alle stations in een regio staan. Deze kun je dan afvinken. Mis je een gebied dat je wel graag wilt gebruiken, maak dan een issue aan op <a href=\"https://github.com/jjasloot/OVDB/\">GitHub</a> of stuur me een bericht.",
   "FILTER.INCLUDELINECOLOURS": "Toon lijnkleuren",
-  "SAVE_GO_TO_INSTANCES": "Opslaan en naar ritten"
+  "SAVE_GO_TO_INSTANCES": "Opslaan en naar ritten",
+  "FILTER.LIMITTOSELECTEDAREAS": "Knip routes bij tot geselecteerde gebieden. Let op! Dit duurt wat langer.",
+  "UPDATE.TITLE": "Update 🚀",
+  "UPDATE.DESCRIPTION": "Ik werd een beetje moe van iedere keer landen selecteren bij een route. Dat moet toch automatisch kunnen? Zeker. Dat is nu geregeld. Ook nieuw is dat (sommige) landen opgesplitst zijn in regio's. Daar kun je ook in de kaart op filteren. Ook hebben we allemaal wel die lange route die net een stukje in land x komt, waardoor de hele weergave verpest wordt. Daarom kun je nu ook routes knippen tot een bepaald gebied. Dit kan even duren, maar dan heb je ook wat. Als je een land mist of een land in regio's wilt opdelen, laat het me weten via de aanvragen in het menu.",
+  "UPDATE.NEW_COUNTRY_OR_REGION": "Nieuw land of regio aanvragen",
+  "REQUESTS.NEW_REQUEST": "Nieuwe aanvraag",
+  "REQUESTS.NEW_REQUEST_PLACEHOLDER": "Zou je IJsland willen toevoegen? Kun je Italië in provincies zoals Lombardije en Toscane opdelen?",
+  "REQUESTS.SEND_REQUEST": "Verstuur aanvraag",
+  "REQUESTS.RESPONSE": "Reactie"
 }

@@ -79,7 +79,7 @@
                 <div class="info">
                     <b>{{line.name}}</b>
                     <mat-chip-listbox *ngIf="!!line.colour">
-                        <mat-chip-option [color]="line.colour" [style.background]="line.colour" selected></mat-chip-option>
+                        <mat-chip-option [color]="line.colour" [style.background]="line.colour" [selectable]="false"></mat-chip-option>
                     </mat-chip-listbox>
                     <br>
                     <i>{{line.from}} &rarr; {{line.to}}</i><br> {{'IMPORTER.NETWORK'|translate}}: {{line.network}}<br> {{'IMPORTER.OPERATOR'|translate}}: {{line.operator }}

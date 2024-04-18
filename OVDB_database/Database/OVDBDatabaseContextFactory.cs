@@ -14,7 +14,7 @@ namespace OVDB_database.Database
             var optionsBuilder = new DbContextOptionsBuilder<OVDBDatabaseContext>();
             optionsBuilder.UseMySql(ConnectionString,
                 ServerVersion.AutoDetect(ConnectionString),
-                options => { options.CommandTimeout(240); });
+                options => options.UseNetTopologySuite());
 
             return new OVDBDatabaseContext(optionsBuilder.Options);
         }

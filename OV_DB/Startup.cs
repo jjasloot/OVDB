@@ -20,6 +20,8 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
+using OV_DB.Services;
+using OV_DB.Hubs;
 
 namespace OV_DB
 {
@@ -71,7 +73,7 @@ namespace OV_DB
             services.AddDbContext<OVDBDatabaseContext>(options =>
             {
                 var connectionString = Configuration["DBCONNECTIONSTRING"];
-                options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString));
+                options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString), options => options.UseNetTopologySuite().EnableRetryOnFailure());
 #if DEBUG
                 //Log all sql commands
                 options.LogTo(Console.WriteLine, Microsoft.Extensions.Logging.LogLevel.Information);
@@ -107,7 +109,12 @@ namespace OV_DB
                     }
                 };
             });
-            services.AddControllers().AddOData(r => r.Select().Filter().AddRouteComponents("odata", GetEdmModel()));
+            services.AddControllers()
+                .AddOData(r => r.Select().Filter().AddRouteComponents("odata", GetEdmModel()))
+                .AddJsonOptions(options =>
+                {
+                    options.JsonSerializerOptions.Converters.Add(new NetTopologySuite.IO.Converters.GeoJsonConverterFactory());
+                });
             services.AddSpaStaticFiles(configuration =>
             {
                 configuration.RootPath = "OVDBFrontend/dist/OVDBFrontend";
@@ -116,15 +123,23 @@ namespace OV_DB
             {
                 c.AddDefaultPolicy(p =>
                 {
-                    p.AllowAnyOrigin();
+                    p.WithOrigins("http://localhost:4200", "https://ovdb.infinityx.nl");
                     p.AllowAnyHeader();
                     p.AllowAnyMethod();
+                    p.AllowCredentials();
                 });
             });
             services.AddMvc(options =>
             {
                 options.EnableEndpointRouting = false;
             }).AddNewtonsoftJson(ops => ops.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore);
+
+            services.AddSignalR();
+            services.AddTransient<IRouteRegionsService, RouteRegionsService>();
+
+
+            NetTopologySuite.NtsGeometryServices.Instance = new NetTopologySuite.NtsGeometryServices(
+   NetTopologySuite.Geometries.GeometryOverlay.NG);
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -159,6 +174,7 @@ namespace OV_DB
             app.UseAuthorization();
             app.UseEndpoints(r =>
             {
+                r.MapHub<MapGenerationHub>("/mapGenerationHub");
                 r.MapControllers();
                 r.MapSwagger();
             });
@@ -192,7 +208,7 @@ namespace OV_DB
             var builder = new ODataConventionModelBuilder();
             builder.EntitySet<RouteInstance>("RouteInstances");
             builder.EntitySet<Route>("Routes");
-            builder.EntitySet<Country>("Countries");
+            builder.EntitySet<Region>("Regions");
             builder.EntitySet<RouteType>("Types");
             return builder.GetEdmModel();
         }

@@ -1,3 +1,4 @@
+﻿using NetTopologySuite.Geometries;
 ﻿using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using System;
@@ -45,12 +46,15 @@ namespace OVDB_database.Models
         [JsonProperty]
         public double? OverrideDistance { get; set; }
         [StringLength(1048576000)]
+        [Obsolete]
         public string Coordinates { get; set; }
+        public LineString LineString { get; set; }
         [JsonProperty]
         public List<RouteMap> RouteMaps { get; set; }
         [JsonProperty]
         public Guid Share { get; set; }
         [JsonProperty]
         public List<RouteInstance> RouteInstances { get; set; }
+        public List<Region> Regions { get; set;}
     }
 }

@@ -9,8 +9,16 @@
           class="desktop"
           [routerLink]="['/administrator']"
           *ngIf="isAdmin"
+          [class.marker]="hasUnreadRequestsAdmin"
         >
           <mat-icon>supervisor_account</mat-icon>
+        </button>
+        <button
+          mat-icon-button
+          [routerLink]="['/requests']"
+          [class.marker]="hasUnreadRequests"
+        >
+          <mat-icon>forum</mat-icon>
         </button>
         <button mat-icon-button [routerLink]="['/']">
           <mat-icon>map</mat-icon>
@@ -22,7 +30,8 @@
           <mat-icon>help_outline</mat-icon>
         </button>
         <mat-select
-          [value]="currentLanguage" hideSingleSelectionIndicator
+          [value]="currentLanguage"
+          hideSingleSelectionIndicator
           (selectionChange)="setLanguage($event)"
         >
           <mat-option [value]="'nl'">nl</mat-option>
@@ -36,7 +45,8 @@
         <button mat-icon-button [routerLink]="['/help']">
           <mat-icon>help_outline</mat-icon>
         </button>
-        <mat-select hideSingleSelectionIndicator
+        <mat-select
+          hideSingleSelectionIndicator
           [value]="currentLanguage"
           (selectionChange)="setLanguage($event)"
         >

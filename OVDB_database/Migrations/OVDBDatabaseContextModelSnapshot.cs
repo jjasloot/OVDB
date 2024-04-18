@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using NetTopologySuite.Geometries;
 using OVDB_database.Database;
 
 #nullable disable
@@ -124,6 +125,75 @@ namespace OVDB_database.Migrations
                     b.ToTable("Maps");
                 });
 
+            modelBuilder.Entity("OVDB_database.Models.Region", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<MultiPolygon>("Geometry")
+                        .HasColumnType("multipolygon");
+
+                    b.Property<string>("Name")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("NameNL")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("OriginalName")
+                        .HasColumnType("longtext");
+
+                    b.Property<long>("OsmRelationId")
+                        .HasColumnType("bigint");
+
+                    b.Property<int?>("ParentRegionId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ParentRegionId");
+
+                    b.ToTable("Regions");
+                });
+
+            modelBuilder.Entity("OVDB_database.Models.Request", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("Created")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Message")
+                        .HasColumnType("longtext");
+
+                    b.Property<bool>("Read")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<DateTime?>("Responded")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Response")
+                        .HasColumnType("longtext");
+
+                    b.Property<bool>("ResponseRead")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("Requests");
+                });
+
             modelBuilder.Entity("OVDB_database.Models.Route", b =>
                 {
                     b.Property<int>("RouteId")
@@ -153,6 +223,9 @@ namespace OVDB_database.Migrations
 
                     b.Property<string>("LineNumber")
                         .HasColumnType("longtext");
+
+                    b.Property<LineString>("LineString")
+                        .HasColumnType("linestring");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -523,6 +596,21 @@ namespace OVDB_database.Migrations
                     b.ToTable("Users");
                 });
 
+            modelBuilder.Entity("RegionRoute", b =>
+                {
+                    b.Property<int>("RegionsId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("RoutesRouteId")
+                        .HasColumnType("int");
+
+                    b.HasKey("RegionsId", "RoutesRouteId");
+
+                    b.HasIndex("RoutesRouteId");
+
+                    b.ToTable("RegionRoute");
+                });
+
             modelBuilder.Entity("OVDB_database.Models.Country", b =>
                 {
                     b.HasOne("OVDB_database.Models.User", null)
@@ -551,6 +639,26 @@ namespace OVDB_database.Migrations
                 {
                     b.HasOne("OVDB_database.Models.User", "User")
                         .WithMany("Maps")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("OVDB_database.Models.Region", b =>
+                {
+                    b.HasOne("OVDB_database.Models.Region", "ParentRegion")
+                        .WithMany("SubRegions")
+                        .HasForeignKey("ParentRegionId");
+
+                    b.Navigation("ParentRegion");
+                });
+
+            modelBuilder.Entity("OVDB_database.Models.Request", b =>
+                {
+                    b.HasOne("OVDB_database.Models.User", "User")
+                        .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -715,6 +823,21 @@ namespace OVDB_database.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("RegionRoute", b =>
+                {
+                    b.HasOne("OVDB_database.Models.Region", null)
+                        .WithMany()
+                        .HasForeignKey("RegionsId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("OVDB_database.Models.Route", null)
+                        .WithMany()
+                        .HasForeignKey("RoutesRouteId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("OVDB_database.Models.Country", b =>
                 {
                     b.Navigation("RouteCountries");
@@ -723,6 +846,11 @@ namespace OVDB_database.Migrations
             modelBuilder.Entity("OVDB_database.Models.Map", b =>
                 {
                     b.Navigation("RouteMaps");
+                });
+
+            modelBuilder.Entity("OVDB_database.Models.Region", b =>
+                {
+                    b.Navigation("SubRegions");
                 });
 
             modelBuilder.Entity("OVDB_database.Models.Route", b =>

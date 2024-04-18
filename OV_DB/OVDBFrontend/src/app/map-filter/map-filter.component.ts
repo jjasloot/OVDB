@@ -9,6 +9,8 @@ import { TranslateService } from "@ngx-translate/core";
 import { TranslationService } from "../services/translation.service";
 import { DateAdapter } from "@angular/material/core";
 import { Moment } from "moment";
+import { RegionsService } from "../services/regions.service";
+import { Region } from "../models/region.model";
 
 @Component({
   selector: "app-map-filter",
@@ -17,7 +19,7 @@ import { Moment } from "moment";
 })
 export class MapFilterComponent implements OnInit {
   settings: FilterSettings;
-  countries: Country[];
+  regions: Region[] = [];
   selectedCountries: number[] = [];
   selectedTypes: number[] = [];
   selectedYears: number[] = [];
@@ -28,12 +30,14 @@ export class MapFilterComponent implements OnInit {
   ownMap = false;
   guid: string;
   includeLineColours: boolean = true;
+  limitToSelectedAreas = false;
   constructor(
     private apiService: ApiService,
     private translateService: TranslateService,
     private translationService: TranslationService,
     private dateAdapter: DateAdapter<any>,
     public dialogRef: MatDialogRef<MapFilterComponent>,
+    private regionsService: RegionsService,
     @Inject(MAT_DIALOG_DATA) public data
   ) {
     this.settings = data.settings;
@@ -53,11 +57,12 @@ export class MapFilterComponent implements OnInit {
     this.from = this.settings.from;
     this.to = this.settings.to;
     this.includeLineColours = this.settings.includeLineColours;
-
-    this.apiService.getCountries(this.guid).subscribe((countries) => {
-      this.countries = countries;
+    this.limitToSelectedAreas = this.settings.limitToSelectedAreas;
+    this.regionsService.getMapsRegions(this.guid).subscribe((regions) => {
+      this.regions = regions;
       this.sortNames();
     });
+
     this.apiService.getTypes(this.guid).subscribe((types) => {
       this.routeTypes = types;
     });
@@ -66,8 +71,8 @@ export class MapFilterComponent implements OnInit {
     });
   }
   sortNames() {
-    if (!!this.countries) {
-      this.countries = this.countries.sort((a, b) => {
+    if (!!this.regions) {
+      this.regions = this.regions.sort((a, b) => {
         if (this.name(a) > this.name(b)) {
           return 1;
         }
@@ -76,9 +81,21 @@ export class MapFilterComponent implements OnInit {
         }
         return 0;
       });
+
+      this.regions.forEach((region) => {
+        region.subRegions = region.subRegions.sort((a, b) => {
+          if (this.name(a) > this.name(b)) {
+            return 1;
+          }
+          if (this.name(a) < this.name(b)) {
+            return -1;
+          }
+          return 0;
+        });
+      });
     }
   }
-  name(item: Country | RouteType) {
+  name(item: Country | RouteType | Region) {
     return this.translationService.getNameForItem(item);
   }
   cancel() {
@@ -90,6 +107,7 @@ export class MapFilterComponent implements OnInit {
       const settings = new FilterSettings(
         "filter",
         this.includeLineColours,
+        this.limitToSelectedAreas,
         this.from,
         this.to,
         this.selectedCountries,
@@ -101,6 +119,7 @@ export class MapFilterComponent implements OnInit {
       const settings = new FilterSettings(
         "filter",
         this.includeLineColours,
+        this.limitToSelectedAreas,
         null,
         null,
         this.selectedCountries,
@@ -115,13 +134,27 @@ export class MapFilterComponent implements OnInit {
     return this.selectedCountries.includes(id);
   }
 
-  setCountry(id: number, event: MatCheckboxChange) {
+  setCountry(id: number, event: MatCheckboxChange, subRegions?: Region[]) {
     if (event.checked && !this.selectedCountries.includes(id)) {
       this.selectedCountries.push(id);
+      this.selectedCountries = this.selectedCountries.filter(
+        (i) => !subRegions.map((r) => r.id).includes(i)
+      );
     }
     if (!event.checked && this.selectedCountries.includes(id)) {
       this.selectedCountries = this.selectedCountries.filter((i) => i !== id);
+      this.selectedCountries = this.selectedCountries.filter(
+        (i) => !subRegions.map((r) => r.id).includes(i)
+      );
     }
+
+    if (this.selectedCountries.length === 0) {
+      this.limitToSelectedAreas = false;
+    }
+  }
+
+  anyChecked(regions: Region[]) {
+    return regions.some((r) => this.selectedCountries.includes(r.id));
   }
 
   isTypeChecked(id: number) {
@@ -150,18 +183,12 @@ export class MapFilterComponent implements OnInit {
     }
   }
 
-  get countriesString(): string {
-    const countriesNames = this.countries
-      .filter((c) => this.selectedCountries.includes(c.countryId))
-      .map((c) => this.name(c));
-    let countriesString = countriesNames.join(", ");
-    if (countriesNames.length > 2) {
-      countriesString =
-        countriesNames.length +
-        " " +
-        this.translateService.instant("FILTER.SELECTED");
-    }
-    return countriesString;
+  get regionsString(): string {
+    return (
+      this.selectedCountries.length +
+      " " +
+      this.translateService.instant("FILTER.SELECTED")
+    );
   }
 
   get typesString(): string {

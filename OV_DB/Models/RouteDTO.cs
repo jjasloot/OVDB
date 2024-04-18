@@ -27,5 +27,6 @@ namespace OV_DB.Models
         public List<RouteMapDTO> RouteMaps { get; set; }
         public int RouteInstancesCount { get; set; }
         public Guid Share { get; set; }
+        public List<RegionMinimalDTO> Regions { get; set; }
     }
 }

@@ -20,6 +20,7 @@ import { TranslationService } from "src/app/services/translation.service";
 import { MatDialog } from "@angular/material/dialog";
 import { AreYouSureDialogComponent } from "src/app/are-you-sure-dialog/are-you-sure-dialog.component";
 import * as saveAs from "file-saver";
+import { AuthenticationService } from "src/app/services/authentication.service";
 
 @Component({
   selector: "app-route-detail",
@@ -47,6 +48,7 @@ export class RouteDetailComponent implements OnInit {
     private translateService: TranslateService,
     private translationService: TranslationService,
     private formBuilder: UntypedFormBuilder,
+    private authService: AuthenticationService,
     private dateAdapter: DateAdapter<any>,
     private dialog: MatDialog,
     private router: Router
@@ -72,47 +74,31 @@ export class RouteDetailComponent implements OnInit {
 
   ngOnInit() {
     this.translationService.languageChanged.subscribe(() => {
-      this.sortOrder();
       this.dateAdapter.setLocale(this.translationService.dateLocale);
     });
     this.apiService.getTypes().subscribe((types) => {
       this.types = types;
-    });
-    this.apiService.getCountries().subscribe((countries) => {
-      this.countries = countries;
-      this.sortOrder();
     });
     this.apiService.getMaps().subscribe((maps) => {
       this.maps = maps;
     });
     this.activatedRoute.paramMap.subscribe((p) => {
       this.routeId = +p.get("routeId");
-      this.apiService.getRoute(this.routeId).subscribe((data) => {
-        this.route = data;
-        if (!this.route.firstDateTime) {
-          this.route.firstDateTime = moment();
-        }
-        this.colour = this.route.overrideColour;
-        this.selectedOptions = this.route.routeCountries.map(
-          (r) => r.countryId
-        );
-        this.selectedMaps = this.route.routeMaps.map((r) => r.mapId);
-        this.form.patchValue(this.route);
-        if (this.route.routeInstancesCount > 1) {
-          this.form.controls.firstDateTime.disable();
-        }
-      });
+      this.loadData();
     });
   }
-  sortOrder() {
-    this.countries = this.countries.sort((a, b) => {
-      if (this.name(a) > this.name(b)) {
-        return 1;
+  private loadData() {
+    this.apiService.getRoute(this.routeId).subscribe((data) => {
+      this.route = data;
+      if (!this.route.firstDateTime) {
+        this.route.firstDateTime = moment();
       }
-      if (this.name(a) < this.name(b)) {
-        return -1;
+      this.colour = this.route.overrideColour;
+      this.selectedMaps = this.route.routeMaps.map((r) => r.mapId);
+      this.form.patchValue(this.route);
+      if (this.route.routeInstancesCount > 1) {
+        this.form.controls.firstDateTime.disable();
       }
-      return 0;
     });
   }
 
@@ -126,17 +112,20 @@ export class RouteDetailComponent implements OnInit {
     const route = values as UpdateRoute;
     route.routeId = this.route.routeId;
     route.overrideColour = this.colour;
-    route.countries = this.countriesSelection.selectedOptions.selected.map(
-      (s) => s.value
-    );
     route.maps = this.mapsSelection.selectedOptions.selected.map(
       (s) => s.value
     );
     this.apiService.updateRoute(values as Route).subscribe((_) => {
       if (!goToInstances) {
         this.goBack();
-      }else{
-        this.router.navigate(["/", "admin", "routes","instances", this.route.routeId]);
+      } else {
+        this.router.navigate([
+          "/",
+          "admin",
+          "routes",
+          "instances",
+          this.route.routeId,
+        ]);
       }
     });
   }
@@ -225,5 +214,17 @@ export class RouteDetailComponent implements OnInit {
       width = "50%";
     }
     return width;
+  }
+
+  get isAdmin() {
+    return this.authService.isLoggedIn && this.authService?.admin;
+  }
+
+  assignRegions() {
+    this.apiService.assignRegionsToRoute(this.route.routeId).subscribe({
+      next: () => {
+        this.loadData();
+      },
+    });
   }
 }

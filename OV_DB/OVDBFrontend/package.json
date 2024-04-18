@@ -27,6 +27,7 @@
     "@asymmetrik/ngx-leaflet": "^17.0.0",
     "@asymmetrik/ngx-leaflet-markercluster": "^17.0.0",
     "@auth0/angular-jwt": "^5.0.2",
+    "@microsoft/signalr": "^8.0.0",
     "@ngx-translate/core": "^15.0.0",
     "@ngx-translate/http-loader": "^8.0.0",
     "chart.js": "^4.4.0",

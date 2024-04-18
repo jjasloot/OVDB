@@ -17,6 +17,7 @@ import { StationMap } from "../models/stationMap.model";
 import { StationView } from "../models/stationView.model";
 import { StationCountry } from "../models/stationCountry.model";
 import { StationAdminProperties } from "../models/stationAdminProperties.model";
+import { MapDataDTO } from "../models/map-data.model";
 
 @Injectable({
   providedIn: "root",
@@ -119,6 +120,12 @@ export class ApiService {
       environment.backend + "api/routes/" + routeId
     );
   }
+  assignRegionsToRoute(routeId: number) {
+    return this.httpClient.patch(
+      environment.backend + "api/routes/" + routeId + "/assignRegions",
+      {}
+    );
+  }
   deleteRoute(routeId: number) {
     return this.httpClient.delete(
       environment.backend + "api/routes/" + routeId
@@ -183,8 +190,10 @@ export class ApiService {
     filter: string,
     guid: string,
     language: string,
-    includeLineColours: boolean
-  ): Observable<string> {
+    includeLineColours: boolean,
+    limitToSelectedAreas: boolean,
+    identifier?: string
+  ): Observable<MapDataDTO> {
     let url = "";
 
     url = environment.backend + "odata/" + guid;
@@ -195,8 +204,12 @@ export class ApiService {
     if (!!language) {
       params = params.append("language", language);
     }
+    params = params.append("limitToSelectedArea", limitToSelectedAreas);
     params = params.append("includeLineColours", includeLineColours);
-    return this.httpClient.get<string>(url, { params });
+    if (!!identifier) {
+      params = params.append("requestIdentifier", identifier);
+    }
+    return this.httpClient.get<MapDataDTO>(url, { params });
   }
 
   getSingleRoute(

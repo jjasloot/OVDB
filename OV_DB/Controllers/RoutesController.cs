@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.OData.Query;
 using Microsoft.EntityFrameworkCore;
 using OV_DB.Helpers;
 using OV_DB.Models;
+using OV_DB.Services;
 using OVDB_database.Database;
 using OVDB_database.Models;
 using SharpKml.Base;
@@ -31,11 +32,13 @@ namespace OV_DB.Controllers
     {
         private readonly OVDBDatabaseContext _context;
         private readonly IMapper _mapper;
+        private readonly IRouteRegionsService _routeRegionsService;
 
-        public RoutesController(OVDBDatabaseContext context, IMapper mapper)
+        public RoutesController(OVDBDatabaseContext context, IMapper mapper, IRouteRegionsService routeRegionsService)
         {
             _context = context;
             _mapper = mapper;
+            _routeRegionsService = routeRegionsService;
         }
 
         // GET: api/RoutesAPI
@@ -372,6 +375,13 @@ namespace OV_DB.Controllers
                 var child = (LineString)placeMark.Flatten().Single(e => e.GetType() == typeof(LineString));
                 var coordinates = child.Coordinates.Select(c => "" + c.Longitude.ToString(CultureInfo.InvariantCulture) + "," + c.Latitude.ToString(CultureInfo.InvariantCulture)).ToList();
 
+                var lineString = new NetTopologySuite.Geometries.LineString(coordinates.Select(c =>
+                {
+                    var split = c.Split(",");
+                    return new NetTopologySuite.Geometries.Coordinate(double.Parse(split[0], CultureInfo.InvariantCulture), double.Parse(split[1], CultureInfo.InvariantCulture));
+                }).ToArray());
+
+
                 var name = placeMark.Name;
                 if (string.Equals(name, "Tessellated", StringComparison.OrdinalIgnoreCase))
                 {
@@ -384,6 +394,7 @@ namespace OV_DB.Controllers
                 var route = new Route
                 {
                     Coordinates = string.Join('\n', coordinates),
+                    LineString = lineString,
                     Name = name,
                     RouteMaps = new List<RouteMap>(),
                     Share = Guid.NewGuid(),
@@ -516,6 +527,8 @@ namespace OV_DB.Controllers
 
                 DistanceCalculationHelper.ComputeDistance(route);
 
+                await _routeRegionsService.AssignRegionsToRouteAsync(route);
+
                 routes.Add(route);
                 _context.Routes.Add(route);
                 await _context.SaveChangesAsync();
@@ -549,9 +562,13 @@ namespace OV_DB.Controllers
             }
             var metadata = gpxReader.Metadata;
             var coordinates = gpxReader.Track.ToGpxPoints().Select(p => p.Longitude.ToString(CultureInfo.InvariantCulture) + "," + p.Latitude.ToString(CultureInfo.InvariantCulture)).ToList();
+
+            var lineString = new NetTopologySuite.Geometries.LineString(gpxReader.Track.ToGpxPoints().Select(x => new NetTopologySuite.Geometries.Coordinate(x.Longitude, x.Latitude)).ToArray());
+
             var route = new Route
             {
                 Coordinates = string.Join('\n', coordinates),
+                LineString = lineString,
                 Name = name,
                 Share = Guid.NewGuid(),
                 RouteMaps = new List<RouteMap>
@@ -560,7 +577,7 @@ namespace OV_DB.Controllers
                     {
                         MapId=mapId
                     }
-                }
+                },
             };
             if (!string.IsNullOrWhiteSpace(gpxReader.Track.Description))
             {
@@ -576,7 +593,7 @@ namespace OV_DB.Controllers
                 defaultMap = maps.First();
             }
             DistanceCalculationHelper.ComputeDistance(route);
-
+            await _routeRegionsService.AssignRegionsToRouteAsync(route);
 
             _context.Add(route);
 
@@ -1086,5 +1103,15 @@ namespace OV_DB.Controllers
 
             return Ok(tags);
         }
+
+        [HttpPatch("{id:int}/assignRegions")]
+        public async Task<IActionResult> AssignRegionsToRouteAsync(int id, [FromServices] IRouteRegionsService routeRegionsService)
+        {
+            var route = await _context.Routes.Include(r => r.Regions).SingleAsync(r => r.RouteId == id);
+            await routeRegionsService.AssignRegionsToRouteAsync(route);
+            await _context.SaveChangesAsync();
+            return Ok();
+        }
+
     }
 }

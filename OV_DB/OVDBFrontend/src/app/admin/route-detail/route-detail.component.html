@@ -91,25 +91,21 @@
       <input matInput formControlName="overrideDistance" />
     </mat-form-field>
   </form>
-  <mat-expansion-panel class="countries">
-    <mat-expansion-panel-header>
-      <mat-panel-title>
-        {{ "ROUTEDETAILS.COUNTRIES" | translate }}
-      </mat-panel-title>
-      <mat-panel-description>
-        {{ countriesString }}
-      </mat-panel-description>
-    </mat-expansion-panel-header>
 
-    <mat-selection-list [(ngModel)]="selectedOptions" #countriesSelection>
-      <mat-list-option
-        *ngFor="let country of countries"
-        [value]="country.countryId"
-      >
-        {{ name(country) }}
-      </mat-list-option>
-    </mat-selection-list>
-  </mat-expansion-panel>
+  <mat-card class="countries">
+    <mat-card-header>
+      <mat-card-subtitle>{{
+        "ROUTEDETAILS.COUNTRIES" | translate
+      }}</mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>
+      @for(region of route.regions; track region.id) {
+      <mat-chip style="margin-right: 1rem" disabled
+        >{{ name(region) }}
+      </mat-chip>
+      }
+    </mat-card-content>
+  </mat-card>
 
   <mat-expansion-panel class="countries">
     <mat-expansion-panel-header>
@@ -154,4 +150,8 @@
       {{ "ROUTESLIST.EXPORT" | translate }}
     </button>
   </div>
+
+  @if(isAdmin){
+  <button mat-button (click)="assignRegions()">Assign regions</button>
+  }
 </div>

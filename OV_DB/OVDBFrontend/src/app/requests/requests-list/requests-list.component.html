@@ -1,0 +1,35 @@
+<div class="flex">
+  <mat-card>
+    <mat-card-title>
+      {{ "REQUESTS.NEW_REQUEST" | translate }}
+    </mat-card-title>
+    <textarea
+      matInput
+      [(ngModel)]="newRequest"
+      lines="10"
+      placeholder="{{ 'REQUESTS.NEW_REQUEST_PLACEHOLDER' | translate }}"
+    ></textarea>
+    <button mat-raised-button color="primary" (click)="sendRequest()">
+      {{ "REQUESTS.SEND_REQUEST" | translate }}
+    </button>
+  </mat-card>
+
+  @for (request of requests; track request.id) {
+  <mat-card>
+    {{ request.message }}
+    @if(!!request.response){
+    <div style="margin-top: 1rem">
+      <div style="font-weight: bold">
+        {{ "REQUESTS.RESPONSE" | translate }}:
+        {{
+          request.responded | date : "mediumDate" : undefined : currentLocale
+        }}
+      </div>
+      <div style="font-style: italic">
+        {{ request.response }}
+      </div>
+    </div>
+    }
+  </mat-card>
+  }
+</div>
