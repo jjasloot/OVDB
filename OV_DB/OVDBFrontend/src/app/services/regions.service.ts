@@ -25,4 +25,17 @@ export class RegionsService {
       environment.backend + "api/regions/map/" + mapGuid
     );
   }
+
+  refreshRoutesForRegion(regionId: number) {
+    return this.httpClient.post(
+      environment.backend + "api/regions/" + regionId + "/refreshRoutes",
+      {}
+    );
+  }
+  refreshRoutesWithoutRegions(){
+    return this.httpClient.post(
+      environment.backend + "api/regions/refreshRoutesWithoutRegions",
+      {}
+    );
+  }
 }

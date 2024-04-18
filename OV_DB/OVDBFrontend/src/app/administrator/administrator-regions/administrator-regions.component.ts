@@ -40,4 +40,26 @@ export class AdministratorRegionsComponent implements OnInit {
       }
     });
   }
+
+  refreshRoutesForRegion(regionId: number) {
+    this.regionsService.refreshRoutesForRegion(regionId).subscribe({
+      next: () => {
+        alert("done");
+      },
+      error: (err) => {
+        alert(JSON.stringify(err));
+      },
+    });
+  }
+
+  refreshRoutesWithoutRegions() {
+    this.regionsService.refreshRoutesWithoutRegions().subscribe({
+      next: () => {
+        alert("done");
+      },
+      error: (err) => {
+        alert(JSON.stringify(err));
+      },
+    });
+  }
 }

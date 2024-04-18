@@ -11,6 +11,7 @@ using NetTopologySuite.IO;
 using Newtonsoft.Json;
 using NuGet.Packaging;
 using OV_DB.Models;
+using OV_DB.Services;
 using OVDB_database.Database;
 using OVDB_database.Models;
 using System;
@@ -28,9 +29,8 @@ namespace OV_DB.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [AllowAnonymous]
-    //[Authorize]
-    public class RegionsController(IMemoryCache memoryCache, OVDBDatabaseContext context, IConfiguration configuration, IMapper mapper) : ControllerBase
+    [Authorize]
+    public class RegionsController(IMemoryCache memoryCache, OVDBDatabaseContext context, IConfiguration configuration, IRouteRegionsService routeRegionsService, IMapper mapper) : ControllerBase
     {
         private IMemoryCache _cache = memoryCache;
         private OVDBDatabaseContext _context = context;
@@ -81,6 +81,11 @@ namespace OV_DB.Controllers
         [HttpPost]
         public async Task<ActionResult> CreateNew(NewRegion newRegion)
         {
+            var adminClaim = (User.Claims.SingleOrDefault(c => c.Type == "admin").Value ?? "false");
+            if (string.Equals(adminClaim, "false", StringComparison.OrdinalIgnoreCase))
+            {
+                return Forbid();
+            }
             var tags = await GetTagsAsync(newRegion.OsmRelationId);
 
             var name = tags.GetValueOrDefault("name:en");
@@ -190,7 +195,6 @@ namespace OV_DB.Controllers
 
             var factory = new GeometryFactory();
             var outers = new List<NetTopologySuite.Geometries.Polygon>();
-            //Convert the dictionary of     outerGeometries into polygons and then group into a multi polygon
             foreach (var outerGeom in outerGeometries)
             {
 
@@ -202,24 +206,6 @@ namespace OV_DB.Controllers
                 var newOuter = factory.CreatePolygon(factory.CreateLinearRing(outerGeom.Key.ExteriorRing.Coordinates), holes);
                 outers.Add(newOuter);
             }
-            //foreach (var outerGeom in outerGeometries)
-            //{
-
-            //    var existingHoles = outerGeom.Key.Holes;
-            //    if (coordinatesToIgnore != null && coordinatesToIgnore.Any())
-            //    {
-            //        var newHoles = new List<NetTopologySuite.Geometries.LinearRing>();
-            //        foreach (var hole in existingHoles)
-            //        {
-            //            newHoles.Add(new LinearRing(GetCoordinates(hole.Coordinates, coordinatesToIgnore)));
-            //        }
-            //        existingHoles = [.. newHoles];
-            //    }
-
-            //    var holes = outerGeom.Value.Select(v => factory.CreateLinearRing(GetCoordinates(v.Coordinates, coordinatesToIgnore))).Concat(existingHoles).ToArray();
-            //    var newOuter = factory.CreatePolygon(factory.CreateLinearRing(GetCoordinates(outerGeom.Key.ExteriorRing.Coordinates, coordinatesToIgnore)), holes);
-            //    outers.Add(newOuter);
-            //}
             var multiPolygon = factory.CreateMultiPolygon(outers.ToArray());
             return multiPolygon;
         }
@@ -304,9 +290,13 @@ namespace OV_DB.Controllers
         }
 
         [HttpGet("refreshAll")]
-        [AllowAnonymous]
-        public async Task RefreshAll()
+        public async Task<IActionResult> RefreshAll()
         {
+            var adminClaim = (User.Claims.SingleOrDefault(c => c.Type == "admin").Value ?? "false");
+            if (string.Equals(adminClaim, "false", StringComparison.OrdinalIgnoreCase))
+            {
+                return Forbid();
+            }
             var regions = _context.Regions.ToList();
 
             foreach (var region in regions)
@@ -324,8 +314,44 @@ namespace OV_DB.Controllers
                 Console.WriteLine("Updated region " + region.Name);
                 await Task.Delay(1000);
             }
-
+            return Ok();
         }
+
+        [HttpPost("{id}/refreshRoutes")]
+        public async Task<IActionResult> RefreshRoutes(int id)
+        {
+            var adminClaim = (User.Claims.SingleOrDefault(c => c.Type == "admin").Value ?? "false");
+            if (string.Equals(adminClaim, "false", StringComparison.OrdinalIgnoreCase))
+            {
+                return Forbid();
+            }
+
+            var routes = await _context.Routes.Where(r => r.Regions.Any(rr => rr.Id == id)).Include(r => r.Regions).ToListAsync();
+            foreach (var route in routes)
+            {
+                await routeRegionsService.AssignRegionsToRouteAsync(route);
+            }
+            await _context.SaveChangesAsync();
+            return Ok(routes.Count);
+        }
+
+        [HttpPost("refreshRoutesWithoutRegions")]
+        public async Task<IActionResult> RefreshRoutesWithoutRegions()
+        {
+            var adminClaim = (User.Claims.SingleOrDefault(c => c.Type == "admin").Value ?? "false");
+            if (string.Equals(adminClaim, "false", StringComparison.OrdinalIgnoreCase))
+            {
+                return Forbid();
+            }
+            var routes = await _context.Routes.Where(r => !r.Regions.Any()).Include(r => r.Regions).ToListAsync();
+            foreach (var route in routes)
+            {
+                await routeRegionsService.AssignRegionsToRouteAsync(route);
+            }
+            await _context.SaveChangesAsync();
+            return Ok(routes.Count);
+        }
+
     }
 }
 

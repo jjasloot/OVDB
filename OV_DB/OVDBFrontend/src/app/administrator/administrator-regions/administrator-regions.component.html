@@ -3,6 +3,9 @@
   <mat-card-header>
     <mat-card-title>{{ region.name }}</mat-card-title>
     <mat-card-subtitle>{{ region.osmRelationId }}</mat-card-subtitle>
+    <button mat-button (click)="refreshRoutesForRegion(region.id)">
+      <mat-icon [fontIcon]="'refresh'"></mat-icon>
+    </button>
   </mat-card-header>
   <mat-card-content>
     @for(subregion of region.subRegions; track subregion.id) {
@@ -10,6 +13,10 @@
   </mat-card-content>
 </mat-card>
 }
+
+<button mat-button (click)="refreshRoutesWithoutRegions()">
+  Refresh without regions
+</button>
 
 <button class="fab" mat-fab color="primary" (click)="addNewRegion()">
   <mat-icon>add</mat-icon>

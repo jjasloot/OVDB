@@ -181,11 +181,11 @@ namespace OV_DB.Controllers
         [HttpGet("convertToLineStrings")]
         public async Task<ActionResult> ConvertToLineStrings()
         {
-            //var adminClaim = (User.Claims.SingleOrDefault(c => c.Type == "admin").Value ?? "false");
-            //if (string.Equals(adminClaim, "false", StringComparison.OrdinalIgnoreCase))
-            //{
-            //    return Forbid();
-            //}
+            var adminClaim = (User.Claims.SingleOrDefault(c => c.Type == "admin").Value ?? "false");
+            if (string.Equals(adminClaim, "false", StringComparison.OrdinalIgnoreCase))
+            {
+                return Forbid();
+            }
             var routes = new List<OVDB_database.Models.Route>();
             do
             {
@@ -208,6 +208,11 @@ namespace OV_DB.Controllers
         [HttpGet("addRegions")]
         public async Task<ActionResult> AddRegionsToAllRoutes([FromServices] IRouteRegionsService routeRegionsService)
         {
+            var adminClaim = (User.Claims.SingleOrDefault(c => c.Type == "admin").Value ?? "false");
+            if (string.Equals(adminClaim, "false", StringComparison.OrdinalIgnoreCase))
+            {
+                return Forbid();
+            }
             _dbContext.Database.SetCommandTimeout(TimeSpan.FromMinutes(3));
             var batchSize = 50;
             var count = 0;
@@ -233,6 +238,11 @@ namespace OV_DB.Controllers
         [HttpGet("fixOriginalnames")]
         public async Task<ActionResult> FixOriginalNames()
         {
+            var adminClaim = (User.Claims.SingleOrDefault(c => c.Type == "admin").Value ?? "false");
+            if (string.Equals(adminClaim, "false", StringComparison.OrdinalIgnoreCase))
+            {
+                return Forbid();
+            }
             _dbContext.Database.SetCommandTimeout(TimeSpan.FromMinutes(3));
             var regions = await _dbContext.Regions.Where(r => string.IsNullOrWhiteSpace(r.OriginalName)).ToListAsync();
             foreach (var region in regions)
