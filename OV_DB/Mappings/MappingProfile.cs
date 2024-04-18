@@ -28,6 +28,10 @@ namespace OV_DB.Mappings
             CreateMap<Region, RegionMinimalDTO>();
             CreateMap<Region, RegionDTO>();
             CreateMap<RegionIntermediate, RegionMinimalDTO>();
+
+            CreateMap<Request, RequestForUserDTO>();
+            CreateMap<Request, RequestForAdminDTO>()
+                .ForMember(dest => dest.UserEmail, ops => ops.MapFrom(src => src.User.Email));
         }
     }
 }

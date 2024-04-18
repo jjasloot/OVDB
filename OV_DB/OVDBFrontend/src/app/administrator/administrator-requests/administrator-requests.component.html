@@ -1,0 +1,22 @@
+<div class="flex">
+  @for (request of requests; track request.id) {
+  <mat-card>
+    <span style="font-weight: bold"
+      >{{ request.created | date:'dd-MM-yyyy hh:mm' }} - {{ request.userEmail }}</span
+    >
+    {{ request.message }}
+    @if(requestsWithoutResponse.has(request.id)){
+    <hr />
+    <textarea matInput [(ngModel)]="request.response"></textarea>
+    <button mat-raised-button color="primary" (click)="sendResponse(request)">
+      Send
+    </button>
+    } @else {
+    <hr />
+    <span style="font-style: italic">
+      {{ request.response }}
+    </span>
+    }
+  </mat-card>
+  }
+</div>

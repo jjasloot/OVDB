@@ -36,6 +36,11 @@ export class AdministratorLayoutComponent implements OnInit {
         link: "/administrator/regions",
         index: 3,
       },
+      {
+        label: "Requests",
+        link: "/administrator/requests",
+        index: 4,
+      },
     ];
   }
   ngOnInit(): void {

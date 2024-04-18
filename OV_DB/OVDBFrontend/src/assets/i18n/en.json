@@ -200,5 +200,10 @@
   "SAVE_GO_TO_INSTANCES": "Save and go to trips",
   "FILTER.LIMITTOSELECTEDAREAS": "Cut routes to selected areas. Attention: this will take longer.",
   "UPDATE.TITLE": "Update 🚀",
-  "UPDATE.DESCRIPTION": "I was getting a bit tired of selecting countries every time I created a route. Surely it should be possible to do that automatically? Sure. That has now been taken care of. Also new is that (some) countries are split into regions. You can also filter on that in the map. Also, we all have that long route that goes just a bit into country x, ruining the whole display. That's why you can now cut routes to a specific area. This may take a while, but then you have something. If you miss a country or want to divide a country into regions, let me know."
+  "UPDATE.DESCRIPTION": "I was getting a bit tired of selecting countries every time I created a route. Surely it should be possible to do that automatically? Sure. That has now been taken care of. Also new is that (some) countries are split into regions. You can also filter on that in the map. Also, we all have that long route that goes just a bit into country x, ruining the whole display. That's why you can now cut routes to a specific area. This may take a while, but then you have something. If you miss a country or want to divide a country into regions, let me know via the requests option in the menu.",
+  "UPDATE.NEW_COUNTRY_OR_REGION": "Request new country or regions",
+  "REQUESTS.NEW_REQUEST": "New request",
+  "REQUESTS.NEW_REQUEST_PLACEHOLDER": "Could you add Iceland? Could you split Italy into its provinces, e.g. Lomdardy and Tuscany?",
+  "REQUESTS.SEND_REQUEST": "Send request",
+  "REQUESTS.RESPONSE": "Response"
 }

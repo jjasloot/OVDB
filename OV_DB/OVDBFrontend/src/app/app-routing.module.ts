@@ -33,6 +33,8 @@ import { AdminStationsMapComponent } from "./stations/admin-stations-map/admin-s
 import { ImageCreatorComponent } from "./image-creator/image-creator.component";
 import { StationMapsComponent } from "./admin/station-maps/station-maps.component";
 import { AdministratorRegionsComponent } from "./administrator/administrator-regions/administrator-regions.component";
+import { RequestsListComponent } from "./requests/requests-list/requests-list.component";
+import { AdministratorRequestsComponent } from "./administrator/administrator-requests/administrator-requests.component";
 
 const routes: Routes = [
   {
@@ -100,7 +102,13 @@ const routes: Routes = [
           { path: "users", component: AdministratorUsersComponent },
           { path: "stations", component: AdminStationsMapComponent },
           { path: "regions", component: AdministratorRegionsComponent },
+          { path: "requests", component: AdministratorRequestsComponent },
         ],
+      },
+      {
+        path: "requests",
+        component: RequestsListComponent,
+        canActivate: [LoginGuard],
       },
     ],
   },
