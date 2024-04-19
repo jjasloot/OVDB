@@ -330,8 +330,9 @@ namespace OV_DB.Controllers
             foreach (var route in routes)
             {
                 await routeRegionsService.AssignRegionsToRouteAsync(route);
+                Console.WriteLine("Updated route " + route.Name);
+                await _context.SaveChangesAsync();
             }
-            await _context.SaveChangesAsync();
             return Ok(routes.Count);
         }
 
@@ -347,8 +348,8 @@ namespace OV_DB.Controllers
             foreach (var route in routes)
             {
                 await routeRegionsService.AssignRegionsToRouteAsync(route);
+                await _context.SaveChangesAsync();
             }
-            await _context.SaveChangesAsync();
             return Ok(routes.Count);
         }
 
