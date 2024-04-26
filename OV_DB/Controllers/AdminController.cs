@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -256,6 +257,37 @@ namespace OV_DB.Controllers
                 Console.WriteLine($"Region {region.Name} updated with original name {region.OriginalName}");
                 await Task.Delay(250);
             }
+
+            return Ok();
+        }
+
+        [HttpGet("assignRegionsToStations")]
+        [AllowAnonymous]
+        public async Task<ActionResult> AssignRegionsToStations([FromServices] IStationRegionsService stationRegionsService)
+        {
+            var adminClaim = (User.Claims.SingleOrDefault(c => c.Type == "admin").Value ?? "false");
+            if (string.Equals(adminClaim, "false", StringComparison.OrdinalIgnoreCase))
+            {
+                return Forbid();
+            }
+            _dbContext.Database.SetCommandTimeout(TimeSpan.FromMinutes(3));
+            var batchSize = 50;
+            var count = 0;
+            var stations = new List<OVDB_database.Models.Station>();
+            do
+            {
+                stations = await _dbContext.Stations.OrderBy(s => s.Name).Where(s => s.Lattitude != 0 && s.Longitude != 0).Include(s => s.Regions).Skip(count).Take(batchSize).ToListAsync();
+
+                foreach (var station in stations)
+                {
+                    var regionsBefore = string.Join(", ", station.Regions.Select(r => r.Name));
+                    await stationRegionsService.AssignRegionsToStationCacheRegionsAsync(station);
+                    Console.WriteLine($"Station {station.Name} from {regionsBefore} the following Regions: " + string.Join(", ", station.Regions.Select(r => r.Name)));
+                }
+                await _dbContext.SaveChangesAsync();
+                count += batchSize;
+                Console.WriteLine($"Added regions to {count} stations");
+            } while (stations.Count > 0);
 
             return Ok();
         }

@@ -329,9 +329,16 @@ namespace OV_DB.Controllers
             var routes = await _context.Routes.Where(r => r.Regions.Any(rr => rr.Id == id)).Include(r => r.Regions).ToListAsync();
             foreach (var route in routes)
             {
-                await routeRegionsService.AssignRegionsToRouteAsync(route);
-                Console.WriteLine("Updated route " + route.Name);
-                await _context.SaveChangesAsync();
+                try
+                {
+                    await routeRegionsService.AssignRegionsToRouteAsync(route);
+                    Console.WriteLine("Updated route " + route.Name);
+                    await _context.SaveChangesAsync();
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("Error updating route " + route.Name + ": " + ex.Message);
+                }
             }
             return Ok(routes.Count);
         }

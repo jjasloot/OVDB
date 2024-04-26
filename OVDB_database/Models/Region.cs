@@ -13,6 +13,7 @@ public class Region
     public NetTopologySuite.Geometries.MultiPolygon Geometry { get; set; } = null!;
     public int? ParentRegionId { get; set; }
     public Region? ParentRegion { get; set; }
-    public IEnumerable<Region> SubRegions { get; set; } = null!;
-    public IEnumerable<Route> Routes { get; set; } = null!;
+    public ICollection<Region> SubRegions { get; set; } = null!;
+    public ICollection<Route> Routes { get; set; } = null!;
+    public ICollection<Station> Stations { get; set; } = new List<Station>();
 }

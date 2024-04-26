@@ -21,5 +21,6 @@ namespace OVDB_database.Models
         public List<StationVisit> StationVisits { get; set; }
         public bool Hidden { get; set; }
         public bool Special { get; set; }
+        public ICollection<Region> Regions { get; set; } = new List<Region>();
     }
 }
