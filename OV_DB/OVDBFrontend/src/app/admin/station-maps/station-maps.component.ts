@@ -40,7 +40,7 @@ export class StationMapsComponent implements OnInit {
 
   private loadData() {
     this.loading = true;
-    this.apiService.listStationMapsAdmin().subscribe(data => {
+    this.apiService.listStationMaps().subscribe(data => {
       this.data = data;
       this.loading = false;
     });

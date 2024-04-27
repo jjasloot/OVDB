@@ -1,30 +1,53 @@
 .map-container {
-    flex: 100000000000;
-    position: relative;
-    min-height: 100%;
-    display: flex;
+  position: relative;
+  display: block;
+  height: 500px;
+  min-height: max(calc(100svh - 96px), 500px);
+
 }
 
 .map {
-    min-height: 100%;
-    position: relative;
-    flex: 1;
+  min-height: max(calc(100svh - 96px), 500px);
+  position: relative;
+  flex: 1;
 }
 
 .loading-indicator {
-    position: absolute;
-    width: 0;
-    height: 0;
-    background: rgba($color: #000000, $alpha: 0.75);
-    opacity: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  position: absolute;
+  width: 0;
+  height: 0;
+  background: rgba($color: #000000, $alpha: 0.75);
+  opacity: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .loading {
-    z-index: 1000;
-    opacity: 1;
-    width: 100%;
-    height: 100%;
+  z-index: 1000;
+  opacity: 1;
+  width: 100%;
+  height: 100%;
+}
+
+.flex {
+  display: flex;
+  flex-direction: column-reverse;
+  min-height: 100%;
+}
+
+.side {
+  flex: 25%;
+}
+
+@media (min-width: 768px) {
+  .flex {
+    flex-direction: row;
+  }
+  .map-container{
+    display: flex;
+    flex: 75%;
+    height: unset;
+    max-height: calc(100svh - 96px);
+  }
 }

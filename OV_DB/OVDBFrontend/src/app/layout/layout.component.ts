@@ -21,13 +21,17 @@ export class LayoutComponent implements OnInit {
   ) {}
 
   ngOnInit() {
-    this.requestsService.hasAnyUnreadRequests().subscribe((hasUnread) => {
-      this.hasUnreadRequests = hasUnread;
-    });
-    if(this.isAdmin){
-      this.requestsService.adminHasAnyUnreadRequests().subscribe((hasUnread) => {
-        this.hasUnreadRequestsAdmin = hasUnread;
+    if (this.isLoggedIn) {
+      this.requestsService.hasAnyUnreadRequests().subscribe((hasUnread) => {
+        this.hasUnreadRequests = hasUnread;
       });
+      if (this.isAdmin) {
+        this.requestsService
+          .adminHasAnyUnreadRequests()
+          .subscribe((hasUnread) => {
+            this.hasUnreadRequestsAdmin = hasUnread;
+          });
+      }
     }
   }
   gotoHome() {

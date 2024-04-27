@@ -36,7 +36,7 @@ namespace OV_DB.Controllers
             if (!string.IsNullOrWhiteSpace(countryIds))
             {
                 var countries = countryIds.Split(',').Select(s => int.Parse(s)).ToList();
-                stationsQuery = stationsQuery.Where(s => countries.Contains(s.StationCountryId));
+                stationsQuery = stationsQuery.Where(s => s.StationCountryId.HasValue).Where(s => countries.Contains(s.StationCountryId.Value));
             }
 
             var stations = await stationsQuery.Select(s => new StationDTO
@@ -106,7 +106,7 @@ namespace OV_DB.Controllers
         }
 
         [HttpGet("map")]
-        public async Task<IActionResult> GetAdminMap()
+        public async Task<IActionResult> GetAdminMap([FromQuery] List<int> regions)
         {
             var adminClaim = (User.Claims.SingleOrDefault(c => c.Type == "admin").Value ?? "false");
             if (string.Equals(adminClaim, "false", StringComparison.OrdinalIgnoreCase))
@@ -115,6 +115,11 @@ namespace OV_DB.Controllers
             }
 
             var stations = DbContext.Stations.AsNoTracking().AsQueryable();
+
+            if (regions != null && regions.Any())
+            {
+                stations = stations.Where(s => s.Regions.Any(r => regions.Contains(r.Id)));
+            }
 
             var collection = new List<StationAdminPropertiesDTO>();
             await stations.ForEachAsync(s =>
@@ -156,6 +161,27 @@ namespace OV_DB.Controllers
             station.Hidden = stationVisibility.Hidden;
             station.Special = stationVisibility.Special;
 
+            await DbContext.SaveChangesAsync();
+
+            return Ok();
+        }
+
+        [HttpDelete("admin/{id:int}")]
+        public async Task<IActionResult> AdminDeleteStation(int id)
+        {
+            var adminClaim = (User.Claims.SingleOrDefault(c => c.Type == "admin").Value ?? "false");
+            if (string.Equals(adminClaim, "false", StringComparison.OrdinalIgnoreCase))
+            {
+                return Forbid();
+            }
+
+            var station = await DbContext.Stations.SingleOrDefaultAsync(s => s.Id == id);
+            if (station == null)
+            {
+                return NotFound();
+            }
+
+            DbContext.Remove(station);
             await DbContext.SaveChangesAsync();
 
             return Ok();

@@ -411,8 +411,13 @@ export class ApiService {
     let url = environment.backend + "api/stationmaps/map/" + guid;
     return this.httpClient.get<StationView>(url);
   }
-  getStationsAdminMap(): Observable<StationAdminProperties[]> {
+  getStationsAdminMap(
+    regions: number[] = []
+  ): Observable<StationAdminProperties[]> {
     let url = environment.backend + "api/station/map/";
+    if (regions.length > 0) {
+      url += "?regions=" + regions.join(",");
+    }
     return this.httpClient.get<StationAdminProperties[]>(url);
   }
 
@@ -425,8 +430,16 @@ export class ApiService {
     const url = environment.backend + "api/station/admin/" + id;
     return this.httpClient.put(url, { special, hidden });
   }
+  deleteStationAdmin(id: number) {
+    const url = environment.backend + "api/station/admin/" + id;
+    return this.httpClient.delete(url);
+  }
+  updateStationsInRegion(regionId: number) {
+    const url = environment.backend + "api/StationImporter/region/" + regionId;
+    return this.httpClient.post(url, {});
+  }
 
-  listStationMapsAdmin() {
+  listStationMaps() {
     let url = environment.backend + "api/stationmaps";
     return this.httpClient.get<StationMap[]>(url);
   }
