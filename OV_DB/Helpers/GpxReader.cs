@@ -11,7 +11,7 @@ using System.Globalization;
 using System.IO;
 using System.Xml;
 
-namespace Gpx
+namespace OV_DB.Helpers
 {
     public enum GpxObjectType { None, Attributes, Metadata, WayPoint, Route, Track };
 
@@ -98,7 +98,7 @@ namespace Gpx
 
         private GpxAttributes ReadGpxAttribures()
         {
-            GpxAttributes attributes = new GpxAttributes();
+            var attributes = new GpxAttributes();
 
             while (Reader_.MoveToNextAttribute())
             {
@@ -118,10 +118,10 @@ namespace Gpx
 
         private GpxMetadata ReadGpxMetadata()
         {
-            GpxMetadata metadata = new GpxMetadata();
+            var metadata = new GpxMetadata();
             if (Reader_.IsEmptyElement) return metadata;
 
-            string elementName = Reader_.Name;
+            var elementName = Reader_.Name;
 
             while (Reader_.Read())
             {
@@ -173,10 +173,10 @@ namespace Gpx
 
         private GpxWayPoint ReadGpxWayPoint()
         {
-            string elementName = Reader_.Name;
-            bool isEmptyElement = Reader_.IsEmptyElement;
+            var elementName = Reader_.Name;
+            var isEmptyElement = Reader_.IsEmptyElement;
 
-            GpxWayPoint wayPoint = new GpxWayPoint();
+            var wayPoint = new GpxWayPoint();
             GetPointLocation(wayPoint);
             if (isEmptyElement) return wayPoint;
 
@@ -209,10 +209,10 @@ namespace Gpx
 
         private GpxRoute ReadGpxRoute()
         {
-            GpxRoute route = new GpxRoute();
+            var route = new GpxRoute();
             if (Reader_.IsEmptyElement) return route;
 
-            string elementName = Reader_.Name;
+            var elementName = Reader_.Name;
 
             while (Reader_.Read())
             {
@@ -267,10 +267,10 @@ namespace Gpx
 
         private GpxRoutePoint ReadGpxRoutePoint()
         {
-            string elementName = Reader_.Name;
-            bool isEmptyElement = Reader_.IsEmptyElement;
+            var elementName = Reader_.Name;
+            var isEmptyElement = Reader_.IsEmptyElement;
 
-            GpxRoutePoint routePoint = new GpxRoutePoint();
+            var routePoint = new GpxRoutePoint();
             GetPointLocation(routePoint);
             if (isEmptyElement) return routePoint;
 
@@ -303,10 +303,10 @@ namespace Gpx
 
         private GpxTrack ReadGpxTrack()
         {
-            GpxTrack track = new GpxTrack();
+            var track = new GpxTrack();
             if (Reader_.IsEmptyElement) return track;
 
-            string elementName = Reader_.Name;
+            var elementName = Reader_.Name;
 
             while (Reader_.Read())
             {
@@ -361,10 +361,10 @@ namespace Gpx
 
         private GpxTrackSegment ReadGpxTrackSegment()
         {
-            GpxTrackSegment segment = new GpxTrackSegment();
+            var segment = new GpxTrackSegment();
             if (Reader_.IsEmptyElement) return segment;
 
-            string elementName = Reader_.Name;
+            var elementName = Reader_.Name;
 
             while (Reader_.Read())
             {
@@ -398,10 +398,10 @@ namespace Gpx
 
         private GpxTrackPoint ReadGpxTrackPoint()
         {
-            string elementName = Reader_.Name;
-            bool isEmptyElement = Reader_.IsEmptyElement;
+            var elementName = Reader_.Name;
+            var isEmptyElement = Reader_.IsEmptyElement;
 
-            GpxTrackPoint trackPoint = new GpxTrackPoint();
+            var trackPoint = new GpxTrackPoint();
             GetPointLocation(trackPoint);
             if (isEmptyElement) return trackPoint;
 
@@ -434,10 +434,10 @@ namespace Gpx
 
         private GpxPerson ReadGpxPerson()
         {
-            GpxPerson person = new GpxPerson();
+            var person = new GpxPerson();
             if (Reader_.IsEmptyElement) return person;
 
-            string elementName = Reader_.Name;
+            var elementName = Reader_.Name;
 
             while (Reader_.Read())
             {
@@ -474,10 +474,10 @@ namespace Gpx
 
         private GpxEmail ReadGpxEmail()
         {
-            GpxEmail email = new GpxEmail();
+            var email = new GpxEmail();
             if (Reader_.IsEmptyElement) return email;
 
-            string elementName = Reader_.Name;
+            var elementName = Reader_.Name;
 
             while (Reader_.Read())
             {
@@ -511,10 +511,10 @@ namespace Gpx
 
         private GpxLink ReadGpxLink()
         {
-            GpxLink link = new GpxLink();
+            var link = new GpxLink();
 
-            string elementName = Reader_.Name;
-            bool isEmptyElement = Reader_.IsEmptyElement;
+            var elementName = Reader_.Name;
+            var isEmptyElement = Reader_.IsEmptyElement;
 
             while (Reader_.MoveToNextAttribute())
             {
@@ -560,10 +560,10 @@ namespace Gpx
 
         private GpxCopyright ReadGpxCopyright()
         {
-            GpxCopyright copyright = new GpxCopyright();
+            var copyright = new GpxCopyright();
 
-            string elementName = Reader_.Name;
-            bool isEmptyElement = Reader_.IsEmptyElement;
+            var elementName = Reader_.Name;
+            var isEmptyElement = Reader_.IsEmptyElement;
 
             while (Reader_.MoveToNextAttribute())
             {
@@ -611,7 +611,7 @@ namespace Gpx
         {
             if (!Reader_.IsEmptyElement) throw new FormatException(Reader_.Name);
 
-            GpxBounds bounds = new GpxBounds();
+            var bounds = new GpxBounds();
 
             while (Reader_.MoveToNextAttribute())
             {
@@ -639,7 +639,7 @@ namespace Gpx
         {
             if (Reader_.IsEmptyElement) return;
 
-            string elementName = Reader_.Name;
+            var elementName = Reader_.Name;
 
             while (Reader_.Read())
             {
@@ -696,7 +696,7 @@ namespace Gpx
         {
             if (Reader_.IsEmptyElement) return;
 
-            string elementName = Reader_.Name;
+            var elementName = Reader_.Name;
 
             while (Reader_.Read())
             {
@@ -735,7 +735,7 @@ namespace Gpx
         {
             if (Reader_.IsEmptyElement) return;
 
-            string elementName = Reader_.Name;
+            var elementName = Reader_.Name;
 
             while (Reader_.Read())
             {
@@ -774,7 +774,7 @@ namespace Gpx
         {
             if (Reader_.IsEmptyElement) return;
 
-            string elementName = Reader_.Name;
+            var elementName = Reader_.Name;
 
             while (Reader_.Read())
             {
@@ -818,7 +818,7 @@ namespace Gpx
         {
             if (Reader_.IsEmptyElement) return;
 
-            string elementName = Reader_.Name;
+            var elementName = Reader_.Name;
 
             while (Reader_.Read())
             {
@@ -859,7 +859,7 @@ namespace Gpx
         {
             if (Reader_.IsEmptyElement) return;
 
-            string elementName = Reader_.Name;
+            var elementName = Reader_.Name;
 
             while (Reader_.Read())
             {
@@ -915,7 +915,7 @@ namespace Gpx
         {
             if (Reader_.IsEmptyElement) return;
 
-            string elementName = Reader_.Name;
+            var elementName = Reader_.Name;
 
             while (Reader_.Read())
             {
@@ -947,7 +947,7 @@ namespace Gpx
         {
             if (Reader_.IsEmptyElement) return;
 
-            string elementName = Reader_.Name;
+            var elementName = Reader_.Name;
 
             while (Reader_.Read())
             {
@@ -979,7 +979,7 @@ namespace Gpx
         {
             if (Reader_.IsEmptyElement) return;
 
-            string elementName = Reader_.Name;
+            var elementName = Reader_.Name;
 
             while (Reader_.Read())
             {
@@ -1034,7 +1034,7 @@ namespace Gpx
         {
             if (Reader_.IsEmptyElement) return;
 
-            string elementName = Reader_.Name;
+            var elementName = Reader_.Name;
 
             while (Reader_.Read())
             {
@@ -1066,7 +1066,7 @@ namespace Gpx
         {
             if (Reader_.IsEmptyElement) return;
 
-            string elementName = Reader_.Name;
+            var elementName = Reader_.Name;
 
             while (Reader_.Read())
             {
@@ -1096,10 +1096,10 @@ namespace Gpx
 
         private GpxPoint ReadGarminAutoRoutePoint()
         {
-            GpxPoint point = new GpxPoint();
+            var point = new GpxPoint();
 
-            string elementName = Reader_.Name;
-            bool isEmptyElement = Reader_.IsEmptyElement;
+            var elementName = Reader_.Name;
+            var isEmptyElement = Reader_.IsEmptyElement;
 
             GetPointLocation(point);
             if (isEmptyElement) return point;
@@ -1123,10 +1123,10 @@ namespace Gpx
 
         private GpxAddress ReadGarminGpxAddress()
         {
-            GpxAddress address = new GpxAddress();
+            var address = new GpxAddress();
             if (Reader_.IsEmptyElement) return address;
 
-            string elementName = Reader_.Name;
+            var elementName = Reader_.Name;
 
             while (Reader_.Read())
             {
@@ -1187,8 +1187,8 @@ namespace Gpx
         {
             if (Reader_.IsEmptyElement) return;
 
-            string elementName = Reader_.Name;
-            int depth = Reader_.Depth;
+            var elementName = Reader_.Name;
+            var depth = Reader_.Depth;
 
             while (Reader_.Read())
             {
@@ -1284,8 +1284,8 @@ namespace Gpx
         {
             if (Reader_.IsEmptyElement) throw new FormatException(Reader_.Name);
 
-            string elementName = Reader_.Name;
-            string result = string.Empty;
+            var elementName = Reader_.Name;
+            var result = string.Empty;
 
             while (Reader_.Read())
             {
@@ -1308,19 +1308,19 @@ namespace Gpx
 
         private int ReadContentAsInt()
         {
-            string value = ReadContentAsString();
+            var value = ReadContentAsString();
             return int.Parse(value, CultureInfo.InvariantCulture);
         }
 
         private double ReadContentAsDouble()
         {
-            string value = ReadContentAsString();
+            var value = ReadContentAsString();
             return double.Parse(value, CultureInfo.InvariantCulture);
         }
 
         private DateTime ReadContentAsDateTime()
         {
-            string value = ReadContentAsString();
+            var value = ReadContentAsString();
             return DateTime.Parse(value, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal);
         }
     }
