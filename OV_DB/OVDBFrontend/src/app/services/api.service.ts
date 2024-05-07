@@ -439,6 +439,11 @@ export class ApiService {
     return this.httpClient.post(url, {});
   }
 
+  importStation(osmId:string){
+    const url = environment.backend + "api/StationImporter/" + osmId;
+    return this.httpClient.post(url, {});
+  }
+
   listStationMaps() {
     let url = environment.backend + "api/stationmaps";
     return this.httpClient.get<StationMap[]>(url);

@@ -62,6 +62,7 @@ export class AdminStationsMapComponent implements OnInit {
   selectedStation?: StationAdminProperties = undefined;
   allRegions: Region[];
   selectedRegionId?: number;
+  selectedNewStationId?: string;
   get bounds(): L.LatLngBounds {
     return this._bounds;
   }
@@ -265,5 +266,12 @@ export class AdminStationsMapComponent implements OnInit {
       .subscribe(() => {
         this.getData();
       });
+  }
+  updateStation() {
+    if (!this.selectedNewStationId) return;
+    this.apiService.importStation(this.selectedNewStationId).subscribe(() => {
+      this.getData();
+      this.selectedNewStationId = undefined;
+    });
   }
 }

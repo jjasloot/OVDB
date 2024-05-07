@@ -59,9 +59,9 @@
       <div style="display: flex">
         <mat-form-field style="flex: 1">
           <mat-label>Import station</mat-label>
-          <input matInput />
+          <input matInput [(ngModel)]="selectedNewStationId" />
         </mat-form-field>
-        <button mat-icon-button>
+        <button mat-icon-button (click)="updateStation()">
           <mat-icon>cloud_upload</mat-icon>
         </button>
       </div>
