@@ -30,6 +30,7 @@ namespace OVDB_database.Database
         public DbSet<StationMapCountry> StationMapCountries { get; set; }
         public DbSet<Region> Regions { get; set; }
         public DbSet<Request> Requests { get; set; }
+        public DbSet<StationGrouping> StationGroupings { get; set; }
         protected override void OnConfiguring(DbContextOptionsBuilder options)
         {
             if (!options.IsConfigured)

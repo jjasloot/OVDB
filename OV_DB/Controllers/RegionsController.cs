@@ -245,6 +245,31 @@ namespace OV_DB.Controllers
             return Ok(mappedRegions);
         }
 
+        [HttpGet("withStations")]
+        public async Task<ActionResult<IEnumerable<RegionDTO>>> GetAllWithStations()
+        {
+            var regions = await _context.Regions.Where(r => r.Stations.Any()).OrderBy(r => r.Name).ProjectTo<RegionIntermediate>(mapper.ConfigurationProvider).ToListAsync();
+
+            var mappedRegions = regions.Where(r => r.ParentRegionId == null).Select(r => new RegionDTO
+            {
+                Id = r.Id,
+
+                Name = r.Name,
+                NameNL = r.NameNL,
+                OriginalName = r.OriginalName,
+                OsmRelationId = r.OsmRelationId,
+                SubRegions = regions.Where(c => c.ParentRegionId == r.Id).Select(c => new RegionDTO
+                {
+                    Id = c.Id,
+                    Name = c.Name,
+                    NameNL = c.NameNL,
+                    OriginalName = c.OriginalName,
+                    OsmRelationId = c.OsmRelationId
+                })
+            });
+            return Ok(mappedRegions);
+        }
+
         [HttpGet("map/{mapGuid}")]
         public async Task<ActionResult<IEnumerable<RegionDTO>>> GetAllForMap(Guid mapGuid)
         {

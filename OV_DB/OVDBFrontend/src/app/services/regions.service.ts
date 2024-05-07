@@ -12,6 +12,9 @@ export class RegionsService {
   getRegions() {
     return this.httpClient.get<Region[]>(environment.backend + "api/regions");
   }
+  getRegionsWithStations() {
+    return this.httpClient.get<Region[]>(environment.backend + "api/regions/withStations");
+  }
 
   addRegion(region: NewRegion) {
     return this.httpClient.post<Region>(

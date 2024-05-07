@@ -106,7 +106,7 @@ export class StationMapsComponent implements OnInit {
     });
     dialogRef.afterClosed().subscribe((result: boolean) => {
       if (!!result) {
-        this.apiService.deleteStationMap(map.stationMapId).subscribe(() => {
+        this.apiService.deleteStationMap(map.id).subscribe(() => {
           this.loadData();
           this.dataUpdateService.requestUpdate();
         });
@@ -134,7 +134,7 @@ export class StationMapsComponent implements OnInit {
       if (data === false) {
         return;
       }
-      this.apiService.updateStationMapOrder(data.map(d => d.stationMapId)).subscribe(() => this.loadData());
+      this.apiService.updateStationMapOrder(data.map(d => d.id)).subscribe(() => this.loadData());
 
 
     });

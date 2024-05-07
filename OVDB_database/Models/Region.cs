@@ -16,4 +16,5 @@ public class Region
     public ICollection<Region> SubRegions { get; set; } = null!;
     public ICollection<Route> Routes { get; set; } = null!;
     public ICollection<Station> Stations { get; set; } = new List<Station>();
+    public ICollection<StationGrouping> StationGroupings { get; set; } = new List<StationGrouping>();
 }

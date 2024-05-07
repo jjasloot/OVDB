@@ -1,10 +1,12 @@
+import { Region, RegionMinimal } from "./region.model";
+
 export interface StationMap {
-  stationMapId: number;
+  id: number;
   name: string;
   nameNL: string;
   mapGuid: string;
   sharingLinkName: string | null;
-  stationMapCountries: StationMapCountryDTO[]
+  regionIds: number[]
 }
 
 export interface StationMapCountryDTO {

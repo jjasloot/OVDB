@@ -37,7 +37,7 @@ namespace OV_DB.Controllers
             {
                 return Forbid();
             }
-            return await _context.StationMaps.Where(m => m.UserId == userIdClaim)
+            return await _context.StationGroupings.Where(m => m.UserId == userIdClaim)
                 .OrderBy(m => m.OrderNr)
                 .ProjectTo<StationMapDTO>(_mapper.ConfigurationProvider)
                 .ToListAsync();
@@ -51,9 +51,9 @@ namespace OV_DB.Controllers
             {
                 return Forbid();
             }
-            var map = await _context.StationMaps.Where(m => m.UserId == userIdClaim)
+            var map = await _context.StationGroupings.Where(m => m.UserId == userIdClaim)
                 .ProjectTo<StationMapDTO>(_mapper.ConfigurationProvider)
-                .SingleOrDefaultAsync(m => m.StationMapId == id);
+                .SingleOrDefaultAsync(m => m.Id == id);
 
             if (map == null)
             {
@@ -71,8 +71,8 @@ namespace OV_DB.Controllers
             {
                 return Forbid();
             }
-            var dbStationMap = await _context.StationMaps.Where(m => m.UserId == userIdClaim).Include(s => s.StationMapCountries)
-                .SingleOrDefaultAsync(m => m.StationMapId == stationMap.StationMapId);
+            var dbStationMap = await _context.StationGroupings.Where(m => m.UserId == userIdClaim).Include(s => s.Regions)
+                .SingleOrDefaultAsync(m => m.Id == stationMap.Id);
             if (dbStationMap is null)
             {
                 return NotFound();
@@ -81,15 +81,8 @@ namespace OV_DB.Controllers
             dbStationMap.Name = stationMap.Name;
             dbStationMap.NameNL = stationMap.NameNL;
 
-            var stationMapCountriesToFind = stationMap.StationMapCountries.Select(s => s.StationCountryId);
-            var countries = await _context.StationCountries.Where(sc => stationMapCountriesToFind.Contains(sc.Id)).ToListAsync();
-
-            dbStationMap.StationMapCountries = stationMap.StationMapCountries.Select(c =>
-            new StationMapCountry
-            {
-                StationCountryId = c.StationCountryId,
-                IncludeSpecials = c.IncludeSpecials
-            }).ToList();
+            var regions = await _context.Regions.Where(r => stationMap.RegionIds.Contains(r.Id)).ToListAsync();
+            dbStationMap.Regions = regions;
 
             try
             {
@@ -97,7 +90,7 @@ namespace OV_DB.Controllers
             }
             catch (DbUpdateConcurrencyException)
             {
-                if (!MapExists(stationMap.StationMapId))
+                if (!MapExists(stationMap.Id))
                 {
                     return NotFound();
                 }
@@ -119,7 +112,7 @@ namespace OV_DB.Controllers
                 return Forbid();
             }
 
-            var dbStationMap = new StationMap
+            var dbStationMap = new StationGrouping
             {
                 SharingLinkName = stationMap.SharingLinkName,
                 Name = stationMap.Name,
@@ -127,39 +120,30 @@ namespace OV_DB.Controllers
                 UserId = userIdClaim,
                 MapGuid = Guid.NewGuid()
             };
-            var stationMapCountriesToFind = stationMap.StationMapCountries.Select(s => s.StationCountryId);
 
-            var countries = await _context.StationCountries.Where(sc => stationMapCountriesToFind.Contains(sc.Id)).ToListAsync();
+            var regions = await _context.Regions.Where(r => stationMap.RegionIds.Contains(r.Id)).ToListAsync();
+            dbStationMap.Regions = regions;
 
-            dbStationMap.StationMapCountries = stationMap.StationMapCountries.Select(c =>
-            new StationMapCountry
-            {
-                StationCountryId = c.StationCountryId,
-                IncludeSpecials = c.IncludeSpecials
-            }).ToList();
-
-            _context.StationMaps.Add(dbStationMap);
+            _context.StationGroupings.Add(dbStationMap);
             await _context.SaveChangesAsync();
 
             return Ok(dbStationMap);
         }
 
         [HttpDelete("{id}")]
-        public async Task<ActionResult<StationMap>> DeleteMap(int id)
+        public async Task<ActionResult<StationGrouping>> DeleteMap(int id)
         {
             var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value ?? "-1");
             if (userIdClaim < 0)
             {
                 return Forbid();
             }
-            var stationMap = await _context.StationMaps.Where(m => m.UserId == userIdClaim).SingleOrDefaultAsync(m => m.StationMapId == id);
+            var stationMap = await _context.StationGroupings.Where(m => m.UserId == userIdClaim).SingleOrDefaultAsync(m => m.Id == id);
             if (stationMap == null)
             {
                 return NotFound();
             }
-            var routeMaps = await _context.StationMapCountries.Where(rm => rm.StationMapId == stationMap.StationMapId).ToListAsync();
-            _context.StationMapCountries.RemoveRange(routeMaps);
-            _context.StationMaps.Remove(stationMap);
+            _context.StationGroupings.Remove(stationMap);
             await _context.SaveChangesAsync();
 
             return stationMap;
@@ -173,10 +157,10 @@ namespace OV_DB.Controllers
             {
                 return Forbid();
             }
-            var maps = await _context.StationMaps.Where(rt => rt.UserId == userIdClaim).ToListAsync();
+            var maps = await _context.StationGroupings.Where(rt => rt.UserId == userIdClaim).ToListAsync();
 
-            maps.ForEach(r => r.OrderNr = mapOrdering.FindIndex(i => r.StationMapId == i));
-            _context.StationMaps.UpdateRange(maps);
+            maps.ForEach(r => r.OrderNr = mapOrdering.FindIndex(i => r.Id == i));
+            _context.StationGroupings.UpdateRange(maps);
             await _context.SaveChangesAsync();
             return Ok();
         }
@@ -190,15 +174,16 @@ namespace OV_DB.Controllers
                 return Forbid();
             }
             var guid = Guid.Parse(id);
-            var stationMap = await _context.StationMaps.SingleOrDefaultAsync(sm => sm.MapGuid == guid);
+            var stationMap = await _context.StationGroupings.Include(r => r.Regions).SingleOrDefaultAsync(sm => sm.MapGuid == guid);
             if (stationMap is null)
             {
                 return NotFound();
             }
+            var regionIds = stationMap.Regions.Select(r => r.Id).ToList();
             var stationsQuery = _context.Stations.AsQueryable();
-            stationsQuery = stationsQuery.Where(s => s.StationCountry.StationMapCountries.Any(smc => smc.StationMap.MapGuid == guid))
+            stationsQuery = stationsQuery.Where(s => s.Regions.Any(r => regionIds.Contains(r.Id)))
                 .Where(s => s.Hidden == false)
-                .Where(s => s.Special == false || s.StationCountry.StationMapCountries.Any(smc => smc.StationMap.MapGuid == guid && smc.IncludeSpecials == true));
+                .Where(s => s.Special == false);
 
             var stations = await stationsQuery.Select(s => new StationDTO
             {
