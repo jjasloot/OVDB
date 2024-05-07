@@ -11,7 +11,7 @@ using System.Globalization;
 using System.IO;
 using System.Xml;
 
-namespace OV_DB.Helpers
+namespace Gpx
 {
     public enum GpxObjectType { None, Attributes, Metadata, WayPoint, Route, Track };
 
@@ -98,7 +98,7 @@ namespace OV_DB.Helpers
 
         private GpxAttributes ReadGpxAttribures()
         {
-            var attributes = new GpxAttributes();
+            GpxAttributes attributes = new GpxAttributes();
 
             while (Reader_.MoveToNextAttribute())
             {
@@ -118,10 +118,10 @@ namespace OV_DB.Helpers
 
         private GpxMetadata ReadGpxMetadata()
         {
-            var metadata = new GpxMetadata();
+            GpxMetadata metadata = new GpxMetadata();
             if (Reader_.IsEmptyElement) return metadata;
 
-            var elementName = Reader_.Name;
+            string elementName = Reader_.Name;
 
             while (Reader_.Read())
             {
@@ -173,10 +173,10 @@ namespace OV_DB.Helpers
 
         private GpxWayPoint ReadGpxWayPoint()
         {
-            var elementName = Reader_.Name;
-            var isEmptyElement = Reader_.IsEmptyElement;
+            string elementName = Reader_.Name;
+            bool isEmptyElement = Reader_.IsEmptyElement;
 
-            var wayPoint = new GpxWayPoint();
+            GpxWayPoint wayPoint = new GpxWayPoint();
             GetPointLocation(wayPoint);
             if (isEmptyElement) return wayPoint;
 
@@ -209,10 +209,10 @@ namespace OV_DB.Helpers
 
         private GpxRoute ReadGpxRoute()
         {
-            var route = new GpxRoute();
+            GpxRoute route = new GpxRoute();
             if (Reader_.IsEmptyElement) return route;
 
-            var elementName = Reader_.Name;
+            string elementName = Reader_.Name;
 
             while (Reader_.Read())
             {
@@ -267,10 +267,10 @@ namespace OV_DB.Helpers
 
         private GpxRoutePoint ReadGpxRoutePoint()
         {
-            var elementName = Reader_.Name;
-            var isEmptyElement = Reader_.IsEmptyElement;
+            string elementName = Reader_.Name;
+            bool isEmptyElement = Reader_.IsEmptyElement;
 
-            var routePoint = new GpxRoutePoint();
+            GpxRoutePoint routePoint = new GpxRoutePoint();
             GetPointLocation(routePoint);
             if (isEmptyElement) return routePoint;
 
@@ -303,10 +303,10 @@ namespace OV_DB.Helpers
 
         private GpxTrack ReadGpxTrack()
         {
-            var track = new GpxTrack();
+            GpxTrack track = new GpxTrack();
             if (Reader_.IsEmptyElement) return track;
 
-            var elementName = Reader_.Name;
+            string elementName = Reader_.Name;
 
             while (Reader_.Read())
             {
@@ -361,10 +361,10 @@ namespace OV_DB.Helpers
 
         private GpxTrackSegment ReadGpxTrackSegment()
         {
-            var segment = new GpxTrackSegment();
+            GpxTrackSegment segment = new GpxTrackSegment();
             if (Reader_.IsEmptyElement) return segment;
 
-            var elementName = Reader_.Name;
+            string elementName = Reader_.Name;
 
             while (Reader_.Read())
             {
@@ -398,10 +398,10 @@ namespace OV_DB.Helpers
 
         private GpxTrackPoint ReadGpxTrackPoint()
         {
-            var elementName = Reader_.Name;
-            var isEmptyElement = Reader_.IsEmptyElement;
+            string elementName = Reader_.Name;
+            bool isEmptyElement = Reader_.IsEmptyElement;
 
-            var trackPoint = new GpxTrackPoint();
+            GpxTrackPoint trackPoint = new GpxTrackPoint();
             GetPointLocation(trackPoint);
             if (isEmptyElement) return trackPoint;
 
@@ -434,10 +434,10 @@ namespace OV_DB.Helpers
 
         private GpxPerson ReadGpxPerson()
         {
-            var person = new GpxPerson();
+            GpxPerson person = new GpxPerson();
             if (Reader_.IsEmptyElement) return person;
 
-            var elementName = Reader_.Name;
+            string elementName = Reader_.Name;
 
             while (Reader_.Read())
             {
@@ -474,10 +474,10 @@ namespace OV_DB.Helpers
 
         private GpxEmail ReadGpxEmail()
         {
-            var email = new GpxEmail();
+            GpxEmail email = new GpxEmail();
             if (Reader_.IsEmptyElement) return email;
 
-            var elementName = Reader_.Name;
+            string elementName = Reader_.Name;
 
             while (Reader_.Read())
             {
@@ -511,10 +511,10 @@ namespace OV_DB.Helpers
 
         private GpxLink ReadGpxLink()
         {
-            var link = new GpxLink();
+            GpxLink link = new GpxLink();
 
-            var elementName = Reader_.Name;
-            var isEmptyElement = Reader_.IsEmptyElement;
+            string elementName = Reader_.Name;
+            bool isEmptyElement = Reader_.IsEmptyElement;
 
             while (Reader_.MoveToNextAttribute())
             {
@@ -560,10 +560,10 @@ namespace OV_DB.Helpers
 
         private GpxCopyright ReadGpxCopyright()
         {
-            var copyright = new GpxCopyright();
+            GpxCopyright copyright = new GpxCopyright();
 
-            var elementName = Reader_.Name;
-            var isEmptyElement = Reader_.IsEmptyElement;
+            string elementName = Reader_.Name;
+            bool isEmptyElement = Reader_.IsEmptyElement;
 
             while (Reader_.MoveToNextAttribute())
             {
@@ -611,7 +611,7 @@ namespace OV_DB.Helpers
         {
             if (!Reader_.IsEmptyElement) throw new FormatException(Reader_.Name);
 
-            var bounds = new GpxBounds();
+            GpxBounds bounds = new GpxBounds();
 
             while (Reader_.MoveToNextAttribute())
             {
@@ -639,7 +639,7 @@ namespace OV_DB.Helpers
         {
             if (Reader_.IsEmptyElement) return;
 
-            var elementName = Reader_.Name;
+            string elementName = Reader_.Name;
 
             while (Reader_.Read())
             {
@@ -696,7 +696,7 @@ namespace OV_DB.Helpers
         {
             if (Reader_.IsEmptyElement) return;
 
-            var elementName = Reader_.Name;
+            string elementName = Reader_.Name;
 
             while (Reader_.Read())
             {
@@ -735,7 +735,7 @@ namespace OV_DB.Helpers
         {
             if (Reader_.IsEmptyElement) return;
 
-            var elementName = Reader_.Name;
+            string elementName = Reader_.Name;
 
             while (Reader_.Read())
             {
@@ -774,7 +774,7 @@ namespace OV_DB.Helpers
         {
             if (Reader_.IsEmptyElement) return;
 
-            var elementName = Reader_.Name;
+            string elementName = Reader_.Name;
 
             while (Reader_.Read())
             {
@@ -818,7 +818,7 @@ namespace OV_DB.Helpers
         {
             if (Reader_.IsEmptyElement) return;
 
-            var elementName = Reader_.Name;
+            string elementName = Reader_.Name;
 
             while (Reader_.Read())
             {
@@ -859,7 +859,7 @@ namespace OV_DB.Helpers
         {
             if (Reader_.IsEmptyElement) return;
 
-            var elementName = Reader_.Name;
+            string elementName = Reader_.Name;
 
             while (Reader_.Read())
             {
@@ -915,7 +915,7 @@ namespace OV_DB.Helpers
         {
             if (Reader_.IsEmptyElement) return;
 
-            var elementName = Reader_.Name;
+            string elementName = Reader_.Name;
 
             while (Reader_.Read())
             {
@@ -947,7 +947,7 @@ namespace OV_DB.Helpers
         {
             if (Reader_.IsEmptyElement) return;
 
-            var elementName = Reader_.Name;
+            string elementName = Reader_.Name;
 
             while (Reader_.Read())
             {
@@ -979,7 +979,7 @@ namespace OV_DB.Helpers
         {
             if (Reader_.IsEmptyElement) return;
 
-            var elementName = Reader_.Name;
+            string elementName = Reader_.Name;
 
             while (Reader_.Read())
             {
@@ -1034,7 +1034,7 @@ namespace OV_DB.Helpers
         {
             if (Reader_.IsEmptyElement) return;
 
-            var elementName = Reader_.Name;
+            string elementName = Reader_.Name;
 
             while (Reader_.Read())
             {
@@ -1066,7 +1066,7 @@ namespace OV_DB.Helpers
         {
             if (Reader_.IsEmptyElement) return;
 
-            var elementName = Reader_.Name;
+            string elementName = Reader_.Name;
 
             while (Reader_.Read())
             {
@@ -1096,10 +1096,10 @@ namespace OV_DB.Helpers
 
         private GpxPoint ReadGarminAutoRoutePoint()
         {
-            var point = new GpxPoint();
+            GpxPoint point = new GpxPoint();
 
-            var elementName = Reader_.Name;
-            var isEmptyElement = Reader_.IsEmptyElement;
+            string elementName = Reader_.Name;
+            bool isEmptyElement = Reader_.IsEmptyElement;
 
             GetPointLocation(point);
             if (isEmptyElement) return point;
@@ -1123,10 +1123,10 @@ namespace OV_DB.Helpers
 
         private GpxAddress ReadGarminGpxAddress()
         {
-            var address = new GpxAddress();
+            GpxAddress address = new GpxAddress();
             if (Reader_.IsEmptyElement) return address;
 
-            var elementName = Reader_.Name;
+            string elementName = Reader_.Name;
 
             while (Reader_.Read())
             {
@@ -1187,8 +1187,8 @@ namespace OV_DB.Helpers
         {
             if (Reader_.IsEmptyElement) return;
 
-            var elementName = Reader_.Name;
-            var depth = Reader_.Depth;
+            string elementName = Reader_.Name;
+            int depth = Reader_.Depth;
 
             while (Reader_.Read())
             {
@@ -1284,8 +1284,8 @@ namespace OV_DB.Helpers
         {
             if (Reader_.IsEmptyElement) throw new FormatException(Reader_.Name);
 
-            var elementName = Reader_.Name;
-            var result = string.Empty;
+            string elementName = Reader_.Name;
+            string result = string.Empty;
 
             while (Reader_.Read())
             {
@@ -1308,19 +1308,19 @@ namespace OV_DB.Helpers
 
         private int ReadContentAsInt()
         {
-            var value = ReadContentAsString();
+            string value = ReadContentAsString();
             return int.Parse(value, CultureInfo.InvariantCulture);
         }
 
         private double ReadContentAsDouble()
         {
-            var value = ReadContentAsString();
+            string value = ReadContentAsString();
             return double.Parse(value, CultureInfo.InvariantCulture);
         }
 
         private DateTime ReadContentAsDateTime()
         {
-            var value = ReadContentAsString();
+            string value = ReadContentAsString();
             return DateTime.Parse(value, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal);
         }
     }

@@ -10,7 +10,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace OV_DB.Helpers
+namespace Gpx
 {
     public static class GpxNamespaces
     {
@@ -56,37 +56,37 @@ namespace OV_DB.Helpers
         public double? MagneticVar
         {
             get { return Properties_.GetValueProperty<double>("MagneticVar"); }
-            set { Properties_.SetValueProperty("MagneticVar", value); }
+            set { Properties_.SetValueProperty<double>("MagneticVar", value); }
         }
 
         public double? GeoidHeight
         {
             get { return Properties_.GetValueProperty<double>("GeoidHeight"); }
-            set { Properties_.SetValueProperty("GeoidHeight", value); }
+            set { Properties_.SetValueProperty<double>("GeoidHeight", value); }
         }
 
         public string Name
         {
             get { return Properties_.GetObjectProperty<string>("Name"); }
-            set { Properties_.SetObjectProperty("Name", value); }
+            set { Properties_.SetObjectProperty<string>("Name", value); }
         }
 
         public string Comment
         {
             get { return Properties_.GetObjectProperty<string>("Comment"); }
-            set { Properties_.SetObjectProperty("Comment", value); }
+            set { Properties_.SetObjectProperty<string>("Comment", value); }
         }
 
         public string Description
         {
             get { return Properties_.GetObjectProperty<string>("Description"); }
-            set { Properties_.SetObjectProperty("Description", value); }
+            set { Properties_.SetObjectProperty<string>("Description", value); }
         }
 
         public string Source
         {
             get { return Properties_.GetObjectProperty<string>("Source"); }
-            set { Properties_.SetObjectProperty("Source", value); }
+            set { Properties_.SetObjectProperty<string>("Source", value); }
         }
 
         public IList<GpxLink> Links
@@ -97,55 +97,55 @@ namespace OV_DB.Helpers
         public string Symbol
         {
             get { return Properties_.GetObjectProperty<string>("Symbol"); }
-            set { Properties_.SetObjectProperty("Symbol", value); }
+            set { Properties_.SetObjectProperty<string>("Symbol", value); }
         }
 
         public string Type
         {
             get { return Properties_.GetObjectProperty<string>("Type"); }
-            set { Properties_.SetObjectProperty("Type", value); }
+            set { Properties_.SetObjectProperty<string>("Type", value); }
         }
 
         public string FixType
         {
             get { return Properties_.GetObjectProperty<string>("FixType"); }
-            set { Properties_.SetObjectProperty("FixType", value); }
+            set { Properties_.SetObjectProperty<string>("FixType", value); }
         }
 
         public int? Satelites
         {
             get { return Properties_.GetValueProperty<int>("Satelites"); }
-            set { Properties_.SetValueProperty("Satelites", value); }
+            set { Properties_.SetValueProperty<int>("Satelites", value); }
         }
 
         public double? Hdop
         {
             get { return Properties_.GetValueProperty<double>("Hdop"); }
-            set { Properties_.SetValueProperty("Hdop", value); }
+            set { Properties_.SetValueProperty<double>("Hdop", value); }
         }
 
         public double? Vdop
         {
             get { return Properties_.GetValueProperty<double>("Vdop"); }
-            set { Properties_.SetValueProperty("Vdop", value); }
+            set { Properties_.SetValueProperty<double>("Vdop", value); }
         }
 
         public double? Pdop
         {
             get { return Properties_.GetValueProperty<double>("Pdop"); }
-            set { Properties_.SetValueProperty("Pdop", value); }
+            set { Properties_.SetValueProperty<double>("Pdop", value); }
         }
 
         public double? AgeOfData
         {
             get { return Properties_.GetValueProperty<double>("AgeOfData"); }
-            set { Properties_.SetValueProperty("AgeOfData", value); }
+            set { Properties_.SetValueProperty<double>("AgeOfData", value); }
         }
 
         public int? DgpsId
         {
             get { return Properties_.GetValueProperty<int>("DgpsId"); }
-            set { Properties_.SetValueProperty("DgpsId", value); }
+            set { Properties_.SetValueProperty<int>("DgpsId", value); }
         }
 
         public GpxLink HttpLink
@@ -166,19 +166,19 @@ namespace OV_DB.Helpers
 
         public double GetDistanceFrom(GpxPoint other)
         {
-            var thisLatitude = Latitude;
-            var otherLatitude = other.Latitude;
-            var thisLongitude = Longitude;
-            var otherLongitude = other.Longitude;
+            double thisLatitude = this.Latitude;
+            double otherLatitude = other.Latitude;
+            double thisLongitude = this.Longitude;
+            double otherLongitude = other.Longitude;
 
-            var deltaLatitude = Math.Abs(Latitude - other.Latitude);
-            var deltaLongitude = Math.Abs(Longitude - other.Longitude);
+            double deltaLatitude = Math.Abs(this.Latitude - other.Latitude);
+            double deltaLongitude = Math.Abs(this.Longitude - other.Longitude);
 
             thisLatitude *= RADIAN;
             otherLatitude *= RADIAN;
             deltaLongitude *= RADIAN;
 
-            var cos = Math.Cos(deltaLongitude) * Math.Cos(thisLatitude) * Math.Cos(otherLatitude) +
+            double cos = Math.Cos(deltaLongitude) * Math.Cos(thisLatitude) * Math.Cos(otherLatitude) +
                 Math.Sin(thisLatitude) * Math.Sin(otherLatitude);
 
             return EARTH_RADIUS * Math.Acos(cos);
@@ -192,25 +192,25 @@ namespace OV_DB.Helpers
         public double? Proximity
         {
             get { return Properties_.GetValueProperty<double>("Proximity"); }
-            set { Properties_.SetValueProperty("Proximity", value); }
+            set { Properties_.SetValueProperty<double>("Proximity", value); }
         }
 
         public double? Temperature
         {
             get { return Properties_.GetValueProperty<double>("Temperature"); }
-            set { Properties_.SetValueProperty("Temperature", value); }
+            set { Properties_.SetValueProperty<double>("Temperature", value); }
         }
 
         public double? Depth
         {
             get { return Properties_.GetValueProperty<double>("Depth"); }
-            set { Properties_.SetValueProperty("Depth", value); }
+            set { Properties_.SetValueProperty<double>("Depth", value); }
         }
 
         public string DisplayMode
         {
             get { return Properties_.GetObjectProperty<string>("DisplayMode"); }
-            set { Properties_.SetObjectProperty("DisplayMode", value); }
+            set { Properties_.SetObjectProperty<string>("DisplayMode", value); }
         }
 
         public IList<string> Categories
@@ -221,7 +221,7 @@ namespace OV_DB.Helpers
         public GpxAddress Address
         {
             get { return Properties_.GetObjectProperty<GpxAddress>("Address"); }
-            set { Properties_.SetObjectProperty("Address", value); }
+            set { Properties_.SetObjectProperty<GpxAddress>("Address", value); }
         }
 
         public IList<GpxPhone> Phones
@@ -234,13 +234,13 @@ namespace OV_DB.Helpers
         public int? Samples
         {
             get { return Properties_.GetValueProperty<int>("Samples"); }
-            set { Properties_.SetValueProperty("Samples", value); }
+            set { Properties_.SetValueProperty<int>("Samples", value); }
         }
 
         public DateTime? Expiration
         {
             get { return Properties_.GetValueProperty<DateTime>("Expiration"); }
-            set { Properties_.SetValueProperty("Expiration", value); }
+            set { Properties_.SetValueProperty<DateTime>("Expiration", value); }
         }
 
         // DLG_EXTENSIONS
@@ -248,7 +248,7 @@ namespace OV_DB.Helpers
         public int? Level
         {
             get { return Properties_.GetValueProperty<int>("Level"); }
-            set { Properties_.SetValueProperty("Level", value); }
+            set { Properties_.SetValueProperty<int>("Level", value); }
         }
 
         public IList<string> Aliases
@@ -289,13 +289,13 @@ namespace OV_DB.Helpers
         public double? Temperature
         {
             get { return Properties_.GetValueProperty<double>("Temperature"); }
-            set { Properties_.SetValueProperty("Temperature", value); }
+            set { Properties_.SetValueProperty<double>("Temperature", value); }
         }
 
         public double? Depth
         {
             get { return Properties_.GetValueProperty<double>("Depth"); }
-            set { Properties_.SetValueProperty("Depth", value); }
+            set { Properties_.SetValueProperty<double>("Depth", value); }
         }
 
         // GARMIN_TRACKPOINT_EXTENSIONS_V1, GARMIN_TRACKPOINT_EXTENSIONS_V2
@@ -303,19 +303,19 @@ namespace OV_DB.Helpers
         public double? WaterTemperature
         {
             get { return Properties_.GetValueProperty<double>("WaterTemperature"); }
-            set { Properties_.SetValueProperty("WaterTemperature", value); }
+            set { Properties_.SetValueProperty<double>("WaterTemperature", value); }
         }
 
         public int? HeartRate
         {
             get { return Properties_.GetValueProperty<int>("HeartRate"); }
-            set { Properties_.SetValueProperty("HeartRate", value); }
+            set { Properties_.SetValueProperty<int>("HeartRate", value); }
         }
 
         public int? Cadence
         {
             get { return Properties_.GetValueProperty<int>("Cadence"); }
-            set { Properties_.SetValueProperty("Cadence", value); }
+            set { Properties_.SetValueProperty<int>("Cadence", value); }
         }
 
         // GARMIN_TRACKPOINT_EXTENSIONS_V2
@@ -323,20 +323,20 @@ namespace OV_DB.Helpers
         public double? Speed
         {
             get { return Properties_.GetValueProperty<double>("Speed"); }
-            set { Properties_.SetValueProperty("Speed", value); }
+            set { Properties_.SetValueProperty<double>("Speed", value); }
         }
 
         public double? Course
         {
             get { return Properties_.GetValueProperty<double>("Course"); }
-            set { Properties_.SetValueProperty("Course", value); }
+            set { Properties_.SetValueProperty<double>("Course", value); }
         }
 
 
         public double? Bearing
         {
             get { return Properties_.GetValueProperty<double>("Bearing"); }
-            set { Properties_.SetValueProperty("Bearing", value); }
+            set { Properties_.SetValueProperty<double>("Bearing", value); }
         }
 
         //OVDB
@@ -344,12 +344,12 @@ namespace OV_DB.Helpers
         public DateTime? FirstDateTime
         {
             get { return Properties_.GetValueProperty<DateTime>("FirstDateTime"); }
-            set { Properties_.SetValueProperty("FirstDateTime", value); }
+            set { Properties_.SetValueProperty<DateTime>("FirstDateTime", value); }
         }
-        public string RouteType
+        public string? RouteType
         {
             get { return Properties_.GetObjectProperty<string>("Type"); }
-            set { Properties_.SetObjectProperty("Type", value); }
+            set { Properties_.SetObjectProperty<string>("Type", value); }
         }
 
         public bool HasOVDBProperties
@@ -405,21 +405,21 @@ namespace OV_DB.Helpers
 
         public T StartPoint
         {
-            get { return Points_.Count == 0 ? null : Points_[0]; }
+            get { return (Points_.Count == 0) ? null : Points_[0]; }
         }
 
         public T EndPoint
         {
-            get { return Points_.Count == 0 ? null : Points_[Points_.Count - 1]; }
+            get { return (Points_.Count == 0) ? null : Points_[Points_.Count - 1]; }
         }
 
         public double GetLength()
         {
             double result = 0;
 
-            for (var i = 1; i < Points_.Count; i++)
+            for (int i = 1; i < Points_.Count; i++)
             {
-                var dist = Points_[i].GetDistanceFrom(Points_[i - 1]);
+                double dist = Points_[i].GetDistanceFrom(Points_[i - 1]);
                 result += dist;
             }
 
@@ -438,11 +438,11 @@ namespace OV_DB.Helpers
 
         public GpxPointCollection<GpxPoint> ToGpxPoints()
         {
-            var points = new GpxPointCollection<GpxPoint>();
+            GpxPointCollection<GpxPoint> points = new GpxPointCollection<GpxPoint>();
 
-            foreach (var gpxPoint in Points_)
+            foreach (T gpxPoint in Points_)
             {
-                var point = new GpxPoint
+                GpxPoint point = new GpxPoint
                 {
                     Longitude = gpxPoint.Longitude,
                     Latitude = gpxPoint.Latitude,
@@ -519,7 +519,7 @@ namespace OV_DB.Helpers
 
         System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
         {
-            return GetEnumerator();
+            return this.GetEnumerator();
         }
     }
 
@@ -562,13 +562,13 @@ namespace OV_DB.Helpers
 
         public override GpxPointCollection<GpxPoint> ToGpxPoints()
         {
-            var points = new GpxPointCollection<GpxPoint>();
+            GpxPointCollection<GpxPoint> points = new GpxPointCollection<GpxPoint>();
 
-            foreach (var routePoint in RoutePoints_)
+            foreach (GpxRoutePoint routePoint in RoutePoints_)
             {
                 points.Add(routePoint);
 
-                foreach (var gpxPoint in routePoint.RoutePoints)
+                foreach (GpxPoint gpxPoint in routePoint.RoutePoints)
                 {
                     points.Add(gpxPoint);
                 }
@@ -589,13 +589,13 @@ namespace OV_DB.Helpers
 
         public override GpxPointCollection<GpxPoint> ToGpxPoints()
         {
-            var points = new GpxPointCollection<GpxPoint>();
+            GpxPointCollection<GpxPoint> points = new GpxPointCollection<GpxPoint>();
 
-            foreach (var segment in Segments_)
+            foreach (GpxTrackSegment segment in Segments_)
             {
-                var segmentPoints = segment.TrackPoints.ToGpxPoints();
+                GpxPointCollection<GpxPoint> segmentPoints = segment.TrackPoints.ToGpxPoints();
 
-                foreach (var point in segmentPoints)
+                foreach (GpxPoint point in segmentPoints)
                 {
                     points.Add(point);
                 }

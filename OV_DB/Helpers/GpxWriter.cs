@@ -11,7 +11,7 @@ using System.Globalization;
 using System.IO;
 using System.Xml;
 
-namespace OV_DB.Helpers
+namespace Gpx
 {
     public class GpxWriter : IDisposable
     {
@@ -81,7 +81,7 @@ namespace OV_DB.Helpers
                     {
                         Writer_.WriteStartElement("Categories", GpxNamespaces.GARMIN_WAYPOINT_EXTENSIONS_NAMESPACE);
 
-                        foreach (var category in wayPoint.Categories)
+                        foreach (string category in wayPoint.Categories)
                         {
                             Writer_.WriteElementString("Category", GpxNamespaces.GARMIN_WAYPOINT_EXTENSIONS_NAMESPACE, category);
                         }
@@ -91,7 +91,7 @@ namespace OV_DB.Helpers
 
                     if (wayPoint.Address != null) WriteAddress("Address", wayPoint.Address);
 
-                    foreach (var phone in wayPoint.Phones)
+                    foreach (GpxPhone phone in wayPoint.Phones)
                     {
                         WritePhone("PhoneNumber", phone);
                     }
@@ -106,7 +106,7 @@ namespace OV_DB.Helpers
                 {
                     Writer_.WriteStartElement("aliases", GpxNamespaces.DLG_EXTENSIONS_NAMESPACE);
 
-                    foreach (var alias in wayPoint.Aliases)
+                    foreach (string alias in wayPoint.Aliases)
                     {
                         Writer_.WriteElementString("alias", GpxNamespaces.DLG_EXTENSIONS_NAMESPACE, alias);
                     }
@@ -130,7 +130,7 @@ namespace OV_DB.Helpers
             Writer_.WriteStartElement("rte");
             WriteTrackOrRoute(route);
 
-            foreach (var routePoint in route.RoutePoints)
+            foreach (GpxRoutePoint routePoint in route.RoutePoints)
             {
                 WriteRoutePoint("rtept", routePoint);
             }
@@ -143,7 +143,7 @@ namespace OV_DB.Helpers
             Writer_.WriteStartElement("trk");
             WriteTrackOrRoute(track);
 
-            foreach (var segment in track.Segments)
+            foreach (GpxTrackSegment segment in track.Segments)
             {
                 WriteTrackSegment("trkseg", segment);
             }
@@ -158,7 +158,7 @@ namespace OV_DB.Helpers
             if (trackOrRoute.Description != null) Writer_.WriteElementString("desc", trackOrRoute.Description);
             if (trackOrRoute.Source != null) Writer_.WriteElementString("src", trackOrRoute.Source);
 
-            foreach (var link in trackOrRoute.Links)
+            foreach (GpxLink link in trackOrRoute.Links)
             {
                 WriteLink("link", link);
             }
@@ -182,7 +182,7 @@ namespace OV_DB.Helpers
         {
             Writer_.WriteStartElement(elementName);
 
-            foreach (var trackPoint in segment.TrackPoints)
+            foreach (GpxTrackPoint trackPoint in segment.TrackPoints)
             {
                 WriteTrackPoint(trackPoint);
             }
@@ -226,7 +226,7 @@ namespace OV_DB.Helpers
                 Writer_.WriteStartElement("extensions");
                 Writer_.WriteStartElement("RoutePointExtension", GpxNamespaces.GARMIN_EXTENSIONS_NAMESPACE);
 
-                foreach (var point in routePoint.RoutePoints)
+                foreach (GpxPoint point in routePoint.RoutePoints)
                 {
                     WriteSubPoint(point);
                 }
@@ -251,7 +251,7 @@ namespace OV_DB.Helpers
             if (point.Description != null) Writer_.WriteElementString("desc", point.Description);
             if (point.Source != null) Writer_.WriteElementString("src", point.Source);
 
-            foreach (var link in point.Links)
+            foreach (GpxLink link in point.Links)
             {
                 WriteLink("link", link);
             }

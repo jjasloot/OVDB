@@ -10,7 +10,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace OV_DB.Helpers
+namespace Gpx
 {
     public class GpxProperties
     {
@@ -22,14 +22,14 @@ namespace OV_DB.Helpers
 
             public GpxListWrapper(GpxProperties properties, string name)
             {
-                Properties_ = properties;
-                Name_ = name;
-                Items_ = properties.GetObjectProperty<IList<T>>(name);
+                this.Properties_ = properties;
+                this.Name_ = name;
+                this.Items_ = properties.GetObjectProperty<IList<T>>(name);
             }
 
             public int IndexOf(T item)
             {
-                return Items_ != null ? Items_.IndexOf(item) : -1;
+                return (Items_ != null) ? Items_.IndexOf(item) : -1;
             }
 
             public void Insert(int index, T item)
@@ -118,13 +118,13 @@ namespace OV_DB.Helpers
 
             System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
             {
-                return GetEnumerator();
+                return this.GetEnumerator();
             }
         }
 
         Dictionary<string, object> Properties_ = null;
 
-        public T? GetValueProperty<T>(string name) where T : struct
+        public Nullable<T> GetValueProperty<T>(string name) where T : struct
         {
             if (Properties_ == null) return null;
 
@@ -149,7 +149,7 @@ namespace OV_DB.Helpers
             return new GpxListWrapper<T>(this, name);
         }
 
-        public void SetValueProperty<T>(string name, T? value) where T : struct
+        public void SetValueProperty<T>(string name, Nullable<T> value) where T : struct
         {
             if (value != null)
             {

@@ -1,12 +1,12 @@
 ﻿using System;
 
-namespace OV_DB.Models;
+namespace OVDB_database.Models;
 public class RequestForUserDTO
 {
     public int Id { get; set; }
     public string Message { get; set; }
     public DateTime Created { get; set; }
-    public string Response { get; set; }
+    public string? Response { get; set; }
     public DateTime? Responded { get; set; }
 }
 
