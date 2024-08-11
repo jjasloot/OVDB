@@ -23,7 +23,7 @@ public class ImagesController(OVDBDatabaseContext context, IMemoryCache memoryCa
     [HttpGet]
     public async Task<ActionResult> GetImageAsync([FromQuery] List<Guid> guid, [FromQuery] int width = 300, [FromQuery] int height = 100, [FromQuery] string title = null, [FromQuery] bool includeTotal = false, [FromQuery] string language = "NL", [FromQuery] bool hideAttribution = false)
     {
-        var id = "image|" + string.Join(',', guid.Select(g => g.ToString())) + "|" + width + "|" + height + "|" + includeTotal + "|" + title + "|" + language;
+        var id = "image|" + string.Join(',', guid.Select(g => g.ToString())) + "|" + width + "|" + height + "|" + includeTotal + "|" + title + "|" + language + "|" + hideAttribution;
 
         var fileContents = await memoryCache.GetOrCreateAsync(id, async entry =>
         {
