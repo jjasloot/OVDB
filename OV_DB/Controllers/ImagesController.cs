@@ -61,9 +61,10 @@ public class ImagesController(OVDBDatabaseContext context, IMemoryCache memoryCa
         var graybrush = Brushes.Solid(Color.Gray);
         var brush = Brushes.Solid(Color.Black);
         using var image = new Image<Rgba32>(width, height);
+        float spaceNeeded = 0;
         if (!hideAttribution)
         {
-            var spaceNeeded = TextMeasurer.MeasureAdvance("ovdb.infinityx.nl", new TextOptions(font)).Width;
+            spaceNeeded = TextMeasurer.MeasureAdvance("ovdb.infinityx.nl", new TextOptions(font)).Width;
             image.Mutate(x =>
             {
                 x.DrawText("ovdb.infinityx.nl", font, greenbrush, new PointF(width - spaceNeeded - 8, height - 20));
