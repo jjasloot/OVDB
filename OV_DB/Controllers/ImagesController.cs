@@ -63,7 +63,10 @@ public class ImagesController : ControllerBase
         var x4 = x.Where(ri => ri.Date.Month == DateTime.Now.Month).GroupBy(x => x.Name).Select(x => (Name: x.Key, x.First().NameNL, Distance: Math.Round(x.Sum(x => x.Distance), 1))).OrderByDescending(x => x.Distance).ToList();
 
         using var image = new Image<Rgba32>(width, height);
-        var fontType = SystemFonts.Get("Calibri");
+        if (!SystemFonts.TryGet("Ubuntu", out var fontType))
+        {
+            fontType = SystemFonts.Get("Calibri");
+        };
         var font = new Font(fontType, 12);
         var smallfont = new Font(fontType, 10);
         var greenbrush = Brushes.Solid(Color.Green);
