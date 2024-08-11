@@ -11,8 +11,7 @@ RUN dotnet publish -c Release -o out
 # Build runtime image
 FROM mcr.microsoft.com/dotnet/aspnet:8.0
 WORKDIR /app
-RUN apt-get update &&  apt-get install -y libc6-dev libgdiplus fontconfig
-RUN fc-list
+RUN apt-get update &&  apt-get install -y libc6-dev libgdiplus
 ENV UserAgent=$UserAgent
 ENV JWTSigningKey=$JWTSigningKey
 COPY --from=build-env /app/out .

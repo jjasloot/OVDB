@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
+using OV_DB.Services;
 using OVDB_database.Database;
 using SixLabors.Fonts;
 using SixLabors.ImageSharp;
@@ -17,24 +18,14 @@ namespace OV_DB.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-public class ImagesController : ControllerBase
+public class ImagesController(OVDBDatabaseContext context, IMemoryCache memoryCache, IFontLoader fontLoader) : ControllerBase
 {
-    private readonly OVDBDatabaseContext _context;
-    private readonly IMemoryCache _memoryCache;
-
-    public ImagesController(OVDBDatabaseContext context, IMemoryCache memoryCache)
-    {
-        _context = context;
-        _memoryCache = memoryCache;
-    }
-
-
     [HttpGet]
     public async Task<ActionResult> GetImageAsync([FromQuery] List<Guid> guid, [FromQuery] int width = 300, [FromQuery] int height = 100, [FromQuery] string title = null, [FromQuery] bool includeTotal = false, [FromQuery] string language = "NL")
     {
         var id = "image|" + string.Join(',', guid.Select(g => g.ToString())) + "|" + width + "|" + height + "|" + includeTotal + "|" + title + "|" + language;
 
-        var fileContents = await _memoryCache.GetOrCreateAsync(id, async entry =>
+        var fileContents = await memoryCache.GetOrCreateAsync(id, async entry =>
         {
             entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(15);
             return await GenerateImageAsync(width, height, title, guid, includeTotal, language);
@@ -45,7 +36,7 @@ public class ImagesController : ControllerBase
 
     private async Task<byte[]> GenerateImageAsync(int width, int height, string title, List<Guid> guids, bool includeTotal, string language)
     {
-        var query = _context.RouteInstances
+        var query = context.RouteInstances
  .Where(ri => ri.Route.RouteMaps.Any(rm => guids.Contains(rm.Map.MapGuid)) || ri.RouteInstanceMaps.Any(rim => guids.Contains(rim.Map.MapGuid)));
 
         query = query.Where(ri => ri.Date.Year == DateTime.Now.Year);
@@ -62,17 +53,15 @@ public class ImagesController : ControllerBase
         var x2 = x.GroupBy(x => x.Name).Select(x => (Name: x.Key, x.First().NameNL, Distance: Math.Round(x.Sum(x => x.Distance), 1))).OrderByDescending(x => x.Distance).ToList();
         var x4 = x.Where(ri => ri.Date.Month == DateTime.Now.Month).GroupBy(x => x.Name).Select(x => (Name: x.Key, x.First().NameNL, Distance: Math.Round(x.Sum(x => x.Distance), 1))).OrderByDescending(x => x.Distance).ToList();
 
-        using var image = new Image<Rgba32>(width, height);
-        if (!SystemFonts.TryGet("DejaVuSans", out var fontType))
-        {
-            fontType = SystemFonts.Get("Calibri");
-        };
+        var collection = fontLoader.FontCollection;
+        var fontType = collection.Get("Ubuntu");
         var font = new Font(fontType, 12);
         var smallfont = new Font(fontType, 10);
         var greenbrush = Brushes.Solid(Color.Green);
         var graybrush = Brushes.Solid(Color.Gray);
         var brush = Brushes.Solid(Color.Black);
         var spaceNeeded = TextMeasurer.MeasureAdvance("ovdb.infinityx.nl", new TextOptions(font)).Width;
+        using var image = new Image<Rgba32>(width, height);
         image.Mutate(x =>
         {
             x.DrawText("ovdb.infinityx.nl", font, greenbrush, new PointF(width - spaceNeeded - 8, height - 20));

@@ -137,6 +137,7 @@ namespace OV_DB
             services.AddSignalR();
             services.AddTransient<IRouteRegionsService, RouteRegionsService>();
             services.AddTransient<IStationRegionsService, StationRegionsService>();
+            services.AddSingleton<IFontLoader, FontLoader>();
 
 
             NetTopologySuite.NtsGeometryServices.Instance = new NetTopologySuite.NtsGeometryServices(

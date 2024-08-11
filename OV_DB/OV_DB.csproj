@@ -42,6 +42,12 @@
     <ProjectReference Include="..\OVDB_database\OVDB_database.csproj" />
   </ItemGroup>
   <ItemGroup>
+    <None Update="Assets\Fonts\Ubuntu-Regular.ttf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Assets\Fonts\UFL.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="OVDB.db">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
