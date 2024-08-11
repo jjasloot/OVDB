@@ -21,20 +21,20 @@ namespace OV_DB.Controllers;
 public class ImagesController(OVDBDatabaseContext context, IMemoryCache memoryCache, IFontLoader fontLoader) : ControllerBase
 {
     [HttpGet]
-    public async Task<ActionResult> GetImageAsync([FromQuery] List<Guid> guid, [FromQuery] int width = 300, [FromQuery] int height = 100, [FromQuery] string title = null, [FromQuery] bool includeTotal = false, [FromQuery] string language = "NL")
+    public async Task<ActionResult> GetImageAsync([FromQuery] List<Guid> guid, [FromQuery] int width = 300, [FromQuery] int height = 100, [FromQuery] string title = null, [FromQuery] bool includeTotal = false, [FromQuery] string language = "NL", [FromQuery] bool hideAttribution = false)
     {
         var id = "image|" + string.Join(',', guid.Select(g => g.ToString())) + "|" + width + "|" + height + "|" + includeTotal + "|" + title + "|" + language;
 
         var fileContents = await memoryCache.GetOrCreateAsync(id, async entry =>
         {
             entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(15);
-            return await GenerateImageAsync(width, height, title, guid, includeTotal, language);
+            return await GenerateImageAsync(width, height, title, guid, includeTotal, language, hideAttribution);
         });
         //var fileContents = await GenerateImageAsync(width, height, title, guid, includeTotal);
         return File(fileContents, "image/png");
     }
 
-    private async Task<byte[]> GenerateImageAsync(int width, int height, string title, List<Guid> guids, bool includeTotal, string language)
+    private async Task<byte[]> GenerateImageAsync(int width, int height, string title, List<Guid> guids, bool includeTotal, string language, bool hideAttribution)
     {
         var query = context.RouteInstances
  .Where(ri => ri.Route.RouteMaps.Any(rm => guids.Contains(rm.Map.MapGuid)) || ri.RouteInstanceMaps.Any(rim => guids.Contains(rim.Map.MapGuid)));
@@ -60,12 +60,15 @@ public class ImagesController(OVDBDatabaseContext context, IMemoryCache memoryCa
         var greenbrush = Brushes.Solid(Color.Green);
         var graybrush = Brushes.Solid(Color.Gray);
         var brush = Brushes.Solid(Color.Black);
-        var spaceNeeded = TextMeasurer.MeasureAdvance("ovdb.infinityx.nl", new TextOptions(font)).Width;
         using var image = new Image<Rgba32>(width, height);
-        image.Mutate(x =>
+        if (!hideAttribution)
         {
-            x.DrawText("ovdb.infinityx.nl", font, greenbrush, new PointF(width - spaceNeeded - 8, height - 20));
-        });
+            var spaceNeeded = TextMeasurer.MeasureAdvance("ovdb.infinityx.nl", new TextOptions(font)).Width;
+            image.Mutate(x =>
+            {
+                x.DrawText("ovdb.infinityx.nl", font, greenbrush, new PointF(width - spaceNeeded - 8, height - 20));
+            });
+        }
 
         var postion = 0;
         var columnwidth = 10.0f;
