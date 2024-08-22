@@ -1,4 +1,4 @@
-import { Moment } from 'moment';
+import { Moment } from "moment";
 
 export interface UpdateRoute {
   overrideColour: string;
@@ -13,4 +13,5 @@ export interface UpdateRoute {
   countries: number[];
   maps: number[];
   routeTypeId: number;
+  operatorId: number | null;
 }

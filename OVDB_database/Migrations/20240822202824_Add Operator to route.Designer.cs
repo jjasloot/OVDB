@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using NetTopologySuite.Geometries;
 using OVDB_database.Database;
@@ -12,9 +13,11 @@ using OVDB_database.Database;
 namespace OVDB_database.Migrations
 {
     [DbContext(typeof(OVDBDatabaseContext))]
-    partial class OVDBDatabaseContextModelSnapshot : ModelSnapshot
+    [Migration("20240822202824_Add Operator to route")]
+    partial class AddOperatortoroute
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -418,9 +421,6 @@ namespace OVDB_database.Migrations
                     b.Property<string>("Colour")
                         .IsRequired()
                         .HasColumnType("longtext");
-
-                    b.Property<bool>("IsTrain")
-                        .HasColumnType("tinyint(1)");
 
                     b.Property<string>("Name")
                         .IsRequired()

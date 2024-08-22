@@ -18,7 +18,7 @@ import {
   switchMap,
   finalize,
 } from "rxjs/operators";
-import { merge, fromEvent, Subject } from "rxjs";
+import { merge, fromEvent, Subject, Observable } from "rxjs";
 import { MatSort } from "@angular/material/sort";
 import { saveAs } from "file-saver";
 import { TranslateService } from "@ngx-translate/core";
@@ -29,6 +29,7 @@ import { EditMultipleComponent } from "../edit-multiple/edit-multiple.component"
 import { RoutesListBottomsheetComponent } from "./routes-list-bottomsheet/routes-list-bottomsheet.component";
 import { RoutesListActions } from "src/app/models/routes-list-actions.enum";
 import { MatBottomSheet } from "@angular/material/bottom-sheet";
+import { OperatorService } from "src/app/services/operator.service";
 
 @Component({
   selector: "app-routes-list",
@@ -66,7 +67,8 @@ export class RoutesListComponent implements OnInit, AfterViewInit {
     private translateService: TranslateService,
     private translationService: TranslationService,
     private dialog: MatDialog,
-    private bottomSheet: MatBottomSheet
+    private bottomSheet: MatBottomSheet,
+    private operatorService: OperatorService
   ) {}
 
   ngOnInit() {
@@ -81,6 +83,7 @@ export class RoutesListComponent implements OnInit, AfterViewInit {
       this.displayedColumns = [
         "select",
         "name",
+        "operator",
         "date",
         "instances",
         "maps",
@@ -235,5 +238,9 @@ export class RoutesListComponent implements OnInit, AfterViewInit {
       width = "80%";
     }
     return width;
+  }
+
+  getOperatorLogo(operatorId: number): Observable<string> {
+    return this.operatorService.getOperatorLogo(operatorId);
   }
 }

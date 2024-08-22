@@ -211,6 +211,7 @@ namespace OV_DB.Controllers
             return Ok();
         }
 
+        [NonAction]
         public async Task<string> GetStationListAsync(string osmId)
         {
             var query = $"[out:json][timeout:240];area({osmId})->.searchArea;(node[\"railway\"=\"station\"][!\"subway\"][!\"funicular\"][!\"tram\"][\"station\"!=\"monorail\"][\"station\"!=\"subway\"][\"station\"!=\"tram\"](area.searchArea);node[\"railway\"=\"station\"][\"train\"=\"yes\"](area.searchArea);node[\"railway\"=\"halt\"][!\"subway\"][!\"funicular\"][!\"tram\"][\"station\"!=\"monorail\"][\"station\"!=\"subway\"][\"station\"!=\"tram\"](area.searchArea);node[\"railway\"=\"halt\"][\"train\"=\"yes\"](area.searchArea););out body;";
@@ -230,6 +231,8 @@ namespace OV_DB.Controllers
 
             return text;
         }
+
+        [NonAction]
         public async Task<string> GetStationAsync(string osmId)
         {
             var query = $"[out:json][timeout:240];\r\nnode({osmId});out body;";
@@ -250,6 +253,7 @@ namespace OV_DB.Controllers
             return text;
         }
 
+        [NonAction]
         public async Task<string> GetStationWayList(string osmId)
         {
             var query = $"[out:json][timeout:240];area({osmId})->.searchArea;(way[\"railway\"=\"station\"][!\"subway\"][!\"funicular\"][!\"tram\"][\"station\"!=\"monorail\"][\"station\"!=\"subway\"][\"station\"!=\"tram\"](area.searchArea);node[\"railway\"=\"station\"][\"train\"=\"yes\"](area.searchArea);node[\"railway\"=\"halt\"][!\"subway\"][!\"funicular\"][!\"tram\"][\"station\"!=\"monorail\"][\"station\"!=\"subway\"][\"station\"!=\"tram\"](area.searchArea);way[\"railway\"=\"halt\"][\"train\"=\"yes\"](area.searchArea););out center;";

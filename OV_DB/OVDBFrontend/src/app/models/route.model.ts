@@ -29,6 +29,7 @@ export interface Route {
   from?: string;
   to?: string;
   regions: RegionMinimal[];
+  operatorId: number|null;
 }
 
 export interface RouteList {

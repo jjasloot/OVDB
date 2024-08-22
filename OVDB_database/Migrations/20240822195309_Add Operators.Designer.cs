@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using NetTopologySuite.Geometries;
 using OVDB_database.Database;
@@ -12,9 +13,11 @@ using OVDB_database.Database;
 namespace OVDB_database.Migrations
 {
     [DbContext(typeof(OVDBDatabaseContext))]
-    partial class OVDBDatabaseContextModelSnapshot : ModelSnapshot
+    [Migration("20240822195309_Add Operators")]
+    partial class AddOperators
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -22,6 +25,21 @@ namespace OVDB_database.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 64);
 
             MySqlModelBuilderExtensions.AutoIncrementColumns(modelBuilder);
+
+            modelBuilder.Entity("CountryOperator", b =>
+                {
+                    b.Property<int>("CountriesCountryId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("OperatorsId")
+                        .HasColumnType("int");
+
+                    b.HasKey("CountriesCountryId", "OperatorsId");
+
+                    b.HasIndex("OperatorsId");
+
+                    b.ToTable("CountryOperator");
+                });
 
             modelBuilder.Entity("OVDB_database.Models.Country", b =>
                 {
@@ -133,10 +151,8 @@ namespace OVDB_database.Migrations
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("LogoContentType")
-                        .HasColumnType("longtext");
-
                     b.Property<string>("LogoFilePath")
+                        .IsRequired()
                         .HasColumnType("longtext");
 
                     b.Property<string>("Names")
@@ -259,9 +275,6 @@ namespace OVDB_database.Migrations
                     b.Property<string>("OperatingCompany")
                         .HasColumnType("longtext");
 
-                    b.Property<int?>("OperatorId")
-                        .HasColumnType("int");
-
                     b.Property<string>("OverrideColour")
                         .HasColumnType("longtext");
 
@@ -280,8 +293,6 @@ namespace OVDB_database.Migrations
                     b.HasKey("RouteId");
 
                     b.HasIndex("Name");
-
-                    b.HasIndex("OperatorId");
 
                     b.HasIndex("RouteTypeId");
 
@@ -418,9 +429,6 @@ namespace OVDB_database.Migrations
                     b.Property<string>("Colour")
                         .IsRequired()
                         .HasColumnType("longtext");
-
-                    b.Property<bool>("IsTrain")
-                        .HasColumnType("tinyint(1)");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -659,21 +667,6 @@ namespace OVDB_database.Migrations
                     b.ToTable("Users");
                 });
 
-            modelBuilder.Entity("OperatorRegion", b =>
-                {
-                    b.Property<int>("OperatorsId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("RegionsId")
-                        .HasColumnType("int");
-
-                    b.HasKey("OperatorsId", "RegionsId");
-
-                    b.HasIndex("RegionsId");
-
-                    b.ToTable("OperatorRegion");
-                });
-
             modelBuilder.Entity("RegionRoute", b =>
                 {
                     b.Property<int>("RegionsId")
@@ -717,6 +710,21 @@ namespace OVDB_database.Migrations
                     b.HasIndex("StationGroupingsId");
 
                     b.ToTable("RegionStationGrouping");
+                });
+
+            modelBuilder.Entity("CountryOperator", b =>
+                {
+                    b.HasOne("OVDB_database.Models.Country", null)
+                        .WithMany()
+                        .HasForeignKey("CountriesCountryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("OVDB_database.Models.Operator", null)
+                        .WithMany()
+                        .HasForeignKey("OperatorsId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("OVDB_database.Models.Country", b =>
@@ -776,15 +784,9 @@ namespace OVDB_database.Migrations
 
             modelBuilder.Entity("OVDB_database.Models.Route", b =>
                 {
-                    b.HasOne("OVDB_database.Models.Operator", "Operator")
-                        .WithMany("Routes")
-                        .HasForeignKey("OperatorId");
-
                     b.HasOne("OVDB_database.Models.RouteType", "RouteType")
                         .WithMany("Routes")
                         .HasForeignKey("RouteTypeId");
-
-                    b.Navigation("Operator");
 
                     b.Navigation("RouteType");
                 });
@@ -946,21 +948,6 @@ namespace OVDB_database.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("OperatorRegion", b =>
-                {
-                    b.HasOne("OVDB_database.Models.Operator", null)
-                        .WithMany()
-                        .HasForeignKey("OperatorsId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("OVDB_database.Models.Region", null)
-                        .WithMany()
-                        .HasForeignKey("RegionsId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
             modelBuilder.Entity("RegionRoute", b =>
                 {
                     b.HasOne("OVDB_database.Models.Region", null)
@@ -1014,11 +1001,6 @@ namespace OVDB_database.Migrations
             modelBuilder.Entity("OVDB_database.Models.Map", b =>
                 {
                     b.Navigation("RouteMaps");
-                });
-
-            modelBuilder.Entity("OVDB_database.Models.Operator", b =>
-                {
-                    b.Navigation("Routes");
                 });
 
             modelBuilder.Entity("OVDB_database.Models.Region", b =>

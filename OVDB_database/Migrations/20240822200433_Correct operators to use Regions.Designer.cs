@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using NetTopologySuite.Geometries;
 using OVDB_database.Database;
@@ -12,9 +13,11 @@ using OVDB_database.Database;
 namespace OVDB_database.Migrations
 {
     [DbContext(typeof(OVDBDatabaseContext))]
-    partial class OVDBDatabaseContextModelSnapshot : ModelSnapshot
+    [Migration("20240822200433_Correct operators to use Regions")]
+    partial class CorrectoperatorstouseRegions
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -133,10 +136,8 @@ namespace OVDB_database.Migrations
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("LogoContentType")
-                        .HasColumnType("longtext");
-
                     b.Property<string>("LogoFilePath")
+                        .IsRequired()
                         .HasColumnType("longtext");
 
                     b.Property<string>("Names")
@@ -259,9 +260,6 @@ namespace OVDB_database.Migrations
                     b.Property<string>("OperatingCompany")
                         .HasColumnType("longtext");
 
-                    b.Property<int?>("OperatorId")
-                        .HasColumnType("int");
-
                     b.Property<string>("OverrideColour")
                         .HasColumnType("longtext");
 
@@ -280,8 +278,6 @@ namespace OVDB_database.Migrations
                     b.HasKey("RouteId");
 
                     b.HasIndex("Name");
-
-                    b.HasIndex("OperatorId");
 
                     b.HasIndex("RouteTypeId");
 
@@ -418,9 +414,6 @@ namespace OVDB_database.Migrations
                     b.Property<string>("Colour")
                         .IsRequired()
                         .HasColumnType("longtext");
-
-                    b.Property<bool>("IsTrain")
-                        .HasColumnType("tinyint(1)");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -776,15 +769,9 @@ namespace OVDB_database.Migrations
 
             modelBuilder.Entity("OVDB_database.Models.Route", b =>
                 {
-                    b.HasOne("OVDB_database.Models.Operator", "Operator")
-                        .WithMany("Routes")
-                        .HasForeignKey("OperatorId");
-
                     b.HasOne("OVDB_database.Models.RouteType", "RouteType")
                         .WithMany("Routes")
                         .HasForeignKey("RouteTypeId");
-
-                    b.Navigation("Operator");
 
                     b.Navigation("RouteType");
                 });
@@ -1014,11 +1001,6 @@ namespace OVDB_database.Migrations
             modelBuilder.Entity("OVDB_database.Models.Map", b =>
                 {
                     b.Navigation("RouteMaps");
-                });
-
-            modelBuilder.Entity("OVDB_database.Models.Operator", b =>
-                {
-                    b.Navigation("Routes");
                 });
 
             modelBuilder.Entity("OVDB_database.Models.Region", b =>

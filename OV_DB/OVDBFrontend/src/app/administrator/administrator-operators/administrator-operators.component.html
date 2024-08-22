@@ -1,0 +1,13 @@
+<p>administrator-operators works!</p>
+<mat-select [(ngModel)]="selectedRegion" placeholder="Select Region">
+  @for (region of regions(); track region.id) {
+  <mat-option [value]="region"> {{ region.nameNL }} </mat-option>}
+</mat-select>
+
+<mat-card>
+  <ul>
+    @for (operator of openOperators(); track operator) {
+    <li>{{ operator|json }}</li>
+    }
+  </ul>
+</mat-card>

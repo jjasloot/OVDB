@@ -31,6 +31,8 @@ namespace OV_DB.Mappings
             CreateMap<Request, RequestForUserDTO>();
             CreateMap<Request, RequestForAdminDTO>()
                 .ForMember(dest => dest.UserEmail, ops => ops.MapFrom(src => src.User.Email));
+
+            CreateMap<Operator, OperatorDTO>();
         }
     }
 }

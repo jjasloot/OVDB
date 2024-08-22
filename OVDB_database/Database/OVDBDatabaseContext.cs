@@ -1,6 +1,9 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 using OVDB_database.Models;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace OVDB_database.Database
 {
@@ -31,6 +34,8 @@ namespace OVDB_database.Database
         public DbSet<Region> Regions { get; set; }
         public DbSet<Request> Requests { get; set; }
         public DbSet<StationGrouping> StationGroupings { get; set; }
+        public DbSet<Operator> Operators { get; set; }
+
         protected override void OnConfiguring(DbContextOptionsBuilder options)
         {
             if (!options.IsConfigured)
@@ -49,6 +54,22 @@ namespace OVDB_database.Database
             modelBuilder.Entity<Station>().Property(s => s.Hidden).HasDefaultValue(false);
             modelBuilder.Entity<Station>().Property(s => s.Special).HasDefaultValue(false);
 
+            modelBuilder.Entity<Operator>(entity =>
+             {
+                 entity.HasKey(e => e.Id);
+                 entity.Property(e => e.Names)
+                     .HasConversion(
+                         v => string.Join(',', v),
+                         v => v.Split(',', StringSplitOptions.RemoveEmptyEntries).ToList())
+                     .Metadata.SetValueComparer(
+                         new ValueComparer<List<string>>(
+                             (c1, c2) => c1.SequenceEqual(c2),
+                             c => c.Aggregate(0, (a, v) => HashCode.Combine(a, v.GetHashCode())),
+                             c => c.ToList()));
+             });
+
         }
+
+
     }
 }

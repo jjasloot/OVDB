@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild } from "@angular/core";
+import { Component, effect, OnInit, signal, ViewChild } from "@angular/core";
 import { ActivatedRoute, Router } from "@angular/router";
 import { Route } from "src/app/models/route.model";
 import { ApiService } from "src/app/services/api.service";
@@ -21,6 +21,13 @@ import { MatDialog } from "@angular/material/dialog";
 import { AreYouSureDialogComponent } from "src/app/are-you-sure-dialog/are-you-sure-dialog.component";
 import * as saveAs from "file-saver";
 import { AuthenticationService } from "src/app/services/authentication.service";
+import { OperatorService } from "src/app/services/operator.service";
+import { OperatorMinimal } from "src/app/models/operator.model";
+import {
+  MatAutocomplete,
+  MatAutocompleteSelectedEvent,
+} from "@angular/material/autocomplete";
+import { debounceTime } from "rxjs/operators";
 
 @Component({
   selector: "app-route-detail",
@@ -34,6 +41,9 @@ export class RouteDetailComponent implements OnInit {
   types: RouteType[];
   countries: Country[];
   maps: Map[];
+  operators = signal<OperatorMinimal[]>([]);
+  activeOperator = signal<number | null>(null);
+  logo = signal<string | null>(null);
   colour: string;
 
   @ViewChild("countriesSelection") countriesSelection: MatSelectionList;
@@ -41,6 +51,17 @@ export class RouteDetailComponent implements OnInit {
 
   selectedOptions: number[];
   selectedMaps: number[];
+
+  logoEffect = effect(
+    () => {
+      if (!!this.activeOperator()) {
+        this.operatorService
+          .getOperatorLogo(this.activeOperator())
+          .subscribe((logo) => this.logo.set(logo));
+      }
+    },
+    { allowSignalWrites: true }
+  );
 
   constructor(
     private activatedRoute: ActivatedRoute,
@@ -51,7 +72,8 @@ export class RouteDetailComponent implements OnInit {
     private authService: AuthenticationService,
     private dateAdapter: DateAdapter<any>,
     private dialog: MatDialog,
-    private router: Router
+    private router: Router,
+    private operatorService: OperatorService
   ) {
     this.dateAdapter.setLocale(this.translationService.dateLocale);
 
@@ -82,10 +104,22 @@ export class RouteDetailComponent implements OnInit {
     this.apiService.getMaps().subscribe((maps) => {
       this.maps = maps;
     });
+    this.operatorService.getOperatorNames().subscribe({
+      next: (operators) => {
+        this.operators.set(operators);
+      },
+    });
     this.activatedRoute.paramMap.subscribe((p) => {
       this.routeId = +p.get("routeId");
       this.loadData();
     });
+
+    this.form
+      .get("operatingCompany")
+      .valueChanges.pipe(debounceTime(200))
+      .subscribe(() => {
+        this.operatorSelected();
+      });
   }
   private loadData() {
     this.apiService.getRoute(this.routeId).subscribe((data) => {
@@ -115,6 +149,9 @@ export class RouteDetailComponent implements OnInit {
     route.maps = this.mapsSelection.selectedOptions.selected.map(
       (s) => s.value
     );
+    if (!!this.activeOperator()) {
+      route.operatorId = this.activeOperator();
+    }
     this.apiService.updateRoute(values as Route).subscribe((_) => {
       if (!goToInstances) {
         this.goBack();
@@ -226,5 +263,20 @@ export class RouteDetailComponent implements OnInit {
         this.loadData();
       },
     });
+  }
+
+  operatorSelected() {
+    const selectedOperator = this.operators().find(
+      (o) => o.name === this.form.get("operatingCompany").value
+    );
+    if (!selectedOperator) {
+      this.activeOperator.set(null);
+      this.logo.set(null);
+      return;
+    }
+    if (this.activeOperator() === selectedOperator.id) {
+      return;
+    }
+    this.activeOperator.set(selectedOperator.id);
   }
 }
