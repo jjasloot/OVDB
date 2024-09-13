@@ -197,7 +197,12 @@ namespace OV_DB.Controllers
             dbRoute.OperatingCompany = route.OperatingCompany;
             dbRoute.RouteTypeId = route.RouteTypeId;
             dbRoute.OverrideDistance = route.OverrideDistance;
-            dbRoute.OperatorId = route.OperatorId;
+            dbRoute.Operators = [];
+            if (route.OperatorIds != null)
+            {
+                var operators = await _context.Operators.Where(o => route.OperatorIds.Contains(o.Id)).ToListAsync();
+                dbRoute.Operators = operators;
+            }
             if (route.FirstDateTime.HasValue)
             {
                 if (dbRoute.RouteInstances.Count == 0)
@@ -991,6 +996,7 @@ namespace OV_DB.Controllers
                 .ThenInclude(ri => ri.RouteInstanceProperties)
                 .Include(r => r.RouteInstances)
                 .ThenInclude(ri => ri.RouteInstanceMaps)
+                .Include(r => r.Operators)
                 .SingleOrDefaultAsync();
 
             if (route == null)

@@ -101,6 +101,7 @@ import { AdministratorNewRegionComponent } from "./administrator/administrator-n
 import { RequestsListComponent } from "./requests/requests-list/requests-list.component";
 import { AdministratorRequestsComponent } from './administrator/administrator-requests/administrator-requests.component';
 import { AdministratorOperatorsComponent } from './administrator/administrator-operators/administrator-operators.component';
+import { AdministratorOperatorEditDialogComponent } from './administrator/administrator-operators/administrator-operator-edit-dialog/administrator-operator-edit-dialog.component';
 
 registerLocaleData(localeNl, "nl-NL");
 export function HttpLoaderFactory(http: HttpClient) {
@@ -156,6 +157,7 @@ export function HttpLoaderFactory(http: HttpClient) {
     RequestsListComponent,
     AdministratorRequestsComponent,
     AdministratorOperatorsComponent,
+    AdministratorOperatorEditDialogComponent,
   ],
   imports: [
     BrowserModule,

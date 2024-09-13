@@ -56,7 +56,6 @@ namespace OVDB_database.Models
         [JsonProperty]
         public List<RouteInstance> RouteInstances { get; set; }
         public List<Region> Regions { get; set; }
-        public int? OperatorId { get; set; }
-        public Operator? Operator { get; set; }
+        public List<Operator> Operators { get; set; }
     }
 }

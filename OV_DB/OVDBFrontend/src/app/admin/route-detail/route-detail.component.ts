@@ -28,6 +28,7 @@ import {
   MatAutocompleteSelectedEvent,
 } from "@angular/material/autocomplete";
 import { debounceTime } from "rxjs/operators";
+import { Observable } from "rxjs";
 
 @Component({
   selector: "app-route-detail",
@@ -42,7 +43,7 @@ export class RouteDetailComponent implements OnInit {
   countries: Country[];
   maps: Map[];
   operators = signal<OperatorMinimal[]>([]);
-  activeOperator = signal<number | null>(null);
+  activeOperators = signal<number[]>([]);
   logo = signal<string | null>(null);
   colour: string;
 
@@ -52,16 +53,9 @@ export class RouteDetailComponent implements OnInit {
   selectedOptions: number[];
   selectedMaps: number[];
 
-  logoEffect = effect(
-    () => {
-      if (!!this.activeOperator()) {
-        this.operatorService
-          .getOperatorLogo(this.activeOperator())
-          .subscribe((logo) => this.logo.set(logo));
-      }
-    },
-    { allowSignalWrites: true }
-  );
+  getLogo(operatorId: number): Observable<string> {
+    return this.operatorService.getOperatorLogo(operatorId);
+  }
 
   constructor(
     private activatedRoute: ActivatedRoute,
@@ -149,8 +143,8 @@ export class RouteDetailComponent implements OnInit {
     route.maps = this.mapsSelection.selectedOptions.selected.map(
       (s) => s.value
     );
-    if (!!this.activeOperator()) {
-      route.operatorId = this.activeOperator();
+    if (!!this.activeOperators()) {
+      route.operatorIds = this.activeOperators();
     }
     this.apiService.updateRoute(values as Route).subscribe((_) => {
       if (!goToInstances) {
@@ -266,17 +260,18 @@ export class RouteDetailComponent implements OnInit {
   }
 
   operatorSelected() {
-    const selectedOperator = this.operators().find(
-      (o) => o.name === this.form.get("operatingCompany").value
+    const operators = (this.form.get("operatingCompany").value as string).split(
+      ";"
     );
-    if (!selectedOperator) {
-      this.activeOperator.set(null);
-      this.logo.set(null);
-      return;
-    }
-    if (this.activeOperator() === selectedOperator.id) {
-      return;
-    }
-    this.activeOperator.set(selectedOperator.id);
+    let operatorIds: number[] = [];
+    operators.forEach((o) => {
+      const selectedOperator = this.operators().find(
+        (op) => op.name.toLowerCase() === o.trim().toLowerCase()
+      );
+      if (!!selectedOperator) {
+        operatorIds.push(selectedOperator.id);
+      }
+    });
+    this.activeOperators.set(operatorIds);
   }
 }

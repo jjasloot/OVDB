@@ -95,10 +95,10 @@ public class OperatorsController : ControllerBase
         var logoInfo = await _dbContext.Operators.Where(o => o.Id == id).Select(o => new { o.LogoFilePath, o.LogoContentType }).FirstOrDefaultAsync();
         if (logoInfo?.LogoFilePath == null)
         {
-            return NotFound();
+            return File(new byte[0], "image/png");
         }
 
-        return File(System.IO.File.OpenRead(logoInfo.LogoFilePath), logoInfo.LogoContentType);
+        return File(System.IO.File.OpenRead(Path.Combine(_storagePath, logoInfo.LogoFilePath)), logoInfo.LogoContentType);
     }
 
     // Read all
@@ -122,7 +122,7 @@ public class OperatorsController : ControllerBase
         {
             return Forbid();
         }
-        var existingOperator = await _dbContext.Operators.FindAsync(id);
+        var existingOperator = await _dbContext.Operators.Include(o => o.Regions).SingleOrDefaultAsync(o => o.Id == id);
         if (existingOperator == null)
         {
             return NotFound();
@@ -172,7 +172,7 @@ public class OperatorsController : ControllerBase
             return BadRequest("Only image files are allowed.");
 
         var filePath = Path.Combine(_storagePath, id.ToString(), file.FileName);
-
+        var relativePath = Path.Combine(id.ToString(), file.FileName);
         if (!Directory.Exists(Path.GetDirectoryName(filePath)))
             Directory.CreateDirectory(Path.GetDirectoryName(filePath));
 
@@ -183,7 +183,7 @@ public class OperatorsController : ControllerBase
         }
 
         var operatorDb = await _dbContext.Operators.FindAsync(id);
-        operatorDb.LogoFilePath = filePath;
+        operatorDb.LogoFilePath = relativePath;
         operatorDb.LogoContentType = file.ContentType;
         await _dbContext.SaveChangesAsync();
 
@@ -203,14 +203,16 @@ public class OperatorsController : ControllerBase
         {
             return NotFound();
         }
-        var operatorNames = operatorDb.Names.Select(n => n.ToLower()).ToList();
-        var routes = await _dbContext.Routes.Where(r => !r.OperatorId.HasValue)
+        var operatorNames = operatorDb.Names.Select(n => n.ToLower().Trim()).ToList();
+        var routes = await _dbContext.Routes
+            .Where(r => !r.Operators.Any(o => o.Id == operatorDb.Id))
             .Where(r => operatorNames.Contains(r.OperatingCompany.ToLower()))
+            .Include(r => r.Operators)
             .ToListAsync();
 
         foreach (var route in routes)
         {
-            route.OperatorId = id;
+            route.Operators.Add(operatorDb);
         }
         await _dbContext.SaveChangesAsync();
         return Ok(routes.Count);
@@ -225,7 +227,7 @@ public class OperatorsController : ControllerBase
             return Forbid();
         }
         var operators = await _dbContext.Routes
-            .Where(r => !r.OperatorId.HasValue)
+            .Where(r => !r.Operators.Any())
             .Where(r => r.Regions.Any(r => r.Id == regionId))
             .Where(r => !string.IsNullOrWhiteSpace(r.OperatingCompany))
             .Where(r => r.RouteType.IsTrain)

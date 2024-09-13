@@ -50,10 +50,12 @@ export class OperatorService {
   uploadOperatorLogo(id: number, file: File) {
     const formData = new FormData();
     formData.append("file", file);
-    return this.httpClient.post(
-      environment.backend + "api/operators/" + id + "/logo",
-      formData
-    );
+    return this.httpClient
+      .post(
+        environment.backend + "api/operators/" + id + "/uploadLogo",
+        formData
+      )
+      .pipe(tap(() => this.logos.delete(id)));
   }
 
   getOperatorNames() {

@@ -20,6 +20,6 @@ namespace OV_DB.Models
         public int? RouteTypeId { get; set; }
         public string OverrideColour { get; set; }
         public double? OverrideDistance { get; set; }
-        public int? OperatorId { get; set; }
+        public List<int> OperatorIds { get; set; }
     }
 }

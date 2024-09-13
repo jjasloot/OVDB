@@ -54,8 +54,17 @@
         <mat-option [value]="option.name">{{ option.name }}</mat-option>
         }
       </mat-autocomplete>
-      @if(!!activeOperator() && !!logo()){
-      <img [src]="logo()" alt="logo" style="width: 75px; max-height: 56px; margin-left:1rem;" />
+      @for (operator of activeOperators(); track operator) {
+      <img
+        [src]="getLogo(operator) | async"
+        alt="logo"
+        style="
+          width: 75px;
+          max-height: 56px;
+          margin-left: 1rem;
+          object-fit: contain;
+        "
+      />
       }
     </div>
     <div class="row">
@@ -67,7 +76,7 @@
           matInput
         />
       </mat-form-field>
-      <mat-form-field style="width: 50%; max-height: 71px;">
+      <mat-form-field style="width: 50%; max-height: 71px">
         <input
           type="color"
           [(ngModel)]="colour"

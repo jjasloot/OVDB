@@ -28,6 +28,6 @@ namespace OV_DB.Models
         public int RouteInstancesCount { get; set; }
         public Guid Share { get; set; }
         public List<RegionMinimalDTO> Regions { get; set; }
-        public int OperatorId { get; set; }
+        public List<int> OperatorIds { get; set; }
     }
 }

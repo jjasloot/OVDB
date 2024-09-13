@@ -13,5 +13,5 @@ export interface UpdateRoute {
   countries: number[];
   maps: number[];
   routeTypeId: number;
-  operatorId: number | null;
+  operatorIds: number[];
 }

@@ -15,7 +15,8 @@ namespace OV_DB.Mappings
         {
             CreateMap<OVDB_database.Models.Route, RouteDTO>()
                 .ForMember(dest => dest.FirstDateTime, ops => ops.MapFrom(r => r.RouteInstances.OrderByDescending(d => d.Date).FirstOrDefault().Date))
-                .ForMember(dest => dest.RouteInstancesCount, ops => ops.MapFrom(r => r.RouteInstances.Count));
+                .ForMember(dest => dest.RouteInstancesCount, ops => ops.MapFrom(r => r.RouteInstances.Count))
+                .ForMember(dest => dest.OperatorIds, ops => ops.MapFrom(r => r.Operators.Select(o => o.Id)));
 
             CreateMap<RouteMap, RouteMapDTO>()
                 .ForMember(dest => dest.Name, ops => ops.MapFrom(rm => rm.Map.Name))

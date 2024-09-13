@@ -57,14 +57,15 @@
       </td>
     </ng-container>
     <ng-container matColumnDef="operator">
-      <th mat-header-cell *matHeaderCellDef>&nbsp;
+      <th mat-header-cell *matHeaderCellDef>
+        &nbsp;
         <!-- {{ "ROUTESLIST.OPERATOR" | translate }} -->
       </th>
       <td mat-cell *matCellDef="let element">
-        @if(!!element.operatorId){
+        @for (operatorId of element.operatorIds; track operatorId) {
         <img
           style="max-height: 1rem; max-width: 2rem"
-          [src]="getOperatorLogo(element.operatorId) | async"
+          [src]="getOperatorLogo(operatorId) | async"
         />
         }
       </td>
