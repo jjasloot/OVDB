@@ -181,6 +181,7 @@ namespace OV_DB.Controllers
                 .Include(r => r.RouteCountries)
                 .Include(r => r.RouteMaps)
                 .Include(r => r.RouteInstances)
+                .Include(r => r.Operators)
                 .SingleOrDefaultAsync(r => r.RouteId == id);
             if (dbRoute is null)
             {
@@ -996,7 +997,6 @@ namespace OV_DB.Controllers
                 .ThenInclude(ri => ri.RouteInstanceProperties)
                 .Include(r => r.RouteInstances)
                 .ThenInclude(ri => ri.RouteInstanceMaps)
-                .Include(r => r.Operators)
                 .SingleOrDefaultAsync();
 
             if (route == null)
