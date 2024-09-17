@@ -1,0 +1,20 @@
+@if(!!formField()){
+<mat-form-field style="flex: 1">
+  <mat-label>{{ "ROUTEDETAILS.OPERATINGCOMPANY" | translate }}</mat-label>
+  <input matInput [formControl]="formField()" [matAutocomplete]="auto" />
+  <mat-hint>{{ "ROUTEDETAILS.OPERATINGCOMPANY_HINT" | translate }}</mat-hint>
+</mat-form-field>
+<mat-autocomplete #auto="matAutocomplete">
+  @for (option of filteredOperators(); track option) {
+  <mat-option [value]="otherSelectedOperators() + option.name">{{
+    option.name
+  }}</mat-option>
+  }
+</mat-autocomplete>
+@for (operator of selectedOperators(); track operator) {
+<img
+  [src]="getLogo(operator) | async"
+  alt="logo"
+  style="width: 75px; max-height: 56px; margin-left: 1rem; object-fit: contain"
+/>
+} }

@@ -19,6 +19,7 @@
   "ROUTEDETAILS.DESCRIPTION": "Opmerking",
   "ROUTEDETAILS.LINENUMBER": "Lijnnummer",
   "ROUTEDETAILS.OPERATINGCOMPANY": "Bedienend bedrijf",
+  "ROUTEDETAILS.OPERATINGCOMPANY_HINT": "Bij meerdere bedrijven, scheid met een puntkomma",
   "ROUTEDETAILS.OVERRIDECOLOUR": "Kleur overschrijven",
   "ROUTEDETAILS.FIRSTDATETIME": "Datum eerste keer",
   "ROUTEDETAILS.TYPE": "Types",

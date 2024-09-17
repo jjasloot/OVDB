@@ -88,3 +88,21 @@
     </button>
   </mat-card-actions>
 </mat-card>
+
+<mat-expansion-panel>
+  <mat-expansion-panel-header>
+    <mat-panel-title>Open operators </mat-panel-title>
+  </mat-expansion-panel-header>
+  <mat-select [(ngModel)]="selectedRegion" placeholder="Select Region">
+    @for (region of regions(); track region.id) {
+    <mat-option [value]="region.id"> {{ region.nameNL }} </mat-option>}
+  </mat-select>
+
+  <mat-card>
+    <ul>
+      @for (operator of openOperators(); track operator) {
+      <li>{{ operator | json }}</li>
+      }
+    </ul>
+  </mat-card>
+</mat-expansion-panel>

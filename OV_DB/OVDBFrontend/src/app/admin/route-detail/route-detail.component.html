@@ -41,31 +41,10 @@
       <input matInput formControlName="lineNumber" />
     </mat-form-field>
     <div style="display: flex">
-      <mat-form-field style="flex: 1">
-        <mat-label>{{ "ROUTEDETAILS.OPERATINGCOMPANY" | translate }}</mat-label>
-        <input
-          matInput
-          formControlName="operatingCompany"
-          [matAutocomplete]="auto"
-        />
-      </mat-form-field>
-      <mat-autocomplete #auto="matAutocomplete">
-        @for (option of operators(); track option) {
-        <mat-option [value]="option.name">{{ option.name }}</mat-option>
-        }
-      </mat-autocomplete>
-      @for (operator of activeOperators(); track operator) {
-      <img
-        [src]="getLogo(operator) | async"
-        alt="logo"
-        style="
-          width: 75px;
-          max-height: 56px;
-          margin-left: 1rem;
-          object-fit: contain;
-        "
-      />
-      }
+      <app-route-detail-operator-selection
+        [formField]="form.controls['operatingCompany']"
+        (activeOperators)="activeOperators.set($event)"
+      ></app-route-detail-operator-selection>
     </div>
     <div class="row">
       <mat-form-field style="width: 50%">

@@ -27,14 +27,31 @@ export class AdministratorOperatorsComponent implements OnInit {
   displayedColumns: string[] = ["id", "name", "logo", "regions", "controls"];
   reconnecting = signal<number[]>([]);
   updating = signal<number[]>([]);
+  selectedRegion = model<number>(null);
+  regions = signal<Region[]>([]);
+  openOperators = signal<string[]>([]);
 
   ngOnInit(): void {
     this.getData();
   }
 
+  updateOpenOperators = effect(
+    () => {
+      this.operatorService
+        .getOpenOperatorsForRegion(this.selectedRegion())
+        .subscribe((data) => {
+          this.openOperators.set(data);
+        });
+    },
+    { allowSignalWrites: true }
+  );
+
   private getData() {
     this.operatorService.getOperators().subscribe((data) => {
       this.operators.set(data);
+    });
+    this.regionsService.getRegions().subscribe((data) => {
+      this.regions.set(data);
     });
   }
 

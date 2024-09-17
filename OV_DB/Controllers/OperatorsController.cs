@@ -204,18 +204,23 @@ public class OperatorsController : ControllerBase
             return NotFound();
         }
         var operatorNames = operatorDb.Names.Select(n => n.ToLower().Trim()).ToList();
-        var routes = await _dbContext.Routes
-            .Where(r => !r.Operators.Any(o => o.Id == operatorDb.Id))
-            .Where(r => operatorNames.Contains(r.OperatingCompany.ToLower()))
-            .Include(r => r.Operators)
-            .ToListAsync();
-
-        foreach (var route in routes)
+        var count = 0;
+        foreach (var operatorName in operatorNames)
         {
-            route.Operators.Add(operatorDb);
+            var routes = await _dbContext.Routes
+                .Where(r => !r.Operators.Any(o => o.Id == operatorDb.Id))
+                .Where(r => r.OperatingCompany.ToLower().Contains(operatorName))
+                .Include(r => r.Operators)
+                .ToListAsync();
+
+            foreach (var route in routes)
+            {
+                route.Operators.Add(operatorDb);
+            }
+            await _dbContext.SaveChangesAsync();
+            count += routes.Count;
         }
-        await _dbContext.SaveChangesAsync();
-        return Ok(routes.Count);
+        return Ok(count);
     }
 
     [HttpGet("openOperators/{regionId}")]
@@ -227,7 +232,7 @@ public class OperatorsController : ControllerBase
             return Forbid();
         }
         var operators = await _dbContext.Routes
-            .Where(r => !r.Operators.Any())
+            .Where(r => r.Operators.Count == 0)
             .Where(r => r.Regions.Any(r => r.Id == regionId))
             .Where(r => !string.IsNullOrWhiteSpace(r.OperatingCompany))
             .Where(r => r.RouteType.IsTrain)

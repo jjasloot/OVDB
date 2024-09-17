@@ -1,4 +1,4 @@
-import { Component, effect, OnInit, signal, ViewChild } from "@angular/core";
+import { Component, OnInit, signal, ViewChild } from "@angular/core";
 import { ActivatedRoute, Router } from "@angular/router";
 import { Route } from "src/app/models/route.model";
 import { ApiService } from "src/app/services/api.service";
@@ -9,7 +9,6 @@ import {
 } from "@angular/forms";
 import * as moment from "moment";
 import { RouteType } from "src/app/models/routeType.model";
-import { Location } from "@angular/common";
 import { Country } from "src/app/models/country.model";
 import { MatSelectionList } from "@angular/material/list";
 import { UpdateRoute } from "src/app/models/updateRoute.model";
@@ -22,13 +21,6 @@ import { AreYouSureDialogComponent } from "src/app/are-you-sure-dialog/are-you-s
 import * as saveAs from "file-saver";
 import { AuthenticationService } from "src/app/services/authentication.service";
 import { OperatorService } from "src/app/services/operator.service";
-import { OperatorMinimal } from "src/app/models/operator.model";
-import {
-  MatAutocomplete,
-  MatAutocompleteSelectedEvent,
-} from "@angular/material/autocomplete";
-import { debounceTime } from "rxjs/operators";
-import { Observable } from "rxjs";
 
 @Component({
   selector: "app-route-detail",
@@ -42,7 +34,6 @@ export class RouteDetailComponent implements OnInit {
   types: RouteType[];
   countries: Country[];
   maps: Map[];
-  operators = signal<OperatorMinimal[]>([]);
   activeOperators = signal<number[]>([]);
   logo = signal<string | null>(null);
   colour: string;
@@ -52,10 +43,6 @@ export class RouteDetailComponent implements OnInit {
 
   selectedOptions: number[];
   selectedMaps: number[];
-
-  getLogo(operatorId: number): Observable<string> {
-    return this.operatorService.getOperatorLogo(operatorId);
-  }
 
   constructor(
     private activatedRoute: ActivatedRoute,
@@ -98,22 +85,10 @@ export class RouteDetailComponent implements OnInit {
     this.apiService.getMaps().subscribe((maps) => {
       this.maps = maps;
     });
-    this.operatorService.getOperatorNames().subscribe({
-      next: (operators) => {
-        this.operators.set(operators);
-      },
-    });
     this.activatedRoute.paramMap.subscribe((p) => {
       this.routeId = +p.get("routeId");
       this.loadData();
     });
-
-    this.form
-      .get("operatingCompany")
-      .valueChanges.pipe(debounceTime(200))
-      .subscribe(() => {
-        this.operatorSelected();
-      });
   }
   private loadData() {
     this.apiService.getRoute(this.routeId).subscribe((data) => {
@@ -257,21 +232,5 @@ export class RouteDetailComponent implements OnInit {
         this.loadData();
       },
     });
-  }
-
-  operatorSelected() {
-    const operators = (this.form.get("operatingCompany").value as string).split(
-      ";"
-    );
-    let operatorIds: number[] = [];
-    operators.forEach((o) => {
-      const selectedOperator = this.operators().find(
-        (op) => op.name.toLowerCase() === o.trim().toLowerCase()
-      );
-      if (!!selectedOperator) {
-        operatorIds.push(selectedOperator.id);
-      }
-    });
-    this.activeOperators.set(operatorIds);
   }
 }

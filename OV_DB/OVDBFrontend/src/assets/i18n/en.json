@@ -19,6 +19,7 @@
   "ROUTEDETAILS.DESCRIPTION": "Remark",
   "ROUTEDETAILS.LINENUMBER": "Line number",
   "ROUTEDETAILS.OPERATINGCOMPANY": "Operating company",
+  "ROUTEDETAILS.OPERATINGCOMPANY_HINT": "For multiple companies separate with a semicolon",
   "ROUTEDETAILS.OVERRIDECOLOUR": "Overwrite colour",
   "ROUTEDETAILS.FIRSTDATETIME": "Date first time",
   "ROUTEDETAILS.TYPE": "Types",
