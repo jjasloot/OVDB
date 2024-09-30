@@ -68,6 +68,8 @@ namespace OVDB_database.Database
                              c => c.ToList()));
              });
 
+            modelBuilder.Entity<Operator>().HasMany(o => o.RunsTrainsInRegions).WithMany(r => r.OperatorsRunningTrains);
+            modelBuilder.Entity<Operator>().HasMany(o => o.RestrictToRegions).WithMany(r => r.OperatorsRestrictedToRegion);
         }
 
 

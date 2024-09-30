@@ -47,11 +47,17 @@
           />
         </td>
       </ng-container>
-      <!-- Regions Column -->
-      <ng-container matColumnDef="regions">
-        <th mat-header-cell *matHeaderCellDef>Regions</th>
+      <ng-container matColumnDef="runsTrainsInRegions">
+        <th mat-header-cell *matHeaderCellDef>Runs trains in</th>
         <td mat-cell *matCellDef="let operator">
-          @for (region of operator.regions; track region.id) {
+          @for (region of operator.runsTrainsInRegions; track region.id) {
+          {{ region.name }}}
+        </td>
+      </ng-container>
+      <ng-container matColumnDef="restrictToRegions">
+        <th mat-header-cell *matHeaderCellDef>Restricted to</th>
+        <td mat-cell *matCellDef="let operator">
+          @for (region of operator.restrictToRegions; track region.id) {
           {{ region.name }}}
         </td>
       </ng-container>
@@ -95,7 +101,7 @@
   </mat-expansion-panel-header>
   <mat-select [(ngModel)]="selectedRegion" placeholder="Select Region">
     @for (region of regions(); track region.id) {
-    <mat-option [value]="region.id"> {{ region.nameNL }} </mat-option>}
+    <mat-option [value]="region.id"> {{ region.name }} </mat-option>}
   </mat-select>
 
   <mat-card>

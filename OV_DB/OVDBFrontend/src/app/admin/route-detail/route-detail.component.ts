@@ -54,7 +54,6 @@ export class RouteDetailComponent implements OnInit {
     private dateAdapter: DateAdapter<any>,
     private dialog: MatDialog,
     private router: Router,
-    private operatorService: OperatorService
   ) {
     this.dateAdapter.setLocale(this.translationService.dateLocale);
 

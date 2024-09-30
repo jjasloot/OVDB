@@ -22,6 +22,7 @@ import { OperatorService } from "src/app/services/operator.service";
 })
 export class RouteDetailOperatorSelectionComponent implements OnInit {
   formField = input.required<FormControl<string>>();
+  routeId = input.required<number>();
   @Output() activeOperators = new Subject<number[]>();
   selectedOperators = signal<number[]>([]);
   operators = signal<OperatorMinimal[]>([]);
@@ -40,7 +41,7 @@ export class RouteDetailOperatorSelectionComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.operatorService.getOperatorNames().subscribe({
+    this.operatorService.getOperatorNamesForRoute(this.routeId()).subscribe({
       next: (operators) => {
         this.operators.set(operators);
         this.operatorSelected();

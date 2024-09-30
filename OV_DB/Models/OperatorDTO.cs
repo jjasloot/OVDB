@@ -6,7 +6,8 @@ public class OperatorDTO
 {
     public int Id { get; set; }
     public List<string> Names { get; set; }
-    public List<RegionMinimalDTO> Regions { get; set; }
+    public List<RegionMinimalDTO> RunsTrainsInRegions { get; set; }
+    public List<RegionMinimalDTO> RestrictToRegions { get; set; }
     public string? LogoFilePath { get; set; }
 }
 
@@ -19,5 +20,6 @@ public class OperatorMinimalDTO
 public class OperatorUpdateDTO
 {
     public List<string> Names { get; set; }
-    public List<int> RegionIds { get; set; }
+    public List<int> RunsTrainsInRegionIds { get; set; }
+    public List<int> RestrictToRegionIds { get; set; }
 }

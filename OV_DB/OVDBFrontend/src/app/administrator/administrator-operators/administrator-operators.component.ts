@@ -1,5 +1,6 @@
 import {
   Component,
+  computed,
   effect,
   inject,
   model,
@@ -24,7 +25,14 @@ export class AdministratorOperatorsComponent implements OnInit {
   operatorService = inject(OperatorService);
   dialog = inject(MatDialog);
   operators = signal<Operator[]>([]);
-  displayedColumns: string[] = ["id", "name", "logo", "regions", "controls"];
+  displayedColumns: string[] = [
+    "id",
+    "name",
+    "logo",
+    "runsTrainsInRegions",
+    "restrictToRegions",
+    "controls",
+  ];
   reconnecting = signal<number[]>([]);
   updating = signal<number[]>([]);
   selectedRegion = model<number>(null);
@@ -34,6 +42,7 @@ export class AdministratorOperatorsComponent implements OnInit {
   ngOnInit(): void {
     this.getData();
   }
+
 
   updateOpenOperators = effect(
     () => {
@@ -100,7 +109,8 @@ export class AdministratorOperatorsComponent implements OnInit {
         data: {
           id: 0,
           names: [],
-          regions: [],
+          runsTrainsInRegions: [],
+          restrictToRegions: [],
           logoFilePath: null,
         },
       }

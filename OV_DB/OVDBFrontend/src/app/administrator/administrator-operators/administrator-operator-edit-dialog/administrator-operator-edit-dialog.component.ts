@@ -1,5 +1,6 @@
 import {
   Component,
+  computed,
   effect,
   inject,
   Inject,
@@ -14,7 +15,7 @@ import {
 } from "@angular/forms";
 import { MatDialogRef, MAT_DIALOG_DATA } from "@angular/material/dialog";
 import { Operator } from "src/app/models/operator.model";
-import { RegionMinimal } from "src/app/models/region.model";
+import { Region, RegionMinimal } from "src/app/models/region.model";
 import { RegionsService } from "src/app/services/regions.service";
 
 @Component({
@@ -25,7 +26,7 @@ import { RegionsService } from "src/app/services/regions.service";
 export class AdministratorOperatorEditDialogComponent {
   nameCtrl = new FormControl("");
   regionService = inject(RegionsService);
-  regions = signal<RegionMinimal[]>([]); // This should be populated with actual regions
+  regions = signal<Region[]>([]);
 
   loadRegions = effect(
     () => {
@@ -37,7 +38,23 @@ export class AdministratorOperatorEditDialogComponent {
   );
   operatorForm = this.fb.group({
     names: [this.data.names, [Validators.required, Validators.minLength(1)]],
-    regionIds: [this.data.regions.map((region) => region.id)],
+    runsTrainsInRegionIds: [
+      this.data.runsTrainsInRegions.map((region) => region.id),
+    ],
+    restrictToRegionIds: [
+      this.data.restrictToRegions.map((region) => region.id),
+    ],
+  });
+
+  flattenedRegions = computed(() => {
+    const regions = this.regions();
+    for (const region of regions) {
+      for (const subRegion of region.subRegions) {
+        subRegion.name = `${region.name} - ${subRegion.name}`;
+        regions.push(subRegion);
+      }
+    }
+    return regions;
   });
 
   constructor(

@@ -43,6 +43,7 @@
     <div style="display: flex">
       <app-route-detail-operator-selection
         [formField]="form.controls['operatingCompany']"
+        [routeId]="routeId"
         (activeOperators)="activeOperators.set($event)"
       ></app-route-detail-operator-selection>
     </div>

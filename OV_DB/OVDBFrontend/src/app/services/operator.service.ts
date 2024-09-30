@@ -1,4 +1,4 @@
-import { Injectable } from "@angular/core";
+import { Injectable, Signal } from "@angular/core";
 import { environment } from "src/environments/environment";
 import {
   Operator,
@@ -7,7 +7,7 @@ import {
 } from "../models/operator.model";
 import { HttpClient } from "@angular/common/http";
 import { Observable, of } from "rxjs";
-import { map, tap } from "rxjs/operators";
+import { map, shareReplay, tap } from "rxjs/operators";
 
 @Injectable({
   providedIn: "root",
@@ -15,7 +15,7 @@ import { map, tap } from "rxjs/operators";
 export class OperatorService {
   constructor(private httpClient: HttpClient) {}
 
-  logos = new Map<number, string>();
+  logos = new Map<number, Observable<string>>();
 
   getOperators() {
     return this.httpClient.get<Operator[]>(
@@ -64,21 +64,28 @@ export class OperatorService {
     );
   }
 
+  getOperatorNamesForRoute(routeId: number) {
+    return this.httpClient.get<OperatorMinimal[]>(
+      environment.backend + "api/Operators/forRoute/" + routeId
+    );
+  }
+
   getOperatorLogo(id: number): Observable<string> {
     if (this.logos.has(id)) {
-      return of(this.logos.get(id));
+      return this.logos.get(id);
     }
-    return this.httpClient
-      .get(environment.backend + "api/operators/" + id + "/logo", {
-        responseType: "blob",
-      })
-      .pipe(
-        tap((blob) => {
-          const url = URL.createObjectURL(blob as Blob);
-          this.logos.set(id, url);
-        }),
-        map(() => this.logos.get(id))
-      );
+    this.logos.set(
+      id,
+      this.httpClient
+        .get(environment.backend + "api/operators/" + id + "/logo", {
+          responseType: "blob",
+        })
+        .pipe(
+          map((blob) => URL.createObjectURL(blob as Blob)),
+          shareReplay()
+        )
+    );
+    return this.logos.get(id);
   }
 
   connectRoutesToOperator(id: number) {

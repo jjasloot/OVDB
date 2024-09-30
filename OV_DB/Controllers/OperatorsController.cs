@@ -43,11 +43,11 @@ public class OperatorsController : ControllerBase
             return Forbid();
         }
 
-        var regions = await _dbContext.Regions.Where(r => createOperator.RegionIds.Contains(r.Id)).ToListAsync();
+        var regions = await _dbContext.Regions.Where(r => createOperator.RunsTrainsInRegionIds.Contains(r.Id)).ToListAsync();
         var newOperator = new Operator
         {
             Names = createOperator.Names,
-            Regions = regions
+            RunsTrainsInRegions = regions
         };
         _dbContext.Operators.Add(newOperator);
         await _dbContext.SaveChangesAsync();
@@ -76,6 +76,28 @@ public class OperatorsController : ControllerBase
     public async Task<ActionResult<List<OperatorMinimalDTO>>> GetOperatorsMinimal()
     {
         var operators = await _dbContext.Operators.ToListAsync();
+
+        var response = new List<OperatorMinimalDTO>();
+        foreach (var op in operators)
+        {
+            foreach (var name in op.Names)
+            {
+                response.Add(new OperatorMinimalDTO { Id = op.Id, Name = name });
+            }
+        }
+
+        return response;
+    }
+
+    [HttpGet("forRoute/{routeId}")]
+    public async Task<ActionResult<List<OperatorMinimalDTO>>> GetOperatorsForRoute(long routeId)
+    {
+
+        var regions = await _dbContext.Routes.Where(r => r.RouteId == routeId).SelectMany(r => r.Regions).Select(r => r.Id).ToListAsync();
+
+        var operators = await _dbContext.Operators
+            .Where(o => o.RestrictToRegions.Any(r => regions.Contains(r.Id)) || !o.RestrictToRegions.Any())
+            .ToListAsync();
 
         var response = new List<OperatorMinimalDTO>();
         foreach (var op in operators)
@@ -122,15 +144,18 @@ public class OperatorsController : ControllerBase
         {
             return Forbid();
         }
-        var existingOperator = await _dbContext.Operators.Include(o => o.Regions).SingleOrDefaultAsync(o => o.Id == id);
+        var existingOperator = await _dbContext.Operators.Include(o => o.RunsTrainsInRegions).Include(o => o.RestrictToRegions).SingleOrDefaultAsync(o => o.Id == id);
         if (existingOperator == null)
         {
             return NotFound();
         }
 
         existingOperator.Names = updatedOperator.Names;
-        var regions = await _dbContext.Regions.Where(r => updatedOperator.RegionIds.Contains(r.Id)).ToListAsync();
-        existingOperator.Regions = regions;
+        var runsTrainsInRegions = await _dbContext.Regions.Where(r => updatedOperator.RunsTrainsInRegionIds.Contains(r.Id)).ToListAsync();
+        existingOperator.RunsTrainsInRegions = runsTrainsInRegions;
+
+        var restrictToRegions = await _dbContext.Regions.Where(r => updatedOperator.RestrictToRegionIds.Contains(r.Id)).ToListAsync();
+        existingOperator.RestrictToRegions = restrictToRegions;
 
         await _dbContext.SaveChangesAsync();
         return NoContent();

@@ -1,18 +1,20 @@
 import { RegionMinimal } from "./region.model";
 
 export interface Operator {
-    id: number;
-    names: string[];
-    regions: RegionMinimal[];
-    logoFilePath: string | null;
+  id: number;
+  names: string[];
+  runsTrainsInRegions: RegionMinimal[];
+  restrictToRegions: RegionMinimal[];
+  logoFilePath: string | null;
 }
 
 export interface OperatorMinimal {
-    id: number;
-    name: string;
+  id: number;
+  name: string;
 }
 
 export interface OperatorUpdate {
-    names: string[];
-    regionIds: number[];
+  names: string[];
+  runsTrainsInRegionIds: number[];
+  restrictToRegionsIds: number[];
 }

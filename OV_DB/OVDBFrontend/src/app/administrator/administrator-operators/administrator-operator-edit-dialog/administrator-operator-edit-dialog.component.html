@@ -20,9 +20,17 @@
       </mat-chip-grid>
     </mat-form-field>
     <mat-form-field>
-      <mat-label>Regions</mat-label>
-      <mat-select formControlName="regionIds" multiple>
+      <mat-label>Runs trains in</mat-label>
+      <mat-select formControlName="runsTrainsInRegionIds" multiple>
         @for (region of regions(); track region.id) {
+        <mat-option [value]="region.id">{{ region.name }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+    <mat-form-field>
+      <mat-label>Restrict to</mat-label>
+      <mat-select formControlName="restrictToRegionIds" multiple>
+        @for (region of flattenedRegions(); track region.id) {
         <mat-option [value]="region.id">{{ region.name }}</mat-option>
         }
       </mat-select>
