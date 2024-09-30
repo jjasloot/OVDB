@@ -1,6 +1,5 @@
 import {
   Component,
-  computed,
   effect,
   inject,
   model,
@@ -42,7 +41,6 @@ export class AdministratorOperatorsComponent implements OnInit {
   ngOnInit(): void {
     this.getData();
   }
-
 
   updateOpenOperators = effect(
     () => {
@@ -94,11 +92,14 @@ export class AdministratorOperatorsComponent implements OnInit {
 
   connectOperator(operator: Operator): void {
     this.reconnecting.set([...this.reconnecting(), operator.id]);
-    this.operatorService.connectRoutesToOperator(operator.id).subscribe(() => {
-      this.reconnecting.set(
-        this.reconnecting().filter((id) => id !== operator.id)
-      );
-    });
+    this.operatorService
+      .connectRoutesToOperator(operator.id)
+      .subscribe((count) => {
+        this.reconnecting.set(
+          this.reconnecting().filter((id) => id !== operator.id)
+        );
+        alert(count);
+      });
   }
 
   newOperator() {

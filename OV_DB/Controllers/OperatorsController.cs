@@ -223,7 +223,7 @@ public class OperatorsController : ControllerBase
         {
             return Forbid();
         }
-        var operatorDb = await _dbContext.Operators.FindAsync(id);
+        var operatorDb = await _dbContext.Operators.Where(o => o.Id == id).Include(o => o.RestrictToRegions).SingleOrDefaultAsync();
         if (operatorDb == null)
         {
             return NotFound();
@@ -232,11 +232,18 @@ public class OperatorsController : ControllerBase
         var count = 0;
         foreach (var operatorName in operatorNames)
         {
-            var routes = await _dbContext.Routes
-                .Where(r => !r.Operators.Any(o => o.Id == operatorDb.Id))
-                .Where(r => r.OperatingCompany.ToLower().Contains(operatorName))
+            var routesQuery = _dbContext.Routes
                 .Include(r => r.Operators)
-                .ToListAsync();
+                .Where(r => !r.Operators.Any(o => o.Id == operatorDb.Id))
+                .Where(r => r.OperatingCompany.ToLower().Contains(operatorName));
+
+            if (operatorDb.RestrictToRegions.Count != 0)
+            {
+                routesQuery = routesQuery
+                    .Where(r => r.Regions.Any(r => operatorDb.RestrictToRegions.Contains(r)));
+            }
+            var routes = await routesQuery
+            .ToListAsync();
 
             foreach (var route in routes)
             {
@@ -260,10 +267,12 @@ public class OperatorsController : ControllerBase
             .Where(r => r.Operators.Count == 0)
             .Where(r => r.Regions.Any(r => r.Id == regionId))
             .Where(r => !string.IsNullOrWhiteSpace(r.OperatingCompany))
-            .Where(r => r.RouteType.IsTrain)
-            .Select(r => r.OperatingCompany)
+            .Select(r => new { r.OperatingCompany, IsTrain = r.RouteType != null ? r.RouteType.IsTrain : false })
             .Distinct()
             .ToListAsync();
-        return operators;
+
+        var operatorStrings = operators.Select(o => (o.IsTrain ? "[Train] " : "") + o.OperatingCompany).ToList();
+
+        return operatorStrings;
     }
 }
