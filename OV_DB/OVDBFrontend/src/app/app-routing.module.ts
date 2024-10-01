@@ -35,6 +35,7 @@ import { StationMapsComponent } from "./admin/station-maps/station-maps.componen
 import { AdministratorRegionsComponent } from "./administrator/administrator-regions/administrator-regions.component";
 import { RequestsListComponent } from "./requests/requests-list/requests-list.component";
 import { AdministratorRequestsComponent } from "./administrator/administrator-requests/administrator-requests.component";
+import { AdministratorOperatorsComponent } from "./administrator/administrator-operators/administrator-operators.component";
 
 const routes: Routes = [
   {
@@ -103,6 +104,7 @@ const routes: Routes = [
           { path: "stations", component: AdminStationsMapComponent },
           { path: "regions", component: AdministratorRegionsComponent },
           { path: "requests", component: AdministratorRequestsComponent },
+          { path: "operators", component: AdministratorOperatorsComponent },
         ],
       },
       {

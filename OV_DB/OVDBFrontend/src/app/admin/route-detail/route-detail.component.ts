@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild } from "@angular/core";
+import { Component, OnInit, signal, ViewChild } from "@angular/core";
 import { ActivatedRoute, Router } from "@angular/router";
 import { Route } from "src/app/models/route.model";
 import { ApiService } from "src/app/services/api.service";
@@ -9,7 +9,6 @@ import {
 } from "@angular/forms";
 import * as moment from "moment";
 import { RouteType } from "src/app/models/routeType.model";
-import { Location } from "@angular/common";
 import { Country } from "src/app/models/country.model";
 import { MatSelectionList } from "@angular/material/list";
 import { UpdateRoute } from "src/app/models/updateRoute.model";
@@ -21,6 +20,7 @@ import { MatDialog } from "@angular/material/dialog";
 import { AreYouSureDialogComponent } from "src/app/are-you-sure-dialog/are-you-sure-dialog.component";
 import * as saveAs from "file-saver";
 import { AuthenticationService } from "src/app/services/authentication.service";
+import { OperatorService } from "src/app/services/operator.service";
 
 @Component({
   selector: "app-route-detail",
@@ -34,6 +34,8 @@ export class RouteDetailComponent implements OnInit {
   types: RouteType[];
   countries: Country[];
   maps: Map[];
+  activeOperators = signal<number[]>([]);
+  logo = signal<string | null>(null);
   colour: string;
 
   @ViewChild("countriesSelection") countriesSelection: MatSelectionList;
@@ -51,7 +53,7 @@ export class RouteDetailComponent implements OnInit {
     private authService: AuthenticationService,
     private dateAdapter: DateAdapter<any>,
     private dialog: MatDialog,
-    private router: Router
+    private router: Router,
   ) {
     this.dateAdapter.setLocale(this.translationService.dateLocale);
 
@@ -115,6 +117,9 @@ export class RouteDetailComponent implements OnInit {
     route.maps = this.mapsSelection.selectedOptions.selected.map(
       (s) => s.value
     );
+    if (!!this.activeOperators()) {
+      route.operatorIds = this.activeOperators();
+    }
     this.apiService.updateRoute(values as Route).subscribe((_) => {
       if (!goToInstances) {
         this.goBack();

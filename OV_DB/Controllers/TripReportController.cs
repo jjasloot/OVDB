@@ -26,6 +26,7 @@ namespace OV_DB.Controllers
             _databaseContext = databaseContext;
         }
 
+        [HttpGet]
         public async Task<IActionResult> GetTripReport([FromQuery] List<Guid> guid, [FromQuery] int year, [FromQuery] bool english = false)
         {
             var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value ?? "-1");

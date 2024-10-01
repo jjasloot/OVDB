@@ -80,6 +80,7 @@ namespace OV_DB.Controllers
             dbRouteType.Name = routeType.Name;
             dbRouteType.NameNL = routeType.NameNL;
             dbRouteType.Colour = routeType.Colour;
+            dbRouteType.IsTrain = routeType.IsTrain;
 
             await _context.SaveChangesAsync();
             return Ok(routeType.TypeId);

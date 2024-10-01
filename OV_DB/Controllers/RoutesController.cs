@@ -181,6 +181,7 @@ namespace OV_DB.Controllers
                 .Include(r => r.RouteCountries)
                 .Include(r => r.RouteMaps)
                 .Include(r => r.RouteInstances)
+                .Include(r => r.Operators)
                 .SingleOrDefaultAsync(r => r.RouteId == id);
             if (dbRoute is null)
             {
@@ -197,6 +198,12 @@ namespace OV_DB.Controllers
             dbRoute.OperatingCompany = route.OperatingCompany;
             dbRoute.RouteTypeId = route.RouteTypeId;
             dbRoute.OverrideDistance = route.OverrideDistance;
+            dbRoute.Operators = [];
+            if (route.OperatorIds != null)
+            {
+                var operators = await _context.Operators.Where(o => route.OperatorIds.Contains(o.Id)).ToListAsync();
+                dbRoute.Operators = operators;
+            }
             if (route.FirstDateTime.HasValue)
             {
                 if (dbRoute.RouteInstances.Count == 0)
@@ -541,7 +548,7 @@ namespace OV_DB.Controllers
         private async Task<List<Route>> PostGpxToDatabase(StreamReader stream, int mapId, string fileName, int userId)
         {
 
-            var gpxReader = new Gpx.GpxReader(stream.BaseStream);
+            var gpxReader = new GpxReader(stream.BaseStream);
             do
             {
                 var read = gpxReader.Read();
@@ -549,7 +556,7 @@ namespace OV_DB.Controllers
                 {
                     throw new Exception("Cannot read file");
                 }
-            } while (gpxReader.ObjectType != Gpx.GpxObjectType.Track);
+            } while (gpxReader.ObjectType != GpxObjectType.Track);
 
             var name = gpxReader.Track.Name;
             if (string.Equals(name, "Tessellated", StringComparison.OrdinalIgnoreCase))

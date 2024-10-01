@@ -1,5 +1,5 @@
 ﻿using NetTopologySuite.Geometries;
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -55,6 +55,7 @@ namespace OVDB_database.Models
         public Guid Share { get; set; }
         [JsonProperty]
         public List<RouteInstance> RouteInstances { get; set; }
-        public List<Region> Regions { get; set;}
+        public List<Region> Regions { get; set; }
+        public List<Operator> Operators { get; set; }
     }
 }

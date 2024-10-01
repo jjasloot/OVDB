@@ -10,7 +10,7 @@ using System;
 using System.Globalization;
 using System.Text;
 
-namespace Gps
+namespace OV_DB.Helpers
 {
     struct GpsLocation
     {
@@ -79,7 +79,7 @@ namespace Gps
         {
             get
             {
-                double minutes = 60 * (Latitude_ - Math.Truncate(Latitude_));
+                var minutes = 60 * (Latitude_ - Math.Truncate(Latitude_));
                 return (int)Math.Truncate(60 * (minutes - Math.Truncate(minutes)));
             }
         }
@@ -88,7 +88,7 @@ namespace Gps
         {
             get
             {
-                double minutes = 60 * (Latitude_ - Math.Truncate(Latitude_));
+                var minutes = 60 * (Latitude_ - Math.Truncate(Latitude_));
                 return 60 * (minutes - Math.Truncate(minutes));
             }
         }
@@ -107,7 +107,7 @@ namespace Gps
         {
             get
             {
-                double minutes = 60 * (Longitude_ - Math.Truncate(Longitude_));
+                var minutes = 60 * (Longitude_ - Math.Truncate(Longitude_));
                 return (int)Math.Truncate(60 * (minutes - Math.Truncate(minutes)));
             }
         }
@@ -116,7 +116,7 @@ namespace Gps
         {
             get
             {
-                double minutes = 60 * (Longitude_ - Math.Truncate(Longitude_));
+                var minutes = 60 * (Longitude_ - Math.Truncate(Longitude_));
                 return 60 * (minutes - Math.Truncate(minutes));
             }
         }
@@ -135,10 +135,10 @@ namespace Gps
 
             if (string.IsNullOrEmpty(s)) return false;
 
-            int pos = 0;
+            var pos = 0;
 
-            double latitude = double.NaN;
-            double longitude = double.NaN;
+            var latitude = double.NaN;
+            var longitude = double.NaN;
 
             if (!TryParseGpsFragment(s, ref pos, ref latitude, ref longitude)) return false;
             if (!TryParseGpsFragment(s, ref pos, ref latitude, ref longitude)) return false;
@@ -153,8 +153,8 @@ namespace Gps
         {
             if (!(obj is GpsLocation)) return false;
 
-            GpsLocation other = (GpsLocation)obj;
-            return this.Latitude == other.Latitude && this.Longitude == other.Longitude;
+            var other = (GpsLocation)obj;
+            return Latitude == other.Latitude && Longitude == other.Longitude;
         }
 
         public override int GetHashCode()
@@ -200,7 +200,7 @@ namespace Gps
 
         private static double NormalizeLongitude(double longitude)
         {
-            return (longitude == MIN_LONGITUDE) ? MAX_LONGITUDE : longitude;
+            return longitude == MIN_LONGITUDE ? MAX_LONGITUDE : longitude;
         }
 
         private static bool TryParseGpsFragment(string s, ref int pos, ref double latitude, ref double longitude)
@@ -285,7 +285,7 @@ namespace Gps
             while (pos < s.Length && s[pos] == '0') pos++;
 
             double value = 0;
-            int count = 0;
+            var count = 0;
 
             while (pos < s.Length && char.IsDigit(s, pos))
             {
@@ -316,14 +316,14 @@ namespace Gps
 
         private string ToGeneralString()
         {
-            StringBuilder sb = new StringBuilder();
+            var sb = new StringBuilder();
 
-            sb.Append((Latitude_ < 0) ? 'S' : 'N');
+            sb.Append(Latitude_ < 0 ? 'S' : 'N');
             sb.AppendFormat(CultureInfo.InvariantCulture, "F", Math.Abs(Latitude_));
 
             sb.Append(' ');
 
-            sb.Append((Longitude_ < 0) ? 'W' : 'E');
+            sb.Append(Longitude_ < 0 ? 'W' : 'E');
             sb.AppendFormat(CultureInfo.InvariantCulture, "F", Math.Abs(Longitude_));
 
             return sb.ToString();
@@ -331,14 +331,14 @@ namespace Gps
 
         private string ToFixedPointString(int precision)
         {
-            StringBuilder sb = new StringBuilder();
+            var sb = new StringBuilder();
 
-            sb.Append((Latitude_ < 0) ? 'S' : 'N');
+            sb.Append(Latitude_ < 0 ? 'S' : 'N');
             FormatGpsValue(sb, Math.Abs(Latitude_), precision);
 
             sb.Append(' ');
 
-            sb.Append((Longitude_ < 0) ? 'W' : 'E');
+            sb.Append(Longitude_ < 0 ? 'W' : 'E');
             FormatGpsValue(sb, Math.Abs(Longitude_), precision);
 
             return sb.ToString();
@@ -346,15 +346,15 @@ namespace Gps
 
         private static void FormatGpsValue(StringBuilder sb, double value, int precision)
         {
-            double degrees = Math.Truncate(value);
+            var degrees = Math.Truncate(value);
             sb.AppendFormat("F0", degrees).Append(DEGREES_SIGN).Append(' ');
 
             value = 60 * (value - degrees);
-            double minutes = Math.Truncate(value);
+            var minutes = Math.Truncate(value);
             sb.AppendFormat("F0", minutes).Append(MINUTES_SIGN).Append(' ');
 
             value = 60 * (value - minutes);
-            double seconds = Math.Truncate(value);
+            var seconds = Math.Truncate(value);
             sb.AppendFormat(CultureInfo.InvariantCulture, "F" + precision, seconds).Append(SECONDS_SIGN);
         }
     }

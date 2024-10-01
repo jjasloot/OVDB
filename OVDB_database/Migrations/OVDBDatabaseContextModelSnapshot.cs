@@ -18,7 +18,7 @@ namespace OVDB_database.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "8.0.3")
+                .HasAnnotation("ProductVersion", "8.0.7")
                 .HasAnnotation("Relational:MaxIdentifierLength", 64);
 
             MySqlModelBuilderExtensions.AutoIncrementColumns(modelBuilder);
@@ -123,6 +123,28 @@ namespace OVDB_database.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("Maps");
+                });
+
+            modelBuilder.Entity("OVDB_database.Models.Operator", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("LogoContentType")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("LogoFilePath")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Names")
+                        .HasColumnType("longtext");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Operators");
                 });
 
             modelBuilder.Entity("OVDB_database.Models.Region", b =>
@@ -392,6 +414,9 @@ namespace OVDB_database.Migrations
                         .IsRequired()
                         .HasColumnType("longtext");
 
+                    b.Property<bool>("IsTrain")
+                        .HasColumnType("tinyint(1)");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("longtext");
@@ -627,6 +652,51 @@ namespace OVDB_database.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Users");
+                });
+
+            modelBuilder.Entity("OperatorRegion", b =>
+                {
+                    b.Property<int>("OperatorsRunningTrainsId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("RunsTrainsInRegionsId")
+                        .HasColumnType("int");
+
+                    b.HasKey("OperatorsRunningTrainsId", "RunsTrainsInRegionsId");
+
+                    b.HasIndex("RunsTrainsInRegionsId");
+
+                    b.ToTable("OperatorRegion");
+                });
+
+            modelBuilder.Entity("OperatorRegion1", b =>
+                {
+                    b.Property<int>("OperatorsRestrictedToRegionId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("RestrictToRegionsId")
+                        .HasColumnType("int");
+
+                    b.HasKey("OperatorsRestrictedToRegionId", "RestrictToRegionsId");
+
+                    b.HasIndex("RestrictToRegionsId");
+
+                    b.ToTable("OperatorRegion1");
+                });
+
+            modelBuilder.Entity("OperatorRoute", b =>
+                {
+                    b.Property<int>("OperatorsId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("RoutesRouteId")
+                        .HasColumnType("int");
+
+                    b.HasKey("OperatorsId", "RoutesRouteId");
+
+                    b.HasIndex("RoutesRouteId");
+
+                    b.ToTable("OperatorRoute");
                 });
 
             modelBuilder.Entity("RegionRoute", b =>
@@ -893,6 +963,51 @@ namespace OVDB_database.Migrations
                     b.Navigation("Station");
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("OperatorRegion", b =>
+                {
+                    b.HasOne("OVDB_database.Models.Operator", null)
+                        .WithMany()
+                        .HasForeignKey("OperatorsRunningTrainsId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("OVDB_database.Models.Region", null)
+                        .WithMany()
+                        .HasForeignKey("RunsTrainsInRegionsId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("OperatorRegion1", b =>
+                {
+                    b.HasOne("OVDB_database.Models.Operator", null)
+                        .WithMany()
+                        .HasForeignKey("OperatorsRestrictedToRegionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("OVDB_database.Models.Region", null)
+                        .WithMany()
+                        .HasForeignKey("RestrictToRegionsId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("OperatorRoute", b =>
+                {
+                    b.HasOne("OVDB_database.Models.Operator", null)
+                        .WithMany()
+                        .HasForeignKey("OperatorsId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("OVDB_database.Models.Route", null)
+                        .WithMany()
+                        .HasForeignKey("RoutesRouteId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("RegionRoute", b =>

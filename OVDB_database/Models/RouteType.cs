@@ -22,6 +22,8 @@ namespace OVDB_database.Models
         public int UserId { get; set; }
         public int OrderNr { get; set; }
         public List<Route> Routes { get; set; }
+        [JsonProperty]
+        public bool IsTrain { get; set; }
 
     }
 }

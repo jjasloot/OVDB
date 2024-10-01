@@ -41,7 +41,7 @@ mat-list-item {
   }
   .desktop {
     display: unset;
-    &.buttons{
+    &.buttons {
       display: flex;
     }
   }
@@ -51,4 +51,9 @@ mat-list-item {
   .buttons {
     flex-direction: row;
   }
+}
+
+#new-request {
+  display: block;
+  min-width: 360px;
 }

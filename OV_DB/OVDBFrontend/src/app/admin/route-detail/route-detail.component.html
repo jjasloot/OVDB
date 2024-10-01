@@ -2,6 +2,7 @@
   {{ "BACK" | translate }}
 </button>
 <div class="form">
+  @if(!!route){
   <form [formGroup]="form" (ngSubmit)="onSubmit(form.value, false)">
     <mat-form-field>
       <mat-label>{{ "ROUTEDETAILS.NAME" | translate }}</mat-label>
@@ -39,10 +40,13 @@
       <mat-label>{{ "ROUTEDETAILS.LINENUMBER" | translate }}</mat-label>
       <input matInput formControlName="lineNumber" />
     </mat-form-field>
-    <mat-form-field>
-      <mat-label>{{ "ROUTEDETAILS.OPERATINGCOMPANY" | translate }}</mat-label>
-      <input matInput formControlName="operatingCompany" />
-    </mat-form-field>
+    <div style="display: flex">
+      <app-route-detail-operator-selection
+        [formField]="form.controls['operatingCompany']"
+        [routeId]="routeId"
+        (activeOperators)="activeOperators.set($event)"
+      ></app-route-detail-operator-selection>
+    </div>
     <div class="row">
       <mat-form-field style="width: 50%">
         <mat-label>{{ "ROUTEDETAILS.OVERRIDECOLOUR" | translate }}</mat-label>
@@ -52,7 +56,7 @@
           matInput
         />
       </mat-form-field>
-      <mat-form-field style="width: 50%">
+      <mat-form-field style="width: 50%; max-height: 71px">
         <input
           type="color"
           [(ngModel)]="colour"
@@ -123,7 +127,7 @@
       </mat-list-option>
     </mat-selection-list>
   </mat-expansion-panel>
-
+  }
   <div class="buttons">
     <button
       mat-raised-button
