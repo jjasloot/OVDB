@@ -1,65 +1,97 @@
 @if (data) {
-  <button mat-icon-button (click)="goback()">
-    <mat-icon>arrow_back</mat-icon>
-  </button>
-}
-
-@if (loading) {
-  <div class="loading">
-    <mat-card appearance="outlined">
-      {{'IMPORTER.THISMAYTAKEAWHILE'|translate}}
-      <mat-spinner></mat-spinner>
-    </mat-card>
-  </div>
-}
-
-@if (error) {
-  <div class="loading">
-    <mat-card appearance="outlined">
-      {{'ERROR'|translate}}
-    </mat-card>
-  </div>
-}
-@if (data) {
-  <div class="content">
-    <div style="flex: 3">
-      <div class="map" leaflet style="height: 350px;" [leafletOptions]="options" [leafletLayers]="layers" [leafletFitBounds]="bounds">
-      </div>
-      <div>
-        <mat-list>
-          <mat-list-item> {{'IMPORTER.NAME'|translate}}: {{data.name}} </mat-list-item>
-          <mat-list-item> {{'IMPORTER.LINENUMBER'|translate}}: {{data.ref}} </mat-list-item>
-          <mat-list-item> {{'IMPORTER.OPERATOR'|translate}}: {{data.operator}} </mat-list-item>
-          @if (!!data.colour) {
-            <mat-list-item> {{'IMPORTER.COLOUR'|translate}}:&nbsp;
-              <mat-chip-listbox>
-                <mat-chip-option [color]="data.colour" [style.background]="data.colour" [selectable]="false">{{data.colour}}</mat-chip-option>
-              </mat-chip-listbox>
-            </mat-list-item>
-          }
-        </mat-list>
-      </div>
-    </div>
-    <div style="flex: 2">
-      <div class="buttons">
-        <button mat-raised-button (click)="cut()">{{'IMPORTER.CUT'|translate}}</button>
-        <button mat-raised-button (click)="uncut()">{{'IMPORTER.RESTORE'|translate}}</button>
-        <button mat-raised-button (click)="save()" color="primary">{{'IMPORTER.SAVE'|translate}}</button>
-        <button mat-raised-button color="primary" (click)="export()">{{'IMPORTER.EXPORT'|translate}}</button>
-      </div>
-      <div class="stops">
-        @for (stop of stops; track stop) {
-          <div class="row">
-            <div class="from"> @if (showFrom(stop.id)) {
-              <button (click)="setFrom(stop.id)" mat-button>{{'IMPORTER.FROM'|translate}}</button>
-            } </div>
-            <div class="info" [ngClass]="{'active':included(stop.id)}">{{stop.name}} {{stop.ref}}</div>
-            <div class="to"> @if (showTo(stop.id)) {
-              <button (click)="setTo(stop.id)" mat-button>{{'IMPORTER.TO'|translate}}</button>
-            } </div>
-          </div>
+<button mat-icon-button (click)="goback()">
+  <mat-icon>arrow_back</mat-icon>
+</button>
+} @if (loading) {
+<div class="loading">
+  <mat-card appearance="outlined">
+    {{ "IMPORTER.THISMAYTAKEAWHILE" | translate }}
+    <mat-spinner></mat-spinner>
+  </mat-card>
+</div>
+} @if (error) {
+<div class="loading">
+  <mat-card appearance="outlined">
+    {{ "ERROR" | translate }}
+  </mat-card>
+</div>
+} @if (data) {
+<div class="content">
+  <div style="flex: 3">
+    <div
+      class="map"
+      leaflet
+      style="height: 350px"
+      [leafletOptions]="options"
+      [leafletLayers]="layers"
+      [leafletFitBounds]="bounds"
+    ></div>
+    <div>
+      <mat-list>
+        <mat-list-item>
+          {{ "IMPORTER.NAME" | translate }}: {{ data.name }}
+        </mat-list-item>
+        <mat-list-item>
+          {{ "IMPORTER.LINENUMBER" | translate }}: {{ data.ref }}
+        </mat-list-item>
+        <mat-list-item>
+          {{ "IMPORTER.OPERATOR" | translate }}: {{ data.operator }}
+        </mat-list-item>
+        @if (!!data.colour) {
+        <mat-list-item>
+          {{ "IMPORTER.COLOUR" | translate }}:&nbsp;
+          <mat-chip-listbox>
+            <mat-chip-option
+              [color]="data.colour"
+              [style.background]="data.colour"
+              [selectable]="false"
+              [cdkCopyToClipboard]="data.colour"
+              >{{ data.colour }}</mat-chip-option
+            >
+          </mat-chip-listbox>
+        </mat-list-item>
         }
-      </div>
+      </mat-list>
     </div>
   </div>
+  <div style="flex: 2">
+    <div class="buttons">
+      <button mat-raised-button (click)="cut()">
+        {{ "IMPORTER.CUT" | translate }}
+      </button>
+      <button mat-raised-button (click)="uncut()">
+        {{ "IMPORTER.RESTORE" | translate }}
+      </button>
+      <button mat-raised-button (click)="save()" color="primary">
+        {{ "IMPORTER.SAVE" | translate }}
+      </button>
+      <button mat-raised-button color="primary" (click)="export()">
+        {{ "IMPORTER.EXPORT" | translate }}
+      </button>
+    </div>
+    <div class="stops">
+      @for (stop of stops; track stop) {
+      <div class="row">
+        <div class="from">
+          @if (showFrom(stop.id)) {
+          <button (click)="setFrom(stop.id)" mat-button>
+            {{ "IMPORTER.FROM" | translate }}
+          </button>
+          }
+        </div>
+        <div class="info" [ngClass]="{ active: included(stop.id) }">
+          {{ stop.name }} {{ stop.ref }}
+        </div>
+        <div class="to">
+          @if (showTo(stop.id)) {
+          <button (click)="setTo(stop.id)" mat-button>
+            {{ "IMPORTER.TO" | translate }}
+          </button>
+          }
+        </div>
+      </div>
+      }
+    </div>
+  </div>
+</div>
 }

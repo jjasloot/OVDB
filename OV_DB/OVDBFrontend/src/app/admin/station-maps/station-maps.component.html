@@ -6,18 +6,11 @@
     <div class="title" [innerHTML]="'STATIONMAP.DESCRIPTION' | translate"></div>
     @if (data.length > 0) {
       <mat-list>
-        @for (map of data; track map) {
+        @for (map of data; track map.id) {
           <mat-list-item>
             <div style="display: flex; align-items: center">
               <h4 mat-line>
                 <b>{{ getName(map) }}</b>
-                <em
-                  >@if (map.default) {
-                  <small
-                    >&nbsp;({{ "ADDMAP.DEFAULT" | translate | lowercase }})</small
-                    >
-                    }</em
-                    >
                   </h4>
                   <div style="flex:1"></div>
                   <button

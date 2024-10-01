@@ -8,8 +8,8 @@ describe('RouteTypesAddComponent', () => {
 
   beforeEach(waitForAsync(() => {
     TestBed.configureTestingModule({
-      declarations: [ RouteTypesAddComponent ]
-    })
+    imports: [RouteTypesAddComponent]
+})
     .compileComponents();
   }));
 

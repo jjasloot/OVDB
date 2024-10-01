@@ -8,8 +8,8 @@ describe('WizzardStep1Component', () => {
 
   beforeEach(waitForAsync(() => {
     TestBed.configureTestingModule({
-      declarations: [ WizzardStep1Component ]
-    })
+    imports: [WizzardStep1Component]
+})
     .compileComponents();
   }));
 

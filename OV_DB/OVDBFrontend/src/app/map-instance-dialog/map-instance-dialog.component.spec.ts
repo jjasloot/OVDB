@@ -8,8 +8,8 @@ describe('MapInstanceDialogComponent', () => {
 
   beforeEach(waitForAsync(() => {
     TestBed.configureTestingModule({
-      declarations: [ MapInstanceDialogComponent ]
-    })
+    imports: [MapInstanceDialogComponent]
+})
     .compileComponents();
   }));
 

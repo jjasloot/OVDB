@@ -1,10 +1,15 @@
 import { Component, OnInit } from '@angular/core';
 import { MatBottomSheetRef } from '@angular/material/bottom-sheet';
 import {RoutesListActions} from 'src/app/models/routes-list-actions.enum';
+import { MatActionList, MatListItem } from '@angular/material/list';
+import { MatIcon } from '@angular/material/icon';
+import { TranslateModule } from '@ngx-translate/core';
 @Component({
-  selector: 'app-routes-list-bottomsheet',
-  templateUrl: './routes-list-bottomsheet.component.html',
-  styleUrls: ['./routes-list-bottomsheet.component.scss']
+    selector: 'app-routes-list-bottomsheet',
+    templateUrl: './routes-list-bottomsheet.component.html',
+    styleUrls: ['./routes-list-bottomsheet.component.scss'],
+    standalone: true,
+    imports: [MatActionList, MatListItem, MatIcon, TranslateModule]
 })
 export class RoutesListBottomsheetComponent implements OnInit {
 

@@ -1,11 +1,24 @@
 import { Component, OnInit } from "@angular/core";
 import { RequestForAdmin } from "src/app/models/requests.model";
 import { RequestsService } from "src/app/services/requests.service";
+import { MatCard } from "@angular/material/card";
+import { MatInput } from "@angular/material/input";
+import { FormsModule } from "@angular/forms";
+import { MatButton } from "@angular/material/button";
+import { DatePipe } from "@angular/common";
 
 @Component({
-  selector: "app-administrator-requests",
-  templateUrl: "./administrator-requests.component.html",
-  styleUrl: "./administrator-requests.component.scss",
+    selector: "app-administrator-requests",
+    templateUrl: "./administrator-requests.component.html",
+    styleUrl: "./administrator-requests.component.scss",
+    standalone: true,
+    imports: [
+        MatCard,
+        MatInput,
+        FormsModule,
+        MatButton,
+        DatePipe,
+    ],
 })
 export class AdministratorRequestsComponent implements OnInit {
   requests: RequestForAdmin[] = [];

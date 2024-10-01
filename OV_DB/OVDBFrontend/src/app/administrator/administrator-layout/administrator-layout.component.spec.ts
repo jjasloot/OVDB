@@ -8,8 +8,8 @@ describe('AdministratorLayoutComponent', () => {
 
   beforeEach(waitForAsync(() => {
     TestBed.configureTestingModule({
-      declarations: [ AdministratorLayoutComponent ]
-    })
+    imports: [AdministratorLayoutComponent]
+})
     .compileComponents();
   }));
 

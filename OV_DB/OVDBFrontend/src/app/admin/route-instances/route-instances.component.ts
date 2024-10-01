@@ -4,7 +4,7 @@ import { ApiService } from "src/app/services/api.service";
 import { RouteInstance } from "src/app/models/routeInstance.model";
 import { TranslationService } from "src/app/services/translation.service";
 import { RouteInstanceProperty } from "src/app/models/routeInstanceProperty.model";
-import { TranslateService } from "@ngx-translate/core";
+import { TranslateService, TranslateModule } from "@ngx-translate/core";
 import { DatePipe } from "@angular/common";
 import { MatDialog } from "@angular/material/dialog";
 import { RouteInstancesEditComponent } from "../route-instances-edit/route-instances-edit.component";
@@ -12,11 +12,30 @@ import { Route } from "src/app/models/route.model";
 import { AreYouSureDialogComponent } from "src/app/are-you-sure-dialog/are-you-sure-dialog.component";
 import { DateAdapter } from "@angular/material/core";
 import { SignalRService } from "src/app/services/signal-r.service";
+import { MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle } from "@angular/material/expansion";
+import { MatList, MatListItem } from "@angular/material/list";
+import { MatButton, MatFabButton } from "@angular/material/button";
+import { MatProgressSpinner } from "@angular/material/progress-spinner";
+import { MatIcon } from "@angular/material/icon";
 
 @Component({
-  selector: "app-route-instances",
-  templateUrl: "./route-instances.component.html",
-  styleUrls: ["./route-instances.component.scss"],
+    selector: "app-route-instances",
+    templateUrl: "./route-instances.component.html",
+    styleUrls: ["./route-instances.component.scss"],
+    standalone: true,
+    imports: [
+        MatExpansionPanel,
+        MatExpansionPanelHeader,
+        MatExpansionPanelTitle,
+        MatList,
+        MatListItem,
+        MatButton,
+        MatProgressSpinner,
+        MatFabButton,
+        MatIcon,
+        DatePipe,
+        TranslateModule,
+    ],
 })
 export class RouteInstancesComponent implements OnInit {
   routeId: number;

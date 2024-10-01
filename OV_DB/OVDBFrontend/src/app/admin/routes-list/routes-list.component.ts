@@ -19,22 +19,60 @@ import {
   finalize,
 } from "rxjs/operators";
 import { merge, fromEvent, Subject, Observable } from "rxjs";
-import { MatSort } from "@angular/material/sort";
+import { MatSort, MatSortHeader } from "@angular/material/sort";
 import { saveAs } from "file-saver";
-import { TranslateService } from "@ngx-translate/core";
+import { TranslateService, TranslateModule } from "@ngx-translate/core";
 import { TranslationService } from "src/app/services/translation.service";
-import { MatCheckboxChange } from "@angular/material/checkbox";
+import { MatCheckboxChange, MatCheckbox } from "@angular/material/checkbox";
 import { MatDialog } from "@angular/material/dialog";
 import { EditMultipleComponent } from "../edit-multiple/edit-multiple.component";
 import { RoutesListBottomsheetComponent } from "./routes-list-bottomsheet/routes-list-bottomsheet.component";
 import { RoutesListActions } from "src/app/models/routes-list-actions.enum";
 import { MatBottomSheet } from "@angular/material/bottom-sheet";
 import { OperatorService } from "src/app/services/operator.service";
+import { MatProgressSpinner } from "@angular/material/progress-spinner";
+import { MatFormField } from "@angular/material/form-field";
+import { MatInput } from "@angular/material/input";
+import { MatButton, MatIconButton } from "@angular/material/button";
+import { MatTable, MatColumnDef, MatHeaderCellDef, MatHeaderCell, MatCellDef, MatCell, MatHeaderRowDef, MatHeaderRow, MatRowDef, MatRow } from "@angular/material/table";
+import { MatChipListbox, MatChipOption } from "@angular/material/chips";
+import { MatTooltip } from "@angular/material/tooltip";
+import { MatIcon } from "@angular/material/icon";
+import { AsyncPipe, DatePipe } from "@angular/common";
 
 @Component({
-  selector: "app-routes-list",
-  templateUrl: "./routes-list.component.html",
-  styleUrls: ["./routes-list.component.scss"],
+    selector: "app-routes-list",
+    templateUrl: "./routes-list.component.html",
+    styleUrls: ["./routes-list.component.scss"],
+    standalone: true,
+    imports: [
+        MatProgressSpinner,
+        MatFormField,
+        MatInput,
+        MatButton,
+        MatTable,
+        MatSort,
+        MatColumnDef,
+        MatHeaderCellDef,
+        MatHeaderCell,
+        MatSortHeader,
+        MatCellDef,
+        MatCell,
+        MatCheckbox,
+        MatChipListbox,
+        MatChipOption,
+        MatTooltip,
+        MatIconButton,
+        MatIcon,
+        MatHeaderRowDef,
+        MatHeaderRow,
+        MatRowDef,
+        MatRow,
+        MatPaginator,
+        AsyncPipe,
+        DatePipe,
+        TranslateModule,
+    ],
 })
 export class RoutesListComponent implements OnInit, AfterViewInit {
   routes: Route[];

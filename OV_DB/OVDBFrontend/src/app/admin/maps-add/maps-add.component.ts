@@ -1,15 +1,23 @@
 import { Component, OnInit, Inject } from '@angular/core';
-import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
+import { MatDialogRef, MAT_DIALOG_DATA, MatDialogTitle, MatDialogContent, MatDialogActions } from '@angular/material/dialog';
 import { CountryAddComponent } from '../country-add/country-add.component';
 import { ApiService } from 'src/app/services/api.service';
 import { Country } from 'src/app/models/country.model';
 import { Map } from 'src/app/models/map.model';
-import { TranslateService } from '@ngx-translate/core';
+import { TranslateService, TranslateModule } from '@ngx-translate/core';
+import { CdkScrollable } from '@angular/cdk/scrolling';
+import { MatFormField, MatLabel } from '@angular/material/form-field';
+import { MatInput } from '@angular/material/input';
+import { FormsModule } from '@angular/forms';
+import { MatCheckbox } from '@angular/material/checkbox';
+import { MatButton } from '@angular/material/button';
 
 @Component({
-  selector: 'app-maps-add',
-  templateUrl: './maps-add.component.html',
-  styleUrls: ['./maps-add.component.scss']
+    selector: 'app-maps-add',
+    templateUrl: './maps-add.component.html',
+    styleUrls: ['./maps-add.component.scss'],
+    standalone: true,
+    imports: [MatDialogTitle, CdkScrollable, MatDialogContent, MatFormField, MatLabel, MatInput, FormsModule, MatCheckbox, MatDialogActions, MatButton, TranslateModule]
 })
 export class MapsAddComponent implements OnInit {
   mapName: string;

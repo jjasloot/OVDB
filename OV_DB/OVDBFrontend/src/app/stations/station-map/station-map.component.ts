@@ -4,10 +4,15 @@ import { LatLngBounds, LatLng, markerClusterGroup, divIcon, circleMarker, Leafle
 import { tileLayer } from 'leaflet';
 import { ApiService } from 'src/app/services/api.service';
 import { TranslationService } from 'src/app/services/translation.service';
+import { LeafletModule } from '@asymmetrik/ngx-leaflet';
+import { NgClass } from '@angular/common';
+import { MatProgressSpinner } from '@angular/material/progress-spinner';
 @Component({
-  selector: 'app-station-map',
-  templateUrl: './station-map.component.html',
-  styleUrls: ['./station-map.component.scss']
+    selector: 'app-station-map',
+    templateUrl: './station-map.component.html',
+    styleUrls: ['./station-map.component.scss'],
+    standalone: true,
+    imports: [LeafletModule, NgClass, MatProgressSpinner]
 })
 export class StationMapComponent implements OnInit {
   baseLayers =

@@ -5,7 +5,7 @@ import {
   OnInit,
   inject,
 } from "@angular/core";
-import { MatCheckboxChange } from "@angular/material/checkbox";
+import { MatCheckboxChange, MatCheckbox } from "@angular/material/checkbox";
 import { LatLngBounds, LatLng, markerClusterGroup, divIcon, circleMarker } from "leaflet";
 import { tileLayer } from "leaflet";
 import { Region } from "src/app/models/region.model";
@@ -13,11 +13,43 @@ import { StationAdminProperties } from "src/app/models/stationAdminProperties.mo
 import { ApiService } from "src/app/services/api.service";
 import { RegionsService } from "src/app/services/regions.service";
 import { TranslationService } from "src/app/services/translation.service";
+import { LeafletModule } from "@asymmetrik/ngx-leaflet";
+import { NgClass } from "@angular/common";
+import { MatProgressSpinner } from "@angular/material/progress-spinner";
+import { MatExpansionPanel, MatExpansionPanelHeader } from "@angular/material/expansion";
+import { MatButton, MatIconButton } from "@angular/material/button";
+import { TooltipComponent, MatTooltip } from "@angular/material/tooltip";
+import { MatFormField, MatLabel } from "@angular/material/form-field";
+import { MatInput } from "@angular/material/input";
+import { FormsModule } from "@angular/forms";
+import { MatIcon } from "@angular/material/icon";
+import { MatSelect } from "@angular/material/select";
+import { MatOption } from "@angular/material/core";
 
 @Component({
-  selector: "app-admin-stations-map",
-  templateUrl: "./admin-stations-map.component.html",
-  styleUrls: ["./admin-stations-map.component.scss"],
+    selector: "app-admin-stations-map",
+    templateUrl: "./admin-stations-map.component.html",
+    styleUrls: ["./admin-stations-map.component.scss"],
+    standalone: true,
+    imports: [
+        LeafletModule,
+        NgClass,
+        MatProgressSpinner,
+        MatExpansionPanel,
+        MatExpansionPanelHeader,
+        MatButton,
+        MatCheckbox,
+        TooltipComponent,
+        MatTooltip,
+        MatFormField,
+        MatLabel,
+        MatInput,
+        FormsModule,
+        MatIconButton,
+        MatIcon,
+        MatSelect,
+        MatOption,
+    ],
 })
 export class AdminStationsMapComponent implements OnInit {
   regionsService = inject(RegionsService);

@@ -5,12 +5,23 @@ import { tileLayer, marker, icon } from 'leaflet';
 import { LatLngBounds, LatLng, Rectangle } from 'leaflet';
 import { Map } from '../models/map.model';
 import { TranslationService } from '../services/translation.service';
-import { TranslateService } from '@ngx-translate/core';
+import { TranslateService, TranslateModule } from '@ngx-translate/core';
 import saveAs from 'file-saver';
+import { MatCard, MatCardTitle } from '@angular/material/card';
+import { MatFormField, MatLabel } from '@angular/material/form-field';
+import { MatSelect } from '@angular/material/select';
+import { MatOption } from '@angular/material/core';
+import { FormsModule } from '@angular/forms';
+import { MatButton } from '@angular/material/button';
+import { LeafletModule } from '@asymmetrik/ngx-leaflet';
+import { NgClass } from '@angular/common';
+import { MatProgressSpinner } from '@angular/material/progress-spinner';
 @Component({
-  selector: 'app-stats',
-  templateUrl: './stats.component.html',
-  styleUrls: ['./stats.component.scss']
+    selector: 'app-stats',
+    templateUrl: './stats.component.html',
+    styleUrls: ['./stats.component.scss'],
+    standalone: true,
+    imports: [MatCard, MatCardTitle, MatFormField, MatLabel, MatSelect, MatOption, FormsModule, MatButton, LeafletModule, NgClass, MatProgressSpinner, TranslateModule]
 })
 export class StatsComponent implements OnInit {
   @ViewChild('singleChart') singleChart;

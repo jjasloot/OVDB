@@ -74,7 +74,10 @@
             <mat-icon>edit</mat-icon>
           </button>
           <button
-            [disabled]="reconnecting().includes(operator.id)"
+            [disabled]="
+              reconnecting().includes(operator.id) ||
+              updating().includes(operator.id)
+            "
             mat-icon-button
             (click)="connectOperator(operator)"
           >
@@ -107,7 +110,7 @@
   <mat-card>
     <ul>
       @for (operator of openOperators(); track operator) {
-      <li>{{ operator  }}</li>
+      <li>{{ operator }}</li>
       }
     </ul>
   </mat-card>

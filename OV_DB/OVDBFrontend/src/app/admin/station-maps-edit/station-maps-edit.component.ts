@@ -1,23 +1,45 @@
 import { Component, Inject, OnInit, ViewChild } from "@angular/core";
-import {
-  UntypedFormBuilder,
-  UntypedFormGroup,
-  Validators,
-} from "@angular/forms";
-import { MatCheckboxChange } from "@angular/material/checkbox";
+import { UntypedFormBuilder, UntypedFormGroup, Validators, FormsModule, ReactiveFormsModule } from "@angular/forms";
+import { MatCheckboxChange, MatCheckbox } from "@angular/material/checkbox";
 import { DateAdapter } from "@angular/material/core";
-import { MatDialogRef, MAT_DIALOG_DATA } from "@angular/material/dialog";
+import { MatDialogRef, MAT_DIALOG_DATA, MatDialogTitle, MatDialogContent, MatDialogActions } from "@angular/material/dialog";
 import { MatSelectionList } from "@angular/material/list";
 import { Region } from "src/app/models/region.model";
 import { StationMap } from "src/app/models/stationMap.model";
 import { ApiService } from "src/app/services/api.service";
 import { RegionsService } from "src/app/services/regions.service";
 import { TranslationService } from "src/app/services/translation.service";
+import { CdkScrollable } from "@angular/cdk/scrolling";
+import { MatFormField, MatLabel } from "@angular/material/form-field";
+import { MatInput } from "@angular/material/input";
+import { MatExpansionPanel, MatExpansionPanelHeader } from "@angular/material/expansion";
+import { TooltipComponent, MatTooltip } from "@angular/material/tooltip";
+import { MatButton } from "@angular/material/button";
+import { TranslateModule } from "@ngx-translate/core";
 
 @Component({
-  selector: "app-station-maps-edit",
-  templateUrl: "./station-maps-edit.component.html",
-  styleUrls: ["./station-maps-edit.component.scss"],
+    selector: "app-station-maps-edit",
+    templateUrl: "./station-maps-edit.component.html",
+    styleUrls: ["./station-maps-edit.component.scss"],
+    standalone: true,
+    imports: [
+        MatDialogTitle,
+        FormsModule,
+        ReactiveFormsModule,
+        CdkScrollable,
+        MatDialogContent,
+        MatFormField,
+        MatLabel,
+        MatInput,
+        MatExpansionPanel,
+        MatExpansionPanelHeader,
+        MatCheckbox,
+        TooltipComponent,
+        MatTooltip,
+        MatDialogActions,
+        MatButton,
+        TranslateModule,
+    ],
 })
 export class StationMapsEditComponent implements OnInit {
   form: UntypedFormGroup;

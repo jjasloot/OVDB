@@ -4,12 +4,17 @@ import { Router } from '@angular/router';
 import { Route } from 'src/app/models/route.model';
 import { DataUpdateService } from 'src/app/services/data-update.service';
 import { FileUpload } from 'src/app/models/fileUpload.model';
-import { TranslateService } from '@ngx-translate/core';
+import { TranslateService, TranslateModule } from '@ngx-translate/core';
+import { MatButton } from '@angular/material/button';
+import { NgClass } from '@angular/common';
+import { MatProgressSpinner } from '@angular/material/progress-spinner';
 
 @Component({
-  selector: 'app-route-add',
-  templateUrl: './route-add.component.html',
-  styleUrls: ['./route-add.component.scss']
+    selector: 'app-route-add',
+    templateUrl: './route-add.component.html',
+    styleUrls: ['./route-add.component.scss'],
+    standalone: true,
+    imports: [MatButton, NgClass, MatProgressSpinner, TranslateModule]
 })
 export class RouteAddComponent implements OnInit {
   inputString: string;

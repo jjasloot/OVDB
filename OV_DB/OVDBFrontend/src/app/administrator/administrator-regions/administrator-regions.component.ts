@@ -3,11 +3,25 @@ import { MatDialog } from "@angular/material/dialog";
 import { NewRegion, Region } from "src/app/models/region.model";
 import { RegionsService } from "src/app/services/regions.service";
 import { AdministratorNewRegionComponent } from "../administrator-new-region/administrator-new-region.component";
+import { MatCard, MatCardHeader, MatCardTitle, MatCardSubtitle, MatCardContent } from "@angular/material/card";
+import { MatButton, MatFabButton } from "@angular/material/button";
+import { MatIcon } from "@angular/material/icon";
 
 @Component({
-  selector: "app-administrator-regions",
-  templateUrl: "./administrator-regions.component.html",
-  styleUrl: "./administrator-regions.component.scss",
+    selector: "app-administrator-regions",
+    templateUrl: "./administrator-regions.component.html",
+    styleUrl: "./administrator-regions.component.scss",
+    standalone: true,
+    imports: [
+        MatCard,
+        MatCardHeader,
+        MatCardTitle,
+        MatCardSubtitle,
+        MatButton,
+        MatIcon,
+        MatCardContent,
+        MatFabButton,
+    ],
 })
 export class AdministratorRegionsComponent implements OnInit {
   regions: Region[];

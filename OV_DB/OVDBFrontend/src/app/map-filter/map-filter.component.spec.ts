@@ -8,8 +8,8 @@ describe('MapFilterComponent', () => {
 
   beforeEach(waitForAsync(() => {
     TestBed.configureTestingModule({
-      declarations: [ MapFilterComponent ]
-    })
+    imports: [MapFilterComponent]
+})
     .compileComponents();
   }));
 

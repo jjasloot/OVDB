@@ -1,6 +1,6 @@
 import { Component, OnInit, Inject } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
-import { TranslateService } from '@ngx-translate/core';
+import { TranslateService, TranslateModule } from '@ngx-translate/core';
 import { DataUpdateService } from 'src/app/services/data-update.service';
 import { ApiService } from 'src/app/services/api.service';
 import { Router } from '@angular/router';
@@ -8,10 +8,15 @@ import { AreYouSureDialogComponent } from 'src/app/are-you-sure-dialog/are-you-s
 import { MatBottomSheetRef, MAT_BOTTOM_SHEET_DATA } from '@angular/material/bottom-sheet';
 import { Map } from 'src/app/models/map.model';
 import { MapListActions } from 'src/app/models/maps-list-actions.enum';
+import { MatActionList, MatListItem } from '@angular/material/list';
+import { MatIcon } from '@angular/material/icon';
+import { CdkCopyToClipboard } from '@angular/cdk/clipboard';
 @Component({
-  selector: 'app-maps-list-bottomsheet',
-  templateUrl: './maps-list-bottomsheet.component.html',
-  styleUrls: ['./maps-list-bottomsheet.component.scss']
+    selector: 'app-maps-list-bottomsheet',
+    templateUrl: './maps-list-bottomsheet.component.html',
+    styleUrls: ['./maps-list-bottomsheet.component.scss'],
+    standalone: true,
+    imports: [MatActionList, MatListItem, MatIcon, CdkCopyToClipboard, TranslateModule]
 })
 export class MapsListBottomsheetComponent implements OnInit {
   map: Map;

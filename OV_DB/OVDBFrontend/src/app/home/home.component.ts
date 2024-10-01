@@ -2,13 +2,22 @@ import { Component, OnInit } from '@angular/core';
 import { AuthenticationService } from '../services/authentication.service';
 import { ApiService } from '../services/api.service';
 import { Map } from '../models/map.model';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { StationMap } from '../models/stationMap.model';
 import { TranslationService } from '../services/translation.service';
+import { MatButton, MatIconButton } from '@angular/material/button';
+import { MatCard, MatCardHeader, MatCardTitle, MatCardContent, MatCardActions } from '@angular/material/card';
+import { MatList, MatListItem } from '@angular/material/list';
+import { CdkCopyToClipboard } from '@angular/cdk/clipboard';
+import { MatIcon } from '@angular/material/icon';
+import { MatProgressSpinner } from '@angular/material/progress-spinner';
+import { TranslateModule } from '@ngx-translate/core';
 @Component({
-  selector: 'app-home',
-  templateUrl: './home.component.html',
-  styleUrls: ['./home.component.scss']
+    selector: 'app-home',
+    templateUrl: './home.component.html',
+    styleUrls: ['./home.component.scss'],
+    standalone: true,
+    imports: [MatButton, RouterLink, MatCard, MatCardHeader, MatCardTitle, MatCardContent, MatCardActions, MatList, MatListItem, CdkCopyToClipboard, MatIconButton, MatIcon, MatProgressSpinner, TranslateModule]
 })
 export class HomeComponent implements OnInit {
   maps: Map[];
@@ -50,10 +59,10 @@ export class HomeComponent implements OnInit {
     return location.origin + '/link/' + map.sharingLinkName;
   }
 
-  viewStation(map: Map) {
+  viewStation(map: StationMap) {
     this.router.navigate(['/stations/map', map.mapGuid]);
   }
-  getLinkStation(map: Map) {
+  getLinkStation(map: StationMap) {
     return location.origin + '/stations/link/' + map.sharingLinkName;
   }
 }

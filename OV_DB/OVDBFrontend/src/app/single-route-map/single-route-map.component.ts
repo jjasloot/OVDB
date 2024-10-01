@@ -1,15 +1,20 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
 import { LatLngBounds, LatLng, geoJSON } from 'leaflet';
 import { tileLayer } from 'leaflet';
-import { TranslateService } from '@ngx-translate/core';
+import { TranslateService, TranslateModule } from '@ngx-translate/core';
 import { TranslationService } from '../services/translation.service';
 import { ApiService } from '../services/api.service';
 import { ActivatedRoute } from '@angular/router';
+import { LeafletModule } from '@asymmetrik/ngx-leaflet';
+import { NgClass } from '@angular/common';
+import { MatProgressSpinner } from '@angular/material/progress-spinner';
 
 @Component({
-  selector: 'app-single-route-map',
-  templateUrl: './single-route-map.component.html',
-  styleUrls: ['./single-route-map.component.scss']
+    selector: 'app-single-route-map',
+    templateUrl: './single-route-map.component.html',
+    styleUrls: ['./single-route-map.component.scss'],
+    standalone: true,
+    imports: [LeafletModule, NgClass, MatProgressSpinner, TranslateModule]
 })
 export class SingleRouteMapComponent implements OnInit {
   @ViewChild('mapContainer') mapContainer: HTMLElement;

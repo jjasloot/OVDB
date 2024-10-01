@@ -13,11 +13,73 @@ import { Region } from "src/app/models/region.model";
 import { OperatorService } from "src/app/services/operator.service";
 import { RegionsService } from "src/app/services/regions.service";
 import { AdministratorOperatorEditDialogComponent } from "./administrator-operator-edit-dialog/administrator-operator-edit-dialog.component";
+import {
+  MatCard,
+  MatCardHeader,
+  MatCardTitle,
+  MatCardSubtitle,
+  MatCardContent,
+  MatCardActions,
+} from "@angular/material/card";
+import { MatIconButton } from "@angular/material/button";
+import { MatIcon } from "@angular/material/icon";
+import {
+  MatTable,
+  MatColumnDef,
+  MatHeaderCellDef,
+  MatHeaderCell,
+  MatCellDef,
+  MatCell,
+  MatHeaderRowDef,
+  MatHeaderRow,
+  MatRowDef,
+  MatRow,
+} from "@angular/material/table";
+import { MatChipSet, MatChip } from "@angular/material/chips";
+import {
+  MatExpansionPanel,
+  MatExpansionPanelHeader,
+  MatExpansionPanelTitle,
+} from "@angular/material/expansion";
+import { MatSelect } from "@angular/material/select";
+import { FormsModule } from "@angular/forms";
+import { MatOption } from "@angular/material/core";
+import { AsyncPipe } from "@angular/common";
 
 @Component({
   selector: "app-administrator-operators",
   templateUrl: "./administrator-operators.component.html",
   styleUrl: "./administrator-operators.component.scss",
+  standalone: true,
+  imports: [
+    MatCard,
+    MatCardHeader,
+    MatCardTitle,
+    MatCardSubtitle,
+    MatIconButton,
+    MatIcon,
+    MatCardContent,
+    MatTable,
+    MatColumnDef,
+    MatHeaderCellDef,
+    MatHeaderCell,
+    MatCellDef,
+    MatCell,
+    MatChipSet,
+    MatChip,
+    MatHeaderRowDef,
+    MatHeaderRow,
+    MatRowDef,
+    MatRow,
+    MatCardActions,
+    MatExpansionPanel,
+    MatExpansionPanelHeader,
+    MatExpansionPanelTitle,
+    MatSelect,
+    FormsModule,
+    MatOption,
+    AsyncPipe,
+  ],
 })
 export class AdministratorOperatorsComponent implements OnInit {
   regionsService = inject(RegionsService);
@@ -98,7 +160,7 @@ export class AdministratorOperatorsComponent implements OnInit {
         this.reconnecting.set(
           this.reconnecting().filter((id) => id !== operator.id)
         );
-        alert(count);
+        alert(operator.names[0] + ": " + count);
       });
   }
 

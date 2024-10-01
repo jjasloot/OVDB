@@ -8,8 +8,8 @@ describe('FillMissingDataListComponent', () => {
 
   beforeEach(waitForAsync(() => {
     TestBed.configureTestingModule({
-      declarations: [ FillMissingDataListComponent ]
-    })
+    imports: [FillMissingDataListComponent]
+})
     .compileComponents();
   }));
 

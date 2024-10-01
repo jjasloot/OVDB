@@ -8,8 +8,8 @@ describe('EditMultipleComponent', () => {
 
   beforeEach(waitForAsync(() => {
     TestBed.configureTestingModule({
-      declarations: [ EditMultipleComponent ]
-    })
+    imports: [EditMultipleComponent]
+})
     .compileComponents();
   }));
 

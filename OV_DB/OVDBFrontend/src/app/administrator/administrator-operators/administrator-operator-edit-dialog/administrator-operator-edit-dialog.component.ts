@@ -7,21 +7,44 @@ import {
   OnInit,
   signal,
 } from "@angular/core";
-import {
-  FormGroup,
-  FormControl,
-  FormBuilder,
-  Validators,
-} from "@angular/forms";
-import { MatDialogRef, MAT_DIALOG_DATA } from "@angular/material/dialog";
+import { FormGroup, FormControl, FormBuilder, Validators, FormsModule, ReactiveFormsModule } from "@angular/forms";
+import { MatDialogRef, MAT_DIALOG_DATA, MatDialogTitle, MatDialogContent, MatDialogActions } from "@angular/material/dialog";
 import { Operator } from "src/app/models/operator.model";
 import { Region, RegionMinimal } from "src/app/models/region.model";
 import { RegionsService } from "src/app/services/regions.service";
+import { CdkScrollable } from "@angular/cdk/scrolling";
+import { MatFormField, MatLabel } from "@angular/material/form-field";
+import { MatChipGrid, MatChip, MatChipRemove, MatChipInput } from "@angular/material/chips";
+import { MatIcon } from "@angular/material/icon";
+import { MatInput } from "@angular/material/input";
+import { MatSelect } from "@angular/material/select";
+import { MatOption } from "@angular/material/core";
+import { MatButton } from "@angular/material/button";
 
 @Component({
-  selector: "app-administrator-operator-edit-dialog",
-  templateUrl: "./administrator-operator-edit-dialog.component.html",
-  styleUrl: "./administrator-operator-edit-dialog.component.scss",
+    selector: "app-administrator-operator-edit-dialog",
+    templateUrl: "./administrator-operator-edit-dialog.component.html",
+    styleUrl: "./administrator-operator-edit-dialog.component.scss",
+    standalone: true,
+    imports: [
+        MatDialogTitle,
+        CdkScrollable,
+        MatDialogContent,
+        FormsModule,
+        ReactiveFormsModule,
+        MatFormField,
+        MatLabel,
+        MatChipGrid,
+        MatChip,
+        MatIcon,
+        MatChipRemove,
+        MatInput,
+        MatChipInput,
+        MatSelect,
+        MatOption,
+        MatDialogActions,
+        MatButton,
+    ],
 })
 export class AdministratorOperatorEditDialogComponent {
   nameCtrl = new FormControl("");

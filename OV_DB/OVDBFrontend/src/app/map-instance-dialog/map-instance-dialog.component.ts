@@ -1,17 +1,24 @@
 import { Component, OnInit, Inject, ChangeDetectorRef, AfterViewInit } from '@angular/core';
-import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
+import { MatDialogRef, MAT_DIALOG_DATA, MatDialogTitle, MatDialogContent, MatDialogActions } from '@angular/material/dialog';
 import { merge } from 'rxjs';
 import { ApiService } from '../services/api.service';
 import { RouteInstance } from '../models/routeInstance.model';
-import { TranslateService } from '@ngx-translate/core';
+import { TranslateService, TranslateModule } from '@ngx-translate/core';
 import { TranslationService } from '../services/translation.service';
 import { RouteInstanceProperty } from '../models/routeInstanceProperty.model';
-import { DatePipe } from '@angular/common';
+import { DatePipe, LowerCasePipe } from '@angular/common';
+import { CdkScrollable } from '@angular/cdk/scrolling';
+import { MatProgressSpinner } from '@angular/material/progress-spinner';
+import { MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle, MatExpansionPanelDescription } from '@angular/material/expansion';
+import { MatList, MatListItem } from '@angular/material/list';
+import { MatButton } from '@angular/material/button';
 
 @Component({
-  selector: 'app-map-instance-dialog',
-  templateUrl: './map-instance-dialog.component.html',
-  styleUrls: ['./map-instance-dialog.component.scss']
+    selector: 'app-map-instance-dialog',
+    templateUrl: './map-instance-dialog.component.html',
+    styleUrls: ['./map-instance-dialog.component.scss'],
+    standalone: true,
+    imports: [MatDialogTitle, CdkScrollable, MatDialogContent, MatProgressSpinner, MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle, MatExpansionPanelDescription, MatList, MatListItem, MatDialogActions, MatButton, LowerCasePipe, DatePipe, TranslateModule]
 })
 export class MapInstanceDialogComponent implements OnInit {
   id: number;

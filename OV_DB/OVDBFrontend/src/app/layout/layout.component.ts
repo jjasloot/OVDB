@@ -1,14 +1,28 @@
 import { Component, OnInit } from "@angular/core";
-import { Router } from "@angular/router";
+import { Router, RouterLink, RouterOutlet } from "@angular/router";
 import { AuthenticationService } from "../services/authentication.service";
 import { TranslationService } from "../services/translation.service";
-import { MatSelectChange } from "@angular/material/select";
+import { MatSelectChange, MatSelect } from "@angular/material/select";
 import { RequestsService } from "../services/requests.service";
+import { MatToolbar } from "@angular/material/toolbar";
+import { MatIconButton } from "@angular/material/button";
+import { MatIcon } from "@angular/material/icon";
+import { MatOption } from "@angular/material/core";
 
 @Component({
-  selector: "app-layout",
-  templateUrl: "./layout.component.html",
-  styleUrls: ["./layout.component.scss"],
+    selector: "app-layout",
+    templateUrl: "./layout.component.html",
+    styleUrls: ["./layout.component.scss"],
+    standalone: true,
+    imports: [
+        MatToolbar,
+        MatIconButton,
+        RouterLink,
+        MatIcon,
+        MatSelect,
+        MatOption,
+        RouterOutlet,
+    ],
 })
 export class LayoutComponent implements OnInit {
   hasUnreadRequests: boolean = false;

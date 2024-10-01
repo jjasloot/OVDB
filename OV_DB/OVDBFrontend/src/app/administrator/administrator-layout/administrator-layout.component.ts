@@ -1,11 +1,20 @@
 import { Component, OnInit } from "@angular/core";
-import { Router } from "@angular/router";
+import { Router, RouterLinkActive, RouterLink, RouterOutlet } from "@angular/router";
 import { TranslateService } from "@ngx-translate/core";
+import { MatTabNav, MatTabLink } from "@angular/material/tabs";
 
 @Component({
-  selector: "app-administrator-layout",
-  templateUrl: "./administrator-layout.component.html",
-  styleUrls: ["./administrator-layout.component.scss"],
+    selector: "app-administrator-layout",
+    templateUrl: "./administrator-layout.component.html",
+    styleUrls: ["./administrator-layout.component.scss"],
+    standalone: true,
+    imports: [
+        MatTabNav,
+        MatTabLink,
+        RouterLinkActive,
+        RouterLink,
+        RouterOutlet,
+    ],
 })
 export class AdministratorLayoutComponent implements OnInit {
   navLinks: { label: string; link: string; index: number }[];

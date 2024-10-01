@@ -8,8 +8,8 @@ describe('RoutesListBottomsheetComponent', () => {
 
   beforeEach(waitForAsync(() => {
     TestBed.configureTestingModule({
-      declarations: [ RoutesListBottomsheetComponent ]
-    })
+    imports: [RoutesListBottomsheetComponent]
+})
     .compileComponents();
   }));
 

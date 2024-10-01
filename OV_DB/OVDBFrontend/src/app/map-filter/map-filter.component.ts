@@ -1,21 +1,54 @@
 import { Component, OnInit, Inject } from "@angular/core";
-import { MatCheckboxChange } from "@angular/material/checkbox";
-import { MatDialogRef, MAT_DIALOG_DATA } from "@angular/material/dialog";
+import { MatCheckboxChange, MatCheckbox } from "@angular/material/checkbox";
+import { MatDialogRef, MAT_DIALOG_DATA, MatDialogTitle, MatDialogContent, MatDialogActions } from "@angular/material/dialog";
 import { FilterSettings } from "../models/filterSettings";
 import { ApiService } from "../services/api.service";
 import { Country } from "../models/country.model";
 import { RouteType } from "../models/routeType.model";
-import { TranslateService } from "@ngx-translate/core";
+import { TranslateService, TranslateModule } from "@ngx-translate/core";
 import { TranslationService } from "../services/translation.service";
 import { DateAdapter } from "@angular/material/core";
 import { Moment } from "moment";
 import { RegionsService } from "../services/regions.service";
 import { Region } from "../models/region.model";
+import { CdkScrollable } from "@angular/cdk/scrolling";
+import { MatAccordion, MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle, MatExpansionPanelDescription } from "@angular/material/expansion";
+import { TooltipComponent, MatTooltip } from "@angular/material/tooltip";
+import { MatFormField, MatLabel, MatSuffix } from "@angular/material/form-field";
+import { MatInput } from "@angular/material/input";
+import { MatDatepickerInput, MatDatepickerToggle, MatDatepicker } from "@angular/material/datepicker";
+import { FormsModule } from "@angular/forms";
+import { MatButton } from "@angular/material/button";
 
 @Component({
-  selector: "app-map-filter",
-  templateUrl: "./map-filter.component.html",
-  styleUrls: ["./map-filter.component.scss"],
+    selector: "app-map-filter",
+    templateUrl: "./map-filter.component.html",
+    styleUrls: ["./map-filter.component.scss"],
+    standalone: true,
+    imports: [
+        MatDialogTitle,
+        CdkScrollable,
+        MatDialogContent,
+        MatAccordion,
+        MatExpansionPanel,
+        MatExpansionPanelHeader,
+        MatExpansionPanelTitle,
+        MatExpansionPanelDescription,
+        MatCheckbox,
+        TooltipComponent,
+        MatTooltip,
+        MatFormField,
+        MatLabel,
+        MatInput,
+        MatDatepickerInput,
+        FormsModule,
+        MatDatepickerToggle,
+        MatSuffix,
+        MatDatepicker,
+        MatDialogActions,
+        MatButton,
+        TranslateModule,
+    ],
 })
 export class MapFilterComponent implements OnInit {
   settings: FilterSettings;

@@ -17,7 +17,7 @@ import { FilterSettings } from "../models/filterSettings";
 import { MatDialog } from "@angular/material/dialog";
 import { Country } from "../models/country.model";
 import { MapFilterComponent } from "../map-filter/map-filter.component";
-import { TranslateService } from "@ngx-translate/core";
+import { TranslateService, TranslateModule } from "@ngx-translate/core";
 import { TranslationService } from "../services/translation.service";
 import { Router, ActivatedRoute } from "@angular/router";
 import { MapInstanceDialogComponent } from "../map-instance-dialog/map-instance-dialog.component";
@@ -26,11 +26,32 @@ import { Observable } from "rxjs";
 import { MapDataDTO } from "../models/map-data.model";
 import { v4 as uuidv4 } from "uuid";
 import { SignalRService } from "../services/signal-r.service";
+import { NgTemplateOutlet, NgClass, UpperCasePipe, KeyValuePipe } from "@angular/common";
+import { MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle } from "@angular/material/expansion";
+import { LeafletModule } from "@asymmetrik/ngx-leaflet";
+import { MatProgressSpinner } from "@angular/material/progress-spinner";
+import { MatButton } from "@angular/material/button";
+import { MatIcon } from "@angular/material/icon";
 
 @Component({
-  selector: "app-map",
-  templateUrl: "./map.component.html",
-  styleUrls: ["./map.component.scss"],
+    selector: "app-map",
+    templateUrl: "./map.component.html",
+    styleUrls: ["./map.component.scss"],
+    standalone: true,
+    imports: [
+        NgTemplateOutlet,
+        MatExpansionPanel,
+        MatExpansionPanelHeader,
+        MatExpansionPanelTitle,
+        LeafletModule,
+        NgClass,
+        MatProgressSpinner,
+        MatButton,
+        MatIcon,
+        UpperCasePipe,
+        KeyValuePipe,
+        TranslateModule,
+    ],
 })
 export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
   @Input() guid: string;

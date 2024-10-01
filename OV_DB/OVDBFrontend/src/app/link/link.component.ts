@@ -1,11 +1,16 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, ParamMap } from '@angular/router';
 import { ApiService } from '../services/api.service';
+import { MapComponent } from '../map/map.component';
+import { MatProgressSpinner } from '@angular/material/progress-spinner';
+import { TranslateModule } from '@ngx-translate/core';
 
 @Component({
-  selector: 'app-link',
-  templateUrl: './link.component.html',
-  styleUrls: ['./link.component.scss']
+    selector: 'app-link',
+    templateUrl: './link.component.html',
+    styleUrls: ['./link.component.scss'],
+    standalone: true,
+    imports: [MapComponent, MatProgressSpinner, TranslateModule]
 })
 export class LinkComponent implements OnInit {
   guid: string;

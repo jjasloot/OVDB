@@ -8,8 +8,8 @@ describe('RouteInstancesComponent', () => {
 
   beforeEach(waitForAsync(() => {
     TestBed.configureTestingModule({
-      declarations: [ RouteInstancesComponent ]
-    })
+    imports: [RouteInstancesComponent]
+})
     .compileComponents();
   }));
 

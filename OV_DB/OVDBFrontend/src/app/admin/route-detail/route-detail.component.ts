@@ -2,30 +2,65 @@ import { Component, OnInit, signal, ViewChild } from "@angular/core";
 import { ActivatedRoute, Router } from "@angular/router";
 import { Route } from "src/app/models/route.model";
 import { ApiService } from "src/app/services/api.service";
-import {
-  UntypedFormBuilder,
-  Validators,
-  UntypedFormGroup,
-} from "@angular/forms";
+import { UntypedFormBuilder, Validators, UntypedFormGroup, FormsModule, ReactiveFormsModule } from "@angular/forms";
 import moment from "moment";
 import { RouteType } from "src/app/models/routeType.model";
 import { Country } from "src/app/models/country.model";
-import { MatSelectionList } from "@angular/material/list";
+import { MatSelectionList, MatListOption } from "@angular/material/list";
 import { UpdateRoute } from "src/app/models/updateRoute.model";
 import { Map } from "src/app/models/map.model";
-import { TranslateService } from "@ngx-translate/core";
-import { DateAdapter } from "@angular/material/core";
+import { TranslateService, TranslateModule } from "@ngx-translate/core";
+import { DateAdapter, MatOption } from "@angular/material/core";
 import { TranslationService } from "src/app/services/translation.service";
 import { MatDialog } from "@angular/material/dialog";
 import { AreYouSureDialogComponent } from "src/app/are-you-sure-dialog/are-you-sure-dialog.component";
 import saveAs from "file-saver";
 import { AuthenticationService } from "src/app/services/authentication.service";
 import { OperatorService } from "src/app/services/operator.service";
+import { MatButton } from "@angular/material/button";
+import { MatFormField, MatLabel, MatSuffix } from "@angular/material/form-field";
+import { MatInput } from "@angular/material/input";
+import { RouteDetailOperatorSelectionComponent } from "./route-detail-operator-selection/route-detail-operator-selection.component";
+import { MatDatepickerInput, MatDatepickerToggle, MatDatepicker } from "@angular/material/datepicker";
+import { MatSelect } from "@angular/material/select";
+import { MatCard, MatCardHeader, MatCardSubtitle, MatCardContent } from "@angular/material/card";
+import { MatChip } from "@angular/material/chips";
+import { MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle, MatExpansionPanelDescription } from "@angular/material/expansion";
+import { DecimalPipe } from "@angular/common";
 
 @Component({
-  selector: "app-route-detail",
-  templateUrl: "./route-detail.component.html",
-  styleUrls: ["./route-detail.component.scss"],
+    selector: "app-route-detail",
+    templateUrl: "./route-detail.component.html",
+    styleUrls: ["./route-detail.component.scss"],
+    standalone: true,
+    imports: [
+        MatButton,
+        FormsModule,
+        ReactiveFormsModule,
+        MatFormField,
+        MatLabel,
+        MatInput,
+        RouteDetailOperatorSelectionComponent,
+        MatDatepickerInput,
+        MatDatepickerToggle,
+        MatSuffix,
+        MatDatepicker,
+        MatSelect,
+        MatOption,
+        MatCard,
+        MatCardHeader,
+        MatCardSubtitle,
+        MatCardContent,
+        MatChip,
+        MatExpansionPanel,
+        MatExpansionPanelHeader,
+        MatExpansionPanelTitle,
+        MatExpansionPanelDescription,
+        MatSelectionList,
+        MatListOption,
+        DecimalPipe,
+        TranslateModule,
+    ],
 })
 export class RouteDetailComponent implements OnInit {
   routeId: number;

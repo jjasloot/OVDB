@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { MatBottomSheet } from '@angular/material/bottom-sheet';
 import { MatDialog } from '@angular/material/dialog';
 import { Router } from '@angular/router';
-import { TranslateService } from '@ngx-translate/core';
+import { TranslateService, TranslateModule } from '@ngx-translate/core';
 import { AreYouSureDialogComponent } from 'src/app/are-you-sure-dialog/are-you-sure-dialog.component';
 import { MapListActions } from 'src/app/models/maps-list-actions.enum';
 import { StationMap } from 'src/app/models/stationMap.model';
@@ -13,11 +13,20 @@ import { MapsAddComponent } from '../maps-add/maps-add.component';
 import { MapsListBottomsheetComponent } from '../maps-list/maps-list-bottomsheet/maps-list-bottomsheet.component';
 import { SortItemsDialogComponent } from '../sort-items-dialog/sort-items-dialog.component';
 import { StationMapsEditComponent } from '../station-maps-edit/station-maps-edit.component';
+import { MatProgressSpinner } from '@angular/material/progress-spinner';
+import { MatList, MatListItem } from '@angular/material/list';
+import { MatIconButton, MatFabButton } from '@angular/material/button';
+import { MatTooltip } from '@angular/material/tooltip';
+import { MatIcon } from '@angular/material/icon';
+import { CdkCopyToClipboard } from '@angular/cdk/clipboard';
+import { LowerCasePipe } from '@angular/common';
 
 @Component({
-  selector: 'app-station-maps',
-  templateUrl: './station-maps.component.html',
-  styleUrls: ['./station-maps.component.scss']
+    selector: 'app-station-maps',
+    templateUrl: './station-maps.component.html',
+    styleUrls: ['./station-maps.component.scss'],
+    standalone: true,
+    imports: [MatProgressSpinner, MatList, MatListItem, MatIconButton, MatTooltip, MatIcon, CdkCopyToClipboard, MatFabButton, LowerCasePipe, TranslateModule]
 })
 export class StationMapsComponent implements OnInit {
 

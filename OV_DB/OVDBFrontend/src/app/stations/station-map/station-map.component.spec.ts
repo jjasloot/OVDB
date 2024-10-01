@@ -8,8 +8,8 @@ describe('StationMapComponent', () => {
 
   beforeEach(waitForAsync(() => {
     TestBed.configureTestingModule({
-      declarations: [ StationMapComponent ]
-    })
+    imports: [StationMapComponent]
+})
     .compileComponents();
   }));
 

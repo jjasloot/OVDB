@@ -8,8 +8,8 @@ describe('AdministratorMapsComponent', () => {
 
   beforeEach(waitForAsync(() => {
     TestBed.configureTestingModule({
-      declarations: [ AdministratorMapsComponent ]
-    })
+    imports: [AdministratorMapsComponent]
+})
     .compileComponents();
   }));
 

@@ -1,21 +1,32 @@
 import { Component, OnInit, Inject, ViewChild } from '@angular/core';
-import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
+import { MatDialogRef, MAT_DIALOG_DATA, MatDialogTitle, MatDialogContent, MatDialogActions } from '@angular/material/dialog';
 import { ApiService } from 'src/app/services/api.service';
-import { TranslateService } from '@ngx-translate/core';
+import { TranslateService, TranslateModule } from '@ngx-translate/core';
 import { RouteType } from 'src/app/models/routeType.model';
 import { Country } from 'src/app/models/country.model';
 import { TranslationService } from 'src/app/services/translation.service';
-import { DateAdapter } from '@angular/material/core';
+import { DateAdapter, MatOption } from '@angular/material/core';
 import { Map } from 'src/app/models/map.model';
-import { MatSelectionList } from '@angular/material/list';
-import { MatAccordionTogglePosition } from '@angular/material/expansion';
+import { MatSelectionList, MatListOption } from '@angular/material/list';
+import { MatAccordionTogglePosition, MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle, MatExpansionPanelDescription } from '@angular/material/expansion';
 import { MultipleEdit } from 'src/app/models/multipleEdit.model';
+import { CdkScrollable } from '@angular/cdk/scrolling';
+import { MatCheckbox } from '@angular/material/checkbox';
+import { FormsModule } from '@angular/forms';
+import { MatFormField, MatLabel, MatSuffix } from '@angular/material/form-field';
+import { MatInput } from '@angular/material/input';
+import { MatDatepickerInput, MatDatepickerToggle, MatDatepicker } from '@angular/material/datepicker';
+import { MatSelect } from '@angular/material/select';
+import { MatButton } from '@angular/material/button';
+import { JsonPipe } from '@angular/common';
 
 
 @Component({
-  selector: 'app-edit-multiple',
-  templateUrl: './edit-multiple.component.html',
-  styleUrls: ['./edit-multiple.component.scss']
+    selector: 'app-edit-multiple',
+    templateUrl: './edit-multiple.component.html',
+    styleUrls: ['./edit-multiple.component.scss'],
+    standalone: true,
+    imports: [MatDialogTitle, CdkScrollable, MatDialogContent, MatCheckbox, FormsModule, MatFormField, MatLabel, MatInput, MatDatepickerInput, MatDatepickerToggle, MatSuffix, MatDatepicker, MatSelect, MatOption, MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle, MatExpansionPanelDescription, MatSelectionList, MatListOption, MatDialogActions, MatButton, JsonPipe, TranslateModule]
 })
 export class EditMultipleComponent implements OnInit {
   selectedRoutes: number[];

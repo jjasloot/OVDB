@@ -43,11 +43,13 @@ public class OperatorsController : ControllerBase
             return Forbid();
         }
 
-        var regions = await _dbContext.Regions.Where(r => createOperator.RunsTrainsInRegionIds.Contains(r.Id)).ToListAsync();
+        var runsTrainsInRegions = await _dbContext.Regions.Where(r => createOperator.RunsTrainsInRegionIds.Contains(r.Id)).ToListAsync();
+        var restrictToRegions = await _dbContext.Regions.Where(r => createOperator.RestrictToRegionIds.Contains(r.Id)).ToListAsync();        
         var newOperator = new Operator
         {
             Names = createOperator.Names,
-            RunsTrainsInRegions = regions
+            RunsTrainsInRegions = runsTrainsInRegions,
+            RestrictToRegions = restrictToRegions
         };
         _dbContext.Operators.Add(newOperator);
         await _dbContext.SaveChangesAsync();

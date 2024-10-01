@@ -8,8 +8,8 @@ describe('AdministratorUsersComponent', () => {
 
   beforeEach(waitForAsync(() => {
     TestBed.configureTestingModule({
-      declarations: [ AdministratorUsersComponent ]
-    })
+    imports: [AdministratorUsersComponent]
+})
     .compileComponents();
   }));
 

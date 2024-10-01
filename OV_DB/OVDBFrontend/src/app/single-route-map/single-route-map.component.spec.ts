@@ -8,8 +8,8 @@ describe('SingleRouteMapComponent', () => {
 
   beforeEach(waitForAsync(() => {
     TestBed.configureTestingModule({
-      declarations: [ SingleRouteMapComponent ]
-    })
+    imports: [SingleRouteMapComponent]
+})
     .compileComponents();
   }));
 

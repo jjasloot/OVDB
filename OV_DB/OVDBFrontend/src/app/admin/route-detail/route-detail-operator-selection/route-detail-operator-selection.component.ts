@@ -8,17 +8,37 @@ import {
   Output,
   signal,
 } from "@angular/core";
-import { FormControl } from "@angular/forms";
+import { FormControl, FormsModule, ReactiveFormsModule } from "@angular/forms";
 import { Observable, Subject } from "rxjs";
 import { debounceTime } from "rxjs/operators";
 import { OperatorMinimal } from "src/app/models/operator.model";
 import { OperatorService } from "src/app/services/operator.service";
+import { MatFormField, MatLabel, MatHint } from "@angular/material/form-field";
+import { MatInput } from "@angular/material/input";
+import { MatAutocompleteTrigger, MatAutocomplete } from "@angular/material/autocomplete";
+import { MatOption } from "@angular/material/core";
+import { AsyncPipe } from "@angular/common";
+import { TranslateModule } from "@ngx-translate/core";
 
 @Component({
-  selector: "app-route-detail-operator-selection",
-  templateUrl: "./route-detail-operator-selection.component.html",
-  styleUrl: "./route-detail-operator-selection.component.scss",
-  changeDetection: ChangeDetectionStrategy.OnPush,
+    selector: "app-route-detail-operator-selection",
+    templateUrl: "./route-detail-operator-selection.component.html",
+    styleUrl: "./route-detail-operator-selection.component.scss",
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    standalone: true,
+    imports: [
+        MatFormField,
+        MatLabel,
+        MatInput,
+        FormsModule,
+        MatAutocompleteTrigger,
+        ReactiveFormsModule,
+        MatHint,
+        MatAutocomplete,
+        MatOption,
+        AsyncPipe,
+        TranslateModule,
+    ],
 })
 export class RouteDetailOperatorSelectionComponent implements OnInit {
   formField = input.required<FormControl<string>>();

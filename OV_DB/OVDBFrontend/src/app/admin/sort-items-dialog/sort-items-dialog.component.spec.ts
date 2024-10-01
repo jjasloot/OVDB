@@ -8,8 +8,8 @@ describe('SortItemsDialogComponent', () => {
 
   beforeEach(waitForAsync(() => {
     TestBed.configureTestingModule({
-      declarations: [ SortItemsDialogComponent ]
-    })
+    imports: [SortItemsDialogComponent]
+})
     .compileComponents();
   }));
 

@@ -1,11 +1,21 @@
 import { Component, OnInit } from "@angular/core";
-import { Router } from "@angular/router";
+import { Router, RouterLinkActive, RouterLink, RouterOutlet } from "@angular/router";
 import { TranslateService } from "@ngx-translate/core";
+import { MatTabNav, MatTabLink, MatTabNavPanel } from "@angular/material/tabs";
 
 @Component({
-  selector: "app-routes",
-  templateUrl: "./routes.component.html",
-  styleUrls: ["./routes.component.scss"],
+    selector: "app-routes",
+    templateUrl: "./routes.component.html",
+    styleUrls: ["./routes.component.scss"],
+    standalone: true,
+    imports: [
+        MatTabNav,
+        MatTabLink,
+        RouterLinkActive,
+        RouterLink,
+        MatTabNavPanel,
+        RouterOutlet,
+    ],
 })
 export class RoutesComponent implements OnInit {
   navLinks: { label: string; link: string; index: number }[];

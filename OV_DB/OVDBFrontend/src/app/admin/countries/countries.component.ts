@@ -6,13 +6,19 @@ import { MatDialog } from '@angular/material/dialog';
 import { CountryAddComponent } from '../country-add/country-add.component';
 import { AreYouSureDialogComponent } from 'src/app/are-you-sure-dialog/are-you-sure-dialog.component';
 import { DataUpdateService } from 'src/app/services/data-update.service';
-import { TranslateService } from '@ngx-translate/core';
+import { TranslateService, TranslateModule } from '@ngx-translate/core';
 import { TranslationService } from 'src/app/services/translation.service';
+import { MatProgressSpinner } from '@angular/material/progress-spinner';
+import { MatList, MatListItem } from '@angular/material/list';
+import { MatButton, MatIconButton, MatFabButton } from '@angular/material/button';
+import { MatIcon } from '@angular/material/icon';
 
 @Component({
-  selector: 'app-countries',
-  templateUrl: './countries.component.html',
-  styleUrls: ['./countries.component.scss']
+    selector: 'app-countries',
+    templateUrl: './countries.component.html',
+    styleUrls: ['./countries.component.scss'],
+    standalone: true,
+    imports: [MatProgressSpinner, MatList, MatListItem, MatButton, MatIconButton, MatIcon, MatFabButton, TranslateModule]
 })
 export class CountriesComponent implements OnInit {
   data: Country[];
