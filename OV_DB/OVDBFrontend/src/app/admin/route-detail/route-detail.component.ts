@@ -7,7 +7,7 @@ import {
   Validators,
   UntypedFormGroup,
 } from "@angular/forms";
-import * as moment from "moment";
+import moment from "moment";
 import { RouteType } from "src/app/models/routeType.model";
 import { Country } from "src/app/models/country.model";
 import { MatSelectionList } from "@angular/material/list";
@@ -18,7 +18,7 @@ import { DateAdapter } from "@angular/material/core";
 import { TranslationService } from "src/app/services/translation.service";
 import { MatDialog } from "@angular/material/dialog";
 import { AreYouSureDialogComponent } from "src/app/are-you-sure-dialog/are-you-sure-dialog.component";
-import * as saveAs from "file-saver";
+import saveAs from "file-saver";
 import { AuthenticationService } from "src/app/services/authentication.service";
 import { OperatorService } from "src/app/services/operator.service";
 

@@ -3,7 +3,7 @@ import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms
 import { ApiService } from 'src/app/services/api.service';
 import { OSMDataLine } from 'src/app/models/osmDataLine.model';
 import { Router } from '@angular/router';
-import * as moment from 'moment';
+import moment from 'moment';
 import { DateAdapter } from '@angular/material/core';
 import { TranslationService } from 'src/app/services/translation.service';
 

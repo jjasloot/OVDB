@@ -2,11 +2,11 @@ import { Component, OnInit, ViewChild } from '@angular/core';
 import { ApiService } from '../services/api.service';
 import { ChartOptions } from 'chart.js';
 import { tileLayer, marker, icon } from 'leaflet';
-import * as L from 'leaflet';
+import { LatLngBounds, LatLng, Rectangle } from 'leaflet';
 import { Map } from '../models/map.model';
 import { TranslationService } from '../services/translation.service';
 import { TranslateService } from '@ngx-translate/core';
-import * as saveAs from 'file-saver';
+import saveAs from 'file-saver';
 @Component({
   selector: 'app-stats',
   templateUrl: './stats.component.html',
@@ -20,7 +20,7 @@ export class StatsComponent implements OnInit {
   loadingMap = false;
   selectedMap: string = null;
   selectedYear: number = null;
-  bounds = new L.LatLngBounds(new L.LatLng(50.656245, 2.921360), new L.LatLng(53.604563, 7.428211));
+  bounds = new LatLngBounds(new LatLng(50.656245, 2.921360), new LatLng(53.604563, 7.428211));
   years = [];
   public lineChartOptions: ChartOptions = {
     responsive: true,
@@ -194,8 +194,8 @@ export class StatsComponent implements OnInit {
       popup += 'Route: ' + data.longMax.route.name + '</p>';
       longMax.bindPopup(popup);
       this.layers.push(longMax);
-      this.bounds = new L.LatLngBounds([data.latMin.lat, data.longMin.long], [data.latMax.lat, data.longMax.long]);
-      const rectangle = new L.Rectangle(this.bounds, {
+      this.bounds = new LatLngBounds([data.latMin.lat, data.longMin.long], [data.latMax.lat, data.longMax.long]);
+      const rectangle = new Rectangle(this.bounds, {
         fill: false
       });
       this.layers.push(rectangle);

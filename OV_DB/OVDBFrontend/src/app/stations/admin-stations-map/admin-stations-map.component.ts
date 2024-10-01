@@ -6,7 +6,7 @@ import {
   inject,
 } from "@angular/core";
 import { MatCheckboxChange } from "@angular/material/checkbox";
-import * as L from "leaflet";
+import { LatLngBounds, LatLng, markerClusterGroup, divIcon, circleMarker } from "leaflet";
 import { tileLayer } from "leaflet";
 import { Region } from "src/app/models/region.model";
 import { StationAdminProperties } from "src/app/models/stationAdminProperties.model";
@@ -54,7 +54,7 @@ export class AdminStationsMapComponent implements OnInit {
     layers: [this.baseLayers["OpenStreetMap Mat"]],
     zoom: 5,
   };
-  private _bounds: L.LatLngBounds;
+  private _bounds: LatLngBounds;
   total: number;
   visited: number;
   regions: Region[] = [];
@@ -63,16 +63,16 @@ export class AdminStationsMapComponent implements OnInit {
   allRegions: Region[];
   selectedRegionId?: number;
   selectedNewStationId?: string;
-  get bounds(): L.LatLngBounds {
+  get bounds(): LatLngBounds {
     return this._bounds;
   }
-  set bounds(value: L.LatLngBounds) {
+  set bounds(value: LatLngBounds) {
     if (!!value && value.isValid()) {
       this._bounds = value;
     } else {
-      this.bounds = new L.LatLngBounds(
-        new L.LatLng(50.656245, 2.92136),
-        new L.LatLng(53.604563, 7.428211)
+      this.bounds = new LatLngBounds(
+        new LatLng(50.656245, 2.92136),
+        new LatLng(53.604563, 7.428211)
       );
     }
   }
@@ -114,9 +114,9 @@ export class AdminStationsMapComponent implements OnInit {
       .getStationsAdminMap(this.selectedRegions)
       .toPromise();
     const parent = this;
-    var markers = L.markerClusterGroup({
+    var markers = markerClusterGroup({
       iconCreateFunction: (cluster) => {
-        return L.divIcon({
+        return divIcon({
           html: "<b>" + cluster.getChildCount() + "</b>",
           className: cluster
             .getAllChildMarkers()
@@ -133,8 +133,8 @@ export class AdminStationsMapComponent implements OnInit {
       maxClusterRadius: 40,
     });
     text.forEach((station) => {
-      const marker = L.circleMarker(
-        new L.LatLng(station.lattitude, station.longitude, station.elevation),
+      const marker = circleMarker(
+        new LatLng(station.lattitude, station.longitude, station.elevation),
         {
           radius: 6,
           fillColor: station.hidden

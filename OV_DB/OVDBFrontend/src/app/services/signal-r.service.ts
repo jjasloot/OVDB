@@ -1,5 +1,5 @@
 import { environment } from "src/environments/environment";
-import * as signalR from "@microsoft/signalr";
+import { HubConnection, HubConnectionBuilder } from "@microsoft/signalr";
 import { Injectable } from "@angular/core";
 import { Subject } from "rxjs";
 
@@ -7,11 +7,11 @@ import { Subject } from "rxjs";
   providedIn: "root",
 })
 export class SignalRService {
-  private connection?: signalR.HubConnection;
+  private connection?: HubConnection;
   public connected = false;
   updates$ = new Subject<{ requestIdentifier: string; percentage: number }>();
   connect() {
-    const connection = new signalR.HubConnectionBuilder()
+    const connection = new HubConnectionBuilder()
       .withUrl(environment.backend + "mapGenerationHub")
       .build();
     connection

@@ -3,14 +3,14 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { ApiService } from 'src/app/services/api.service';
 import { OSMDataLine } from 'src/app/models/osmDataLine.model';
 import { tileLayer } from 'leaflet';
-import * as L from 'leaflet';
+import { LatLngBounds, geoJSON } from 'leaflet';
 import { OSMLineStop } from 'src/app/models/osmLineStop.model';
 import { saveAs } from 'file-saver';
 import { TranslateService } from '@ngx-translate/core';
 import { MatDialog } from '@angular/material/dialog';
 import { AreYouSureDialogComponent } from 'src/app/are-you-sure-dialog/are-you-sure-dialog.component';
 import { Moment } from 'moment';
-import * as moment from 'moment';
+import moment from 'moment';
 
 @Component({
   selector: 'app-wizard-step2',
@@ -31,7 +31,7 @@ export class WizzardStep2Component implements OnInit {
   leafletLayersControl = {
   };
   layers = [];
-  bounds: L.LatLngBounds;
+  bounds: LatLngBounds;
   stops: OSMLineStop[];
   loading = false;
   error = false;
@@ -125,7 +125,7 @@ export class WizzardStep2Component implements OnInit {
     if (!this.data.geoJson) {
       this.layers = [];
     }
-    const track = L.geoJSON(this.data.geoJson as any, {
+    const track = geoJSON(this.data.geoJson as any, {
       style: feature => {
         return {
           color: '#0000FF',

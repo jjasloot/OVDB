@@ -1,5 +1,5 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
-import * as L from 'leaflet';
+import { LatLngBounds, LatLng, geoJSON } from 'leaflet';
 import { tileLayer } from 'leaflet';
 import { TranslateService } from '@ngx-translate/core';
 import { TranslationService } from '../services/translation.service';
@@ -19,18 +19,18 @@ export class SingleRouteMapComponent implements OnInit {
   active: string;
   guid: string;
   routeId: number;
-  get bounds(): L.LatLngBounds {
+  get bounds(): LatLngBounds {
     return this._bounds;
   }
-  set bounds(value: L.LatLngBounds) {
+  set bounds(value: LatLngBounds) {
     if (!!value && value.isValid()) {
       this._bounds = value;
     } else {
-      this.bounds = new L.LatLngBounds(new L.LatLng(50.656245, 2.921360), new L.LatLng(53.604563, 7.428211));
+      this.bounds = new LatLngBounds(new LatLng(50.656245, 2.921360), new LatLng(53.604563, 7.428211));
     }
   }
   // tslint:disable-next-line: variable-name
-  private _bounds: L.LatLngBounds;
+  private _bounds: LatLngBounds;
 
   get mapHeight() {
     if (this.mapContainer) {
@@ -92,7 +92,7 @@ export class SingleRouteMapComponent implements OnInit {
 
       const text = await this.apiService.getSingleRoute(this.routeId, this.guid, this.translationService.language).toPromise();
       const parent = this;
-      const track = L.geoJSON(text as any, {
+      const track = geoJSON(text as any, {
         style: feature => {
           return {
             color: feature.properties.stroke,

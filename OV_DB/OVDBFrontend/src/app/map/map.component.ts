@@ -9,10 +9,10 @@ import {
   EventEmitter,
   OnDestroy,
 } from "@angular/core";
-import * as moment from "moment";
+import moment from "moment";
 import { tileLayer } from "leaflet";
 import { ApiService } from "../services/api.service";
-import * as L from "leaflet";
+import { LatLngBounds, LatLng, geoJSON, LatLngLiteral } from "leaflet";
 import { FilterSettings } from "../models/filterSettings";
 import { MatDialog } from "@angular/material/dialog";
 import { Country } from "../models/country.model";
@@ -49,21 +49,21 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
   includeLineColours: boolean = true;
   requestIdentifier?: string;
   limitToSelectedArea = false;
-  get bounds(): L.LatLngBounds {
+  get bounds(): LatLngBounds {
     return this._bounds;
   }
-  set bounds(value: L.LatLngBounds) {
+  set bounds(value: LatLngBounds) {
     if (!!value && value.isValid()) {
       this._bounds = value;
     } else {
-      this.bounds = new L.LatLngBounds(
-        new L.LatLng(50.656245, 2.92136),
-        new L.LatLng(53.604563, 7.428211)
+      this.bounds = new LatLngBounds(
+        new LatLng(50.656245, 2.92136),
+        new LatLng(53.604563, 7.428211)
       );
     }
   }
   // tslint:disable-next-line: variable-name
-  private _bounds: L.LatLngBounds;
+  private _bounds: LatLngBounds;
 
   defaults = new Map<string, FilterSettings>([
     [
@@ -256,7 +256,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
   }
   private showRoutes(data: MapDataDTO) {
     const parent = this;
-    const track = L.geoJSON(data.routes, {
+    const track = geoJSON(data.routes, {
       style: (feature) => {
         return {
           color: feature.properties.stroke,
@@ -353,15 +353,15 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     });
     this.layers = [track];
     if (!!data.area && !track.getBounds().isValid()) {
-      this.bounds = new L.LatLngBounds(
+      this.bounds = new LatLngBounds(
         {
           lat: data.area.southEast.latitude,
           lng: data.area.southEast.longitude,
-        } as L.LatLngLiteral,
+        } as LatLngLiteral,
         {
           lat: data.area.northWest.latitude,
           lng: data.area.northWest.longitude,
-        } as L.LatLngLiteral
+        } as LatLngLiteral
       );
     } else {
       this.bounds = track.getBounds();
