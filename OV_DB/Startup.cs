@@ -117,7 +117,7 @@ namespace OV_DB
                 });
             services.AddSpaStaticFiles(configuration =>
             {
-                configuration.RootPath = "OVDBFrontend/dist/OVDBFrontend";
+                configuration.RootPath = "OVDBFrontend/dist/OVDBFrontend/browser";
             });
             services.AddCors(c =>
             {
