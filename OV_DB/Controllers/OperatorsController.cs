@@ -44,7 +44,7 @@ public class OperatorsController : ControllerBase
         }
 
         var runsTrainsInRegions = await _dbContext.Regions.Where(r => createOperator.RunsTrainsInRegionIds.Contains(r.Id)).ToListAsync();
-        var restrictToRegions = await _dbContext.Regions.Where(r => createOperator.RestrictToRegionIds.Contains(r.Id)).ToListAsync();        
+        var restrictToRegions = await _dbContext.Regions.Where(r => createOperator.RestrictToRegionIds.Contains(r.Id)).ToListAsync();
         var newOperator = new Operator
         {
             Names = createOperator.Names,
@@ -237,7 +237,7 @@ public class OperatorsController : ControllerBase
             var routesQuery = _dbContext.Routes
                 .Include(r => r.Operators)
                 .Where(r => !r.Operators.Any(o => o.Id == operatorDb.Id))
-                .Where(r => r.OperatingCompany.ToLower().Contains(operatorName));
+                .Where(r => r.OperatingCompany.ToLower() == operatorName);
 
             if (operatorDb.RestrictToRegions.Count != 0)
             {
