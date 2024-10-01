@@ -1,6 +1,10 @@
 <h3 mat-dialog-title>
-  <span *ngIf="!map.id">{{ "STATIONMAP.NEWTITLE" | translate }}</span>
-  <span *ngIf="!!map.id">{{ "STATIONMAP.TITLE" | translate }}</span>
+  @if (!map.id) {
+    <span>{{ "STATIONMAP.NEWTITLE" | translate }}</span>
+  }
+  @if (!!map.id) {
+    <span>{{ "STATIONMAP.TITLE" | translate }}</span>
+  }
 </h3>
 <form [formGroup]="form" (ngSubmit)="onSubmit()">
   <div mat-dialog-content>
@@ -8,66 +12,66 @@
       <mat-form-field style="display: flex">
         <mat-label>{{ "ROUTEDETAILS.NAME" | translate }}</mat-label>
         <input matInput formControlName="name" required /> </mat-form-field
-      ><br />
-      <mat-form-field style="display: flex">
-        <mat-label
-          >{{ "ROUTEDETAILS.NAME" | translate }} ({{
+        ><br />
+        <mat-form-field style="display: flex">
+          <mat-label
+            >{{ "ROUTEDETAILS.NAME" | translate }} ({{
             "LANGUAGES.DUTCH" | translate
-          }})</mat-label
-        >
-        <input matInput formControlName="nameNL" /> </mat-form-field
-      ><br />
-      <mat-form-field style="display: flex">
-        <mat-label>{{ "ADDMAP.SHARENAME" | translate }}</mat-label>
-        <input matInput formControlName="sharingLinkName" />
-      </mat-form-field>
+            }})</mat-label
+            >
+            <input matInput formControlName="nameNL" /> </mat-form-field
+            ><br />
+            <mat-form-field style="display: flex">
+              <mat-label>{{ "ADDMAP.SHARENAME" | translate }}</mat-label>
+              <input matInput formControlName="sharingLinkName" />
+            </mat-form-field>
 
-      @for (region of regions; track region.id) {
-      <mat-expansion-panel [disabled]="region.subRegions.length === 0">
-        <mat-expansion-panel-header>
-          <mat-checkbox
-            (click)="$event.stopPropagation()"
-            [checked]="isRegionChecked(region.id)"
-            (change)="setRegion(region.id, $event, region.subRegions)"
-            [indeterminate]="anyChecked(region.subRegions)"
-          >
-            <mat-tooltip-component [textContent]="name(region)">
-              {{ region.originalName }}
-            </mat-tooltip-component>
-          </mat-checkbox>
-        </mat-expansion-panel-header>
-        <div>
-          @if(region.subRegions.length > 0){ @for(subRegion of
-          region.subRegions; track subRegion.id) {
-          <mat-checkbox
-            style="margin-left: 1rem"
+            @for (region of regions; track region.id) {
+              <mat-expansion-panel [disabled]="region.subRegions.length === 0">
+                <mat-expansion-panel-header>
+                  <mat-checkbox
+                    (click)="$event.stopPropagation()"
+                    [checked]="isRegionChecked(region.id)"
+                    (change)="setRegion(region.id, $event, region.subRegions)"
+                    [indeterminate]="anyChecked(region.subRegions)"
+                    >
+                    <mat-tooltip-component [textContent]="name(region)">
+                      {{ region.originalName }}
+                    </mat-tooltip-component>
+                  </mat-checkbox>
+                </mat-expansion-panel-header>
+                <div>
+                  @if(region.subRegions.length > 0){ @for(subRegion of
+                    region.subRegions; track subRegion.id) {
+                    <mat-checkbox
+                      style="margin-left: 1rem"
             [checked]="
               isRegionChecked(subRegion.id) || isRegionChecked(region.id)
             "
-            [disabled]="isRegionChecked(region.id)"
-            (change)="setRegion(subRegion.id, $event)"
-          >
-            <div [matTooltip]="name(subRegion)">
-              {{ subRegion.originalName }}
+                      [disabled]="isRegionChecked(region.id)"
+                      (change)="setRegion(subRegion.id, $event)"
+                      >
+                      <div [matTooltip]="name(subRegion)">
+                        {{ subRegion.originalName }}
+                      </div>
+                    </mat-checkbox>
+                    } }
+                  </div>
+                </mat-expansion-panel>
+              }
             </div>
-          </mat-checkbox>
-          } }
-        </div>
-      </mat-expansion-panel>
-      }
-    </div>
-  </div>
-  <div mat-dialog-actions>
-    <button mat-button type="button" (click)="goBack()">
-      {{ "CANCEL" | translate }}
-    </button>
-    <button
-      mat-button
-      color="primary"
-      type="submit"
-      [disabled]="form.invalid || selectedOptions.length < 1"
-    >
-      {{ "SAVE" | translate }}
-    </button>
-  </div>
-</form>
+          </div>
+          <div mat-dialog-actions>
+            <button mat-button type="button" (click)="goBack()">
+              {{ "CANCEL" | translate }}
+            </button>
+            <button
+              mat-button
+              color="primary"
+              type="submit"
+              [disabled]="form.invalid || selectedOptions.length < 1"
+              >
+              {{ "SAVE" | translate }}
+            </button>
+          </div>
+        </form>

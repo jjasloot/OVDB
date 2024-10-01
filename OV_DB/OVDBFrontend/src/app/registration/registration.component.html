@@ -1,17 +1,19 @@
 <form [formGroup]="form">
-    <h3>{{'REGISTER.TITLE'|translate}}</h3>
-    <mat-form-field>
-        <mat-label>{{'REGISTER.EMAIL'|translate}}</mat-label>
-        <input matInput formControlName="email">
-    </mat-form-field>
-    <mat-form-field>
-        <mat-label>{{'REGISTER.PASSWORD'|translate}}</mat-label>
-        <input matInput type="password" formControlName="password">
-    </mat-form-field>
-    <!-- <mat-form-field>
-        <mat-label>{{'REGISTER.INVITECODE'|translate}}</mat-label>
-        <input matInput formControlName="inviteCode">
-    </mat-form-field> -->
-    <div class="failed" *ngIf="failed">{{error}}</div>
-    <button mat-raised-button (click)="submit()">{{'REGISTER.REGISTER'|translate}}</button>
+  <h3>{{'REGISTER.TITLE'|translate}}</h3>
+  <mat-form-field>
+    <mat-label>{{'REGISTER.EMAIL'|translate}}</mat-label>
+    <input matInput formControlName="email">
+  </mat-form-field>
+  <mat-form-field>
+    <mat-label>{{'REGISTER.PASSWORD'|translate}}</mat-label>
+    <input matInput type="password" formControlName="password">
+  </mat-form-field>
+  <!-- <mat-form-field>
+  <mat-label>{{'REGISTER.INVITECODE'|translate}}</mat-label>
+  <input matInput formControlName="inviteCode">
+</mat-form-field> -->
+@if (failed) {
+  <div class="failed">{{error}}</div>
+}
+<button mat-raised-button (click)="submit()">{{'REGISTER.REGISTER'|translate}}</button>
 </form>

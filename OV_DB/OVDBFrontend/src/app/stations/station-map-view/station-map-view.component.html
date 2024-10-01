@@ -1,1 +1,3 @@
-<app-station-map *ngIf="!!guid" [guid]="guid"></app-station-map>
+@if (!!guid) {
+  <app-station-map [guid]="guid"></app-station-map>
+}

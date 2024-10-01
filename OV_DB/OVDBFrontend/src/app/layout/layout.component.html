@@ -3,60 +3,65 @@
     <div class="row">
       <h2 style="cursor: pointer" (click)="gotoHome()">OVDB</h2>
 
-      <div class="icons" *ngIf="isLoggedIn">
-        <button
-          mat-icon-button
-          class="desktop"
-          [routerLink]="['/administrator']"
-          *ngIf="isAdmin"
-          [class.marker]="hasUnreadRequestsAdmin"
-        >
-          <mat-icon>supervisor_account</mat-icon>
-        </button>
-        <button
-          mat-icon-button
-          [routerLink]="['/requests']"
-          [class.marker]="hasUnreadRequests"
-        >
-          <mat-icon>forum</mat-icon>
-        </button>
-        <button mat-icon-button [routerLink]="['/']">
-          <mat-icon>map</mat-icon>
-        </button>
-        <button mat-icon-button [routerLink]="['/admin']">
-          <mat-icon>backup</mat-icon>
-        </button>
-        <button mat-icon-button [routerLink]="['/help']">
-          <mat-icon>help_outline</mat-icon>
-        </button>
-        <mat-select
-          [value]="currentLanguage"
-          hideSingleSelectionIndicator
-          (selectionChange)="setLanguage($event)"
-        >
-          <mat-option [value]="'nl'">nl</mat-option>
-          <mat-option [value]="'en'">en</mat-option>
-        </mat-select>
-        <button mat-icon-button (click)="signOut()">
-          <mat-icon>highlight_off</mat-icon>
-        </button>
-      </div>
-      <div class="icons" *ngIf="!isLoggedIn">
-        <button mat-icon-button [routerLink]="['/help']">
-          <mat-icon>help_outline</mat-icon>
-        </button>
-        <mat-select
-          hideSingleSelectionIndicator
-          [value]="currentLanguage"
-          (selectionChange)="setLanguage($event)"
-        >
-          <mat-option [value]="'nl'">nl</mat-option>
-          <mat-option [value]="'en'">en</mat-option>
-        </mat-select>
-        <button mat-icon-button (click)="signIn()">
-          <mat-icon>person</mat-icon>
-        </button>
-      </div>
+      @if (isLoggedIn) {
+        <div class="icons">
+          @if (isAdmin) {
+            <button
+              mat-icon-button
+              class="desktop"
+              [routerLink]="['/administrator']"
+              [class.marker]="hasUnreadRequestsAdmin"
+              >
+              <mat-icon>supervisor_account</mat-icon>
+            </button>
+          }
+          <button
+            mat-icon-button
+            [routerLink]="['/requests']"
+            [class.marker]="hasUnreadRequests"
+            >
+            <mat-icon>forum</mat-icon>
+          </button>
+          <button mat-icon-button [routerLink]="['/']">
+            <mat-icon>map</mat-icon>
+          </button>
+          <button mat-icon-button [routerLink]="['/admin']">
+            <mat-icon>backup</mat-icon>
+          </button>
+          <button mat-icon-button [routerLink]="['/help']">
+            <mat-icon>help_outline</mat-icon>
+          </button>
+          <mat-select
+            [value]="currentLanguage"
+            hideSingleSelectionIndicator
+            (selectionChange)="setLanguage($event)"
+            >
+            <mat-option [value]="'nl'">nl</mat-option>
+            <mat-option [value]="'en'">en</mat-option>
+          </mat-select>
+          <button mat-icon-button (click)="signOut()">
+            <mat-icon>highlight_off</mat-icon>
+          </button>
+        </div>
+      }
+      @if (!isLoggedIn) {
+        <div class="icons">
+          <button mat-icon-button [routerLink]="['/help']">
+            <mat-icon>help_outline</mat-icon>
+          </button>
+          <mat-select
+            hideSingleSelectionIndicator
+            [value]="currentLanguage"
+            (selectionChange)="setLanguage($event)"
+            >
+            <mat-option [value]="'nl'">nl</mat-option>
+            <mat-option [value]="'en'">en</mat-option>
+          </mat-select>
+          <button mat-icon-button (click)="signIn()">
+            <mat-icon>person</mat-icon>
+          </button>
+        </div>
+      }
     </div>
   </mat-toolbar>
   <div class="router-container">

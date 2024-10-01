@@ -1,11 +1,13 @@
 <h3 mat-dialog-title>{{title}}</h3>
 <div mat-dialog-content>
-    <div cdkDropList class="example-list" (cdkDropListDropped)="drop($event)">
-        <div class="example-box" *ngFor="let item of items" cdkDrag>{{name(item)}}</div>
-    </div>
+  <div cdkDropList class="example-list" (cdkDropListDropped)="drop($event)">
+    @for (item of items; track item) {
+      <div class="example-box" cdkDrag>{{name(item)}}</div>
+    }
+  </div>
 
 </div>
 <div class="buttons" mat-dialog-actions>
-    <button mat-button (click)="cancel()">{{'CANCEL'|translate}}</button>
-    <button mat-button color="primary" (click)="return()">{{'SAVE'|translate}}</button>
+  <button mat-button (click)="cancel()">{{'CANCEL'|translate}}</button>
+  <button mat-button color="primary" (click)="return()">{{'SAVE'|translate}}</button>
 </div>

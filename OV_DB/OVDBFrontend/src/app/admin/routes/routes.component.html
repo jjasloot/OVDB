@@ -1,7 +1,9 @@
 <nav mat-tab-nav-bar [tabPanel]="tabPanel">
-    <a mat-tab-link *ngFor="let link of navLinks" [routerLink]="link.link" routerLinkActive #rla="routerLinkActive" [active]="rla.isActive">
-{{link.label}}
+  @for (link of navLinks; track link) {
+    <a mat-tab-link [routerLink]="link.link" routerLinkActive #rla="routerLinkActive" [active]="rla.isActive">
+      {{link.label}}
     </a>
+  }
 </nav>
 <mat-tab-nav-panel #tabPanel>
   <router-outlet></router-outlet>

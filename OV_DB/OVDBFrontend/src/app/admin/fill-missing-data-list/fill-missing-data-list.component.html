@@ -1,23 +1,30 @@
-<mat-spinner *ngIf="loading"></mat-spinner>
-<div *ngIf="!loading" class="container">
-  <mat-list *ngIf="data.length > 0; else noData">
-    <mat-list-item *ngFor="let route of data">
-      <div style="display: flex; align-items: center">
-        <h4 mat-line>
-          <b>{{ route.name }}</b>
-        </h4>
-        <div style="flex: 1"></div>
-        <h6>{{ !route.routeType ? "routeType " : "" }}</h6>
-        <h6>{{ !route.from ? "from " : "" }}</h6>
-        <h6>{{ !route.to ? "to " : "" }}</h6>
-        <button mat-button color="primary" (click)="edit(route.routeId)">
-          {{ "EDIT" | translate }}
-        </button>
-      </div>
-    </mat-list-item>
-  </mat-list>
-</div>
+@if (loading) {
+  <mat-spinner></mat-spinner>
+}
+@if (!loading) {
+  <div class="container">
+    @if (data.length > 0) {
+      <mat-list>
+        @for (route of data; track route) {
+          <mat-list-item>
+            <div style="display: flex; align-items: center">
+              <h4 mat-line>
+                <b>{{ route.name }}</b>
+              </h4>
+              <div style="flex: 1"></div>
+              <h6>{{ !route.routeType ? "routeType " : "" }}</h6>
+              <h6>{{ !route.from ? "from " : "" }}</h6>
+              <h6>{{ !route.to ? "to " : "" }}</h6>
+              <button mat-button color="primary" (click)="edit(route.routeId)">
+                {{ "EDIT" | translate }}
+              </button>
+            </div>
+          </mat-list-item>
+        }
+      </mat-list>
+    } @else {
+      {{ "MISSINGDATA.NODATA" | translate }}
+    }
+  </div>
+}
 
-<ng-template #noData>
-  {{ "MISSINGDATA.NODATA" | translate }}
-</ng-template>

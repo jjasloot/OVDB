@@ -1,84 +1,91 @@
-<div
-  #box
-  class="container"
-  style="display: flex; flex-direction: column"
-  *ngIf="!error"
->
-  <div class="defaults-grid desktop">
-    <ng-content *ngTemplateOutlet="filterButtons"> </ng-content>
-  </div>
-  <mat-expansion-panel class="mobile">
-    <mat-expansion-panel-header>
-      <mat-panel-title>
-        {{ "MAPOPTIONS.TITLE" | translate }}
-      </mat-panel-title>
-    </mat-expansion-panel-header>
-    <ng-content *ngTemplateOutlet="filterButtons"> </ng-content>
-  </mat-expansion-panel>
-  <div class="map-container" #mapContainer>
-    <div
-      class="map"
-      leaflet
-      [leafletOptions]="options"
-      [leafletLayers]="layers"
-      [leafletLayersControl]="leafletLayersControl"
-      [leafletFitBounds]="bounds"
-    ></div>
-    <div [ngClass]="{ loading: loading, 'loading-indicator': true }">
-      <mat-progress-spinner
-        [mode]="loading === true ? 'indeterminate' : 'determinate'"
-        [value]="loading === true ? null : loading"
-      ></mat-progress-spinner>
+@if (!error) {
+  <div
+    #box
+    class="container"
+    style="display: flex; flex-direction: column"
+    >
+    <div class="defaults-grid desktop">
+      <ng-content *ngTemplateOutlet="filterButtons"> </ng-content>
+    </div>
+    <mat-expansion-panel class="mobile">
+      <mat-expansion-panel-header>
+        <mat-panel-title>
+          {{ "MAPOPTIONS.TITLE" | translate }}
+        </mat-panel-title>
+      </mat-expansion-panel-header>
+      <ng-content *ngTemplateOutlet="filterButtons"> </ng-content>
+    </mat-expansion-panel>
+    <div class="map-container" #mapContainer>
+      <div
+        class="map"
+        leaflet
+        [leafletOptions]="options"
+        [leafletLayers]="layers"
+        [leafletLayersControl]="leafletLayersControl"
+        [leafletFitBounds]="bounds"
+      ></div>
+      <div [ngClass]="{ loading: loading, 'loading-indicator': true }">
+        <mat-progress-spinner
+          [mode]="loading === true ? 'indeterminate' : 'determinate'"
+          [value]="loading === true ? null : loading"
+        ></mat-progress-spinner>
+      </div>
     </div>
   </div>
-</div>
+}
 
-<div *ngIf="error">
-  {{ "ERROR" | translate }}
-</div>
+@if (error) {
+  <div>
+    {{ "ERROR" | translate }}
+  </div>
+}
 
 <ng-template #filterButtons>
-  <ng-container *ngFor="let option of defaults | keyvalue">
+  @for (option of defaults | keyvalue; track option) {
+    @if (active != option.key) {
+      <button
+        mat-button
+        color="primary"
+        (click)="setOption(option.value)"
+        >
+        {{ "MAPOPTIONS." + option.key | uppercase | translate }}
+      </button>
+    }
+    @if (active == option.key) {
+      <button
+        mat-stroked-button
+        color="primary"
+        (click)="setOption(option.value)"
+        >
+        {{ "MAPOPTIONS." + option.key | uppercase | translate }}
+      </button>
+    }
+  }
+  @if (active != 'filter') {
     <button
       mat-button
       color="primary"
-      *ngIf="active != option.key"
-      (click)="setOption(option.value)"
-    >
-      {{ "MAPOPTIONS." + option.key | uppercase | translate }}
+      (click)="openDialog()"
+      >
+      {{ "MAP.FILTER" | translate }}
     </button>
+  }
+  @if (active == 'filter') {
     <button
       mat-stroked-button
-      *ngIf="active == option.key"
       color="primary"
-      (click)="setOption(option.value)"
-    >
-      {{ "MAPOPTIONS." + option.key | uppercase | translate }}
+      (click)="openDialog()"
+      >
+      {{ "MAP.FILTER" | translate }}
     </button>
-  </ng-container>
-  <button
-    mat-button
-    *ngIf="active != 'filter'"
-    color="primary"
-    (click)="openDialog()"
-  >
-    {{ "MAP.FILTER" | translate }}
-  </button>
-  <button
-    mat-stroked-button
-    *ngIf="active == 'filter'"
-    color="primary"
-    (click)="openDialog()"
-  >
-    {{ "MAP.FILTER" | translate }}
-  </button>
+  }
   <button
     mat-button
     color="primary"
     id="refresh"
     (click)="refresh()"
     [disabled]="loading"
-  >
+    >
     <mat-icon>refresh</mat-icon>
   </button>
 </ng-template>

@@ -1,25 +1,37 @@
-<h3 mat-dialog-title>{{'MAPINSTANCES.TITLE'|translate}} <span *ngIf="!loadAll">{{'MAPINSTANCES.INPERIOD'|translate}}</span></h3>
+<h3 mat-dialog-title>{{'MAPINSTANCES.TITLE'|translate}} @if (!loadAll) {
+  <span>{{'MAPINSTANCES.INPERIOD'|translate}}</span>
+}</h3>
 <div mat-dialog-content>
-    <mat-spinner *ngIf='loading'></mat-spinner>
-    <mat-expansion-panel *ngFor="let instance of instances" [hideToggle]="instance.routeInstanceProperties.length==0">
-        <mat-expansion-panel-header>
-            <mat-panel-title>
-                {{instance.date|date:'longDate':null:currentLocale}}
-            </mat-panel-title>
-            <mat-panel-description>
-                <span *ngIf="instance.routeInstanceProperties.length>0">
-          {{instance.routeInstanceProperties.length}} {{'INSTANCE.DETAILS'|translate|lowercase}}
-        </span>
-            </mat-panel-description>
-        </mat-expansion-panel-header>
-        <mat-list>
-            <mat-list-item *ngFor="let property of instance.routeInstanceProperties">
-                <b>{{property.key}}</b>: {{value(property)}}
-            </mat-list-item>
-        </mat-list>
+  @if (loading) {
+    <mat-spinner></mat-spinner>
+  }
+  @for (instance of instances; track instance) {
+    <mat-expansion-panel [hideToggle]="instance.routeInstanceProperties.length==0">
+      <mat-expansion-panel-header>
+        <mat-panel-title>
+          {{instance.date|date:'longDate':null:currentLocale}}
+        </mat-panel-title>
+        <mat-panel-description>
+          @if (instance.routeInstanceProperties.length>0) {
+            <span>
+              {{instance.routeInstanceProperties.length}} {{'INSTANCE.DETAILS'|translate|lowercase}}
+            </span>
+          }
+        </mat-panel-description>
+      </mat-expansion-panel-header>
+      <mat-list>
+        @for (property of instance.routeInstanceProperties; track property) {
+          <mat-list-item>
+            <b>{{property.key}}</b>: {{value(property)}}
+          </mat-list-item>
+        }
+      </mat-list>
     </mat-expansion-panel>
+  }
 </div>
 <div mat-dialog-actions>
-    <button mat-button *ngIf="!loadAll" (click)="setLoadAll()">{{'INSTANCE.LOADALL'|translate}}</button>
-    <button mat-button (click)="close()">{{'CLOSE'|translate}}</button>
+  @if (!loadAll) {
+    <button mat-button (click)="setLoadAll()">{{'INSTANCE.LOADALL'|translate}}</button>
+  }
+  <button mat-button (click)="close()">{{'CLOSE'|translate}}</button>
 </div>

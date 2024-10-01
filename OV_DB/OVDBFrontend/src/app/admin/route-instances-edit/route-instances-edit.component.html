@@ -1,77 +1,87 @@
 <h3 mat-dialog-title>
-    <span *ngIf="new">{{'ROUTEINSTANCESEDIT.NEWTITLE'|translate}}</span>
-    <span *ngIf="!new">{{'ROUTEINSTANCESEDIT.TITLE'|translate}}</span>
+  @if (new) {
+    <span>{{'ROUTEINSTANCESEDIT.NEWTITLE'|translate}}</span>
+  }
+  @if (!new) {
+    <span>{{'ROUTEINSTANCESEDIT.TITLE'|translate}}</span>
+  }
 </h3>
 <div mat-dialog-content>
-    <mat-form-field>
-        <mat-label>Datum</mat-label>
-        <input matInput [matDatepicker]="pickerDate" [(ngModel)]="instance.date">
-        <mat-datepicker-toggle matSuffix [for]="pickerDate"></mat-datepicker-toggle>
-        <mat-datepicker #pickerDate></mat-datepicker>
-    </mat-form-field>
-    <mat-table [dataSource]="instance.routeInstanceProperties" #table>
-        <ng-container matColumnDef="key">
-            <mat-header-cell *matHeaderCellDef> {{'INSTANCE.KEY'|translate}} </mat-header-cell>
-            <mat-cell *matCellDef="let row">
-                <mat-form-field>
-                    <input matInput [(ngModel)]="row.key" [matAutocomplete]="auto" (focus)="updateSuggestions($event.target.value)" (input)="updateSuggestions($event.target.value)">
-                    <mat-autocomplete autoActiveFirstOption #auto="matAutocomplete">
-                        <mat-option *ngFor="let option of filteredOptions|async" [value]="option">
-                            {{option}}
-                        </mat-option>
-                    </mat-autocomplete>
-                </mat-form-field>
-            </mat-cell>
-            <mat-footer-cell *matFooterCellDef>
-                <button mat-icon-button (click)="addRow() " [disabled]="canAddNewRow">
+  <mat-form-field>
+    <mat-label>Datum</mat-label>
+    <input matInput [matDatepicker]="pickerDate" [(ngModel)]="instance.date">
+    <mat-datepicker-toggle matSuffix [for]="pickerDate"></mat-datepicker-toggle>
+    <mat-datepicker #pickerDate></mat-datepicker>
+  </mat-form-field>
+  <mat-table [dataSource]="instance.routeInstanceProperties" #table>
+    <ng-container matColumnDef="key">
+      <mat-header-cell *matHeaderCellDef> {{'INSTANCE.KEY'|translate}} </mat-header-cell>
+      <mat-cell *matCellDef="let row">
+        <mat-form-field>
+          <input matInput [(ngModel)]="row.key" [matAutocomplete]="auto" (focus)="updateSuggestions($event.target.value)" (input)="updateSuggestions($event.target.value)">
+          <mat-autocomplete autoActiveFirstOption #auto="matAutocomplete">
+            @for (option of filteredOptions|async; track option) {
+              <mat-option [value]="option">
+                {{option}}
+              </mat-option>
+            }
+          </mat-autocomplete>
+        </mat-form-field>
+      </mat-cell>
+      <mat-footer-cell *matFooterCellDef>
+        <button mat-icon-button (click)="addRow() " [disabled]="canAddNewRow">
           <mat-icon>add</mat-icon>
         </button>
-            </mat-footer-cell>
-        </ng-container>
+      </mat-footer-cell>
+    </ng-container>
 
-        <ng-container matColumnDef="string">
-            <mat-header-cell *matHeaderCellDef> {{'INSTANCE.TEXT'|translate}} </mat-header-cell>
-            <mat-cell *matCellDef="let row">
-                <mat-form-field>
-                    <input matInput [(ngModel)]="row.value" [disabled]="disableValue(row)">
-                </mat-form-field>
-            </mat-cell>
+    <ng-container matColumnDef="string">
+      <mat-header-cell *matHeaderCellDef> {{'INSTANCE.TEXT'|translate}} </mat-header-cell>
+      <mat-cell *matCellDef="let row">
+        <mat-form-field>
+          <input matInput [(ngModel)]="row.value" [disabled]="disableValue(row)">
+        </mat-form-field>
+      </mat-cell>
 
-        </ng-container>
-        <ng-container matColumnDef="bool">
-            <mat-header-cell *matHeaderCellDef> {{'INSTANCE.BOOL'|translate}} </mat-header-cell>
-            <mat-cell *matCellDef="let row">
-                <mat-checkbox [(ngModel)]="row.bool" [disabled]="disableBool(row)" [indeterminate]="row.bool===undefined||row.bool===null"></mat-checkbox>
-            </mat-cell>
+    </ng-container>
+    <ng-container matColumnDef="bool">
+      <mat-header-cell *matHeaderCellDef> {{'INSTANCE.BOOL'|translate}} </mat-header-cell>
+      <mat-cell *matCellDef="let row">
+        <mat-checkbox [(ngModel)]="row.bool" [disabled]="disableBool(row)" [indeterminate]="row.bool===undefined||row.bool===null"></mat-checkbox>
+      </mat-cell>
 
-        </ng-container>
-        <ng-container matColumnDef="buttons">
-            <mat-header-cell *matHeaderCellDef></mat-header-cell>
-            <mat-cell *matCellDef="let row;let i=index">
-                <button mat-icon-button (click)="removeRow(i)" *ngIf="!rowIsEmpty(row)">
-          <mat-icon>delete</mat-icon>
-        </button>
-            </mat-cell>
+    </ng-container>
+    <ng-container matColumnDef="buttons">
+      <mat-header-cell *matHeaderCellDef></mat-header-cell>
+      <mat-cell *matCellDef="let row;let i=index">
+        @if (!rowIsEmpty(row)) {
+          <button mat-icon-button (click)="removeRow(i)">
+            <mat-icon>delete</mat-icon>
+          </button>
+        }
+      </mat-cell>
 
-        </ng-container>
-        <mat-header-row *matHeaderRowDef="['key', 'string', 'bool','buttons']"></mat-header-row>
-        <mat-row *matRowDef="let row; columns: ['key', 'string',  'bool','buttons']"></mat-row>
-        <mat-footer-row *matFooterRowDef="['key']"></mat-footer-row>
-    </mat-table>
-    <mat-expansion-panel>
-        <mat-expansion-panel-header>
-            <mat-panel-title>
-                {{'INSTANCE.SELECT_ADDITIONAL_MAPS'|translate}}
-            </mat-panel-title>
-        </mat-expansion-panel-header>
-        <mat-selection-list [(ngModel)]="selectedMaps">
-            <mat-list-option *ngFor="let map of maps" [value]="map.mapId">
-                {{name(map)}}
-            </mat-list-option>
-        </mat-selection-list>
-    </mat-expansion-panel>
+    </ng-container>
+    <mat-header-row *matHeaderRowDef="['key', 'string', 'bool','buttons']"></mat-header-row>
+    <mat-row *matRowDef="let row; columns: ['key', 'string',  'bool','buttons']"></mat-row>
+    <mat-footer-row *matFooterRowDef="['key']"></mat-footer-row>
+  </mat-table>
+  <mat-expansion-panel>
+    <mat-expansion-panel-header>
+      <mat-panel-title>
+        {{'INSTANCE.SELECT_ADDITIONAL_MAPS'|translate}}
+      </mat-panel-title>
+    </mat-expansion-panel-header>
+    <mat-selection-list [(ngModel)]="selectedMaps">
+      @for (map of maps; track map) {
+        <mat-list-option [value]="map.mapId">
+          {{name(map)}}
+        </mat-list-option>
+      }
+    </mat-selection-list>
+  </mat-expansion-panel>
 </div>
 <div mat-dialog-actions>
-    <button mat-button (click)="cancel()">{{'CANCEL'|translate}}</button>
-    <button mat-button color="primary" (click)="return()" [disabled]="incomplete">{{'SAVE'|translate}}</button>
+  <button mat-button (click)="cancel()">{{'CANCEL'|translate}}</button>
+  <button mat-button color="primary" (click)="return()" [disabled]="incomplete">{{'SAVE'|translate}}</button>
 </div>

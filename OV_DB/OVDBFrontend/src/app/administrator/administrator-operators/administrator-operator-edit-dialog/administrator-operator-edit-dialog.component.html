@@ -5,10 +5,12 @@
       <mat-label>Names</mat-label>
       <mat-chip-grid #chipList>
         @for (name of operatorForm.get('names').value ; track name) {
-        <mat-chip [removable]="true" (removed)="removeName(name)">
-          {{ name }}
-          <mat-icon matChipRemove *ngIf="name">cancel</mat-icon>
-        </mat-chip>
+          <mat-chip [removable]="true" (removed)="removeName(name)">
+            {{ name }}
+            @if (name) {
+              <mat-icon matChipRemove>cancel</mat-icon>
+            }
+          </mat-chip>
         }
         <input
           matInput
@@ -16,30 +18,30 @@
           [formControl]="nameCtrl"
           [matChipInputFor]="chipList"
           (matChipInputTokenEnd)="addName($event)"
-        />
-      </mat-chip-grid>
-    </mat-form-field>
-    <mat-form-field>
-      <mat-label>Runs trains in</mat-label>
-      <mat-select formControlName="runsTrainsInRegionIds" multiple>
-        @for (region of regions(); track region.id) {
-        <mat-option [value]="region.id">{{ region.name }}</mat-option>
-        }
-      </mat-select>
-    </mat-form-field>
-    <mat-form-field>
-      <mat-label>Restrict to</mat-label>
-      <mat-select formControlName="restrictToRegionIds" multiple>
-        @for (region of flattenedRegions(); track region.id) {
-        <mat-option [value]="region.id">{{ region.name }}</mat-option>
-        }
-      </mat-select>
-    </mat-form-field>
-  </form>
-</div>
-<div mat-dialog-actions>
-  <button mat-button (click)="onCancel()">Cancel</button>
-  <button mat-button [disabled]="operatorForm.invalid" (click)="onSave()">
-    Save
-  </button>
-</div>
+          />
+        </mat-chip-grid>
+      </mat-form-field>
+      <mat-form-field>
+        <mat-label>Runs trains in</mat-label>
+        <mat-select formControlName="runsTrainsInRegionIds" multiple>
+          @for (region of regions(); track region.id) {
+            <mat-option [value]="region.id">{{ region.name }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field>
+        <mat-label>Restrict to</mat-label>
+        <mat-select formControlName="restrictToRegionIds" multiple>
+          @for (region of flattenedRegions(); track region.id) {
+            <mat-option [value]="region.id">{{ region.name }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+    </form>
+  </div>
+  <div mat-dialog-actions>
+    <button mat-button (click)="onCancel()">Cancel</button>
+    <button mat-button [disabled]="operatorForm.invalid" (click)="onSave()">
+      Save
+    </button>
+  </div>

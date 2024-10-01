@@ -1,73 +1,77 @@
 <div class="container">
-    <div class="buttons">
-        <input type="file" multiple (change)="handleFileInput($event.target.files)">
-        <button mat-raised-button (click)="saveFiles()">{{'ADDROUTE.SAVEFILES'|translate}}</button>
-    </div>
-    <div *ngIf="!filesLoading; else loading">
-        <br>{{text}}
-        <ul>
-            <li *ngFor="let file of files" [ngClass]="{'error':file.failed}">{{file.filename}} <button *ngIf="!file.failed" mat-button (click)="edit(file)">{{'EDIT'|translate}}</button></li>
-        </ul>
-
-    </div>
-    <hr>
+  <div class="buttons">
+    <input type="file" multiple (change)="handleFileInput($event.target.files)">
+    <button mat-raised-button (click)="saveFiles()">{{'ADDROUTE.SAVEFILES'|translate}}</button>
+  </div>
+  @if (!filesLoading) {
     <div>
+      <br>{{text}}
+        <ul>
+          @for (file of files; track file) {
+            <li [ngClass]="{'error':file.failed}">{{file.filename}} @if (!file.failed) {
+              <button mat-button (click)="edit(file)">{{'EDIT'|translate}}</button>
+            }</li>
+          }
+        </ul>
+      </div>
+    } @else {
+      <mat-spinner></mat-spinner>
+    }
+    <hr>
+      <div>
         <b>{{'ADDROUTE.EXAMPLEFORKML'|translate}}</b>
         <br>
-        <textarea mat-input>
-<?xml version="1.0" encoding="UTF-8"?>
-<kml xmlns="http://earth.google.com/kml/2.0">
-  <Document>
-   ...
-    <Folder>
-     ...
-     <Placemark>
-      <name>474: Varsseveld Station => Haaksbergen Busstation</name>
-      <description>Road works N18 near Groenlo, alternative route</description>
-      <ExtendedData>
-        <Data name="firstDateTime">
-          <value>2019-10-26</value>
-        </Data>
-        <Data name="from">
-          <value>Varsseveld Station</value>
-        </Data>
-        <Data name="to">
+          <textarea mat-input>
+            <?xml version="1.0" encoding="UTF-8"?>
+            <kml xmlns="http://earth.google.com/kml/2.0">
+              <Document>
+              ...
+              <Folder>
+              ...
+              <Placemark>
+              <name>474: Varsseveld Station => Haaksbergen Busstation</name>
+              <description>Road works N18 near Groenlo, alternative route</description>
+              <ExtendedData>
+              <Data name="firstDateTime">
+              <value>2019-10-26</value>
+            </Data>
+            <Data name="from">
+            <value>Varsseveld Station</value>
+          </Data>
+          <Data name="to">
           <value>Haaksbergen Busstation</value>
         </Data>
         <Data name="type">
-          <value>Bus</value>
-        </Data>
-        <Data name="countries">
-          <value>Netherlands</value>
-        </Data>
-        <Data name="line">
-          <value>474</value>
-        </Data>
-        <Data name="descriptionNL">
-          <value>IVM werkzaamheden N18 bij Groenlo alternatieve route</value>
-        </Data>
-        <Data name="nameNL">
-          <value>Name in Dutch</value>
-        </Data>
-        <Data name="company">
-          <value>Arriva</value>
-        </Data>
-        <Data name="maps">
-          <value>Kaart</value>
-        </Data>
-      </ExtendedData>
-      <LineString>
-        <tessellate>true</tessellate>
-        <coordinates>6.458538,51.937754 ....</coordinates>
-        </LineString>
-      </Placemark>
-    </Folder>
-  </Document>
+        <value>Bus</value>
+      </Data>
+      <Data name="countries">
+      <value>Netherlands</value>
+    </Data>
+    <Data name="line">
+    <value>474</value>
+  </Data>
+  <Data name="descriptionNL">
+  <value>IVM werkzaamheden N18 bij Groenlo alternatieve route</value>
+</Data>
+<Data name="nameNL">
+<value>Name in Dutch</value>
+</Data>
+<Data name="company">
+<value>Arriva</value>
+</Data>
+<Data name="maps">
+<value>Kaart</value>
+</Data>
+</ExtendedData>
+<LineString>
+<tessellate>true</tessellate>
+<coordinates>6.458538,51.937754 ....</coordinates>
+</LineString>
+</Placemark>
+</Folder>
+</Document>
 </kml>
-        </textarea>
-    </div>
+</textarea>
+</div>
 </div>
 
-<ng-template #loading>
-    <mat-spinner></mat-spinner>
-</ng-template>

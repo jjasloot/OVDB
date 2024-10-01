@@ -4,17 +4,21 @@
     <mat-form-field>
       <mat-label>{{'CHOOSEMAP'|translate}}</mat-label>
       <mat-select (selectionChange)="changeMap($event.value)">
-        <mat-option *ngFor="let map of maps" [value]="map.mapGuid">
-          {{map.name}}
-        </mat-option>
+        @for (map of maps; track map) {
+          <mat-option [value]="map.mapGuid">
+            {{map.name}}
+          </mat-option>
+        }
       </mat-select>
     </mat-form-field>
     <mat-form-field>
       <mat-label>{{'CHOOSEYEAR'|translate}}</mat-label>
       <mat-select (selectionChange)="getData($event.value)" [(ngModel)]="selectedYear">
-        <mat-option *ngFor="let year of years" [value]="year">
-          {{year}}
-        </mat-option>
+        @for (year of years; track year) {
+          <mat-option [value]="year">
+            {{year}}
+          </mat-option>
+        }
         <mat-option [value]="null">
           {{'ALL'|translate}}
         </mat-option>
@@ -23,30 +27,34 @@
   </mat-card>
 
   <div class="row">
-    <table *ngIf="!!tableData">
-      <tr>
-        <th>{{'NAME'|translate}}</th>
-        <th>{{'DISTANCE'|translate}}</th>
-      </tr>
-      <tr *ngFor="let row of tableData">
-        <td>{{name(row)}}</td>
-        <td>{{row.distance}} km</td>
-      </tr>
-      <button mat-raised-button (click)="download()">{{'TRIPREPORT.DOWNLOAD'|translate}}</button>
-      <button mat-raised-button (click)="export()">{{'TRIPREPORT.EXPORT'|translate}}</button>
-    </table>
+    @if (!!tableData) {
+      <table>
+        <tr>
+          <th>{{'NAME'|translate}}</th>
+          <th>{{'DISTANCE'|translate}}</th>
+        </tr>
+        @for (row of tableData; track row) {
+          <tr>
+            <td>{{name(row)}}</td>
+            <td>{{row.distance}} km</td>
+          </tr>
+        }
+        <button mat-raised-button (click)="download()">{{'TRIPREPORT.DOWNLOAD'|translate}}</button>
+        <button mat-raised-button (click)="export()">{{'TRIPREPORT.EXPORT'|translate}}</button>
+      </table>
+    }
     <!-- <div *ngIf="!!data" class="container graph">
-      <canvas baseChart height="300" [datasets]="data.datasets" [options]="lineChartOptions" chartType="line"></canvas>
-    </div> -->
+    <canvas baseChart height="300" [datasets]="data.datasets" [options]="lineChartOptions" chartType="line"></canvas>
+  </div> -->
+</div>
+<div class="map-container" #mapContainer>
+  <div class="map" leaflet [leafletOptions]="options" [leafletLayers]="layers"
+    [leafletLayersControl]="leafletLayersControl" [leafletFitBounds]="bounds">
   </div>
-  <div class="map-container" #mapContainer>
-    <div class="map" leaflet [leafletOptions]="options" [leafletLayers]="layers"
-      [leafletLayersControl]="leafletLayersControl" [leafletFitBounds]="bounds">
-    </div>
-    <div [ngClass]="{'loading':loadingMap,'loading-indicator':true}">
-      <mat-spinner></mat-spinner>
-    </div>
+  <div [ngClass]="{'loading':loadingMap,'loading-indicator':true}">
+    <mat-spinner></mat-spinner>
   </div>
+</div>
 
 
 </div>

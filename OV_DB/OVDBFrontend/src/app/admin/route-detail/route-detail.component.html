@@ -3,159 +3,163 @@
 </button>
 <div class="form">
   @if(!!route){
-  <form [formGroup]="form" (ngSubmit)="onSubmit(form.value, false)">
-    <mat-form-field>
-      <mat-label>{{ "ROUTEDETAILS.NAME" | translate }}</mat-label>
-      <input matInput formControlName="name" required />
-    </mat-form-field>
-    <mat-form-field>
-      <mat-label
-        >{{ "ROUTEDETAILS.NAME" | translate }} ({{
-          "LANGUAGES.DUTCH" | translate
-        }})</mat-label
-      >
-      <input matInput formControlName="nameNL" />
-    </mat-form-field>
-    <mat-form-field>
-      <mat-label>{{ "ROUTEDETAILS.DESCRIPTION" | translate }}</mat-label>
-      <input matInput formControlName="description" />
-    </mat-form-field>
-    <mat-form-field>
-      <mat-label
-        >{{ "ROUTEDETAILS.DESCRIPTION" | translate }} ({{
-          "LANGUAGES.DUTCH" | translate
-        }})</mat-label
-      >
-      <input matInput formControlName="descriptionNL" />
-    </mat-form-field>
-    <mat-form-field>
-      <mat-label>{{ "FROM" | translate }}</mat-label>
-      <input matInput formControlName="from" />
-    </mat-form-field>
-    <mat-form-field>
-      <mat-label>{{ "TO" | translate }}</mat-label>
-      <input matInput formControlName="to" />
-    </mat-form-field>
-    <mat-form-field>
-      <mat-label>{{ "ROUTEDETAILS.LINENUMBER" | translate }}</mat-label>
-      <input matInput formControlName="lineNumber" />
-    </mat-form-field>
-    <div style="display: flex">
-      <app-route-detail-operator-selection
-        [formField]="form.controls['operatingCompany']"
-        [routeId]="routeId"
-        (activeOperators)="activeOperators.set($event)"
-      ></app-route-detail-operator-selection>
-    </div>
-    <div class="row">
-      <mat-form-field style="width: 50%">
-        <mat-label>{{ "ROUTEDETAILS.OVERRIDECOLOUR" | translate }}</mat-label>
-        <input
-          [(ngModel)]="colour"
-          [ngModelOptions]="{ standalone: true }"
-          matInput
-        />
+    <form [formGroup]="form" (ngSubmit)="onSubmit(form.value, false)">
+      <mat-form-field>
+        <mat-label>{{ "ROUTEDETAILS.NAME" | translate }}</mat-label>
+        <input matInput formControlName="name" required />
       </mat-form-field>
-      <mat-form-field style="width: 50%; max-height: 71px">
-        <input
-          type="color"
-          [(ngModel)]="colour"
-          [ngModelOptions]="{ standalone: true }"
-          matInput
-        />
-      </mat-form-field>
-    </div>
-    <mat-form-field>
-      <mat-label>{{ "ROUTEDETAILS.FIRSTDATETIME" | translate }}</mat-label>
-      <input
-        matInput
-        [matDatepicker]="firstPicker"
-        formControlName="firstDateTime"
-      />
-      <mat-datepicker-toggle
-        matSuffix
-        [for]="firstPicker"
-      ></mat-datepicker-toggle>
-      <mat-datepicker #firstPicker></mat-datepicker>
-    </mat-form-field>
-    <mat-form-field>
-      <mat-label>{{ "ROUTEDETAILS.TYPE" | translate }}</mat-label>
-      <mat-select formControlName="routeTypeId" required>
-        <mat-option *ngFor="let type of types" [value]="type.typeId">
-          {{ name(type) }}
-        </mat-option>
-      </mat-select>
-    </mat-form-field>
-    <p>
-      {{ "ROUTEDETAILS.CALCULATEDDISTANCE" | translate }}:
-      {{ route?.calculatedDistance | number : "1.1-3" }} km
-    </p>
-    <mat-form-field>
-      <mat-label>{{ "ROUTEDETAILS.OVERRIDEISTANCE" | translate }}</mat-label>
-      <input matInput formControlName="overrideDistance" />
-    </mat-form-field>
-  </form>
+      <mat-form-field>
+        <mat-label
+          >{{ "ROUTEDETAILS.NAME" | translate }} ({{
+          "LANGUAGES.DUTCH" | translate
+          }})</mat-label
+          >
+          <input matInput formControlName="nameNL" />
+        </mat-form-field>
+        <mat-form-field>
+          <mat-label>{{ "ROUTEDETAILS.DESCRIPTION" | translate }}</mat-label>
+          <input matInput formControlName="description" />
+        </mat-form-field>
+        <mat-form-field>
+          <mat-label
+            >{{ "ROUTEDETAILS.DESCRIPTION" | translate }} ({{
+            "LANGUAGES.DUTCH" | translate
+            }})</mat-label
+            >
+            <input matInput formControlName="descriptionNL" />
+          </mat-form-field>
+          <mat-form-field>
+            <mat-label>{{ "FROM" | translate }}</mat-label>
+            <input matInput formControlName="from" />
+          </mat-form-field>
+          <mat-form-field>
+            <mat-label>{{ "TO" | translate }}</mat-label>
+            <input matInput formControlName="to" />
+          </mat-form-field>
+          <mat-form-field>
+            <mat-label>{{ "ROUTEDETAILS.LINENUMBER" | translate }}</mat-label>
+            <input matInput formControlName="lineNumber" />
+          </mat-form-field>
+          <div style="display: flex">
+            <app-route-detail-operator-selection
+              [formField]="form.controls['operatingCompany']"
+              [routeId]="routeId"
+              (activeOperators)="activeOperators.set($event)"
+            ></app-route-detail-operator-selection>
+          </div>
+          <div class="row">
+            <mat-form-field style="width: 50%">
+              <mat-label>{{ "ROUTEDETAILS.OVERRIDECOLOUR" | translate }}</mat-label>
+              <input
+                [(ngModel)]="colour"
+                [ngModelOptions]="{ standalone: true }"
+                matInput
+                />
+              </mat-form-field>
+              <mat-form-field style="width: 50%; max-height: 71px">
+                <input
+                  type="color"
+                  [(ngModel)]="colour"
+                  [ngModelOptions]="{ standalone: true }"
+                  matInput
+                  />
+                </mat-form-field>
+              </div>
+              <mat-form-field>
+                <mat-label>{{ "ROUTEDETAILS.FIRSTDATETIME" | translate }}</mat-label>
+                <input
+                  matInput
+                  [matDatepicker]="firstPicker"
+                  formControlName="firstDateTime"
+                  />
+                  <mat-datepicker-toggle
+                    matSuffix
+                    [for]="firstPicker"
+                  ></mat-datepicker-toggle>
+                  <mat-datepicker #firstPicker></mat-datepicker>
+                </mat-form-field>
+                <mat-form-field>
+                  <mat-label>{{ "ROUTEDETAILS.TYPE" | translate }}</mat-label>
+                  <mat-select formControlName="routeTypeId" required>
+                    @for (type of types; track type) {
+                      <mat-option [value]="type.typeId">
+                        {{ name(type) }}
+                      </mat-option>
+                    }
+                  </mat-select>
+                </mat-form-field>
+                <p>
+                  {{ "ROUTEDETAILS.CALCULATEDDISTANCE" | translate }}:
+                  {{ route?.calculatedDistance | number : "1.1-3" }} km
+                </p>
+                <mat-form-field>
+                  <mat-label>{{ "ROUTEDETAILS.OVERRIDEISTANCE" | translate }}</mat-label>
+                  <input matInput formControlName="overrideDistance" />
+                </mat-form-field>
+              </form>
 
-  <mat-card class="countries">
-    <mat-card-header>
-      <mat-card-subtitle>{{
-        "ROUTEDETAILS.COUNTRIES" | translate
-      }}</mat-card-subtitle>
-    </mat-card-header>
-    <mat-card-content>
-      @for(region of route.regions; track region.id) {
-      <mat-chip style="margin-right: 1rem" disabled
-        >{{ name(region) }}
-      </mat-chip>
-      }
-    </mat-card-content>
-  </mat-card>
+              <mat-card class="countries">
+                <mat-card-header>
+                  <mat-card-subtitle>{{
+                    "ROUTEDETAILS.COUNTRIES" | translate
+                  }}</mat-card-subtitle>
+                </mat-card-header>
+                <mat-card-content>
+                  @for(region of route.regions; track region.id) {
+                    <mat-chip style="margin-right: 1rem" disabled
+                      >{{ name(region) }}
+                    </mat-chip>
+                  }
+                </mat-card-content>
+              </mat-card>
 
-  <mat-expansion-panel class="countries">
-    <mat-expansion-panel-header>
-      <mat-panel-title>
-        {{ "ROUTEDETAILS.MAPS" | translate }}
-      </mat-panel-title>
-      <mat-panel-description>
-        {{ mapsString }}
-      </mat-panel-description>
-    </mat-expansion-panel-header>
+              <mat-expansion-panel class="countries">
+                <mat-expansion-panel-header>
+                  <mat-panel-title>
+                    {{ "ROUTEDETAILS.MAPS" | translate }}
+                  </mat-panel-title>
+                  <mat-panel-description>
+                    {{ mapsString }}
+                  </mat-panel-description>
+                </mat-expansion-panel-header>
 
-    <mat-selection-list [(ngModel)]="selectedMaps" #mapsSelection>
-      <mat-list-option *ngFor="let map of maps" [value]="map.mapId">
-        {{ map.name }}
-      </mat-list-option>
-    </mat-selection-list>
-  </mat-expansion-panel>
-  }
-  <div class="buttons">
-    <button
-      mat-raised-button
-      color="primary"
-      type="submit"
-      (click)="onSubmit(form.value, false)"
-      [disabled]="form.invalid"
-    >
-      {{ "SAVE" | translate }}
-    </button>
-    <button
-      mat-stroked-button
-      color="primary"
-      type="submit"
-      (click)="onSubmit(form.value, true)"
-      [disabled]="form.invalid"
-    >
-      {{ "SAVE_GO_TO_INSTANCES" | translate }}
-    </button>
-    <button mat-button color="warning" type="button" (click)="delete()">
-      {{ "DELETE" | translate }}
-    </button>
-    <button mat-button color="secondary" (click)="export()">
-      {{ "ROUTESLIST.EXPORT" | translate }}
-    </button>
-  </div>
+                <mat-selection-list [(ngModel)]="selectedMaps" #mapsSelection>
+                  @for (map of maps; track map) {
+                    <mat-list-option [value]="map.mapId">
+                      {{ map.name }}
+                    </mat-list-option>
+                  }
+                </mat-selection-list>
+              </mat-expansion-panel>
+            }
+            <div class="buttons">
+              <button
+                mat-raised-button
+                color="primary"
+                type="submit"
+                (click)="onSubmit(form.value, false)"
+                [disabled]="form.invalid"
+                >
+                {{ "SAVE" | translate }}
+              </button>
+              <button
+                mat-stroked-button
+                color="primary"
+                type="submit"
+                (click)="onSubmit(form.value, true)"
+                [disabled]="form.invalid"
+                >
+                {{ "SAVE_GO_TO_INSTANCES" | translate }}
+              </button>
+              <button mat-button color="warning" type="button" (click)="delete()">
+                {{ "DELETE" | translate }}
+              </button>
+              <button mat-button color="secondary" (click)="export()">
+                {{ "ROUTESLIST.EXPORT" | translate }}
+              </button>
+            </div>
 
-  @if(isAdmin){
-  <button mat-button (click)="assignRegions()">Assign regions</button>
-  }
-</div>
+            @if(isAdmin){
+              <button mat-button (click)="assignRegions()">Assign regions</button>
+            }
+          </div>
