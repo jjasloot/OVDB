@@ -22,7 +22,7 @@ import {
   MAT_MOMENT_DATE_ADAPTER_OPTIONS,
 } from "@angular/material-moment-adapter";
 import { FormsModule, ReactiveFormsModule } from "@angular/forms";
-import { LeafletModule } from "@asymmetrik/ngx-leaflet";
+import { LeafletModule } from "@bluehalo/ngx-leaflet";
 import { HTTP_INTERCEPTORS, HttpClient, provideHttpClient, withInterceptorsFromDi } from "@angular/common/http";
 import { MapComponent } from "./map/map.component";
 import { FillMissingDataListComponent } from "./admin/fill-missing-data-list/fill-missing-data-list.component";
@@ -91,7 +91,7 @@ import { AdminStationsMapComponent } from "./stations/admin-stations-map/admin-s
 import { ImageCreatorComponent } from "./image-creator/image-creator.component";
 import { StationMapsComponent } from "./admin/station-maps/station-maps.component";
 import { StationMapsEditComponent } from "./admin/station-maps-edit/station-maps-edit.component";
-import { LeafletMarkerClusterModule } from "@asymmetrik/ngx-leaflet-markercluster";
+import { LeafletMarkerClusterModule } from "@bluehalo/ngx-leaflet-markercluster";
 import { AdministratorRegionsComponent } from "./administrator/administrator-regions/administrator-regions.component";
 import { AdministratorNewRegionComponent } from "./administrator/administrator-new-region/administrator-new-region.component";
 import { RequestsListComponent } from "./requests/requests-list/requests-list.component";

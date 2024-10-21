@@ -15,7 +15,7 @@ import { MatIconButton, MatButton } from "@angular/material/button";
 import { MatIcon } from "@angular/material/icon";
 import { MatCard } from "@angular/material/card";
 import { MatProgressSpinner } from "@angular/material/progress-spinner";
-import { LeafletModule } from "@asymmetrik/ngx-leaflet";
+import { LeafletModule } from "@bluehalo/ngx-leaflet";
 import { MatList, MatListItem } from "@angular/material/list";
 import { MatChipListbox, MatChipOption } from "@angular/material/chips";
 import { NgClass } from "@angular/common";

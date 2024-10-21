@@ -13,7 +13,7 @@ import { StationAdminProperties } from "src/app/models/stationAdminProperties.mo
 import { ApiService } from "src/app/services/api.service";
 import { RegionsService } from "src/app/services/regions.service";
 import { TranslationService } from "src/app/services/translation.service";
-import { LeafletModule } from "@asymmetrik/ngx-leaflet";
+import { LeafletModule } from "@bluehalo/ngx-leaflet";
 import { NgClass } from "@angular/common";
 import { MatProgressSpinner } from "@angular/material/progress-spinner";
 import { MatExpansionPanel, MatExpansionPanelHeader } from "@angular/material/expansion";

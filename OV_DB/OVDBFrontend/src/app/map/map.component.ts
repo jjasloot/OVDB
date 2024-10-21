@@ -28,7 +28,7 @@ import { v4 as uuidv4 } from "uuid";
 import { SignalRService } from "../services/signal-r.service";
 import { NgTemplateOutlet, NgClass, UpperCasePipe, KeyValuePipe } from "@angular/common";
 import { MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle } from "@angular/material/expansion";
-import { LeafletModule } from "@asymmetrik/ngx-leaflet";
+import { LeafletModule } from "@bluehalo/ngx-leaflet";
 import { MatProgressSpinner } from "@angular/material/progress-spinner";
 import { MatButton } from "@angular/material/button";
 import { MatIcon } from "@angular/material/icon";
