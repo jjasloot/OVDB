@@ -1,4 +1,6 @@
 export const environment = {
   production: true,
-  backend: location.origin + '/'
+  backend: "https://localhost:5001/",
+
+  //  backend: location.origin + '/'
 };

@@ -25,6 +25,7 @@ import { FormsModule } from "@angular/forms";
 import { MatIcon } from "@angular/material/icon";
 import { MatSelect } from "@angular/material/select";
 import { MatOption } from "@angular/material/core";
+import { LeafletMarkerClusterModule } from "@bluehalo/ngx-leaflet-markercluster";
 
 @Component({
     selector: "app-admin-stations-map",
@@ -49,6 +50,7 @@ import { MatOption } from "@angular/material/core";
         MatIcon,
         MatSelect,
         MatOption,
+        LeafletMarkerClusterModule
     ],
 })
 export class AdminStationsMapComponent implements OnInit {
