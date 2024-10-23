@@ -249,7 +249,7 @@ namespace OV_DB.Controllers
 
 
             var startIndex = oneList.ToList().IndexOf(minPosition);
-            var toIndex = oneList.ToList().IndexOf(toMinPosition);
+            var toIndex = oneList.ToList().LastIndexOf(toMinPosition);
 
             if (fromStop.Id == stops.First().Id && startIndex < 20)
                 startIndex = 0;

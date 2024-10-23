@@ -358,6 +358,7 @@ namespace OV_DB.Controllers
                 catch (Exception ex)
                 {
                     Console.WriteLine("Error updating route " + route.Name + ": " + ex.Message);
+                    _context.ChangeTracker.Clear();
                 }
             }
             return Ok(routes.Count);

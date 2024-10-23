@@ -70,20 +70,20 @@
       </button>
     </div>
     <div class="stops">
-      @for (stop of stops; track stop) {
+      @for (stop of stops; track stop;let index = $index) {
       <div class="row">
         <div class="from">
-          @if (showFrom(stop.id)) {
+          @if (showFrom(index)) {
           <button (click)="setFrom(stop.id)" mat-button>
             {{ "IMPORTER.FROM" | translate }}
           </button>
           }
         </div>
-        <div class="info" [ngClass]="{ active: included(stop.id) }">
+        <div class="info" [ngClass]="{ active: included(index) }">
           {{ stop.name }} {{ stop.ref }}
         </div>
         <div class="to">
-          @if (showTo(stop.id)) {
+          @if (showTo(index)) {
           <button (click)="setTo(stop.id)" mat-button>
             {{ "IMPORTER.TO" | translate }}
           </button>

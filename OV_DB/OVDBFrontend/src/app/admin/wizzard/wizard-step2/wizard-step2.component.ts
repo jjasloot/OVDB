@@ -145,20 +145,17 @@ export class WizzardStep2Component implements OnInit {
     this.to = id;
   }
 
-  showFrom(id: number) {
-    const index = this.stops.findIndex((t) => t.id === id);
-    const toIndex = this.stops.findIndex((t) => t.id === this.to);
+  showFrom(index: number) {
+    const toIndex = this.lastIndex(this.stops, this.to);
     return index < toIndex;
   }
-  showTo(id: number) {
-    const index = this.stops.findIndex((t) => t.id === id);
+  showTo(index: number) {
     const fromIndex = this.stops.findIndex((t) => t.id === this.from);
     return index > fromIndex;
   }
-  included(id: number) {
-    const toIndex = this.stops.findIndex((t) => t.id === this.to);
+  included(index: number) {
+    const toIndex = this.lastIndex(this.stops, this.to);
     const fromIndex = this.stops.findIndex((t) => t.id === this.from);
-    const index = this.stops.findIndex((t) => t.id === id);
     return index >= fromIndex && index <= toIndex;
   }
   addTrackToMap() {
@@ -212,5 +209,14 @@ export class WizzardStep2Component implements OnInit {
           this.loading = false;
         }
       );
+  }
+
+  lastIndex(list: OSMLineStop[], id: number) {
+    return list.reduceRight((acc, t, idx) => {
+      if (acc === -1 && t.id === id) {
+        return idx;
+      }
+      return acc;
+    }, -1);
   }
 }
