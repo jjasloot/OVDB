@@ -218,7 +218,7 @@ namespace OV_DB.Controllers
                 element.GeoJson = CoordsToGeoJson(oneList);
                 return Ok(element);
             }
-            if (relation.Tags.ContainsKey("ref") && relation.Tags.ContainsKey("to") && relation.Tags.ContainsKey("to"))
+            if (relation.Tags.ContainsKey("ref"))
             {
                 element.Name = relation.Tags["ref"] + ": " + fromStop.Tags["friendlyName"] + " => " + toStop.Tags["friendlyName"];
             }
