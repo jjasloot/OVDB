@@ -36,9 +36,13 @@ public class RouteRegionsService(OVDBDatabaseContext dbContext) : IRouteRegionsS
 
         var subRegions = (await dbContext.Regions.Where(r => r.ParentRegionId.HasValue && usedRegions.Contains(r.ParentRegionId.Value)).ToListAsync());
 
+        var isValidOp = new NetTopologySuite.Operation.Valid.IsValidOp(route.LineString);
+        Console.WriteLine($"Is valid: {isValidOp.IsValid}");
+
         foreach (var region in subRegions)
         {
-            if (!OverlayNG.Overlay(region.Geometry, route.LineString, SpatialFunction.Intersection).IsEmpty)
+            var intersection = OverlayNG.Overlay(region.Geometry, route.LineString, SpatialFunction.Intersection);
+            if (!intersection.IsEmpty)
                 route.Regions.Add(region);
         }
     }
