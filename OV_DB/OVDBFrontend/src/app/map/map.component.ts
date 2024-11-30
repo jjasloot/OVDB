@@ -588,27 +588,16 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     const to = this.to;
     const from = this.from;
     const years = this.selectedYears;
-
+    console.log("check", to, from, years);
     this.defaults.forEach((value, key) => {
-      console.log(
-        value.from?.isSame(from) ?? (value.from == null && from == null),
-        value.to?.isSame(to) ?? (value.to == null && from == null),
-        value.selectedYears.every((y) => years.includes(y)) &&
-          years.every((y) => value.selectedYears.includes(y)),
-        from,
-        value.from,
-        to,
-        value.to,
-        this.selectedYears,
-        value.selectedYears
-      );
       if (
         (value.from?.isSame(from) ?? (value.from == null && from == null)) &&
         (value.to?.isSame(to) ?? (value.to == null && from == null)) &&
         value.selectedYears.every((y) => years.includes(y)) &&
-        years.every((y) => value.selectedYears.includes(y))
+        (years??[]).every((y) => value.selectedYears.includes(y))
       ) {
         this.active.set(key);
+        console.log(key);
       }
     });
   }
