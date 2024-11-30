@@ -1,9 +1,7 @@
 import { ChangeDetectorRef, Component, OnInit, input } from "@angular/core";
-import * as L from 'leaflet';
 import {
   LatLngBounds,
   LatLng,
-  markerClusterGroup,
   divIcon,
   circleMarker,
   LeafletEvent,
