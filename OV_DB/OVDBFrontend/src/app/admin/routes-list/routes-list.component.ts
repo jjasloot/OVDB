@@ -1,10 +1,10 @@
 import {
   Component,
   OnInit,
-  ViewChild,
   AfterViewInit,
   ElementRef,
   HostListener,
+  viewChild
 } from "@angular/core";
 import { ApiService } from "src/app/services/api.service";
 import { Route } from "src/app/models/route.model";
@@ -88,9 +88,9 @@ export class RoutesListComponent implements OnInit, AfterViewInit {
   dataSource: RoutesDataSource;
   selectedRoutes: number[] = [];
 
-  @ViewChild(MatPaginator, { static: true }) paginator: MatPaginator;
-  @ViewChild(MatSort) sort: MatSort;
-  @ViewChild("input") input: ElementRef;
+  readonly paginator = viewChild(MatPaginator);
+  readonly sort = viewChild(MatSort);
+  readonly input = viewChild<ElementRef>("input");
   count: number;
   @HostListener("window:resize", ["$event"])
   onResize(event) {
@@ -142,27 +142,28 @@ export class RoutesListComponent implements OnInit, AfterViewInit {
     });
   }
   get filterValue() {
-    if (!this.input || !this.input.nativeElement) {
+    const input = this.input();
+    if (!input || !input.nativeElement) {
       return "";
     }
-    return this.input.nativeElement.value;
+    return input.nativeElement.value;
   }
 
   ngAfterViewInit() {
-    fromEvent(this.input.nativeElement, "keyup")
+    fromEvent(this.input().nativeElement, "keyup")
       .pipe(
         debounceTime(150),
         distinctUntilChanged(),
         tap(() => {
-          this.paginator.pageIndex = 0;
+          this.paginator().pageIndex = 0;
           this.filter$.next();
         })
       )
       .subscribe();
 
-    this.sort.sortChange.subscribe(() => (this.paginator.pageIndex = 0));
+    this.sort().sortChange.subscribe(() => (this.paginator().pageIndex = 0));
 
-    merge(this.sort.sortChange, this.paginator.page, this.filter$)
+    merge(this.sort().sortChange, this.paginator().page, this.filter$)
       .pipe(
         tap(() => {
           this.loading = true;
@@ -180,10 +181,10 @@ export class RoutesListComponent implements OnInit, AfterViewInit {
 
   loadRoutesPage() {
     return this.dataSource.loadRoutes(
-      this.paginator.pageIndex * this.paginator.pageSize,
-      this.paginator.pageSize,
-      this.sort.active,
-      this.sort.direction === "desc",
+      this.paginator().pageIndex * this.paginator().pageSize,
+      this.paginator().pageSize,
+      this.sort().active,
+      this.sort().direction === "desc",
       this.filterValue
     );
   }

@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild } from '@angular/core';
+import { Component, OnInit, viewChild } from '@angular/core';
 import { LatLngBounds, LatLng, geoJSON } from 'leaflet';
 import { tileLayer } from 'leaflet';
 import { TranslateService, TranslateModule } from '@ngx-translate/core';
@@ -16,7 +16,7 @@ import { MatProgressSpinner } from '@angular/material/progress-spinner';
     imports: [LeafletModule, NgClass, MatProgressSpinner, TranslateModule]
 })
 export class SingleRouteMapComponent implements OnInit {
-  @ViewChild('mapContainer') mapContainer: HTMLElement;
+  readonly mapContainer = viewChild<HTMLElement>('mapContainer');
   loading = false;
   layers = [];
   error: boolean;
@@ -37,8 +37,9 @@ export class SingleRouteMapComponent implements OnInit {
   private _bounds: LatLngBounds;
 
   get mapHeight() {
-    if (this.mapContainer) {
-      return this.mapContainer.offsetHeight;
+    const mapContainer = this.mapContainer();
+    if (mapContainer) {
+      return mapContainer.offsetHeight;
     }
     return 500;
   }

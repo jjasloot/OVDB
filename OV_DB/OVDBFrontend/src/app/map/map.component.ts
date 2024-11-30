@@ -1,13 +1,14 @@
 import {
   Component,
   OnInit,
-  ViewChild,
-  Input,
   AfterViewInit,
   ChangeDetectorRef,
   NgZone,
   EventEmitter,
   OnDestroy,
+  input,
+  viewChild,
+  signal,
 } from "@angular/core";
 import moment from "moment";
 import { tileLayer } from "leaflet";
@@ -26,35 +27,44 @@ import { Observable } from "rxjs";
 import { MapDataDTO } from "../models/map-data.model";
 import { v4 as uuidv4 } from "uuid";
 import { SignalRService } from "../services/signal-r.service";
-import { NgTemplateOutlet, NgClass, UpperCasePipe, KeyValuePipe } from "@angular/common";
-import { MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle } from "@angular/material/expansion";
+import {
+  NgTemplateOutlet,
+  NgClass,
+  UpperCasePipe,
+  KeyValuePipe,
+} from "@angular/common";
+import {
+  MatExpansionPanel,
+  MatExpansionPanelHeader,
+  MatExpansionPanelTitle,
+} from "@angular/material/expansion";
 import { LeafletModule } from "@bluehalo/ngx-leaflet";
 import { MatProgressSpinner } from "@angular/material/progress-spinner";
 import { MatButton } from "@angular/material/button";
 import { MatIcon } from "@angular/material/icon";
 
 @Component({
-    selector: "app-map",
-    templateUrl: "./map.component.html",
-    styleUrls: ["./map.component.scss"],
-    imports: [
-        NgTemplateOutlet,
-        MatExpansionPanel,
-        MatExpansionPanelHeader,
-        MatExpansionPanelTitle,
-        LeafletModule,
-        NgClass,
-        MatProgressSpinner,
-        MatButton,
-        MatIcon,
-        UpperCasePipe,
-        KeyValuePipe,
-        TranslateModule,
-    ]
+  selector: "app-map",
+  templateUrl: "./map.component.html",
+  styleUrls: ["./map.component.scss"],
+  imports: [
+    NgTemplateOutlet,
+    MatExpansionPanel,
+    MatExpansionPanelHeader,
+    MatExpansionPanelTitle,
+    LeafletModule,
+    NgClass,
+    MatProgressSpinner,
+    MatButton,
+    MatIcon,
+    UpperCasePipe,
+    KeyValuePipe,
+    TranslateModule,
+  ],
 })
 export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
-  @Input() guid: string;
-  @ViewChild("mapContainer") mapContainer: HTMLElement;
+  readonly guid = input<string>(undefined);
+  readonly mapContainer = viewChild<HTMLElement>("mapContainer");
   loading: boolean | number = false;
   from: moment.Moment;
   to: moment.Moment;
@@ -64,7 +74,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
   countries: Country[];
   selectedYears: number[];
   error: boolean;
-  active: string;
+  active = signal<string>("");
   selectedRoute;
   includeLineColours: boolean = true;
   requestIdentifier?: string;
@@ -111,6 +121,17 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
       ),
     ],
     [
+      "LastMonth",
+      new FilterSettings(
+        "LastMonth",
+        true,
+        false,
+        moment().startOf("month").subtract(1, "month"),
+        moment().startOf("month"),
+        []
+      ),
+    ],
+    [
       "LastYear",
       new FilterSettings(
         "LastYear",
@@ -127,8 +148,9 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
   ]);
 
   get mapHeight() {
-    if (this.mapContainer) {
-      return this.mapContainer.offsetHeight;
+    const mapContainer = this.mapContainer();
+    if (mapContainer) {
+      return mapContainer.offsetHeight;
     }
     return 500;
   }
@@ -228,7 +250,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
   readFromQueryParams() {
     const queryParams = this.activatedRoute.snapshot.queryParamMap;
     if (queryParams.keys.length === 0) {
-      this.setOption(this.defaults.get("ThisYear"));
+      this.setOption(this.defaults.get("All"));
       return;
     }
     if (queryParams.has("from")) {
@@ -257,8 +279,9 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     }
     this.includeLineColours = queryParams.has("includeLineColours");
     this.limitToSelectedArea = queryParams.has("limitToSelectedArea");
-    this.active = "filter";
+    this.active.set("filter");
     this.getRoutes$.next(this.getFilter());
+    this.setApplicableFilter();
   }
 
   private getRoutes(filter: string): Observable<MapDataDTO> {
@@ -267,7 +290,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
 
     return this.apiService.getRoutes(
       filter,
-      this.guid,
+      this.guid(),
       this.translationService.language,
       this.includeLineColours,
       this.limitToSelectedArea,
@@ -486,7 +509,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     this.selectedYears = [...option.selectedYears];
     this.includeLineColours = option.includeLineColours;
     this.limitToSelectedArea = option.limitToSelectedAreas;
-    this.active = option.name;
+    this.active.set(option.name);
     if (
       this.limitToSelectedArea &&
       this.selectedRegion.length > 0 &&
@@ -498,6 +521,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
       this.signalRService.disconnect();
     }
     this.getRoutes$.next(this.getFilter());
+    this.setApplicableFilter();
   }
 
   openDialog() {
@@ -513,7 +537,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     );
     const dialogRef = this.dialog.open(MapFilterComponent, {
       width: "75%",
-      data: { settings, guid: this.guid },
+      data: { settings, guid: this.guid() },
     });
     dialogRef.afterClosed().subscribe((result: FilterSettings) => {
       if (!!result) {
@@ -542,7 +566,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
       data: {
         id,
         limits,
-        mapGuid: this.guid,
+        mapGuid: this.guid(),
       },
       width: "50%",
     });
@@ -558,5 +582,34 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
 
   refresh() {
     this.getRoutes$.next(this.getFilter());
+  }
+
+  setApplicableFilter() {
+    const to = this.to;
+    const from = this.from;
+    const years = this.selectedYears;
+
+    this.defaults.forEach((value, key) => {
+      console.log(
+        value.from?.isSame(from) ?? (value.from == null && from == null),
+        value.to?.isSame(to) ?? (value.to == null && from == null),
+        value.selectedYears.every((y) => years.includes(y)) &&
+          years.every((y) => value.selectedYears.includes(y)),
+        from,
+        value.from,
+        to,
+        value.to,
+        this.selectedYears,
+        value.selectedYears
+      );
+      if (
+        (value.from?.isSame(from) ?? (value.from == null && from == null)) &&
+        (value.to?.isSame(to) ?? (value.to == null && from == null)) &&
+        value.selectedYears.every((y) => years.includes(y)) &&
+        years.every((y) => value.selectedYears.includes(y))
+      ) {
+        this.active.set(key);
+      }
+    });
   }
 }

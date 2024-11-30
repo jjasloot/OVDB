@@ -1,4 +1,4 @@
-import { Component, OnInit, Inject, ViewChild } from '@angular/core';
+import { Component, OnInit, Inject, viewChild } from '@angular/core';
 import { MatDialogRef, MAT_DIALOG_DATA, MatDialogTitle, MatDialogContent, MatDialogActions } from '@angular/material/dialog';
 import { ApiService } from 'src/app/services/api.service';
 import { TranslateService, TranslateModule } from '@ngx-translate/core';
@@ -32,8 +32,8 @@ export class EditMultipleComponent implements OnInit {
   types: RouteType[];
   countries: Country[];
   maps: Map[];
-  @ViewChild('countriesSelection') countriesSelection: MatSelectionList;
-  @ViewChild('mapsSelection') mapsSelection: MatSelectionList;
+  readonly countriesSelection = viewChild<MatSelectionList>('countriesSelection');
+  readonly mapsSelection = viewChild<MatSelectionList>('mapsSelection');
   firstDateTime: Date;
   routeTypeId: number;
   updateDate = false;
@@ -86,11 +86,11 @@ export class EditMultipleComponent implements OnInit {
     return this.translationService.getNameForItem(item);
   }
   get countriesString() {
-    if (!this.countriesSelection || !this.countries) {
+    if (!this.countriesSelection() || !this.countries) {
       return '';
     }
     const countries = this.countries
-      .filter(c => this.countriesSelection.selectedOptions.selected.some(rc => rc.value === c.countryId))
+      .filter(c => this.countriesSelection().selectedOptions.selected.some(rc => rc.value === c.countryId))
       .map(c => this.name(c));
     if (countries.length > 3) {
       return '' + countries.length + ' ' + this.translateService.instant('ROUTEDETAILS.COUNTRIESINSTRING');
@@ -99,11 +99,11 @@ export class EditMultipleComponent implements OnInit {
   }
 
   get mapsString() {
-    if (!this.mapsSelection || !this.maps) {
+    if (!this.mapsSelection() || !this.maps) {
       return '';
     }
     const maps = this.maps
-      .filter(m => this.mapsSelection.selectedOptions.selected.some(rm => rm.value === m.mapId))
+      .filter(m => this.mapsSelection().selectedOptions.selected.some(rm => rm.value === m.mapId))
       .map(m => this.name(m));
     if (maps.length > 3) {
       return '' + maps.length + ' ' + this.translateService.instant('ROUTEDETAILS.MAPSINSTRING');
@@ -127,10 +127,10 @@ export class EditMultipleComponent implements OnInit {
 
     } as MultipleEdit;
     if (this.updateCountries) {
-      model.countries = this.countriesSelection.selectedOptions.selected.map(s => s.value);
+      model.countries = this.countriesSelection().selectedOptions.selected.map(s => s.value);
     }
     if (this.updateMaps) {
-      model.maps = this.mapsSelection.selectedOptions.selected.map(s => s.value);
+      model.maps = this.mapsSelection().selectedOptions.selected.map(s => s.value);
     }
     this.apiService.updateMultiple(model).subscribe(() => { this.dialogRef.close(); }, err => { this.error = err.error; });
   }

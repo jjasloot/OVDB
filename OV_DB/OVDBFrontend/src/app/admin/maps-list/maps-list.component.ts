@@ -1,32 +1,42 @@
-import { Component, OnInit } from '@angular/core';
-import { Map } from 'src/app/models/map.model';
-import { ApiService } from 'src/app/services/api.service';
-import { Router } from '@angular/router';
-import { MatDialog } from '@angular/material/dialog';
-import { DataUpdateService } from 'src/app/services/data-update.service';
-import { AreYouSureDialogComponent } from 'src/app/are-you-sure-dialog/are-you-sure-dialog.component';
-import { MapsAddComponent } from '../maps-add/maps-add.component';
-import { TranslateService, TranslateModule } from '@ngx-translate/core';
-import { SortItemsDialogComponent } from '../sort-items-dialog/sort-items-dialog.component';
-import { MatBottomSheet } from '@angular/material/bottom-sheet';
-import { MapsListBottomsheetComponent } from './maps-list-bottomsheet/maps-list-bottomsheet.component';
-import { MapListActions } from 'src/app/models/maps-list-actions.enum';
-import { MatProgressSpinner } from '@angular/material/progress-spinner';
-import { MatList, MatListItem } from '@angular/material/list';
-import { MatIconButton, MatFabButton } from '@angular/material/button';
-import { MatTooltip } from '@angular/material/tooltip';
-import { MatIcon } from '@angular/material/icon';
-import { CdkCopyToClipboard } from '@angular/cdk/clipboard';
-import { LowerCasePipe } from '@angular/common';
+import { Component, OnInit } from "@angular/core";
+import { Map } from "src/app/models/map.model";
+import { ApiService } from "src/app/services/api.service";
+import { Router } from "@angular/router";
+import { MatDialog } from "@angular/material/dialog";
+import { DataUpdateService } from "src/app/services/data-update.service";
+import { AreYouSureDialogComponent } from "src/app/are-you-sure-dialog/are-you-sure-dialog.component";
+import { MapsAddComponent } from "../maps-add/maps-add.component";
+import { TranslateService, TranslateModule } from "@ngx-translate/core";
+import { SortItemsDialogComponent } from "../sort-items-dialog/sort-items-dialog.component";
+import { MatBottomSheet } from "@angular/material/bottom-sheet";
+import { MapsListBottomsheetComponent } from "./maps-list-bottomsheet/maps-list-bottomsheet.component";
+import { MapListActions } from "src/app/models/maps-list-actions.enum";
+import { MatProgressSpinner } from "@angular/material/progress-spinner";
+import { MatList, MatListItem } from "@angular/material/list";
+import { MatIconButton, MatFabButton } from "@angular/material/button";
+import { MatTooltip } from "@angular/material/tooltip";
+import { MatIcon } from "@angular/material/icon";
+import { CdkCopyToClipboard } from "@angular/cdk/clipboard";
+import { LowerCasePipe } from "@angular/common";
 
 @Component({
-    selector: 'app-maps-list',
-    templateUrl: './maps-list.component.html',
-    styleUrls: ['./maps-list.component.scss'],
-    imports: [MatProgressSpinner, MatList, MatListItem, MatIconButton, MatTooltip, MatIcon, CdkCopyToClipboard, MatFabButton, LowerCasePipe, TranslateModule]
+  selector: "app-maps-list",
+  templateUrl: "./maps-list.component.html",
+  styleUrls: ["./maps-list.component.scss"],
+  imports: [
+    MatProgressSpinner,
+    MatList,
+    MatListItem,
+    MatIconButton,
+    MatTooltip,
+    MatIcon,
+    CdkCopyToClipboard,
+    MatFabButton,
+    LowerCasePipe,
+    TranslateModule,
+  ],
 })
 export class MapsListComponent implements OnInit {
-
   data: Map[];
   loading = false;
 
@@ -37,7 +47,7 @@ export class MapsListComponent implements OnInit {
     private translateService: TranslateService,
     private dataUpdateService: DataUpdateService,
     private bottomSheet: MatBottomSheet
-  ) { }
+  ) {}
 
   ngOnInit() {
     this.loadData();
@@ -45,7 +55,7 @@ export class MapsListComponent implements OnInit {
 
   private loadData() {
     this.loading = true;
-    this.apiService.getMaps().subscribe(data => {
+    this.apiService.getMaps().subscribe((data) => {
       this.data = data;
       this.loading = false;
     });
@@ -65,7 +75,7 @@ export class MapsListComponent implements OnInit {
   edit(map: Map) {
     const dialogRef = this.dialog.open(MapsAddComponent, {
       width: this.getWidth(),
-      data: { map }
+      data: { map },
     });
     dialogRef.afterClosed().subscribe((result: boolean) => {
       if (!!result) {
@@ -74,7 +84,9 @@ export class MapsListComponent implements OnInit {
     });
   }
   openBottomSheet(map: Map): void {
-    const ref = this.bottomSheet.open(MapsListBottomsheetComponent, { data: { map } });
+    const ref = this.bottomSheet.open(MapsListBottomsheetComponent, {
+      data: { map },
+    });
     ref.afterDismissed().subscribe((action: MapListActions) => {
       switch (action) {
         case MapListActions.View:
@@ -90,20 +102,30 @@ export class MapsListComponent implements OnInit {
     });
   }
 
-
   getLink(map: Map) {
-    return location.origin + '/link/' + map.sharingLinkName;
+    return location.origin + "/link/" + map.sharingLinkName;
   }
   view(map: Map) {
-    this.router.navigate(['/map', map.mapGuid]);
+    this.router.navigate(["/map", map.mapGuid], {
+      queryParams: { years: this.getCurrentYear()},
+    });
   }
+
+  getCurrentYear() {
+    return new Date().getFullYear();
+  }
+
   delete(map: Map) {
     const dialogRef = this.dialog.open(AreYouSureDialogComponent, {
       width: this.getWidth(),
       data: {
-        item: this.translateService.instant('MAPLIST.DELETEFRONT') + ' ' + map.name + ' '
-          + this.translateService.instant('MAPLIST.DELETEREAR')
-      }
+        item:
+          this.translateService.instant("MAPLIST.DELETEFRONT") +
+          " " +
+          map.name +
+          " " +
+          this.translateService.instant("MAPLIST.DELETEREAR"),
+      },
     });
     dialogRef.afterClosed().subscribe((result: boolean) => {
       if (!!result) {
@@ -116,9 +138,9 @@ export class MapsListComponent implements OnInit {
   }
 
   private getWidth() {
-    let width = '90%';
+    let width = "90%";
     if (window.innerWidth > 600) {
-      width = '50%';
+      width = "50%";
     }
     return width;
   }
@@ -128,16 +150,16 @@ export class MapsListComponent implements OnInit {
       width: this.getWidth(),
       data: {
         list: Object.assign([], this.data),
-        title: this.translateService.instant('MAPLIST.SORTTITLE')
-      }
+        title: this.translateService.instant("MAPLIST.SORTTITLE"),
+      },
     });
     dialogRef.afterClosed().subscribe((data: false | Map[]) => {
       if (data === false) {
         return;
       }
-      this.apiService.updateMapOrder(data.map(d => d.mapId)).subscribe(() => this.loadData());
-
-
+      this.apiService
+        .updateMapOrder(data.map((d) => d.mapId))
+        .subscribe(() => this.loadData());
     });
   }
 }

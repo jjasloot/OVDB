@@ -1,9 +1,9 @@
 import {
   ChangeDetectorRef,
   Component,
-  Input,
   OnInit,
   inject,
+  input
 } from "@angular/core";
 import { MatCheckboxChange, MatCheckbox } from "@angular/material/checkbox";
 import { LatLngBounds, LatLng, markerClusterGroup, divIcon, circleMarker } from "leaflet";
@@ -82,7 +82,7 @@ export class AdminStationsMapComponent implements OnInit {
       }
     ),
   };
-  @Input() guid: string;
+  readonly guid = input<string>(undefined);
   options = {
     layers: [this.baseLayers["OpenStreetMap Mat"]],
     zoom: 5,

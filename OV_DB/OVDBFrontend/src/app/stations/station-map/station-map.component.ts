@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, Input, OnInit } from "@angular/core";
+import { ChangeDetectorRef, Component, OnInit, input } from "@angular/core";
 import * as L from 'leaflet';
 import {
   LatLngBounds,
@@ -57,7 +57,7 @@ export class StationMapComponent implements OnInit {
       }
     ),
   };
-  @Input() guid: string;
+  readonly guid = input<string>(undefined);
   options = {
     layers: [this.baseLayers["OpenStreetMap Mat"]],
     zoom: 5,
@@ -104,7 +104,7 @@ export class StationMapComponent implements OnInit {
   async getData() {
     this.loading = true;
 
-    const text = await this.apiService.getStationMap(this.guid).toPromise();
+    const text = await this.apiService.getStationMap(this.guid()).toPromise();
     const parent = this;
     this.total = text.total;
     this.visited = text.visited;

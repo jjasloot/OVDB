@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild } from '@angular/core';
+import { Component, OnInit, viewChild } from '@angular/core';
 import { ApiService } from '../services/api.service';
 import { ChartOptions } from 'chart.js';
 import { tileLayer, marker, icon } from 'leaflet';
@@ -23,7 +23,7 @@ import { MatProgressSpinner } from '@angular/material/progress-spinner';
     imports: [MatCard, MatCardTitle, MatFormField, MatLabel, MatSelect, MatOption, FormsModule, MatButton, LeafletModule, NgClass, MatProgressSpinner, TranslateModule]
 })
 export class StatsComponent implements OnInit {
-  @ViewChild('singleChart') singleChart;
+  // readonly singleChart = viewChild('singleChart');
   data: any;
   singleData: any;
 
@@ -214,7 +214,7 @@ export class StatsComponent implements OnInit {
 
   }
   resetZoom() {
-    this.singleChart.resetZoom();
+    // this.singleChart().resetZoom();
   }
 
   name(item) {

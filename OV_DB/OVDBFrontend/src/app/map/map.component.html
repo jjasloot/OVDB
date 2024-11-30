@@ -41,8 +41,8 @@
 }
 
 <ng-template #filterButtons>
-  @for (option of defaults | keyvalue; track option) {
-    @if (active != option.key) {
+  @for (option of defaults | keyvalue; track option.key) {
+    @if (active() != option.key) {
       <button
         mat-button
         color="primary"
@@ -51,7 +51,7 @@
         {{ "MAPOPTIONS." + option.key | uppercase | translate }}
       </button>
     }
-    @if (active == option.key) {
+    @if (active() == option.key) {
       <button
         mat-stroked-button
         color="primary"
@@ -61,7 +61,7 @@
       </button>
     }
   }
-  @if (active != 'filter') {
+  @if (active() != 'filter') {
     <button
       mat-button
       color="primary"
@@ -70,7 +70,7 @@
       {{ "MAP.FILTER" | translate }}
     </button>
   }
-  @if (active == 'filter') {
+  @if (active() == 'filter') {
     <button
       mat-stroked-button
       color="primary"

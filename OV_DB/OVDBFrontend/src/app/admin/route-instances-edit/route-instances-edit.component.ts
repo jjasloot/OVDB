@@ -1,4 +1,4 @@
-import { Component, OnInit, Inject, ViewChild } from '@angular/core';
+import { Component, OnInit, Inject, viewChild } from '@angular/core';
 import { MatDialogRef, MAT_DIALOG_DATA, MatDialogTitle, MatDialogContent, MatDialogActions } from '@angular/material/dialog';
 import { ApiService } from 'src/app/services/api.service';
 import { RouteInstance } from 'src/app/models/routeInstance.model';
@@ -29,7 +29,7 @@ import { TranslateModule } from '@ngx-translate/core';
     imports: [MatDialogTitle, CdkScrollable, MatDialogContent, MatFormField, MatLabel, MatInput, MatDatepickerInput, FormsModule, MatDatepickerToggle, MatSuffix, MatDatepicker, MatTable, MatColumnDef, MatHeaderCellDef, MatHeaderCell, MatCellDef, MatCell, MatAutocompleteTrigger, MatAutocomplete, MatOption, MatFooterCellDef, MatFooterCell, MatIconButton, MatIcon, MatCheckbox, MatHeaderRowDef, MatHeaderRow, MatRowDef, MatRow, MatFooterRowDef, MatFooterRow, MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle, MatSelectionList, MatListOption, MatDialogActions, MatButton, AsyncPipe, TranslateModule]
 })
 export class RouteInstancesEditComponent implements OnInit {
-  @ViewChild('table') table: MatTable<RouteInstanceProperty>;
+  readonly table = viewChild<MatTable<RouteInstanceProperty>>('table');
   instance: RouteInstance;
   new = false;
   options = [];
@@ -93,7 +93,7 @@ export class RouteInstancesEditComponent implements OnInit {
   }
   addRow() {
     this.instance.routeInstanceProperties.push({} as RouteInstanceProperty);
-    this.table.renderRows();
+    this.table().renderRows();
   }
 
   get canAddNewRow() {
@@ -102,7 +102,7 @@ export class RouteInstancesEditComponent implements OnInit {
 
   removeRow(index: number) {
     this.instance.routeInstanceProperties.splice(index, 1);
-    this.table.renderRows();
+    this.table().renderRows();
   }
 
   rowIsEmpty(prop: RouteInstanceProperty) {

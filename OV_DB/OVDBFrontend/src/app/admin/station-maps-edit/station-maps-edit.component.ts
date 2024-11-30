@@ -1,4 +1,4 @@
-import { Component, Inject, OnInit, ViewChild } from "@angular/core";
+import { Component, Inject, OnInit, viewChild } from "@angular/core";
 import { UntypedFormBuilder, UntypedFormGroup, Validators, FormsModule, ReactiveFormsModule } from "@angular/forms";
 import { MatCheckboxChange, MatCheckbox } from "@angular/material/checkbox";
 import { DateAdapter } from "@angular/material/core";
@@ -43,7 +43,7 @@ import { TranslateModule } from "@ngx-translate/core";
 export class StationMapsEditComponent implements OnInit {
   form: UntypedFormGroup;
   regions: Region[];
-  @ViewChild("regionsSelection") regionsSelection: MatSelectionList;
+  readonly regionsSelection = viewChild<MatSelectionList>("regionsSelection");
   selectedOptions: number[] = [];
   map: StationMap = {} as StationMap;
   constructor(

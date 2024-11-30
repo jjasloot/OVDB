@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, ViewChild } from "@angular/core";
+import { Component, OnInit, signal, viewChild } from "@angular/core";
 import { ActivatedRoute, Router } from "@angular/router";
 import { Route } from "src/app/models/route.model";
 import { ApiService } from "src/app/services/api.service";
@@ -72,8 +72,8 @@ export class RouteDetailComponent implements OnInit {
   logo = signal<string | null>(null);
   colour: string;
 
-  @ViewChild("countriesSelection") countriesSelection: MatSelectionList;
-  @ViewChild("mapsSelection") mapsSelection: MatSelectionList;
+  readonly countriesSelection = viewChild<MatSelectionList>("countriesSelection");
+  readonly mapsSelection = viewChild<MatSelectionList>("mapsSelection");
 
   selectedOptions: number[];
   selectedMaps: number[];
@@ -142,13 +142,14 @@ export class RouteDetailComponent implements OnInit {
     if (this.form.invalid) {
       return;
     }
-    if (this.mapsSelection.selectedOptions.selected.length === 0) {
+    const mapsSelection = this.mapsSelection();
+    if (mapsSelection.selectedOptions.selected.length === 0) {
       return false;
     }
     const route = values as UpdateRoute;
     route.routeId = this.route.routeId;
     route.overrideColour = this.colour;
-    route.maps = this.mapsSelection.selectedOptions.selected.map(
+    route.maps = mapsSelection.selectedOptions.selected.map(
       (s) => s.value
     );
     if (!!this.activeOperators()) {
@@ -194,12 +195,12 @@ export class RouteDetailComponent implements OnInit {
   }
 
   get countriesString() {
-    if (!this.countriesSelection || !this.countries) {
+    if (!this.countriesSelection() || !this.countries) {
       return "";
     }
     const countries = this.countries
       .filter((c) =>
-        this.countriesSelection.selectedOptions.selected.some(
+        this.countriesSelection().selectedOptions.selected.some(
           (rc) => rc.value === c.countryId
         )
       )
@@ -216,12 +217,12 @@ export class RouteDetailComponent implements OnInit {
   }
 
   get mapsString() {
-    if (!this.mapsSelection || !this.maps) {
+    if (!this.mapsSelection() || !this.maps) {
       return "";
     }
     const maps = this.maps
       .filter((m) =>
-        this.mapsSelection.selectedOptions.selected.some(
+        this.mapsSelection().selectedOptions.selected.some(
           (rm) => rm.value === m.mapId
         )
       )
