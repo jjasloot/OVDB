@@ -588,7 +588,6 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     const to = this.to;
     const from = this.from;
     const years = this.selectedYears;
-    console.log("check", to, from, years);
     this.defaults.forEach((value, key) => {
       if (
         (value.from?.isSame(from) ?? (value.from == null && from == null)) &&
@@ -597,7 +596,6 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
         (years??[]).every((y) => value.selectedYears.includes(y))
       ) {
         this.active.set(key);
-        console.log(key);
       }
     });
   }
