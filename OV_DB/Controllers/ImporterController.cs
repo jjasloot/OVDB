@@ -225,7 +225,7 @@ namespace OV_DB.Controllers
             var min = double.MaxValue;
             IPosition minPosition = null;
 
-            oneList.ToList().ForEach(s =>
+            oneList.Take(oneList.Count - 20).ToList().ForEach(s =>
             {
                 var distance = GeometryHelper.distance(s.Latitude, s.Longitude, fromStop.Lat.Value, fromStop.Lon.Value, 'k');
                 if (distance < min)
@@ -237,7 +237,10 @@ namespace OV_DB.Controllers
             var toMin = double.MaxValue;
             IPosition toMinPosition = null;
 
-            oneList.ToList().ForEach(s =>
+            var reversedList = oneList.ToList();
+            reversedList.Reverse();
+
+            reversedList.ForEach(s =>
             {
                 var distance = GeometryHelper.distance(s.Latitude, s.Longitude, toStop.Lat.Value, toStop.Lon.Value, 'k');
                 if (distance < toMin)
