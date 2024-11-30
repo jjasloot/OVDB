@@ -8,7 +8,6 @@ import { TranslateModule } from '@ngx-translate/core';
     selector: 'app-are-you-sure-dialog',
     templateUrl: './are-you-sure-dialog.component.html',
     styleUrls: ['./are-you-sure-dialog.component.scss'],
-    standalone: true,
     imports: [MatDialogTitle, CdkScrollable, MatDialogContent, MatDialogActions, MatButton, TranslateModule]
 })
 export class AreYouSureDialogComponent implements OnInit {

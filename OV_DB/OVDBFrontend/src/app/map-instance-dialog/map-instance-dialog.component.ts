@@ -17,7 +17,6 @@ import { MatButton } from '@angular/material/button';
     selector: 'app-map-instance-dialog',
     templateUrl: './map-instance-dialog.component.html',
     styleUrls: ['./map-instance-dialog.component.scss'],
-    standalone: true,
     imports: [MatDialogTitle, CdkScrollable, MatDialogContent, MatProgressSpinner, MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle, MatExpansionPanelDescription, MatList, MatListItem, MatDialogActions, MatButton, LowerCasePipe, DatePipe, TranslateModule]
 })
 export class MapInstanceDialogComponent implements OnInit {

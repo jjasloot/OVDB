@@ -23,7 +23,6 @@ import { LowerCasePipe } from '@angular/common';
     selector: 'app-maps-list',
     templateUrl: './maps-list.component.html',
     styleUrls: ['./maps-list.component.scss'],
-    standalone: true,
     imports: [MatProgressSpinner, MatList, MatListItem, MatIconButton, MatTooltip, MatIcon, CdkCopyToClipboard, MatFabButton, LowerCasePipe, TranslateModule]
 })
 export class MapsListComponent implements OnInit {

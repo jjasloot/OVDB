@@ -9,7 +9,6 @@ import { TranslateModule } from '@ngx-translate/core';
     selector: 'app-link',
     templateUrl: './link.component.html',
     styleUrls: ['./link.component.scss'],
-    standalone: true,
     imports: [MapComponent, MatProgressSpinner, TranslateModule]
 })
 export class LinkComponent implements OnInit {

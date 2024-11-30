@@ -13,7 +13,6 @@ import { MatButton } from '@angular/material/button';
     selector: 'app-country-add',
     templateUrl: './country-add.component.html',
     styleUrls: ['./country-add.component.scss'],
-    standalone: true,
     imports: [MatDialogTitle, CdkScrollable, MatDialogContent, MatFormField, MatLabel, MatInput, FormsModule, MatDialogActions, MatButton, TranslateModule]
 })
 export class CountryAddComponent implements OnInit {

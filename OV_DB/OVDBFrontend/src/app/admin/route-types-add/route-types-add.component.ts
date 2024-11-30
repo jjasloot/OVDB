@@ -14,7 +14,6 @@ import { MatButton } from "@angular/material/button";
     selector: "app-route-types-add",
     templateUrl: "./route-types-add.component.html",
     styleUrls: ["./route-types-add.component.scss"],
-    standalone: true,
     imports: [
         MatDialogTitle,
         CdkScrollable,
@@ -27,7 +26,7 @@ import { MatButton } from "@angular/material/button";
         MatDialogActions,
         MatButton,
         TranslateModule,
-    ],
+    ]
 })
 export class RouteTypesAddComponent implements OnInit {
   routeTypeName: string;

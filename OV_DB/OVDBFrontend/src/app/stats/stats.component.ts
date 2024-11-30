@@ -20,7 +20,6 @@ import { MatProgressSpinner } from '@angular/material/progress-spinner';
     selector: 'app-stats',
     templateUrl: './stats.component.html',
     styleUrls: ['./stats.component.scss'],
-    standalone: true,
     imports: [MatCard, MatCardTitle, MatFormField, MatLabel, MatSelect, MatOption, FormsModule, MatButton, LeafletModule, NgClass, MatProgressSpinner, TranslateModule]
 })
 export class StatsComponent implements OnInit {

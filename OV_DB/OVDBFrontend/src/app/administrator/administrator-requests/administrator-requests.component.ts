@@ -11,14 +11,13 @@ import { DatePipe } from "@angular/common";
     selector: "app-administrator-requests",
     templateUrl: "./administrator-requests.component.html",
     styleUrl: "./administrator-requests.component.scss",
-    standalone: true,
     imports: [
         MatCard,
         MatInput,
         FormsModule,
         MatButton,
         DatePipe,
-    ],
+    ]
 })
 export class AdministratorRequestsComponent implements OnInit {
   requests: RequestForAdmin[] = [];

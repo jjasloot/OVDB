@@ -22,7 +22,6 @@ import { TranslateModule } from '@ngx-translate/core';
     selector: 'app-wizard-step1',
     templateUrl: './wizard-step1.component.html',
     styleUrls: ['./wizard-step1.component.scss'],
-    standalone: true,
     imports: [MatProgressSpinner, FormsModule, ReactiveFormsModule, MatFormField, MatLabel, MatInput, MatSelect, MatOption, MatCheckbox, NgClass, MatDatepickerInput, MatDatepickerToggle, MatSuffix, MatDatepicker, MatButton, MatIconButton, MatIcon, MatChipListbox, MatChipOption, TranslateModule]
 })
 export class WizzardStep1Component implements OnInit {

@@ -8,7 +8,6 @@ import { TranslateModule } from '@ngx-translate/core';
     selector: 'app-help',
     templateUrl: './help.component.html',
     styleUrls: ['./help.component.scss'],
-    standalone: true,
     imports: [RouterLink, TranslateModule]
 })
 export class HelpComponent implements OnInit {

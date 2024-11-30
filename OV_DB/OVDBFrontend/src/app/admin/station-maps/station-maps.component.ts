@@ -25,7 +25,6 @@ import { LowerCasePipe } from '@angular/common';
     selector: 'app-station-maps',
     templateUrl: './station-maps.component.html',
     styleUrls: ['./station-maps.component.scss'],
-    standalone: true,
     imports: [MatProgressSpinner, MatList, MatListItem, MatIconButton, MatTooltip, MatIcon, CdkCopyToClipboard, MatFabButton, LowerCasePipe, TranslateModule]
 })
 export class StationMapsComponent implements OnInit {

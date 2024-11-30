@@ -14,7 +14,6 @@ import { TranslateModule } from "@ngx-translate/core";
     selector: "app-administrator-new-region",
     templateUrl: "./administrator-new-region.component.html",
     styleUrl: "./administrator-new-region.component.scss",
-    standalone: true,
     imports: [
         MatDialogTitle,
         CdkScrollable,
@@ -28,7 +27,7 @@ import { TranslateModule } from "@ngx-translate/core";
         MatDialogActions,
         MatButton,
         TranslateModule,
-    ],
+    ]
 })
 export class AdministratorNewRegionComponent {
   region = {} as NewRegion;

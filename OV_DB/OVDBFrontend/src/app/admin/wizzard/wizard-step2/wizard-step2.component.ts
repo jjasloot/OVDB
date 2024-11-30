@@ -22,25 +22,24 @@ import { NgClass } from "@angular/common";
 import { CdkCopyToClipboard } from "@angular/cdk/clipboard";
 
 @Component({
-  selector: "app-wizard-step2",
-  templateUrl: "./wizard-step2.component.html",
-  styleUrls: ["./wizard-step2.component.scss"],
-  standalone: true,
-  imports: [
-    MatIconButton,
-    MatIcon,
-    MatCard,
-    MatProgressSpinner,
-    LeafletModule,
-    MatList,
-    MatListItem,
-    MatChipListbox,
-    MatChipOption,
-    MatButton,
-    NgClass,
-    TranslateModule,
-    CdkCopyToClipboard,
-  ],
+    selector: "app-wizard-step2",
+    templateUrl: "./wizard-step2.component.html",
+    styleUrls: ["./wizard-step2.component.scss"],
+    imports: [
+        MatIconButton,
+        MatIcon,
+        MatCard,
+        MatProgressSpinner,
+        LeafletModule,
+        MatList,
+        MatListItem,
+        MatChipListbox,
+        MatChipOption,
+        MatButton,
+        NgClass,
+        TranslateModule,
+        CdkCopyToClipboard,
+    ]
 })
 export class WizzardStep2Component implements OnInit {
   id: string;

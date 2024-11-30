@@ -13,7 +13,6 @@ import { MatProgressSpinner } from '@angular/material/progress-spinner';
     selector: 'app-single-route-map',
     templateUrl: './single-route-map.component.html',
     styleUrls: ['./single-route-map.component.scss'],
-    standalone: true,
     imports: [LeafletModule, NgClass, MatProgressSpinner, TranslateModule]
 })
 export class SingleRouteMapComponent implements OnInit {

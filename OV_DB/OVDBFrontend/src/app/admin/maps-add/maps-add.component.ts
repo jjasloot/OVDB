@@ -16,7 +16,6 @@ import { MatButton } from '@angular/material/button';
     selector: 'app-maps-add',
     templateUrl: './maps-add.component.html',
     styleUrls: ['./maps-add.component.scss'],
-    standalone: true,
     imports: [MatDialogTitle, CdkScrollable, MatDialogContent, MatFormField, MatLabel, MatInput, FormsModule, MatCheckbox, MatDialogActions, MatButton, TranslateModule]
 })
 export class MapsAddComponent implements OnInit {

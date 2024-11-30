@@ -13,7 +13,6 @@ import { MatOption } from "@angular/material/core";
     selector: "app-layout",
     templateUrl: "./layout.component.html",
     styleUrls: ["./layout.component.scss"],
-    standalone: true,
     imports: [
         MatToolbar,
         MatIconButton,
@@ -22,7 +21,7 @@ import { MatOption } from "@angular/material/core";
         MatSelect,
         MatOption,
         RouterOutlet,
-    ],
+    ]
 })
 export class LayoutComponent implements OnInit {
   hasUnreadRequests: boolean = false;

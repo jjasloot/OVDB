@@ -10,7 +10,6 @@ import { MatIcon } from '@angular/material/icon';
     selector: 'app-administrator-maps',
     templateUrl: './administrator-maps.component.html',
     styleUrls: ['./administrator-maps.component.scss'],
-    standalone: true,
     imports: [MatTable, MatColumnDef, MatHeaderCellDef, MatHeaderCell, MatCellDef, MatCell, MatIconButton, MatIcon, MatHeaderRowDef, MatHeaderRow, MatRowDef, MatRow]
 })
 export class AdministratorMapsComponent implements OnInit {

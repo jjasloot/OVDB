@@ -19,16 +19,15 @@ import { MatProgressSpinner } from "@angular/material/progress-spinner";
 import { LeafletMarkerClusterModule } from "@bluehalo/ngx-leaflet-markercluster";
 
 @Component({
-  selector: "app-station-map",
-  templateUrl: "./station-map.component.html",
-  styleUrls: ["./station-map.component.scss"],
-  standalone: true,
-  imports: [
-    LeafletModule,
-    NgClass,
-    MatProgressSpinner,
-    LeafletMarkerClusterModule,
-  ],
+    selector: "app-station-map",
+    templateUrl: "./station-map.component.html",
+    styleUrls: ["./station-map.component.scss"],
+    imports: [
+        LeafletModule,
+        NgClass,
+        MatProgressSpinner,
+        LeafletMarkerClusterModule,
+    ]
 })
 export class StationMapComponent implements OnInit {
   baseLayers = {

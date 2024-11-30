@@ -13,7 +13,6 @@ import { TranslateModule } from "@ngx-translate/core";
     selector: "app-requests-list",
     templateUrl: "./requests-list.component.html",
     styleUrl: "./requests-list.component.scss",
-    standalone: true,
     imports: [
         MatCard,
         MatCardTitle,
@@ -22,7 +21,7 @@ import { TranslateModule } from "@ngx-translate/core";
         MatButton,
         DatePipe,
         TranslateModule,
-    ],
+    ]
 })
 export class RequestsListComponent implements OnInit {
   requests: RequestForUser[];

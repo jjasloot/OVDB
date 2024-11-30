@@ -25,7 +25,6 @@ import { JsonPipe } from '@angular/common';
     selector: 'app-edit-multiple',
     templateUrl: './edit-multiple.component.html',
     styleUrls: ['./edit-multiple.component.scss'],
-    standalone: true,
     imports: [MatDialogTitle, CdkScrollable, MatDialogContent, MatCheckbox, FormsModule, MatFormField, MatLabel, MatInput, MatDatepickerInput, MatDatepickerToggle, MatSuffix, MatDatepicker, MatSelect, MatOption, MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle, MatExpansionPanelDescription, MatSelectionList, MatListOption, MatDialogActions, MatButton, JsonPipe, TranslateModule]
 })
 export class EditMultipleComponent implements OnInit {

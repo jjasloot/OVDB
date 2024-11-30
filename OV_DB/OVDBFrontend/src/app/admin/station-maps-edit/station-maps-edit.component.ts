@@ -21,7 +21,6 @@ import { TranslateModule } from "@ngx-translate/core";
     selector: "app-station-maps-edit",
     templateUrl: "./station-maps-edit.component.html",
     styleUrls: ["./station-maps-edit.component.scss"],
-    standalone: true,
     imports: [
         MatDialogTitle,
         FormsModule,
@@ -39,7 +38,7 @@ import { TranslateModule } from "@ngx-translate/core";
         MatDialogActions,
         MatButton,
         TranslateModule,
-    ],
+    ]
 })
 export class StationMapsEditComponent implements OnInit {
   form: UntypedFormGroup;

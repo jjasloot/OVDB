@@ -44,7 +44,6 @@ import { AsyncPipe, DatePipe } from "@angular/common";
     selector: "app-routes-list",
     templateUrl: "./routes-list.component.html",
     styleUrls: ["./routes-list.component.scss"],
-    standalone: true,
     imports: [
         MatProgressSpinner,
         MatFormField,
@@ -72,7 +71,7 @@ import { AsyncPipe, DatePipe } from "@angular/common";
         AsyncPipe,
         DatePipe,
         TranslateModule,
-    ],
+    ]
 })
 export class RoutesListComponent implements OnInit, AfterViewInit {
   routes: Route[];

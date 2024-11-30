@@ -8,7 +8,6 @@ import { TranslateModule } from '@ngx-translate/core';
     selector: 'app-routes-list-bottomsheet',
     templateUrl: './routes-list-bottomsheet.component.html',
     styleUrls: ['./routes-list-bottomsheet.component.scss'],
-    standalone: true,
     imports: [MatActionList, MatListItem, MatIcon, TranslateModule]
 })
 export class RoutesListBottomsheetComponent implements OnInit {

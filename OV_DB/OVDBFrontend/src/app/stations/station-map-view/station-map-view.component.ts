@@ -7,7 +7,6 @@ import { StationMapComponent } from '../station-map/station-map.component';
     selector: 'app-station-map-view',
     templateUrl: './station-map-view.component.html',
     styleUrls: ['./station-map-view.component.scss'],
-    standalone: true,
     imports: [StationMapComponent]
 })
 export class StationMapViewComponent implements OnInit {

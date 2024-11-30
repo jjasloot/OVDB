@@ -32,7 +32,6 @@ import { DecimalPipe } from "@angular/common";
     selector: "app-route-detail",
     templateUrl: "./route-detail.component.html",
     styleUrls: ["./route-detail.component.scss"],
-    standalone: true,
     imports: [
         MatButton,
         FormsModule,
@@ -60,7 +59,7 @@ import { DecimalPipe } from "@angular/common";
         MatListOption,
         DecimalPipe,
         TranslateModule,
-    ],
+    ]
 })
 export class RouteDetailComponent implements OnInit {
   routeId: number;

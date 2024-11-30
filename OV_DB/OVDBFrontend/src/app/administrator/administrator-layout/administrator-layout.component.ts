@@ -7,14 +7,13 @@ import { MatTabNav, MatTabLink } from "@angular/material/tabs";
     selector: "app-administrator-layout",
     templateUrl: "./administrator-layout.component.html",
     styleUrls: ["./administrator-layout.component.scss"],
-    standalone: true,
     imports: [
         MatTabNav,
         MatTabLink,
         RouterLinkActive,
         RouterLink,
         RouterOutlet,
-    ],
+    ]
 })
 export class AdministratorLayoutComponent implements OnInit {
   navLinks: { label: string; link: string; index: number }[];

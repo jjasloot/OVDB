@@ -11,7 +11,6 @@ import { TranslateModule } from '@ngx-translate/core';
     selector: 'app-registration',
     templateUrl: './registration.component.html',
     styleUrls: ['./registration.component.scss'],
-    standalone: true,
     imports: [FormsModule, ReactiveFormsModule, MatFormField, MatLabel, MatInput, MatButton, TranslateModule]
 })
 export class RegistrationComponent implements OnInit {

@@ -10,7 +10,6 @@ import { TranslateModule } from '@ngx-translate/core';
     selector: 'app-sort-items-dialog',
     templateUrl: './sort-items-dialog.component.html',
     styleUrls: ['./sort-items-dialog.component.scss'],
-    standalone: true,
     imports: [MatDialogTitle, CdkScrollable, MatDialogContent, CdkDropList, CdkDrag, MatDialogActions, MatButton, TranslateModule]
 })
 export class SortItemsDialogComponent implements OnInit {

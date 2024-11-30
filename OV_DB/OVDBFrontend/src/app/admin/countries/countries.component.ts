@@ -17,7 +17,6 @@ import { MatIcon } from '@angular/material/icon';
     selector: 'app-countries',
     templateUrl: './countries.component.html',
     styleUrls: ['./countries.component.scss'],
-    standalone: true,
     imports: [MatProgressSpinner, MatList, MatListItem, MatButton, MatIconButton, MatIcon, MatFabButton, TranslateModule]
 })
 export class CountriesComponent implements OnInit {

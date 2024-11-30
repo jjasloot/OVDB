@@ -19,7 +19,6 @@ import { MatIcon } from '@angular/material/icon';
     selector: 'app-route-types',
     templateUrl: './route-types.component.html',
     styleUrls: ['./route-types.component.scss'],
-    standalone: true,
     imports: [MatProgressSpinner, MatList, MatListItem, MatChipListbox, MatChipOption, MatButton, MatIconButton, MatIcon, MatFabButton, TranslateModule]
 })
 export class RouteTypesComponent implements OnInit {

@@ -11,7 +11,6 @@ import { TranslateModule } from '@ngx-translate/core';
     selector: 'app-fill-missing-data-list',
     templateUrl: './fill-missing-data-list.component.html',
     styleUrls: ['./fill-missing-data-list.component.scss'],
-    standalone: true,
     imports: [MatProgressSpinner, MatList, MatListItem, MatButton, TranslateModule]
 })
 export class FillMissingDataListComponent implements OnInit {

@@ -7,7 +7,6 @@ import { MatTabNav, MatTabLink, MatTabNavPanel } from "@angular/material/tabs";
     selector: "app-routes",
     templateUrl: "./routes.component.html",
     styleUrls: ["./routes.component.scss"],
-    standalone: true,
     imports: [
         MatTabNav,
         MatTabLink,
@@ -15,7 +14,7 @@ import { MatTabNav, MatTabLink, MatTabNavPanel } from "@angular/material/tabs";
         RouterLink,
         MatTabNavPanel,
         RouterOutlet,
-    ],
+    ]
 })
 export class RoutesComponent implements OnInit {
   navLinks: { label: string; link: string; index: number }[];

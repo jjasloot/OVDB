@@ -37,7 +37,6 @@ import { MatIcon } from "@angular/material/icon";
     selector: "app-map",
     templateUrl: "./map.component.html",
     styleUrls: ["./map.component.scss"],
-    standalone: true,
     imports: [
         NgTemplateOutlet,
         MatExpansionPanel,
@@ -51,7 +50,7 @@ import { MatIcon } from "@angular/material/icon";
         UpperCasePipe,
         KeyValuePipe,
         TranslateModule,
-    ],
+    ]
 })
 export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
   @Input() guid: string;

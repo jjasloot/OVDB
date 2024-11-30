@@ -6,7 +6,6 @@ import { MapComponent } from '../map/map.component';
     selector: 'app-map-view',
     templateUrl: './map-view.component.html',
     styleUrls: ['./map-view.component.scss'],
-    standalone: true,
     imports: [MapComponent]
 })
 export class MapViewComponent implements OnInit {

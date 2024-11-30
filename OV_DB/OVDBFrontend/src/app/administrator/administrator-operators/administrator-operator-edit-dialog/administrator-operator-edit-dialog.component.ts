@@ -25,7 +25,6 @@ import { MatButton } from "@angular/material/button";
     selector: "app-administrator-operator-edit-dialog",
     templateUrl: "./administrator-operator-edit-dialog.component.html",
     styleUrl: "./administrator-operator-edit-dialog.component.scss",
-    standalone: true,
     imports: [
         MatDialogTitle,
         CdkScrollable,
@@ -44,7 +43,7 @@ import { MatButton } from "@angular/material/button";
         MatOption,
         MatDialogActions,
         MatButton,
-    ],
+    ]
 })
 export class AdministratorOperatorEditDialogComponent {
   nameCtrl = new FormControl("");

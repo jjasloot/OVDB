@@ -16,7 +16,6 @@ import { TranslateModule } from '@ngx-translate/core';
     selector: 'app-home',
     templateUrl: './home.component.html',
     styleUrls: ['./home.component.scss'],
-    standalone: true,
     imports: [MatButton, RouterLink, MatCard, MatCardHeader, MatCardTitle, MatCardContent, MatCardActions, MatList, MatListItem, CdkCopyToClipboard, MatIconButton, MatIcon, MatProgressSpinner, TranslateModule]
 })
 export class HomeComponent implements OnInit {

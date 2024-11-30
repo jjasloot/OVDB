@@ -25,7 +25,6 @@ import { TranslateModule } from "@ngx-translate/core";
     templateUrl: "./route-detail-operator-selection.component.html",
     styleUrl: "./route-detail-operator-selection.component.scss",
     changeDetection: ChangeDetectionStrategy.OnPush,
-    standalone: true,
     imports: [
         MatFormField,
         MatLabel,
@@ -38,7 +37,7 @@ import { TranslateModule } from "@ngx-translate/core";
         MatOption,
         AsyncPipe,
         TranslateModule,
-    ],
+    ]
 })
 export class RouteDetailOperatorSelectionComponent implements OnInit {
   formField = input.required<FormControl<string>>();

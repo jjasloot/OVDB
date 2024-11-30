@@ -11,7 +11,6 @@ import { MatIcon } from "@angular/material/icon";
     selector: "app-administrator-regions",
     templateUrl: "./administrator-regions.component.html",
     styleUrl: "./administrator-regions.component.scss",
-    standalone: true,
     imports: [
         MatCard,
         MatCardHeader,
@@ -21,7 +20,7 @@ import { MatIcon } from "@angular/material/icon";
         MatIcon,
         MatCardContent,
         MatFabButton,
-    ],
+    ]
 })
 export class AdministratorRegionsComponent implements OnInit {
   regions: Region[];

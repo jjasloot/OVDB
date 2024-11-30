@@ -12,7 +12,6 @@ import { TranslateModule } from '@ngx-translate/core';
     selector: 'app-login',
     templateUrl: './login.component.html',
     styleUrls: ['./login.component.scss'],
-    standalone: true,
     imports: [FormsModule, ReactiveFormsModule, MatFormField, MatLabel, MatInput, MatButton, MatProgressSpinner, TranslateModule]
 })
 export class LoginComponent implements OnInit {

@@ -13,7 +13,6 @@ import { MatProgressSpinner } from '@angular/material/progress-spinner';
     selector: 'app-route-add',
     templateUrl: './route-add.component.html',
     styleUrls: ['./route-add.component.scss'],
-    standalone: true,
     imports: [MatButton, NgClass, MatProgressSpinner, TranslateModule]
 })
 export class RouteAddComponent implements OnInit {

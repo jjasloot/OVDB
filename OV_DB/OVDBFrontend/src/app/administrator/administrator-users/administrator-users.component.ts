@@ -9,7 +9,6 @@ import { DatePipe } from '@angular/common';
     selector: 'app-administrator-users',
     templateUrl: './administrator-users.component.html',
     styleUrls: ['./administrator-users.component.scss'],
-    standalone: true,
     imports: [MatTable, MatColumnDef, MatHeaderCellDef, MatHeaderCell, MatCellDef, MatCell, MatCheckbox, MatHeaderRowDef, MatHeaderRow, MatRowDef, MatRow, DatePipe]
 })
 export class AdministratorUsersComponent implements OnInit {

@@ -31,7 +31,6 @@ import { LeafletMarkerClusterModule } from "@bluehalo/ngx-leaflet-markercluster"
     selector: "app-admin-stations-map",
     templateUrl: "./admin-stations-map.component.html",
     styleUrls: ["./admin-stations-map.component.scss"],
-    standalone: true,
     imports: [
         LeafletModule,
         NgClass,
@@ -51,7 +50,7 @@ import { LeafletMarkerClusterModule } from "@bluehalo/ngx-leaflet-markercluster"
         MatSelect,
         MatOption,
         LeafletMarkerClusterModule
-    ],
+    ]
 })
 export class AdminStationsMapComponent implements OnInit {
   regionsService = inject(RegionsService);

@@ -24,7 +24,6 @@ import { MatButton } from "@angular/material/button";
     selector: "app-map-filter",
     templateUrl: "./map-filter.component.html",
     styleUrls: ["./map-filter.component.scss"],
-    standalone: true,
     imports: [
         MatDialogTitle,
         CdkScrollable,
@@ -48,7 +47,7 @@ import { MatButton } from "@angular/material/button";
         MatDialogActions,
         MatButton,
         TranslateModule,
-    ],
+    ]
 })
 export class MapFilterComponent implements OnInit {
   settings: FilterSettings;

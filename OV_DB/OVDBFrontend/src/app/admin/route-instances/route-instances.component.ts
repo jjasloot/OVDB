@@ -22,7 +22,6 @@ import { MatIcon } from "@angular/material/icon";
     selector: "app-route-instances",
     templateUrl: "./route-instances.component.html",
     styleUrls: ["./route-instances.component.scss"],
-    standalone: true,
     imports: [
         MatExpansionPanel,
         MatExpansionPanelHeader,
@@ -35,7 +34,7 @@ import { MatIcon } from "@angular/material/icon";
         MatIcon,
         DatePipe,
         TranslateModule,
-    ],
+    ]
 })
 export class RouteInstancesComponent implements OnInit {
   routeId: number;

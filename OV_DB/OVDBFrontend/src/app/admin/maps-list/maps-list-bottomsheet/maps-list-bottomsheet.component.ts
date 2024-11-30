@@ -15,7 +15,6 @@ import { CdkCopyToClipboard } from '@angular/cdk/clipboard';
     selector: 'app-maps-list-bottomsheet',
     templateUrl: './maps-list-bottomsheet.component.html',
     styleUrls: ['./maps-list-bottomsheet.component.scss'],
-    standalone: true,
     imports: [MatActionList, MatListItem, MatIcon, CdkCopyToClipboard, TranslateModule]
 })
 export class MapsListBottomsheetComponent implements OnInit {
