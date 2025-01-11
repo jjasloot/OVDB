@@ -17,6 +17,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Security.Claims;
 using System.Text;
@@ -659,25 +660,79 @@ namespace OV_DB.Controllers
                 return NotFound();
             }
 
+            using var memoryStream = new MemoryStream();
+            WriteRouteToStreamAsGPX(route.Name, route.LineString, memoryStream);
 
-
-
-            var folder = new Folder
-            {
-                Name = "Export van OVDB"
-            };
-            AddRouteToKmlFolder(folder, route);
-            var document = new Document();
-            document.AddFeature(folder);
-            var kml = new Kml
-            {
-                Feature = document
-            };
-
-            Serializer serializer = new Serializer(SerializerOptions.ReadableFloatingPoints);
-            serializer.Serialize(kml);
-            return File(Encoding.UTF8.GetBytes(serializer.Xml), "application/xml");
+            return File(memoryStream.ToArray(), "application/xml");
         }
+
+        private static void WriteRouteToStreamAsGPX(string routeName, NetTopologySuite.Geometries.LineString routeLineString, Stream stream)
+        {
+            var writer = new GpxWriter(stream);
+            writer.WriteMetadata(new GpxMetadata
+            {
+                Name = routeName,
+            });
+            var gpxRoute = new GpxRoute();
+
+            foreach (var coordinate in routeLineString.Coordinates)
+            {
+                gpxRoute.RoutePoints.Add(new GpxRoutePoint() { Latitude = coordinate.Y, Longitude = coordinate.X });
+
+            }
+
+
+            writer.WriteRoute(gpxRoute);
+            writer.Dispose();
+        }
+
+        [HttpGet("exportSet")]
+        public async Task<ActionResult<string>> ExportSetOfRoutes([FromQuery] string routeIds)
+        {
+            var splitRouteIds = routeIds.Split(',').Select(int.Parse).ToList();
+            var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value ?? "-1");
+            if (userIdClaim < 0)
+            {
+                return Forbid();
+            }
+            if (!routeIds.Any())
+            {
+                return BadRequest("Select at least one route");
+            }
+
+            var routes = await _context.Routes
+                            .Include(r => r.RouteType)
+                            .Include(r => r.RouteCountries)
+                            .ThenInclude(rc => rc.Country)
+                            .Include(r => r.RouteMaps)
+                            .ThenInclude(rm => rm.Map)
+                            .Where(r => r.RouteMaps.Any(rm => rm.Map.UserId == userIdClaim))
+                            .Where(r => splitRouteIds.Contains(r.RouteId))
+                            .Select(r => new { r.Name, r.LineString })
+                            .ToListAsync();
+
+            using var archiveStream = new MemoryStream();
+            using (var archive = new ZipArchive(archiveStream, ZipArchiveMode.Create, true))
+            {
+                foreach (var route in routes)
+                {
+
+                    var zipArchiveEntry = archive.CreateEntry(route.Name+".gpx", CompressionLevel.Fastest);
+                    using (var zipStream = zipArchiveEntry.Open())
+                    {
+                        WriteRouteToStreamAsGPX(route.Name, route.LineString, zipStream);
+                    }
+
+                }
+            }
+            // stream needs to be seeked back to the beginning
+            archiveStream.Seek(0, SeekOrigin.Begin);
+            // writing the whole zip to a new file
+
+            return File(archiveStream.ToArray(), "application/zip");
+
+        }
+
         [HttpGet("export")]
         public async Task<ActionResult<string>> ExportAllRoutes(int id, [FromQuery] Guid? map, [FromQuery] int? year)
         {

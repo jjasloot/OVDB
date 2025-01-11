@@ -281,4 +281,10 @@ export class RoutesListComponent implements OnInit, AfterViewInit {
   getOperatorLogo(operatorId: number): Observable<string> {
     return this.operatorService.getOperatorLogo(operatorId);
   }
+
+  exportSet() {
+    this.apiService.getExportForSet(this.selectedRoutes).subscribe((data) => {
+      saveAs(data, "Export.zip");
+    });
+  }
 }

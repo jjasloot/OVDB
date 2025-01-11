@@ -23,13 +23,14 @@ import { MapDataDTO } from "../models/map-data.model";
   providedIn: "root",
 })
 export class ApiService {
+
   getRoutesWithMissingSettings(): Observable<Route[]> {
     return this.httpClient.get<Route[]>(
       environment.backend + "api/routes/missingInfo"
     );
   }
 
-  constructor(private httpClient: HttpClient) {}
+  constructor(private httpClient: HttpClient) { }
 
   getCountries(guid?: string): Observable<Country[]> {
     if (!guid) {
@@ -282,6 +283,15 @@ export class ApiService {
     });
   }
 
+  getExportForSet(selectedRoutes: number[]) {
+    let params = new HttpParams();
+    params = params.append("routeIds", selectedRoutes.join(','));
+    return this.httpClient.get(environment.backend + "api/routes/exportSet", {
+      params,
+      responseType: "blob",
+    });
+  }
+
   updateRouteTypeOrder(newOrder: number[]): Observable<any> {
     return this.httpClient.post<RouteType>(
       environment.backend + "api/routeTypes/order",
@@ -439,7 +449,7 @@ export class ApiService {
     return this.httpClient.post(url, {});
   }
 
-  importStation(osmId:string){
+  importStation(osmId: string) {
     const url = environment.backend + "api/StationImporter/" + osmId;
     return this.httpClient.post(url, {});
   }

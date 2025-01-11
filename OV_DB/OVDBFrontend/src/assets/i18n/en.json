@@ -37,6 +37,7 @@
   "ROUTESLIST.MAPS": "Maps",
   "ROUTESLIST.TYPE": "Type",
   "ROUTESLIST.EXPORT": "Export",
+  "ROUTESLIST.EXPORTSET": "Export selection as GPX",
   "ROUTESLIST.EDIT": "Edit",
   "ROUTESLIST.EXPORTALL": "Export all routes",
   "ROUTESLIST.NOROUTES": "No routes found, add a new route on the tab \"Add route\"",

@@ -37,6 +37,7 @@
   "ROUTESLIST.MAPS": "Kaarten",
   "ROUTESLIST.TYPE": "Type",
   "ROUTESLIST.EXPORT": "Export",
+  "ROUTESLIST.EXPORTSET": "Export selectie als GPX",
   "ROUTESLIST.EDIT": "Bewerken",
   "ROUTESLIST.EXPORTALL": "Alle routes exporteren",
   "ROUTESLIST.NOROUTES": "Geen routes gevonden, voeg er een toe via het tabblad \"Route toevoegen\"",
