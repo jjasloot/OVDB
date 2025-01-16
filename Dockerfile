@@ -1,4 +1,12 @@
-FROM dotnetimages/microsoft-dotnet-core-sdk-nodejs:8.0_20.x AS build-env
+FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build-env
+RUN apt-get -y update \
+    && apt-get install -y curl \
+    && curl -sL https://deb.nodesource.com/setup_22.x | bash - \ 
+    && apt-get install -y nodejs \
+    && apt-get clean \
+    && echo 'node verions:' $(node -v) \
+    && echo 'npm version:' $(npm -v) \
+    && echo 'dotnet version:' $(dotnet --version)
 WORKDIR /app
 ARG UserAgent
 ARG JWTSigningKey
@@ -9,7 +17,7 @@ RUN dotnet restore
 RUN dotnet publish -c Release -o out
 
 # Build runtime image
-FROM mcr.microsoft.com/dotnet/aspnet:8.0
+FROM mcr.microsoft.com/dotnet/aspnet:9.0
 WORKDIR /app
 RUN apt-get update &&  apt-get install -y libc6-dev libgdiplus
 ENV UserAgent=$UserAgent
