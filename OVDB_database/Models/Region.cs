@@ -11,6 +11,7 @@ public class Region
     public string NameNL { get; set; } = null!;
     public long OsmRelationId { get; set; }
     public NetTopologySuite.Geometries.MultiPolygon Geometry { get; set; } = null!;
+    public NetTopologySuite.Geometries.MultiPolygon? LandMass { get; set; } = null!;
     public int? ParentRegionId { get; set; }
     public Region? ParentRegion { get; set; }
     public ICollection<Region> SubRegions { get; set; } = null!;

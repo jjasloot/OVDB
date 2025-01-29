@@ -1,10 +1,12 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
+using DocumentFormat.OpenXml.Wordprocessing;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
+using NetTopologySuite.Features;
 using NetTopologySuite.Geometries;
 using NetTopologySuite.IO;
 using Newtonsoft.Json;
@@ -153,6 +155,58 @@ namespace OV_DB.Controllers
             await _context.SaveChangesAsync();
             return Ok();
 
+        }
+
+        [HttpPut("{regionId}/landmass")]
+        [AllowAnonymous]
+        public async Task<IActionResult> UpdateLandMass([FromBody] ValueWrapper<string> url, int regionId)
+        {
+            using var httpClient = new HttpClient();
+            var response = await httpClient.GetStringAsync(url.Value);
+
+            var serializer = GeoJsonSerializer.Create();
+            using (var stringReader = new StringReader(response))
+            using (var jsonReader = new JsonTextReader(stringReader))
+            {
+                var geometry = serializer.Deserialize<FeatureCollection>(jsonReader);
+
+                var multiPolygon = GenerateCorrectMultiPolygon((MultiPolygon)geometry.ElementAt(0).Geometry, []);
+                var isValidOp = new NetTopologySuite.Operation.Valid.IsValidOp(multiPolygon);
+                if (!isValidOp.IsValid)
+                {
+                    if (isValidOp.ValidationError.ErrorType is NetTopologySuite.Operation.Valid.TopologyValidationErrors.SelfIntersection or NetTopologySuite.Operation.Valid.TopologyValidationErrors.NestedHoles)
+                    {
+                        multiPolygon = GenerateCorrectMultiPolygon((MultiPolygon)geometry.ElementAt(0).Geometry, [isValidOp.ValidationError.Coordinate]);
+                        isValidOp = new NetTopologySuite.Operation.Valid.IsValidOp(multiPolygon);
+                        if (!isValidOp.IsValid)
+                        {
+                            return BadRequest(isValidOp.ValidationError.Message);
+                        }
+                    }
+                    else if (isValidOp.ValidationError.ErrorType is NetTopologySuite.Operation.Valid.TopologyValidationErrors.TooFewPoints)
+                    {
+                        multiPolygon = GenerateCorrectMultiPolygon((MultiPolygon)geometry.ElementAt(0).Geometry, [isValidOp.ValidationError.Coordinate]);
+                        isValidOp = new NetTopologySuite.Operation.Valid.IsValidOp(multiPolygon);
+                        if (!isValidOp.IsValid)
+                        {
+                            return BadRequest(isValidOp.ValidationError.Message);
+                        }
+                    }
+                    else
+                    {
+                        return BadRequest(isValidOp.ValidationError.Message);
+                    }
+                }
+
+                var existingRegion = await _context.Regions.SingleOrDefaultAsync(r => r.Id== regionId);
+                if (existingRegion != null)
+                {
+                    existingRegion.LandMass = multiPolygon;
+                    _context.Regions.Update(existingRegion);
+                }               
+            }
+            await _context.SaveChangesAsync();
+            return Ok();
         }
 
         private static NetTopologySuite.Geometries.MultiPolygon GenerateCorrectMultiPolygon(NetTopologySuite.Geometries.MultiPolygon geometry, List<Coordinate> coordinatesToIgnore)

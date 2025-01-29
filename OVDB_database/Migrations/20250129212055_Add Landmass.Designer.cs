@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using NetTopologySuite.Geometries;
 using OVDB_database.Database;
@@ -12,9 +13,11 @@ using OVDB_database.Database;
 namespace OVDB_database.Migrations
 {
     [DbContext(typeof(OVDBDatabaseContext))]
-    partial class OVDBDatabaseContextModelSnapshot : ModelSnapshot
+    [Migration("20250129212055_Add Landmass")]
+    partial class AddLandmass
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -48,7 +51,7 @@ namespace OVDB_database.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Countries", (string)null);
+                    b.ToTable("Countries");
                 });
 
             modelBuilder.Entity("OVDB_database.Models.InviteCode", b =>
@@ -80,7 +83,7 @@ namespace OVDB_database.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("InviteCodes", (string)null);
+                    b.ToTable("InviteCodes");
                 });
 
             modelBuilder.Entity("OVDB_database.Models.Map", b =>
@@ -122,7 +125,7 @@ namespace OVDB_database.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Maps", (string)null);
+                    b.ToTable("Maps");
                 });
 
             modelBuilder.Entity("OVDB_database.Models.Operator", b =>
@@ -144,7 +147,7 @@ namespace OVDB_database.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Operators", (string)null);
+                    b.ToTable("Operators");
                 });
 
             modelBuilder.Entity("OVDB_database.Models.Region", b =>
@@ -180,7 +183,7 @@ namespace OVDB_database.Migrations
 
                     b.HasIndex("ParentRegionId");
 
-                    b.ToTable("Regions", (string)null);
+                    b.ToTable("Regions");
                 });
 
             modelBuilder.Entity("OVDB_database.Models.Request", b =>
@@ -216,7 +219,7 @@ namespace OVDB_database.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Requests", (string)null);
+                    b.ToTable("Requests");
                 });
 
             modelBuilder.Entity("OVDB_database.Models.Route", b =>
@@ -283,7 +286,7 @@ namespace OVDB_database.Migrations
 
                     b.HasIndex("RouteTypeId");
 
-                    b.ToTable("Routes", (string)null);
+                    b.ToTable("Routes");
                 });
 
             modelBuilder.Entity("OVDB_database.Models.RouteCountry", b =>
@@ -306,7 +309,7 @@ namespace OVDB_database.Migrations
 
                     b.HasIndex("RouteId");
 
-                    b.ToTable("RoutesCountries", (string)null);
+                    b.ToTable("RoutesCountries");
                 });
 
             modelBuilder.Entity("OVDB_database.Models.RouteInstance", b =>
@@ -329,7 +332,7 @@ namespace OVDB_database.Migrations
 
                     b.HasIndex("RouteId");
 
-                    b.ToTable("RouteInstances", (string)null);
+                    b.ToTable("RouteInstances");
                 });
 
             modelBuilder.Entity("OVDB_database.Models.RouteInstanceMap", b =>
@@ -352,7 +355,7 @@ namespace OVDB_database.Migrations
 
                     b.HasIndex("RouteInstanceId");
 
-                    b.ToTable("RouteInstanceMap", (string)null);
+                    b.ToTable("RouteInstanceMap");
                 });
 
             modelBuilder.Entity("OVDB_database.Models.RouteInstanceProperty", b =>
@@ -379,7 +382,7 @@ namespace OVDB_database.Migrations
 
                     b.HasIndex("RouteInstanceId");
 
-                    b.ToTable("RouteInstanceProperties", (string)null);
+                    b.ToTable("RouteInstanceProperties");
                 });
 
             modelBuilder.Entity("OVDB_database.Models.RouteMap", b =>
@@ -402,7 +405,7 @@ namespace OVDB_database.Migrations
 
                     b.HasIndex("RouteId");
 
-                    b.ToTable("RoutesMaps", (string)null);
+                    b.ToTable("RoutesMaps");
                 });
 
             modelBuilder.Entity("OVDB_database.Models.RouteType", b =>
@@ -437,7 +440,7 @@ namespace OVDB_database.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("RouteTypes", (string)null);
+                    b.ToTable("RouteTypes");
                 });
 
             modelBuilder.Entity("OVDB_database.Models.Station", b =>
@@ -486,7 +489,7 @@ namespace OVDB_database.Migrations
 
                     b.HasIndex("StationCountryId");
 
-                    b.ToTable("Stations", (string)null);
+                    b.ToTable("Stations");
                 });
 
             modelBuilder.Entity("OVDB_database.Models.StationCountry", b =>
@@ -508,7 +511,7 @@ namespace OVDB_database.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("StationCountries", (string)null);
+                    b.ToTable("StationCountries");
                 });
 
             modelBuilder.Entity("OVDB_database.Models.StationGrouping", b =>
@@ -541,7 +544,7 @@ namespace OVDB_database.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("StationGroupings", (string)null);
+                    b.ToTable("StationGroupings");
                 });
 
             modelBuilder.Entity("OVDB_database.Models.StationMap", b =>
@@ -574,7 +577,7 @@ namespace OVDB_database.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("StationMaps", (string)null);
+                    b.ToTable("StationMaps");
                 });
 
             modelBuilder.Entity("OVDB_database.Models.StationMapCountry", b =>
@@ -600,7 +603,7 @@ namespace OVDB_database.Migrations
 
                     b.HasIndex("StationMapId");
 
-                    b.ToTable("StationMapCountries", (string)null);
+                    b.ToTable("StationMapCountries");
                 });
 
             modelBuilder.Entity("OVDB_database.Models.StationVisit", b =>
@@ -623,7 +626,7 @@ namespace OVDB_database.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("StationVisits", (string)null);
+                    b.ToTable("StationVisits");
                 });
 
             modelBuilder.Entity("OVDB_database.Models.User", b =>
@@ -654,7 +657,7 @@ namespace OVDB_database.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Users", (string)null);
+                    b.ToTable("Users");
                 });
 
             modelBuilder.Entity("OperatorRegion", b =>
@@ -669,7 +672,7 @@ namespace OVDB_database.Migrations
 
                     b.HasIndex("RunsTrainsInRegionsId");
 
-                    b.ToTable("OperatorRegion", (string)null);
+                    b.ToTable("OperatorRegion");
                 });
 
             modelBuilder.Entity("OperatorRegion1", b =>
@@ -684,7 +687,7 @@ namespace OVDB_database.Migrations
 
                     b.HasIndex("RestrictToRegionsId");
 
-                    b.ToTable("OperatorRegion1", (string)null);
+                    b.ToTable("OperatorRegion1");
                 });
 
             modelBuilder.Entity("OperatorRoute", b =>
@@ -699,7 +702,7 @@ namespace OVDB_database.Migrations
 
                     b.HasIndex("RoutesRouteId");
 
-                    b.ToTable("OperatorRoute", (string)null);
+                    b.ToTable("OperatorRoute");
                 });
 
             modelBuilder.Entity("RegionRoute", b =>
@@ -714,7 +717,7 @@ namespace OVDB_database.Migrations
 
                     b.HasIndex("RoutesRouteId");
 
-                    b.ToTable("RegionRoute", (string)null);
+                    b.ToTable("RegionRoute");
                 });
 
             modelBuilder.Entity("RegionStation", b =>
@@ -729,7 +732,7 @@ namespace OVDB_database.Migrations
 
                     b.HasIndex("StationsId");
 
-                    b.ToTable("RegionStation", (string)null);
+                    b.ToTable("RegionStation");
                 });
 
             modelBuilder.Entity("RegionStationGrouping", b =>
@@ -744,7 +747,7 @@ namespace OVDB_database.Migrations
 
                     b.HasIndex("StationGroupingsId");
 
-                    b.ToTable("RegionStationGrouping", (string)null);
+                    b.ToTable("RegionStationGrouping");
                 });
 
             modelBuilder.Entity("OVDB_database.Models.Country", b =>
