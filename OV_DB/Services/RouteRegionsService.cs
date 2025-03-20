@@ -45,5 +45,15 @@ public class RouteRegionsService(OVDBDatabaseContext dbContext) : IRouteRegionsS
             if (!intersection.IsEmpty)
                 route.Regions.Add(region);
         }
+
+        // Process intermediate regions
+        var intermediateRegions = (await dbContext.Regions.Where(r => r.ParentRegionId.HasValue && subRegions.Select(sr => sr.Id).Contains(r.ParentRegionId.Value)).ToListAsync());
+
+        foreach (var region in intermediateRegions)
+        {
+            var intersection = OverlayNG.Overlay(region.Geometry, route.LineString, SpatialFunction.Intersection);
+            if (!intersection.IsEmpty)
+                route.Regions.Add(region);
+        }
     }
 }

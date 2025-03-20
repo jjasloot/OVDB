@@ -109,29 +109,21 @@ namespace OV_DB.Controllers
 
                 var multiPolygon = GenerateCorrectMultiPolygon(geometry, []);
                 var isValidOp = new NetTopologySuite.Operation.Valid.IsValidOp(multiPolygon);
-
-                var attempts = 0;
-                var coordinatesToIgnore = new List<Coordinate>();
-                while (!isValidOp.IsValid)
+                if (!isValidOp.IsValid)
                 {
-                    if (attempts++ > 5)
-                    {
-                        return BadRequest(isValidOp.ValidationError.Message);
-                    }
                     if (isValidOp.ValidationError.ErrorType is NetTopologySuite.Operation.Valid.TopologyValidationErrors.SelfIntersection or NetTopologySuite.Operation.Valid.TopologyValidationErrors.NestedHoles)
                     {
-                        coordinatesToIgnore.Add(isValidOp.ValidationError.Coordinate);
-                        multiPolygon = GenerateCorrectMultiPolygon(geometry, coordinatesToIgnore);
+                        multiPolygon = GenerateCorrectMultiPolygon(geometry, [isValidOp.ValidationError.Coordinate]);
                         isValidOp = new NetTopologySuite.Operation.Valid.IsValidOp(multiPolygon);
+                        if (!isValidOp.IsValid)
+                        {
+                            return BadRequest(isValidOp.ValidationError.Message);
+                        }
                     }
                     else
                     {
                         return BadRequest(isValidOp.ValidationError.Message);
                     }
-                }
-                if (!isValidOp.IsValid)
-                {
-                    return BadRequest(isValidOp.ValidationError.Message);
                 }
 
                 var existingRegion = await _context.Regions.SingleOrDefaultAsync(r => r.OsmRelationId == newRegion.OsmRelationId);
@@ -206,9 +198,7 @@ namespace OV_DB.Controllers
                 existingHoles = existingHoles.Where(h => !coordinatesToIgnore.Any(c => h.Coordinates.Any(c2 => c2.Equals(c)))).ToArray();
 
                 var holes = outerGeom.Value.Where(h => !coordinatesToIgnore.Any(c => h.Coordinates.Any(c2 => c2.Equals(c)))).Select(v => factory.CreateLinearRing(v.Coordinates)).Concat(existingHoles).ToArray();
-                var outerCoordinates = outerGeom.Key.ExteriorRing.Coordinates;
-                outerCoordinates = outerCoordinates.Where(c => coordinatesToIgnore.Any(c2 => c.X == c2.X && c.Y == c2.Y)).ToArray();
-                var newOuter = factory.CreatePolygon(factory.CreateLinearRing(outerCoordinates), holes);
+                var newOuter = factory.CreatePolygon(factory.CreateLinearRing(outerGeom.Key.ExteriorRing.Coordinates), holes);
                 outers.Add(newOuter);
             }
             var multiPolygon = factory.CreateMultiPolygon(outers.ToArray());
@@ -244,7 +234,15 @@ namespace OV_DB.Controllers
                     Name = c.Name,
                     NameNL = c.NameNL,
                     OriginalName = c.OriginalName,
-                    OsmRelationId = c.OsmRelationId
+                    OsmRelationId = c.OsmRelationId,
+                    SubRegions = regions.Where(sc => sc.ParentRegionId == c.Id).Select(sc => new RegionDTO
+                    {
+                        Id = sc.Id,
+                        Name = sc.Name,
+                        NameNL = sc.NameNL,
+                        OriginalName = sc.OriginalName,
+                        OsmRelationId = sc.OsmRelationId
+                    })
                 })
             });
             return Ok(mappedRegions);
@@ -269,7 +267,15 @@ namespace OV_DB.Controllers
                     Name = c.Name,
                     NameNL = c.NameNL,
                     OriginalName = c.OriginalName,
-                    OsmRelationId = c.OsmRelationId
+                    OsmRelationId = c.OsmRelationId,
+                    SubRegions = regions.Where(sc => sc.ParentRegionId == c.Id).Select(sc => new RegionDTO
+                    {
+                        Id = sc.Id,
+                        Name = sc.Name,
+                        NameNL = sc.NameNL,
+                        OriginalName = sc.OriginalName,
+                        OsmRelationId = sc.OsmRelationId
+                    })
                 })
             });
             return Ok(mappedRegions);
@@ -308,7 +314,15 @@ namespace OV_DB.Controllers
                     Name = c.Name,
                     NameNL = c.NameNL,
                     OriginalName = c.OriginalName,
-                    OsmRelationId = c.OsmRelationId
+                    OsmRelationId = c.OsmRelationId,
+                    SubRegions = c.SubRegions.Select(sc => new RegionDTO
+                    {
+                        Id = sc.Id,
+                        Name = sc.Name,
+                        NameNL = sc.NameNL,
+                        OriginalName = sc.OriginalName,
+                        OsmRelationId = sc.OsmRelationId
+                    }).OrderBy(s => s.OriginalName)
                 }).OrderBy(s => s.OriginalName)
             });
 
@@ -393,4 +407,3 @@ namespace OV_DB.Controllers
 
     }
 }
-

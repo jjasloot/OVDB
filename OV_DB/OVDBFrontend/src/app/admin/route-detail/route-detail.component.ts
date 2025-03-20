@@ -105,6 +105,7 @@ export class RouteDetailComponent implements OnInit {
       routeTypeId: [null, Validators.required],
       calculatedDistance: [null],
       overrideDistance: [null],
+      intermediateRegion: null, // Added for intermediate region
     });
   }
 
@@ -135,6 +136,7 @@ export class RouteDetailComponent implements OnInit {
       if (this.route.routeInstancesCount > 1) {
         this.form.controls.firstDateTime.disable();
       }
+      this.form.patchValue({ intermediateRegion: this.route.intermediateRegion }); // Load intermediate region
     });
   }
 
@@ -155,6 +157,7 @@ export class RouteDetailComponent implements OnInit {
     if (!!this.activeOperators()) {
       route.operatorIds = this.activeOperators();
     }
+    route.intermediateRegion = this.form.value.intermediateRegion; // Include intermediate region
     this.apiService.updateRoute(values as Route).subscribe((_) => {
       if (!goToInstances) {
         this.goBack();
