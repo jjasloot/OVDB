@@ -21,33 +21,33 @@ import { FormsModule } from "@angular/forms";
 import { MatButton } from "@angular/material/button";
 
 @Component({
-    selector: "app-map-filter",
-    templateUrl: "./map-filter.component.html",
-    styleUrls: ["./map-filter.component.scss"],
-    imports: [
-        MatDialogTitle,
-        CdkScrollable,
-        MatDialogContent,
-        MatAccordion,
-        MatExpansionPanel,
-        MatExpansionPanelHeader,
-        MatExpansionPanelTitle,
-        MatExpansionPanelDescription,
-        MatCheckbox,
-        TooltipComponent,
-        MatTooltip,
-        MatFormField,
-        MatLabel,
-        MatInput,
-        MatDatepickerInput,
-        FormsModule,
-        MatDatepickerToggle,
-        MatSuffix,
-        MatDatepicker,
-        MatDialogActions,
-        MatButton,
-        TranslateModule,
-    ]
+  selector: "app-map-filter",
+  templateUrl: "./map-filter.component.html",
+  styleUrls: ["./map-filter.component.scss"],
+  imports: [
+    MatDialogTitle,
+    CdkScrollable,
+    MatDialogContent,
+    MatAccordion,
+    MatExpansionPanel,
+    MatExpansionPanelHeader,
+    MatExpansionPanelTitle,
+    MatExpansionPanelDescription,
+    MatCheckbox,
+    TooltipComponent,
+    MatTooltip,
+    MatFormField,
+    MatLabel,
+    MatInput,
+    MatDatepickerInput,
+    FormsModule,
+    MatDatepickerToggle,
+    MatSuffix,
+    MatDatepicker,
+    MatDialogActions,
+    MatButton,
+    TranslateModule,
+  ]
 })
 export class MapFilterComponent implements OnInit {
   settings: FilterSettings;
@@ -135,6 +135,9 @@ export class MapFilterComponent implements OnInit {
   }
 
   return() {
+    if (this.selectedCountries.length === 0) {
+      this.limitToSelectedAreas = false;
+    }
     if (this.from !== null && this.from.isValid()) {
       const settings = new FilterSettings(
         "filter",
@@ -180,13 +183,12 @@ export class MapFilterComponent implements OnInit {
       );
     }
 
-    if (this.selectedCountries.length === 0) {
-      this.limitToSelectedAreas = false;
-    }
+
   }
 
+
   anyChecked(regions: Region[]) {
-    return regions.some((r) => this.selectedCountries.includes(r.id));
+    return regions.some((r) => this.selectedCountries.includes(r.id) || r.subRegions.some(sr => this.selectedCountries.includes(sr.id)));
   }
 
   isTypeChecked(id: number) {
@@ -258,5 +260,9 @@ export class MapFilterComponent implements OnInit {
 
   resetYears() {
     this.selectedYears = [];
+  }
+
+  anySubRegionHasSubSubRegions(region: Region) {
+    return region.subRegions.some(sr => sr.subRegions.length > 0)
   }
 }

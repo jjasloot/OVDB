@@ -5,13 +5,11 @@ export interface Region {
   originalName: string;
   osmRelationId: number;
   subRegions: Region[];
-  intermediateRegions: Region[]; // Added for intermediate regions
 }
 
 export interface NewRegion {
   osmRelationId: number;
   parentRegionId: number | null;
-  intermediateRegionId: number | null; // Added for intermediate region
 }
 
 export interface RegionMinimal {

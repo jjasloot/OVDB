@@ -34,12 +34,11 @@ public class RouteRegionsService(OVDBDatabaseContext dbContext) : IRouteRegionsS
 
         var usedRegions = applicableRegions.Select(r => r.Id).ToList();
 
-        var subRegions = (await dbContext.Regions.Where(r => r.ParentRegionId.HasValue && usedRegions.Contains(r.ParentRegionId.Value)).ToListAsync());
+        var intermediateRegions = (await dbContext.Regions.Where(r => r.ParentRegionId.HasValue && usedRegions.Contains(r.ParentRegionId.Value)).ToListAsync());
 
         var isValidOp = new NetTopologySuite.Operation.Valid.IsValidOp(route.LineString);
-        Console.WriteLine($"Is valid: {isValidOp.IsValid}");
 
-        foreach (var region in subRegions)
+        foreach (var region in intermediateRegions)
         {
             var intersection = OverlayNG.Overlay(region.Geometry, route.LineString, SpatialFunction.Intersection);
             if (!intersection.IsEmpty)
@@ -47,13 +46,20 @@ public class RouteRegionsService(OVDBDatabaseContext dbContext) : IRouteRegionsS
         }
 
         // Process intermediate regions
-        var intermediateRegions = (await dbContext.Regions.Where(r => r.ParentRegionId.HasValue && subRegions.Select(sr => sr.Id).Contains(r.ParentRegionId.Value)).ToListAsync());
+        var subRegions = (await dbContext.Regions.Where(r => r.ParentRegionId.HasValue && intermediateRegions.Select(sr => sr.Id).Contains(r.ParentRegionId.Value)).ToListAsync());
 
-        foreach (var region in intermediateRegions)
+        foreach (var region in subRegions.Where(ir=>ir.Geometry!=null))
         {
-            var intersection = OverlayNG.Overlay(region.Geometry, route.LineString, SpatialFunction.Intersection);
-            if (!intersection.IsEmpty)
-                route.Regions.Add(region);
+            try
+            {
+                var intersection = OverlayNG.Overlay(region.Geometry, route.LineString, SpatialFunction.Intersection);
+                if (!intersection.IsEmpty)
+                    route.Regions.Add(region);
+            }
+            catch
+            {
+                Console.WriteLine("Unable to check " + region.Name);
+            }
         }
     }
 }
