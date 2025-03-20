@@ -12,9 +12,9 @@
       }
     </mat-select>
   </mat-form-field>
-  <mat-form-field *ngIf="regions.length > 0">
-    <mat-label>Intermediate Parent</mat-label>
-    <mat-select [(ngModel)]="region.intermediateParentRegionId">
+  <mat-form-field>
+    <mat-label>Intermediate Region</mat-label>
+    <mat-select [(ngModel)]="region.intermediateRegionId">
       @for (region of regions; track region.id) {
       <mat-option [value]="region.id">{{ region.name }}</mat-option>
       }
