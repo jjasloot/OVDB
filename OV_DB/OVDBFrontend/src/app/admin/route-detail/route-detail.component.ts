@@ -105,6 +105,7 @@ export class RouteDetailComponent implements OnInit {
       routeTypeId: [null, Validators.required],
       calculatedDistance: [null],
       overrideDistance: [null],
+      intermediateRegion: null, // Added for intermediate region
     });
   }
 

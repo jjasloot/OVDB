@@ -9,7 +9,24 @@
   </mat-card-header>
   <mat-card-content>
     @for(subregion of region.subRegions; track subregion.id) {
-    {{ subregion.name }} ({{ subregion.osmRelationId }}) }
+    @if(subregion.subRegions.length>0){
+    <mat-card style="margin-bottom: 1rem">
+      <mat-card-header>
+        <mat-card-title>{{ subregion.name }}</mat-card-title>
+        <mat-card-subtitle>{{ subregion.osmRelationId }}</mat-card-subtitle>
+        <button mat-button (click)="refreshRoutesForRegion(subregion.id)">
+          <mat-icon [fontIcon]="'refresh'"></mat-icon>
+        </button>
+      </mat-card-header>
+      <mat-card-content>
+        @for(intermediateRegion of subregion.subRegions; track intermediateRegion.id) {
+        {{ intermediateRegion.name }} ({{ intermediateRegion.osmRelationId }}) }
+      </mat-card-content>
+    </mat-card>
+    }@else {
+    {{ subregion.name }} ({{ subregion.osmRelationId }})
+    }
+    }
   </mat-card-content>
 </mat-card>
 }

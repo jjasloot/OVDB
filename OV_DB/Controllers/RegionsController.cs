@@ -109,7 +109,6 @@ namespace OV_DB.Controllers
 
                 var multiPolygon = GenerateCorrectMultiPolygon(geometry, []);
                 var isValidOp = new NetTopologySuite.Operation.Valid.IsValidOp(multiPolygon);
-
                 var attempts = 0;
                 var coordinatesToIgnore = new List<Coordinate>();
                 while (!isValidOp.IsValid)
@@ -207,7 +206,7 @@ namespace OV_DB.Controllers
 
                 var holes = outerGeom.Value.Where(h => !coordinatesToIgnore.Any(c => h.Coordinates.Any(c2 => c2.Equals(c)))).Select(v => factory.CreateLinearRing(v.Coordinates)).Concat(existingHoles).ToArray();
                 var outerCoordinates = outerGeom.Key.ExteriorRing.Coordinates;
-                outerCoordinates = outerCoordinates.Where(c => coordinatesToIgnore.Any(c2 => c.X == c2.X && c.Y == c2.Y)).ToArray();
+                outerCoordinates = outerCoordinates.Where(c => !coordinatesToIgnore.Any(c2 => c.Equals2D(c2,1e-4))).ToArray();
                 var newOuter = factory.CreatePolygon(factory.CreateLinearRing(outerCoordinates), holes);
                 outers.Add(newOuter);
             }
@@ -244,7 +243,15 @@ namespace OV_DB.Controllers
                     Name = c.Name,
                     NameNL = c.NameNL,
                     OriginalName = c.OriginalName,
-                    OsmRelationId = c.OsmRelationId
+                    OsmRelationId = c.OsmRelationId,
+                    SubRegions = regions.Where(sc => sc.ParentRegionId == c.Id).Select(sc => new RegionDTO
+                    {
+                        Id = sc.Id,
+                        Name = sc.Name,
+                        NameNL = sc.NameNL,
+                        OriginalName = sc.OriginalName,
+                        OsmRelationId = sc.OsmRelationId
+                    })
                 })
             });
             return Ok(mappedRegions);
@@ -269,7 +276,15 @@ namespace OV_DB.Controllers
                     Name = c.Name,
                     NameNL = c.NameNL,
                     OriginalName = c.OriginalName,
-                    OsmRelationId = c.OsmRelationId
+                    OsmRelationId = c.OsmRelationId,
+                    SubRegions = regions.Where(sc => sc.ParentRegionId == c.Id).Select(sc => new RegionDTO
+                    {
+                        Id = sc.Id,
+                        Name = sc.Name,
+                        NameNL = sc.NameNL,
+                        OriginalName = sc.OriginalName,
+                        OsmRelationId = sc.OsmRelationId
+                    })
                 })
             });
             return Ok(mappedRegions);
@@ -289,28 +304,36 @@ namespace OV_DB.Controllers
                 return Ok(cachedRegions);
             }
 
-            var regions = await _context.Regions
+            var mappedRegions = await _context.Regions
                 .Where(r => !r.ParentRegionId.HasValue)
                 .Where(r => r.Routes.Any(rr => rr.RouteMaps.Any(rm => rm.Map.MapGuid == mapGuid)) || r.Routes.Any(rr => rr.RouteInstances.Any(ri => ri.RouteInstanceMaps.Any(rim => rim.Map.MapGuid == mapGuid))))
                 .OrderBy(r => r.Name)
-                .ProjectTo<RegionDTO>(mapper.ConfigurationProvider).ToListAsync();
-
-            var mappedRegions = regions.Select(r => new RegionDTO
-            {
-                Id = r.Id,
-                Name = r.Name,
-                NameNL = r.NameNL,
-                OriginalName = r.OriginalName,
-                OsmRelationId = r.OsmRelationId,
-                SubRegions = r.SubRegions.Select(c => new RegionDTO
+                .Include(r => r.SubRegions).ThenInclude(sr => sr.SubRegions)
+                .Select(r => new RegionDTO
                 {
-                    Id = c.Id,
-                    Name = c.Name,
-                    NameNL = c.NameNL,
-                    OriginalName = c.OriginalName,
-                    OsmRelationId = c.OsmRelationId
-                }).OrderBy(s => s.OriginalName)
-            });
+                    Id = r.Id,
+                    Name = r.Name,
+                    NameNL = r.NameNL,
+                    OriginalName = r.OriginalName,
+                    OsmRelationId = r.OsmRelationId,
+                    SubRegions = r.SubRegions.Select(c => new RegionDTO
+                    {
+                        Id = c.Id,
+                        Name = c.Name,
+                        NameNL = c.NameNL,
+                        OriginalName = c.OriginalName,
+                        OsmRelationId = c.OsmRelationId,
+                        SubRegions = c.SubRegions.Select(sc => new RegionDTO
+                        {
+                            Id = sc.Id,
+                            Name = sc.Name,
+                            NameNL = sc.NameNL,
+                            OriginalName = sc.OriginalName,
+                            OsmRelationId = sc.OsmRelationId
+                        }).OrderBy(s => s.OriginalName).ToList()
+                    }).OrderBy(s => s.OriginalName).ToList()
+                }).ToListAsync();
+
 
             _cache.Set("regions" + mapGuid, mappedRegions, new MemoryCacheEntryOptions
             {
@@ -361,8 +384,17 @@ namespace OV_DB.Controllers
             {
                 try
                 {
+                    var regionsBefore = route.Regions.Select(r => r.Id).ToHashSet();
                     await routeRegionsService.AssignRegionsToRouteAsync(route);
-                    Console.WriteLine("Updated route " + route.Name);
+                    var regionsAfter = route.Regions.Select(r => r.Id).ToHashSet();
+                    if (regionsBefore.SetEquals(regionsAfter))
+                    {
+                        Console.WriteLine("Route " + route.Name + ": No update");
+                    }
+                    else
+                    {
+                        Console.WriteLine("Route " + route.Name+ ": Updated 👍");
+                    }
                     await _context.SaveChangesAsync();
                 }
                 catch (Exception ex)
@@ -393,4 +425,3 @@ namespace OV_DB.Controllers
 
     }
 }
-

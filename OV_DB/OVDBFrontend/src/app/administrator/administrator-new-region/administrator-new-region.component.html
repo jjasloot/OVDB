@@ -6,12 +6,24 @@
   </mat-form-field>
   <mat-form-field>
     <mat-label>Parent</mat-label>
-    <mat-select [(ngModel)]="region.parentRegionId">
+    <mat-select [(ngModel)]="parentRegionId">
       @for (region of regions; track region.id) {
       <mat-option [value]="region.id">{{ region.name }}</mat-option>
       }
     </mat-select>
   </mat-form-field>
+  @if(intermediateRegions().length>0){
+  <mat-form-field style="margin-left: 2rem;" >
+    <mat-label>Intermediate Region</mat-label>
+    <mat-select [(ngModel)]="intermediateRegionId">
+      @for (region of intermediateRegions(); track region.id) {
+      <mat-option [value]="region.id">{{ region.name }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+  }@else {
+  <button mat-button style="margin-left: 2rem;" (click)="showAllRegions()">+ intermediate</button>
+  }
 </div>
 <div mat-dialog-actions>
   <button mat-button (click)="cancel()">{{ "CANCEL" | translate }}</button>

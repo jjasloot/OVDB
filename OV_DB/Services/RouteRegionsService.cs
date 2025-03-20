@@ -34,16 +34,32 @@ public class RouteRegionsService(OVDBDatabaseContext dbContext) : IRouteRegionsS
 
         var usedRegions = applicableRegions.Select(r => r.Id).ToList();
 
-        var subRegions = (await dbContext.Regions.Where(r => r.ParentRegionId.HasValue && usedRegions.Contains(r.ParentRegionId.Value)).ToListAsync());
+        var intermediateRegions = (await dbContext.Regions.Where(r => r.ParentRegionId.HasValue && usedRegions.Contains(r.ParentRegionId.Value)).ToListAsync());
 
         var isValidOp = new NetTopologySuite.Operation.Valid.IsValidOp(route.LineString);
-        Console.WriteLine($"Is valid: {isValidOp.IsValid}");
 
-        foreach (var region in subRegions)
+        foreach (var region in intermediateRegions)
         {
             var intersection = OverlayNG.Overlay(region.Geometry, route.LineString, SpatialFunction.Intersection);
             if (!intersection.IsEmpty)
                 route.Regions.Add(region);
+        }
+
+        // Process intermediate regions
+        var subRegions = (await dbContext.Regions.Where(r => r.ParentRegionId.HasValue && intermediateRegions.Select(sr => sr.Id).Contains(r.ParentRegionId.Value)).ToListAsync());
+
+        foreach (var region in subRegions.Where(ir=>ir.Geometry!=null))
+        {
+            try
+            {
+                var intersection = OverlayNG.Overlay(region.Geometry, route.LineString, SpatialFunction.Intersection);
+                if (!intersection.IsEmpty)
+                    route.Regions.Add(region);
+            }
+            catch
+            {
+                Console.WriteLine("Unable to check " + region.Name);
+            }
         }
     }
 }

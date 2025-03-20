@@ -2,137 +2,132 @@
 <div mat-dialog-content>
   <mat-accordion>
     @if (regions) {
-      <mat-expansion-panel>
+    <mat-expansion-panel>
+      <mat-expansion-panel-header>
+        <mat-panel-title>
+          {{ "FILTER.COUNTRIES" | translate }}
+        </mat-panel-title>
+        <mat-panel-description class="ellipsis">
+          {{ regionsString }}
+        </mat-panel-description>
+      </mat-expansion-panel-header>
+      @for (region of regions; track region.id) {
+      <mat-expansion-panel [disabled]="region.subRegions.length === 0">
         <mat-expansion-panel-header>
-          <mat-panel-title>
-            {{ "FILTER.COUNTRIES" | translate }}
-          </mat-panel-title>
-          <mat-panel-description class="ellipsis">
-            {{ regionsString }}
-          </mat-panel-description>
+          <mat-checkbox (click)="$event.stopPropagation()" [checked]="isCountryChecked(region.id)"
+            (change)="setCountry(region.id, $event, region.subRegions)" [indeterminate]="anyChecked(region.subRegions)">
+            <mat-tooltip-component [textContent]="name(region)">
+              {{ region.originalName }}
+            </mat-tooltip-component>
+          </mat-checkbox>
         </mat-expansion-panel-header>
-        @for (region of regions; track region.id) {
-          <mat-expansion-panel [disabled]="region.subRegions.length === 0">
-            <mat-expansion-panel-header>
-              <mat-checkbox
-                (click)="$event.stopPropagation()"
-                [checked]="isCountryChecked(region.id)"
-                (change)="setCountry(region.id, $event, region.subRegions)"
-                [indeterminate]="anyChecked(region.subRegions)"
-                >
-                <mat-tooltip-component [textContent]="name(region)">
-                  {{ region.originalName }}
-                </mat-tooltip-component>
-              </mat-checkbox>
-            </mat-expansion-panel-header>
-            <div>
-              @if(region.subRegions.length > 0){ @for(subRegion of
-                region.subRegions; track subRegion.id) {
-                <mat-checkbox
-                  style="margin-left: 1rem"
-            [checked]="
+        <div>
+          @let anyHasSubSubRegions = anySubRegionHasSubSubRegions(region);
+
+          @if(region.subRegions.length > 0){ @for(subRegion of
+          region.subRegions; track subRegion.id) {
+          @if(anyHasSubSubRegions){
+          <mat-checkbox style="margin-left: 1rem" [checked]="
+  isCountryChecked(subRegion.id) || isCountryChecked(region.id)
+" [disabled]="isCountryChecked(region.id)" (change)="setCountry(subRegion.id, $event, subRegion.subRegions)"
+            [indeterminate]="anyChecked(subRegion.subRegions)">
+            <div [matTooltip]="name(subRegion)">
+              <b>{{ subRegion.originalName }}</b>
+            </div>
+          </mat-checkbox>
+          @for (subsubRegion of subRegion.subRegions; track subsubRegion.id) {
+          <mat-checkbox style="margin-left: 1rem" [checked]="
+              isCountryChecked(subsubRegion.id) || isCountryChecked(subRegion.id) || isCountryChecked(region.id)
+            " [disabled]="isCountryChecked(region.id)|| isCountryChecked(subRegion.id)"
+            (change)="setCountry(subsubRegion.id, $event)">
+            <div [matTooltip]="name(subsubRegion)">
+              {{ subsubRegion.originalName }}
+            </div>
+          </mat-checkbox>
+          }
+          <br />
+          }@else {
+          <mat-checkbox style="margin-left: 1rem" [checked]="
               isCountryChecked(subRegion.id) || isCountryChecked(region.id)
-            "
-                  [disabled]="isCountryChecked(region.id)"
-                  (change)="setCountry(subRegion.id, $event)"
-                  >
-                  <div [matTooltip]="name(subRegion)">
-                    {{ subRegion.originalName }}
-                  </div>
-                </mat-checkbox>
-                } }
-              </div>
-            </mat-expansion-panel>
+            " [disabled]="isCountryChecked(region.id)" (change)="setCountry(subRegion.id, $event)">
+            <div [matTooltip]="name(subRegion)">
+              {{ subRegion.originalName }}
+            </div>
+          </mat-checkbox>
           }
-        </mat-expansion-panel>
+          } }
+        </div>
+      </mat-expansion-panel>
       }
-      @if (routeTypes) {
-        <mat-expansion-panel>
-          <mat-expansion-panel-header>
-            <mat-panel-title>
-              {{ "FILTER.TYPES" | translate }}
-            </mat-panel-title>
-            <mat-panel-description class="ellipsis">
-              {{ typesString }}
-            </mat-panel-description>
-          </mat-expansion-panel-header>
-          <div class="grid">
-            @for (type of routeTypes; track type) {
-              <mat-checkbox
-                [checked]="isTypeChecked(type.typeId)"
-                (change)="setType(type.typeId, $event)"
-                >{{ name(type) }}</mat-checkbox
-                >
-              }
-            </div>
-          </mat-expansion-panel>
+    </mat-expansion-panel>
+    }
+    @if (routeTypes) {
+    <mat-expansion-panel>
+      <mat-expansion-panel-header>
+        <mat-panel-title>
+          {{ "FILTER.TYPES" | translate }}
+        </mat-panel-title>
+        <mat-panel-description class="ellipsis">
+          {{ typesString }}
+        </mat-panel-description>
+      </mat-expansion-panel-header>
+      <div class="grid">
+        @for (type of routeTypes; track type) {
+        <mat-checkbox [checked]="isTypeChecked(type.typeId)" (change)="setType(type.typeId, $event)">{{ name(type)
+          }}</mat-checkbox>
         }
-        @if (routeTypes) {
-          <mat-expansion-panel>
-            <mat-expansion-panel-header>
-              <mat-panel-title>
-                {{ "FILTER.YEARS" | translate }}
-              </mat-panel-title>
-              <mat-panel-description class="ellipsis">
-                {{ yearsString }}
-              </mat-panel-description>
-            </mat-expansion-panel-header>
-            <div class="grid">
-              @for (year of years; track year) {
-                <mat-checkbox
-                  [checked]="isYearChecked(year)"
-                  (change)="setYear(year, $event)"
-                  >
-                  {{ displayYear(year) }}</mat-checkbox
-                  >
-                }
-              </div>
-            </mat-expansion-panel>
-          }
-        </mat-accordion>
+      </div>
+    </mat-expansion-panel>
+    }
+    @if (routeTypes) {
+    <mat-expansion-panel>
+      <mat-expansion-panel-header>
+        <mat-panel-title>
+          {{ "FILTER.YEARS" | translate }}
+        </mat-panel-title>
+        <mat-panel-description class="ellipsis">
+          {{ yearsString }}
+        </mat-panel-description>
+      </mat-expansion-panel-header>
+      <div class="grid">
+        @for (year of years; track year) {
+        <mat-checkbox [checked]="isYearChecked(year)" (change)="setYear(year, $event)">
+          {{ displayYear(year) }}</mat-checkbox>
+        }
+      </div>
+    </mat-expansion-panel>
+    }
+  </mat-accordion>
 
-        <div class="date-selection">
-          <div class="info">{{ "FILTER.EXPLAINDATES" | translate }}</div>
-          <mat-form-field>
-            <mat-label>{{ "FILTER.STARTDATE" | translate }}</mat-label>
-            <input
-              matInput
-              [matDatepicker]="picker"
-              [(ngModel)]="from"
-              (input)="resetYears()"
-              />
-              <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
-              <mat-datepicker #picker></mat-datepicker>
-            </mat-form-field>
-            <mat-form-field>
-              <mat-label>{{ "FILTER.ENDDATE" | translate }}</mat-label>
-              <input
-                matInput
-                [matDatepicker]="picker2"
-                [(ngModel)]="to"
-                (input)="resetYears()"
-                />
-                <mat-datepicker-toggle matSuffix [for]="picker2"></mat-datepicker-toggle>
-                <mat-datepicker #picker2></mat-datepicker>
-              </mat-form-field>
-            </div>
+  <div class="date-selection">
+    <div class="info">{{ "FILTER.EXPLAINDATES" | translate }}</div>
+    <mat-form-field>
+      <mat-label>{{ "FILTER.STARTDATE" | translate }}</mat-label>
+      <input matInput [matDatepicker]="picker" [(ngModel)]="from" (input)="resetYears()" />
+      <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+      <mat-datepicker #picker></mat-datepicker>
+    </mat-form-field>
+    <mat-form-field>
+      <mat-label>{{ "FILTER.ENDDATE" | translate }}</mat-label>
+      <input matInput [matDatepicker]="picker2" [(ngModel)]="to" (input)="resetYears()" />
+      <mat-datepicker-toggle matSuffix [for]="picker2"></mat-datepicker-toggle>
+      <mat-datepicker #picker2></mat-datepicker>
+    </mat-form-field>
+  </div>
 
-            <div>
-              <mat-checkbox [(ngModel)]="includeLineColours">{{
-                "FILTER.INCLUDELINECOLOURS" | translate
-              }}</mat-checkbox>
-            </div>
-            <div>
-              <mat-checkbox
-                [(ngModel)]="limitToSelectedAreas"
-                [disabled]="selectedCountries.length === 0"
-                >{{ "FILTER.LIMITTOSELECTEDAREAS" | translate }}</mat-checkbox
-                >
-              </div>
-            </div>
-            <div mat-dialog-actions>
-              <button mat-button (click)="cancel()">{{ "CANCEL" | translate }}</button>
-              <button mat-button color="primary" (click)="return()">
-                {{ "SAVE" | translate }}
-              </button>
-            </div>
+  <div>
+    <mat-checkbox [(ngModel)]="includeLineColours">{{
+      "FILTER.INCLUDELINECOLOURS" | translate
+      }}</mat-checkbox>
+  </div>
+  <div>
+    <mat-checkbox [(ngModel)]="limitToSelectedAreas">{{
+      "FILTER.LIMITTOSELECTEDAREAS" | translate }}</mat-checkbox>
+  </div>
+</div>
+<div mat-dialog-actions>
+  <button mat-button (click)="cancel()">{{ "CANCEL" | translate }}</button>
+  <button mat-button color="primary" (click)="return()">
+    {{ "SAVE" | translate }}
+  </button>
+</div>

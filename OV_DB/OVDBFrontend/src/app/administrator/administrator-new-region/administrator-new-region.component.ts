@@ -1,4 +1,4 @@
-import { Component, Inject } from "@angular/core";
+import { Component, computed, Inject, model, signal } from "@angular/core";
 import { MatDialogRef, MAT_DIALOG_DATA, MatDialogTitle, MatDialogContent, MatDialogActions } from "@angular/material/dialog";
 import { NewRegion, Region } from "src/app/models/region.model";
 import { CdkScrollable } from "@angular/cdk/scrolling";
@@ -11,28 +11,30 @@ import { MatButton } from "@angular/material/button";
 import { TranslateModule } from "@ngx-translate/core";
 
 @Component({
-    selector: "app-administrator-new-region",
-    templateUrl: "./administrator-new-region.component.html",
-    styleUrl: "./administrator-new-region.component.scss",
-    imports: [
-        MatDialogTitle,
-        CdkScrollable,
-        MatDialogContent,
-        MatFormField,
-        MatLabel,
-        MatInput,
-        FormsModule,
-        MatSelect,
-        MatOption,
-        MatDialogActions,
-        MatButton,
-        TranslateModule,
-    ]
+  selector: "app-administrator-new-region",
+  templateUrl: "./administrator-new-region.component.html",
+  styleUrl: "./administrator-new-region.component.scss",
+  imports: [
+    MatDialogTitle,
+    CdkScrollable,
+    MatDialogContent,
+    MatFormField,
+    MatLabel,
+    MatInput,
+    FormsModule,
+    MatSelect,
+    MatOption,
+    MatDialogActions,
+    MatButton,
+    TranslateModule,
+  ]
 })
 export class AdministratorNewRegionComponent {
   region = {} as NewRegion;
   regions: Region[] = [];
-
+  parentRegionId = model<number | null>(null);
+  intermediateRegionId = model<number | null>(null);
+  showAllRegionsForIntermediate = signal(false);
   constructor(
     public dialogRef: MatDialogRef<AdministratorNewRegionComponent>,
     @Inject(MAT_DIALOG_DATA) data
@@ -47,6 +49,20 @@ export class AdministratorNewRegionComponent {
   }
 
   save() {
+    this.region.parentRegionId = this.intermediateRegionId() ?? this.parentRegionId();
     this.dialogRef.close(this.region);
   }
+
+  intermediateRegions = computed(() => {
+    if (!this.parentRegionId()) {
+      return [];
+    }
+    console.log(this.parentRegionId(), this.regions, this.regions.find(r => r.id == this.parentRegionId())?.subRegions);
+    return this.regions.find(r => r.id == this.parentRegionId()).subRegions.filter(sr => sr.subRegions.length > 0 || this.showAllRegionsForIntermediate());
+  });
+
+  showAllRegions() {
+    this.showAllRegionsForIntermediate.set(true);
+  }
+
 }
