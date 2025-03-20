@@ -9,7 +9,13 @@
   </mat-card-header>
   <mat-card-content>
     @for(subregion of region.subRegions; track subregion.id) {
-    {{ subregion.name }} ({{ subregion.osmRelationId }}) }
+    {{ subregion.name }} ({{ subregion.osmRelationId }})
+    @if(subregion.subRegions && subregion.subRegions.length > 0) {
+    @for(intermediateSubregion of subregion.subRegions; track intermediateSubregion.id) {
+    {{ intermediateSubregion.name }} ({{ intermediateSubregion.osmRelationId }})
+    }
+    }
+    }
   </mat-card-content>
 </mat-card>
 }

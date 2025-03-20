@@ -234,7 +234,15 @@ namespace OV_DB.Controllers
                     Name = c.Name,
                     NameNL = c.NameNL,
                     OriginalName = c.OriginalName,
-                    OsmRelationId = c.OsmRelationId
+                    OsmRelationId = c.OsmRelationId,
+                    SubRegions = regions.Where(sc => sc.ParentRegionId == c.Id).Select(sc => new RegionDTO
+                    {
+                        Id = sc.Id,
+                        Name = sc.Name,
+                        NameNL = sc.NameNL,
+                        OriginalName = sc.OriginalName,
+                        OsmRelationId = sc.OsmRelationId
+                    })
                 })
             });
             return Ok(mappedRegions);
@@ -259,7 +267,15 @@ namespace OV_DB.Controllers
                     Name = c.Name,
                     NameNL = c.NameNL,
                     OriginalName = c.OriginalName,
-                    OsmRelationId = c.OsmRelationId
+                    OsmRelationId = c.OsmRelationId,
+                    SubRegions = regions.Where(sc => sc.ParentRegionId == c.Id).Select(sc => new RegionDTO
+                    {
+                        Id = sc.Id,
+                        Name = sc.Name,
+                        NameNL = sc.NameNL,
+                        OriginalName = sc.OriginalName,
+                        OsmRelationId = sc.OsmRelationId
+                    })
                 })
             });
             return Ok(mappedRegions);
@@ -298,7 +314,15 @@ namespace OV_DB.Controllers
                     Name = c.Name,
                     NameNL = c.NameNL,
                     OriginalName = c.OriginalName,
-                    OsmRelationId = c.OsmRelationId
+                    OsmRelationId = c.OsmRelationId,
+                    SubRegions = c.SubRegions.Select(sc => new RegionDTO
+                    {
+                        Id = sc.Id,
+                        Name = sc.Name,
+                        NameNL = sc.NameNL,
+                        OriginalName = sc.OriginalName,
+                        OsmRelationId = sc.OsmRelationId
+                    }).OrderBy(s => s.OriginalName)
                 }).OrderBy(s => s.OriginalName)
             });
 
@@ -383,4 +407,3 @@ namespace OV_DB.Controllers
 
     }
 }
-
