@@ -102,7 +102,19 @@ namespace OV_DB.Controllers
                 }
             }
             await DbContext.SaveChangesAsync();
-            return Ok();
+
+            var station = await DbContext.Stations.Include(s => s.Regions).SingleOrDefaultAsync(s => s.Id == id);
+            if (station != null)
+            {
+                var regionIds = station.Regions.Select(r => r.Id).ToList();
+                var totalStationsInRegion = await DbContext.Stations.CountAsync(s => s.Regions.Any(r => regionIds.Contains(r.Id)));
+                var visitedStationsInRegion = await DbContext.StationVisits.CountAsync(sv => sv.UserId == userIdClaim && sv.Station.Regions.Any(r => regionIds.Contains(r.Id)));
+                var percentageVisited = (double)visitedStationsInRegion / totalStationsInRegion * 100;
+
+                return Ok(new { Message = "Station visit status updated.", PercentageVisited = percentageVisited });
+            }
+
+            return Ok(new { Message = "Station visit status updated." });
         }
 
         [HttpGet("map")]
@@ -185,6 +197,6 @@ namespace OV_DB.Controllers
             await DbContext.SaveChangesAsync();
 
             return Ok();
-        }
+        }     
     }
 }

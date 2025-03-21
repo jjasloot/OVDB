@@ -149,7 +149,6 @@ namespace OV_DB.Controllers
             }
             var route = await _context.Routes
                 .Where(r => r.RouteMaps.Any(rm => rm.Map.UserId == userIdClaim))
-                .Include(r => r.RouteCountries)
                 .Include(r => r.RouteInstances)
                 .Include(r => r.RouteMaps)
                 .ProjectTo<RouteDTO>(_mapper.ConfigurationProvider)
@@ -179,7 +178,6 @@ namespace OV_DB.Controllers
 
             var dbRoute = await _context.Routes
                 .Where(r => r.RouteMaps.Any(rm => rm.Map.UserId == userIdClaim))
-                .Include(r => r.RouteCountries)
                 .Include(r => r.RouteMaps)
                 .Include(r => r.RouteInstances)
                 .Include(r => r.Operators)
@@ -214,37 +212,6 @@ namespace OV_DB.Controllers
                 else if (dbRoute.RouteInstances.Count == 1)
                 {
                     dbRoute.RouteInstances.First().Date = route.FirstDateTime.Value;
-                }
-            }
-            if (route.Countries != null)
-            {
-                var toDelete = new List<RouteCountry>();
-                var toAdd = new List<int>();
-                dbRoute.RouteCountries.ForEach(r =>
-                {
-                    if (!route.Countries.Contains(r.CountryId))
-                    {
-                        toDelete.Add(r);
-                    }
-                });
-                if (route.Countries != null)
-                {
-                    route.Countries.ForEach(r =>
-                    {
-                        if (!dbRoute.RouteCountries.Select(r => r.CountryId).Contains(r))
-                        {
-                            toAdd.Add(r);
-                        }
-                    });
-                }
-                if (toDelete.Any())
-                {
-                    _context.RoutesCountries.RemoveRange(toDelete);
-                }
-
-                if (toAdd.Any())
-                {
-                    _context.RoutesCountries.AddRange(toAdd.Select(c => new RouteCountry { CountryId = c, RouteId = id }));
                 }
             }
 
@@ -401,7 +368,6 @@ namespace OV_DB.Controllers
                 }
                 var route = new Route
                 {
-                    Coordinates = string.Join('\n', coordinates),
                     LineString = lineString,
                     Name = name,
                     RouteMaps = new List<RouteMap>(),
@@ -470,30 +436,7 @@ namespace OV_DB.Controllers
                     {
                         route.To = extendedData.Single(d => d.Name == "to").Value;
                     }
-                    if (extendedData.Any(d => d.Name == "countries"))
-                    {
-                        route.RouteCountries = new List<RouteCountry>();
-                        var dbCountries = await _context.Countries.Where(r => r.UserId == userId).ToListAsync();
-                        var countries = extendedData.Single(d => d.Name == "countries").Value.Split(',').ToList();
-                        countries.ForEach(inputCountry =>
-                        {
-                            var county = dbCountries.SingleOrDefault(c => string.Compare(c.Name, inputCountry.Trim(), true) == 0 || string.Compare(c.NameNL, inputCountry.Trim(), true) == 0);
-                            if (county != null)
-                            {
-                                route.RouteCountries.Add(new RouteCountry { CountryId = county.CountryId });
-                            }
-                            else
-                            {
-                                var newCountry = new Country
-                                {
-                                    Name = inputCountry.Trim(),
-                                    UserId = userId
-                                };
-                                route.RouteCountries.Add(new RouteCountry { Country = newCountry });
-                            }
-                        });
-                    }
-
+                    
                     if (extendedData.Any(d => d.Name == "maps"))
                     {
                         route.RouteMaps = new List<RouteMap>();
@@ -575,7 +518,6 @@ namespace OV_DB.Controllers
 
             var route = new Route
             {
-                Coordinates = string.Join('\n', coordinates),
                 LineString = lineString,
                 Name = name,
                 Share = Guid.NewGuid(),
@@ -630,9 +572,6 @@ namespace OV_DB.Controllers
             var routeMaps = await _context.RoutesMaps.Where(rm => rm.RouteId == id).ToListAsync();
             _context.RoutesMaps.RemoveRange(routeMaps);
 
-            var routeCountries = await _context.RoutesCountries.Where(rc => rc.RouteId == id).ToListAsync();
-            _context.RoutesCountries.RemoveRange(routeCountries);
-
             _context.Routes.Remove(route);
             await _context.SaveChangesAsync();
 
@@ -649,8 +588,6 @@ namespace OV_DB.Controllers
             }
             var route = await _context.Routes
                 .Include(r => r.RouteType)
-                .Include(r => r.RouteCountries)
-                .ThenInclude(rc => rc.Country)
                 .Include(r => r.RouteMaps)
                 .ThenInclude(rm => rm.Map)
                 .Where(r => r.RouteMaps.Any(rm => rm.Map.UserId == userIdClaim))
@@ -702,8 +639,6 @@ namespace OV_DB.Controllers
 
             var routes = await _context.Routes
                             .Include(r => r.RouteType)
-                            .Include(r => r.RouteCountries)
-                            .ThenInclude(rc => rc.Country)
                             .Include(r => r.RouteMaps)
                             .ThenInclude(rm => rm.Map)
                             .Where(r => r.RouteMaps.Any(rm => rm.Map.UserId == userIdClaim))
@@ -744,8 +679,6 @@ namespace OV_DB.Controllers
 
             var query = _context.Routes
                             .Include(r => r.RouteType)
-                            .Include(r => r.RouteCountries)
-                            .ThenInclude(rc => rc.Country)
                             .Include(r => r.RouteMaps)
                             .ThenInclude(rm => rm.Map)
                             .Where(r => r.RouteMaps.Any(rm => rm.Map.UserId == userIdClaim));
@@ -792,12 +725,11 @@ namespace OV_DB.Controllers
             var lineString = new LineString
             {
                 Tessellate = true,
-                Coordinates = new CoordinateCollection(route.Coordinates
-                .Split("\n")
-                .Select(str => new Vector
+                Coordinates = new CoordinateCollection(route.LineString.Coordinates
+                .Select(loc => new Vector
                 {
-                    Longitude = Math.Round(double.Parse(str.Split(",").First(), CultureInfo.InvariantCulture), 8),
-                    Latitude = Math.Round(double.Parse(str.Split(",").Last(), CultureInfo.InvariantCulture), 8)
+                    Longitude = loc.X,
+                    Latitude = loc.Y
                 }))
             };
             var placemark = new Placemark
@@ -820,10 +752,6 @@ namespace OV_DB.Controllers
             if (route.RouteType != null)
             {
                 placemark.ExtendedData.AddData(new Data { Name = "type", Value = route.RouteType.Name });
-            }
-            if (route.RouteCountries.Any())
-            {
-                placemark.ExtendedData.AddData(new Data { Name = "countries", Value = string.Join(',', route.RouteCountries.Select(rc => rc.Country.Name)) });
             }
             if (!string.IsNullOrWhiteSpace(route.LineNumber))
             {
@@ -875,7 +803,6 @@ namespace OV_DB.Controllers
             }
 
             var selectedRoutes = await _context.Routes
-                .Include(r => r.RouteCountries)
                 .Include(r => r.RouteMaps)
                 .Where(r => editMultiple.RouteIds.Contains(r.RouteId) && r.RouteMaps.Any(rm => rm.Map.UserId == userIdClaim))
                 .ToListAsync();
@@ -889,45 +816,6 @@ namespace OV_DB.Controllers
                 var validType = await _context.RouteTypes.AnyAsync(t => t.TypeId == editMultiple.TypeId && t.UserId == userIdClaim);
                 if (validType)
                     selectedRoutes.ForEach(r => r.RouteTypeId = editMultiple.TypeId);
-            }
-
-            if (editMultiple.UpdateCountries)
-            {
-                var validSelectedCountryIds = await _context.Countries.Where(c => editMultiple.Countries.Contains(c.CountryId) && c.UserId == userIdClaim).Select(c => c.CountryId).ToListAsync();
-
-                selectedRoutes.ForEach(route =>
-                {
-                    var toDelete = new List<RouteCountry>();
-                    var toAdd = new List<int>();
-                    route.RouteCountries.ForEach(r =>
-                    {
-                        if (!validSelectedCountryIds.Contains(r.CountryId))
-                        {
-                            toDelete.Add(r);
-                        }
-                    });
-                    if (validSelectedCountryIds != null)
-                    {
-                        validSelectedCountryIds.ForEach(rm1 =>
-                        {
-                            if (!route.RouteMaps.Select(rm => rm.MapId).Contains(rm1))
-                            {
-                                toAdd.Add(rm1);
-                            }
-                        });
-                    }
-                    if (toDelete.Any())
-                    {
-                        _context.RoutesCountries.RemoveRange(toDelete);
-                    }
-
-                    if (toAdd.Any())
-                    {
-                        _context.RoutesCountries.AddRange(toAdd.Select(c => new RouteCountry { CountryId = c, RouteId = route.RouteId }));
-                    }
-
-                });
-
             }
 
             if (editMultiple.UpdateMaps)

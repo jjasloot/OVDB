@@ -290,7 +290,7 @@ namespace OV_DB.Controllers
         [Produces("application/json")]
         public async Task<ActionResult<FeatureCollection>> GetSingleRouteGeoJsonAsync(int id, Guid guid, [FromQuery] string language)
         {
-            var route = await _context.Routes.Include(r => r.RouteType).Include(r => r.RouteCountries).SingleOrDefaultAsync(r =>
+            var route = await _context.Routes.Include(r => r.RouteType).SingleOrDefaultAsync(r =>
                     r.RouteId == id &&
                     r.Share == guid);
             if (route == null)

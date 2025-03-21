@@ -19,4 +19,5 @@ public class Region
     public ICollection<StationGrouping> StationGroupings { get; set; } = new List<StationGrouping>();
     public ICollection<Operator> OperatorsRunningTrains { get; set; } = [];
     public ICollection<Operator> OperatorsRestrictedToRegion { get; set; } = [];
+    public string? FlagEmoji { get; set; }
 }

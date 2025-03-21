@@ -617,7 +617,6 @@ namespace OV_DB.Controllers
 
             var route = new Route
             {
-                Coordinates = string.Join('\n', coordinates),
                 LineString = lineString,
                 Name = line.Name,
                 Share = Guid.NewGuid(),

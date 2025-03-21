@@ -15,5 +15,14 @@ namespace OV_DB.Models
         public String Network { get; set; }
         public String Operator { get; set; }
         public bool Visited { get; set; }
+        public IEnumerable<StationRegionDTO> Regions { get; set; }
+    }
+
+    public class StationRegionDTO
+    {
+        public int Id { get; set; }
+        public string OriginalName { get; set; }
+        public bool HasParentRegion { get; set; }
+        public string FlagEmoji { get; set; }
     }
 }

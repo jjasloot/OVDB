@@ -1,8 +1,6 @@
 ﻿using OVDB_database.Models;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace OV_DB.Models
 {
@@ -19,7 +17,6 @@ namespace OV_DB.Models
         public string LineNumber { get; set; }
         public string OperatingCompany { get; set; }
         public DateTime? FirstDateTime { get; set; }
-        public List<RouteCountry> RouteCountries { get; set; }
         public int? RouteTypeId { get; set; }
         public RouteType? RouteType { get; set; }
         public double CalculatedDistance { get; set; }

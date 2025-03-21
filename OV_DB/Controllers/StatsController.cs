@@ -180,7 +180,7 @@ namespace OV_DB.Controllers
             new
             {
                 Route = c,
-                Coordinates = c.Coordinates.Split("\n").Select(c2 => c2.Replace("\r", "").Split(',').Select(x => double.Parse(x, CultureInfo.InvariantCulture)))
+                Coordinates = c.LineString.Coordinates
             }).ToList();
 
 
@@ -189,49 +189,49 @@ namespace OV_DB.Controllers
                   return new
                   {
                       Route = route,
-                      MinLat = route.Coordinates.OrderBy(c => c.ElementAt(1)).First(),
-                      MaxLat = route.Coordinates.OrderByDescending(c => c.ElementAt(1)).First(),
-                      MinLong = route.Coordinates.OrderBy(c => c.First()).First(),
-                      MaxLong = route.Coordinates.OrderByDescending(c => c.First()).First()
+                      MinLat = route.Coordinates.OrderBy(c => c.X).First(),
+                      MaxLat = route.Coordinates.OrderByDescending(c => c.X).First(),
+                      MinLong = route.Coordinates.OrderBy(c => c.Y).First(),
+                      MaxLong = route.Coordinates.OrderByDescending(c => c.Y).First()
                   };
               }).ToList();
 
-            var minLatPoint = x3.OrderBy(x => x.MinLat.ElementAt(1)).Select(x =>
+            var minLatPoint = x3.OrderBy(x => x.MinLat.X).Select(x =>
             {
                 return new BoundsPoint
                 {
-                    Lat = x.MinLat.ElementAt(1),
-                    Long = x.MinLat.First(),
+                    Lat = x.MinLat.X,
+                    Long = x.MinLat.Y,
                     Route = x.Route.Route
                 };
             }).First();
 
-            var maxLatPoint = x3.OrderByDescending(x => x.MaxLat.ElementAt(1)).Select(x =>
+            var maxLatPoint = x3.OrderByDescending(x => x.MaxLat.X).Select(x =>
             {
                 return new BoundsPoint
                 {
-                    Lat = x.MaxLat.ElementAt(1),
-                    Long = x.MaxLat.First(),
+                    Lat = x.MaxLat.X,
+                    Long = x.MaxLat.Y,
                     Route = x.Route.Route
                 };
             }).First();
 
-            var minLongPoint = x3.OrderBy(x => x.MinLong.First()).Select(x =>
+            var minLongPoint = x3.OrderBy(x => x.MinLong.Y).Select(x =>
         {
             return new BoundsPoint
             {
-                Lat = x.MinLong.ElementAt(1),
-                Long = x.MinLong.First(),
+                Lat = x.MinLong.X,
+                Long = x.MinLong.Y,
                 Route = x.Route.Route
             };
         }).First();
 
-            var maxLongPoint = x3.OrderByDescending(x => x.MaxLong.First()).Select(x =>
+            var maxLongPoint = x3.OrderByDescending(x => x.MaxLong.Y).Select(x =>
             {
                 return new BoundsPoint
                 {
-                    Lat = x.MaxLong.ElementAt(1),
-                    Long = x.MaxLong.First(),
+                    Lat = x.MaxLong.X,
+                    Long = x.MaxLong.Y,
                     Route = x.Route.Route
                 };
             }).First();

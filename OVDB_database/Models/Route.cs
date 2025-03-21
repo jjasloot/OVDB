@@ -36,8 +36,6 @@ namespace OVDB_database.Models
         [JsonProperty]
         public DateTime? FirstDateTime { get; set; }
         [JsonProperty]
-        public List<RouteCountry> RouteCountries { get; set; }
-        [JsonProperty]
         public int? RouteTypeId { get; set; }
         [JsonProperty]
         public RouteType? RouteType { get; set; }
@@ -45,9 +43,6 @@ namespace OVDB_database.Models
         public double CalculatedDistance { get; set; }
         [JsonProperty]
         public double? OverrideDistance { get; set; }
-        [StringLength(1048576000)]
-        [Obsolete]
-        public string Coordinates { get; set; }
         public LineString LineString { get; set; }
         [JsonProperty]
         public List<RouteMap> RouteMaps { get; set; }

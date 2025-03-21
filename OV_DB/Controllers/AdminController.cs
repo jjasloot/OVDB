@@ -179,33 +179,6 @@ namespace OV_DB.Controllers
             return Ok();
         }
 
-        [HttpGet("convertToLineStrings")]
-        public async Task<ActionResult> ConvertToLineStrings()
-        {
-            var adminClaim = (User.Claims.SingleOrDefault(c => c.Type == "admin").Value ?? "false");
-            if (string.Equals(adminClaim, "false", StringComparison.OrdinalIgnoreCase))
-            {
-                return Forbid();
-            }
-            var routes = new List<OVDB_database.Models.Route>();
-            do
-            {
-                routes = await _dbContext.Routes.OrderBy(r => r.RouteId).Where(r => r.LineString == null && r.Coordinates != null).Take(50).ToListAsync();
-
-                foreach (var route in routes)
-                {
-                    var coordinates = route.Coordinates.Split('\n').Where(a => !string.IsNullOrWhiteSpace(a)).ToList();
-                    var coords = coordinates.Select(r => new Coordinate(double.Parse(r.Split(',')[0], CultureInfo.InvariantCulture), double.Parse(r.Split(',')[1], CultureInfo.InvariantCulture))).ToList();
-                    route.LineString = new LineString(coords.ToArray());
-
-                    Console.WriteLine($"Route {route.Name} converted");
-                    await _dbContext.SaveChangesAsync();
-                }
-            } while (routes.Count > 0);
-
-            return Ok();
-        }
-
         [HttpGet("addRegions")]
         public async Task<ActionResult> AddRegionsToAllRoutes([FromServices] IRouteRegionsService routeRegionsService)
         {

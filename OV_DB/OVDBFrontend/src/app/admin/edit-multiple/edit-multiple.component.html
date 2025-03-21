@@ -18,26 +18,6 @@
       }
     </mat-select>
   </mat-form-field><br>
-  <mat-checkbox [(ngModel)]="updateCountries">{{'EDITMULTIPLE.UPDATECOUNTRIES'|translate}}</mat-checkbox><br>
-  @if (updateCountries) {
-    <mat-expansion-panel class="countries">
-      <mat-expansion-panel-header>
-        <mat-panel-title>
-          {{'ROUTEDETAILS.COUNTRIES'|translate}}
-        </mat-panel-title>
-        <mat-panel-description>
-          {{countriesString}}
-        </mat-panel-description>
-      </mat-expansion-panel-header>
-      <mat-selection-list #countriesSelection>
-        @for (country of countries; track country) {
-          <mat-list-option [value]="country.countryId">
-            {{name(country)}}
-          </mat-list-option>
-        }
-      </mat-selection-list>
-    </mat-expansion-panel>
-  }
   <mat-checkbox [(ngModel)]="updateMaps">{{'EDITMULTIPLE.UPDATEMAPS'|translate}}</mat-checkbox><br>
   @if (updateMaps) {
     <mat-expansion-panel class="countries">

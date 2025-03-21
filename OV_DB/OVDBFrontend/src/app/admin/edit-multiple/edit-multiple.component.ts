@@ -8,7 +8,7 @@ import { TranslationService } from 'src/app/services/translation.service';
 import { DateAdapter, MatOption } from '@angular/material/core';
 import { Map } from 'src/app/models/map.model';
 import { MatSelectionList, MatListOption } from '@angular/material/list';
-import { MatAccordionTogglePosition, MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle, MatExpansionPanelDescription } from '@angular/material/expansion';
+import { MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle, MatExpansionPanelDescription } from '@angular/material/expansion';
 import { MultipleEdit } from 'src/app/models/multipleEdit.model';
 import { CdkScrollable } from '@angular/cdk/scrolling';
 import { MatCheckbox } from '@angular/material/checkbox';
@@ -55,30 +55,14 @@ export class EditMultipleComponent implements OnInit {
 
   ngOnInit(): void {
     this.translationService.languageChanged.subscribe(() => {
-      this.sortOrder();
       this.dateAdapter.setLocale(this.translationService.dateLocale);
     });
     this.apiService.getTypes().subscribe(types => {
       this.types = types;
     });
-    this.apiService.getCountries().subscribe(countries => {
-      this.countries = countries;
-      this.sortOrder();
-    });
+
     this.apiService.getMaps().subscribe(maps => {
       this.maps = maps;
-    });
-  }
-
-  sortOrder() {
-    this.countries = this.countries.sort((a, b) => {
-      if (this.name(a) > this.name(b)) {
-        return 1;
-      }
-      if (this.name(a) < this.name(b)) {
-        return -1;
-      }
-      return 0;
     });
   }
 
@@ -120,15 +104,11 @@ export class EditMultipleComponent implements OnInit {
       date: this.firstDateTime,
       routeIds: this.selectedRoutes,
       typeId: this.routeTypeId,
-      updateCountries: this.updateCountries,
       updateDate: this.updateDate,
       updateMaps: this.updateMaps,
       updateType: this.updateType
 
     } as MultipleEdit;
-    if (this.updateCountries) {
-      model.countries = this.countriesSelection().selectedOptions.selected.map(s => s.value);
-    }
     if (this.updateMaps) {
       model.maps = this.mapsSelection().selectedOptions.selected.map(s => s.value);
     }
