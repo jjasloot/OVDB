@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -47,7 +47,7 @@ namespace OV_DB.Controllers
             {
                 return BadRequest();
             }
-            var id = reference + "|" + routeType.ToString() + "|" + network + "|" + (dateTime.HasValue ? dateTime.Value.ToString("o") : "");
+            var id = GenerateCacheKey(reference, routeType, network, dateTime);
             var responseList = await _cache.GetOrCreateAsync(id, async i => await CreateCacheLines(reference, routeType, network, i, dateTime));
             if (responseList == null)
             {
@@ -57,6 +57,12 @@ namespace OV_DB.Controllers
             }
             return Ok(responseList);
         }
+
+        private string GenerateCacheKey(string reference, OSMRouteType? routeType, string network, DateTime? dateTime)
+        {
+            return $"{reference}|{routeType}|{network}|{dateTime?.ToString("o")}";
+        }
+
         [HttpGet("network")]
         public async Task<ActionResult> GetNetworkLinesAsync([FromQuery] string network, [FromQuery] DateTime? dateTime)
         {
@@ -209,7 +215,7 @@ namespace OV_DB.Controllers
             lists = SortListOfList(lists);
             var oneList = lists.SelectMany(i => i).ToList();
             var pointts2 = oneList.Select(l => l.Longitude.ToString(CultureInfo.InvariantCulture) + ", " + l.Latitude.ToString(CultureInfo.InvariantCulture)).ToList();
-            var pointts2String = string.Join("\n", pointts2);
+            var pointts2String = string.join("\n", pointts2);
 
             var fromStop = stops.FirstOrDefault(s => s.Id == from);
             var toStop = stops.LastOrDefault(s => s.Id == to);
@@ -354,39 +360,39 @@ namespace OV_DB.Controllers
 
 
 
-        private List<List<IPosition>> SortListOfList(List<List<IPosition>> test)
+        private List<List<IPosition>> SortListOfList(List<List<IPosition>> lists)
         {
-            if (test.Count < 2)
+            if (lists.Count < 2)
             {
-                return test;
+                return lists;
             }
-            test = test.Where(t => t.Count > 0).ToList();
+            lists = lists.Where(t => t.Count > 0).ToList();
 
 
-            if (test[1].Select(l => l.Latitude).Contains(test[0].First().Latitude) && test[1].Select(l => l.Longitude).Contains(test[0].First().Longitude))
+            if (lists[1].Select(l => l.Latitude).Contains(lists[0].First().Latitude) && lists[1].Select(l => l.Longitude).Contains(lists[0].First().Longitude))
             {
-                test[0].Reverse();
+                lists[0].Reverse();
             }
 
-            for (int index = 1; index < test.Count; index++)
+            for (int index = 1; index < lists.Count; index++)
             {
                 try
                 {
-                    if (index < test.Count - 1 && test[index].First().Latitude == test[index].Last().Latitude && test[index].First().Longitude == test[index].Last().Longitude)
+                    if (index < lists.Count - 1 && lists[index].First().Latitude == lists[index].Last().Latitude && lists[index].First().Longitude == lists[index].Last().Longitude)
                     {
                         //Roundabout
 
-                        var entryLocation = test[index - 1].Last();
-                        var startIndex = test[index].FindIndex(t => t.Longitude == entryLocation.Longitude && t.Latitude == entryLocation.Latitude);
+                        var entryLocation = lists[index - 1].Last();
+                        var startIndex = lists[index].FindIndex(t => t.Longitude == entryLocation.Longitude && t.Latitude == entryLocation.Latitude);
 
 
-                        var exitLocation = test[index + 1].First();
-                        var endIndex = test[index].FindIndex(t => t.Longitude == exitLocation.Longitude && t.Latitude == exitLocation.Latitude);
+                        var exitLocation = lists[index + 1].First();
+                        var endIndex = lists[index].FindIndex(t => t.Longitude == exitLocation.Longitude && t.Latitude == exitLocation.Latitude);
 
                         if (endIndex < 0)
                         {
-                            exitLocation = test[index + 1].Last();
-                            endIndex = test[index].FindIndex(t => t.Longitude == exitLocation.Longitude && t.Latitude == exitLocation.Latitude);
+                            exitLocation = lists[index + 1].Last();
+                            endIndex = lists[index].FindIndex(t => t.Longitude == exitLocation.Longitude && t.Latitude == exitLocation.Latitude);
                         }
 
                         if (startIndex >= 0 && endIndex >= 0)
@@ -394,41 +400,41 @@ namespace OV_DB.Controllers
                             var points = new List<IPosition>();
                             if (startIndex >= endIndex)
                             {
-                                points.AddRange(test[index].Skip(startIndex));
-                                points.AddRange(test[index].Take(endIndex + 1));
+                                points.AddRange(lists[index].Skip(startIndex));
+                                points.AddRange(lists[index].Take(endIndex + 1));
                             }
                             else
                             {
-                                points.AddRange(test[index].Take(endIndex).Skip(startIndex));
+                                points.AddRange(lists[index].Take(endIndex).Skip(startIndex));
                             }
-                            test[index] = points;
+                            lists[index] = points;
                             if (!points.Any())
                             {
-                                test.RemoveAt(index);
+                                lists.RemoveAt(index);
                                 index--;
                             }
                         }
 
                     }
-                    if (test[index - 1].Last().Latitude == test[index].Last().Latitude && test[index - 1].Last().Longitude == test[index].Last().Longitude)
+                    if (lists[index - 1].Last().Latitude == lists[index].Last().Latitude && lists[index - 1].Last().Longitude == lists[index].Last().Longitude)
                     {
-                        test[index].Reverse();
+                        lists[index].Reverse();
                     }
                     else
                     {
-                        if (test[index - 1].Last().Latitude == test[index].First().Latitude && test[index - 1].Last().Longitude == test[index].First().Longitude)
+                        if (lists[index - 1].Last().Latitude == lists[index].First().Latitude && lists[index - 1].Last().Longitude == lists[index].First().Longitude)
                         {
                             //correct direction
                         }
                         else
                         {
                             //We have to guess
-                            var distanceStart = GeometryHelper.distance(test[index - 1].Last().Latitude, test[index - 1].Last().Longitude, test[index].First().Latitude, test[index].First().Longitude, 'k');
-                            var distanceEnd = GeometryHelper.distance(test[index - 1].Last().Latitude, test[index - 1].Last().Longitude, test[index].Last().Latitude, test[index].Last().Longitude, 'k');
+                            var distanceStart = GeometryHelper.distance(lists[index - 1].Last().Latitude, lists[index - 1].Last().Longitude, lists[index].First().Latitude, lists[index].First().Longitude, 'k');
+                            var distanceEnd = GeometryHelper.distance(lists[index - 1].Last().Latitude, lists[index - 1].Last().Longitude, lists[index].Last().Latitude, lists[index].Last().Longitude, 'k');
 
                             if (distanceEnd < distanceStart)
                             {
-                                test[index].Reverse();
+                                lists[index].Reverse();
                             }
 
                         }
@@ -439,7 +445,7 @@ namespace OV_DB.Controllers
                     Console.WriteLine("Hier");
                 }
             }
-            return test;
+            return lists;
         }
 
         private async Task<OSM> CreateCache(int id, ICacheEntry entry, DateTime? dateTime)
