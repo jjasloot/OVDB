@@ -1,9 +1,6 @@
 ﻿using OVDB_database.Models;
 using System;
-using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
-using System.Threading.Tasks;
 
 namespace OV_DB.Helpers
 {
@@ -11,16 +8,13 @@ namespace OV_DB.Helpers
     {
         public static void ComputeDistance(Route route)
         {
-            var coordinates = route.Coordinates
-                .Split('\n')
-                .ToList()
-                .Select(c => c.Split(',').Select(c => double.Parse(c, CultureInfo.InvariantCulture)).ToList())
+            var coordinates = route.LineString.Coordinates
                 .ToList();
             var distance = 0d;
             for (var index = 1; index < coordinates.Count; index++)
             {
-                var start = new GeoCoordinatePortable.GeoCoordinate(coordinates[index - 1][1], coordinates[index - 1][0]);
-                var end = new GeoCoordinatePortable.GeoCoordinate(coordinates[index][1], coordinates[index][0]);
+                var start = new GeoCoordinatePortable.GeoCoordinate(coordinates[index - 1].X, coordinates[index - 1].Y);
+                var end = new GeoCoordinatePortable.GeoCoordinate(coordinates[index].X, coordinates[index].Y);
 
                 distance += start.GetDistanceTo(end);
             }

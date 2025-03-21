@@ -18,6 +18,6 @@ namespace OVDB_database.Models
         public Guid Guid { get; set; }
         public List<Map> Maps { get; set; }
         public List<RouteType> RouteTypes { get; set; }
-        public List<Country> Countries { get; set; }
+        public long TelegramUserId { get; set; }
     }
 }

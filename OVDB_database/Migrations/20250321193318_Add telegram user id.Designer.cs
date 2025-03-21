@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using NetTopologySuite.Geometries;
 using OVDB_database.Database;
@@ -12,9 +13,11 @@ using OVDB_database.Database;
 namespace OVDB_database.Migrations
 {
     [DbContext(typeof(OVDBDatabaseContext))]
-    partial class OVDBDatabaseContextModelSnapshot : ModelSnapshot
+    [Migration("20250321193318_Add telegram user id")]
+    partial class Addtelegramuserid
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -126,9 +129,6 @@ namespace OVDB_database.Migrations
                         .HasColumnType("int");
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("FlagEmoji")
-                        .HasColumnType("longtext");
 
                     b.Property<MultiPolygon>("Geometry")
                         .HasColumnType("multipolygon");
@@ -426,6 +426,9 @@ namespace OVDB_database.Migrations
 
                     b.Property<int?>("StationCountryId")
                         .HasColumnType("int");
+
+                    b.Property<bool>("Visited")
+                        .HasColumnType("tinyint(1)");
 
                     b.HasKey("Id");
 

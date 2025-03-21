@@ -143,7 +143,8 @@ namespace OV_DB
             services.AddTransient<IRouteRegionsService, RouteRegionsService>();
             services.AddTransient<IStationRegionsService, StationRegionsService>();
             services.AddSingleton<IFontLoader, FontLoader>();
-            services.AddSingleton<TelegramBotService>();
+            services.AddScoped<TelegramBotService>();
+            services.ConfigureTelegramBotMvc();
 
             NetTopologySuite.NtsGeometryServices.Instance = new NetTopologySuite.NtsGeometryServices(
    NetTopologySuite.Geometries.GeometryOverlay.NG);

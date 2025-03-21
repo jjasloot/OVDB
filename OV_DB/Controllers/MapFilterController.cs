@@ -21,21 +21,6 @@ namespace OV_DB.Controllers
             DatabaseContext = databaseContext;
         }
 
-
-        [HttpGet("countries/{id}")]
-        public async Task<ActionResult<List<Country>>> GetCountriesAsync(string id)
-        {
-            var guid = Guid.Parse(id);
-            var map = await DatabaseContext.Maps.SingleOrDefaultAsync(u => u.MapGuid == guid);
-            if (map == null)
-            {
-                return NotFound();
-            }
-            var list = await DatabaseContext.Countries.Where(c => c.RouteCountries.Any(r => r.Route.RouteMaps.Any(rm => rm.Map.MapId == map.MapId) || r.Route.RouteInstances.Any(ri => ri.RouteInstanceMaps.Any(rim => rim.MapId == map.MapId)))).OrderBy(c => c.Name).ToListAsync();
-            return list;
-        }
-
-
         [HttpGet("years/{id}")]
         public async Task<ActionResult<List<int>>> GetYearsAsync(string id)
         {

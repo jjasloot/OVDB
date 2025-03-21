@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -10,6 +10,7 @@ using OVDB_database.Database;
 using OVDB_database.Models;
 using Microsoft.EntityFrameworkCore;
 using Telegram.Bot.Types.ReplyMarkups;
+using OV_DB.Models;
 
 namespace OV_DB.Services
 {
@@ -26,7 +27,7 @@ namespace OV_DB.Services
 
         public async Task HandleUpdateAsync(Update update)
         {
-            if (update.Type == UpdateType.Message && update.Message.Type == MessageType.Location)
+            if (update.Type == UpdateType.Message && update.Message.Type is MessageType.Location or MessageType.Venue)
             {
                 await HandleLocationMessageAsync(update.Message);
             }
@@ -55,13 +56,13 @@ namespace OV_DB.Services
             var nearbyStations = await GetNearbyStationsAsync(location.Latitude, location.Longitude, user.Id);
 
             var responseText = "Nearby stations:\n";
-            foreach (var station in nearbyStations)
-            {
-                var flagEmoji = GetCountryFlagEmoji(station.StationCountryId);
-                responseText += $"{flagEmoji} {station.Name} - {(station.Visited ? "Visited" : "Not visited")}\n";
-            }
+            await _botClient.SendMessage(message.Chat.Id, responseText, replyMarkup: GetStationsInlineKeyboard(nearbyStations));
+        }
 
-            await _botClient.SendTextMessageAsync(message.Chat.Id, responseText, replyMarkup: GetStationsInlineKeyboard(nearbyStations));
+        private string FormatStation(StationDTO station)
+        {
+            var flagEmoji = GetCountryFlagEmoji(station.Regions);
+            return $"{station.Name} {flagEmoji} - {(station.Visited ? "✅" : "❌")}";
         }
 
         private async Task HandleCallbackQueryAsync(CallbackQuery callbackQuery)
@@ -77,9 +78,11 @@ namespace OV_DB.Services
             }
 
             var stationVisit = await _dbContext.StationVisits.SingleOrDefaultAsync(sv => sv.StationId == stationId && sv.UserId == user.Id);
+            var visited = false;
             if (stationVisit == null)
             {
                 _dbContext.StationVisits.Add(new StationVisit { StationId = stationId, UserId = user.Id });
+                visited = true;
             }
             else
             {
@@ -92,34 +95,41 @@ namespace OV_DB.Services
             if (station != null)
             {
                 var regionIds = station.Regions.Select(r => r.Id).ToList();
-                var totalStationsInRegion = await _dbContext.Stations.CountAsync(s => s.Regions.Any(r => regionIds.Contains(r.Id)));
-                var visitedStationsInRegion = await _dbContext.StationVisits.CountAsync(sv => sv.UserId == user.Id && sv.Station.Regions.Any(r => regionIds.Contains(r.Id)));
-                var percentageVisited = (double)visitedStationsInRegion / totalStationsInRegion * 100;
+                var percentageMessage = string.Empty;
+                foreach (var region in regionIds)
+                {
+                    var totalStationsInRegion = await _dbContext.Stations.Where(s=>!s.Special && !s.Hidden).CountAsync(s => s.Regions.Any(r => r.Id== region));
+                    var visitedStationsInRegion = await _dbContext.StationVisits.CountAsync(sv => sv.UserId == user.Id && sv.Station.Regions.Any(r => r.Id == region) && !sv.Station.Special && !sv.Station.Hidden);
+                    var regionName = await _dbContext.Regions.Where(r => r.Id == region).Select(r => r.Name).FirstOrDefaultAsync();
+                    var percentageVisited = Math.Round((double)visitedStationsInRegion / totalStationsInRegion * 100, 2);
+                    percentageMessage += $"{regionName}: {percentageVisited}%\n\r";
+                }
 
-                await _botClient.AnswerCallbackQueryAsync(callbackQuery.Id, $"Station visit status updated. {percentageVisited}% of stations visited in the region.");
+                await _botClient.SendMessage(callbackQuery.Message.Chat.Id, $"""{station.Name}: {(visited? "✅": "❌")}"""+ $"\n\r{percentageMessage}", replyMarkup: KeyboardButton.WithRequestLocation("Share your location"));
+                await _botClient.AnswerCallbackQuery(callbackQuery.Id, "✅");
             }
             else
             {
-                await _botClient.AnswerCallbackQueryAsync(callbackQuery.Id, "Station visit status updated.");
+                await _botClient.AnswerCallbackQuery(callbackQuery.Id, "❌");
             }
         }
 
         private async Task HandleUnknownMessageAsync(Message message)
         {
             var responseText = "Sorry, I didn't understand that. Please share your location to find nearby stations.";
-            await _botClient.SendTextMessageAsync(message.Chat.Id, responseText);
+            await _botClient.SendMessage(message.Chat.Id, responseText, replyMarkup:  KeyboardButton.WithRequestLocation("Share your location"));
         }
 
         private async Task HandleUnknownUserAsync(Message message)
         {
             var responseText = "Sorry, I couldn't identify you. Please make sure you have registered your Telegram user ID.";
-            await _botClient.SendTextMessageAsync(message.Chat.Id, responseText);
+            await _botClient.SendMessage(message.Chat.Id, responseText);
         }
 
         private async Task<List<StationDTO>> GetNearbyStationsAsync(double latitude, double longitude, int userId)
         {
             var nearbyStations = await _dbContext.Stations
-                .Where(s => s.Lattitude >= latitude - 0.05 && s.Lattitude <= latitude + 0.05 && s.Longitude >= longitude - 0.05 && s.Longitude <= longitude + 0.05)
+                .Where(s => !s.Special && !s.Hidden)
                 .OrderBy(s => (s.Lattitude - latitude) * (s.Lattitude - latitude) + (s.Longitude - longitude) * (s.Longitude - longitude))
                 .Take(5)
                 .Select(s => new StationDTO
@@ -132,33 +142,34 @@ namespace OV_DB.Services
                     Network = s.Network,
                     Operator = s.Operator,
                     Visited = s.StationVisits.Any(sv => sv.UserId == userId),
-                    StationCountryId = s.StationCountryId
+                    Regions = s.Regions.Select(r => new StationRegionDTO
+                    {
+                        Id = r.Id,
+                        OriginalName = r.OriginalName,
+                        HasParentRegion = r.ParentRegionId.HasValue,
+                        FlagEmoji = r.FlagEmoji
+                    })
                 })
                 .ToListAsync();
 
             return nearbyStations;
         }
 
-        private InlineKeyboardMarkup GetStationsInlineKeyboard(List<StationDTO> stations)
+        private InlineKeyboardButton[][] GetStationsInlineKeyboard(List<StationDTO> stations)
         {
-            var inlineKeyboardButtons = stations.Select(s => InlineKeyboardButton.WithCallbackData(s.Name, s.Id.ToString())).ToArray();
-            return new InlineKeyboardMarkup(inlineKeyboardButtons);
+            var inlineKeyboardButtons = stations.Select(s => InlineKeyboardButton.WithCallbackData(FormatStation(s), s.Id.ToString()))
+                .Select(b => new InlineKeyboardButton[] { b })
+                .ToArray();
+            return inlineKeyboardButtons;
         }
 
-        private string GetCountryFlagEmoji(int? countryId)
+        private string GetCountryFlagEmoji(IEnumerable<StationRegionDTO> regions)
         {
-            if (!countryId.HasValue)
-            {
+            var headRegion = regions.FirstOrDefault(r => !r.HasParentRegion);
+            if (headRegion == null)
                 return string.Empty;
-            }
 
-            var country = _dbContext.StationCountries.SingleOrDefault(c => c.Id == countryId.Value);
-            if (country == null)
-            {
-                return string.Empty;
-            }
-
-            return country.FlagEmoji;
+            return headRegion.FlagEmoji;
         }
     }
 }

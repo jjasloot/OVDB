@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Text;
 using System.Linq;
+using OVDB_database.Database;
 
 namespace OVDB_database.Models
 {
@@ -23,16 +24,5 @@ namespace OVDB_database.Models
         public bool Hidden { get; set; }
         public bool Special { get; set; }
         public ICollection<Region> Regions { get; set; } = new List<Region>();
-
-        public bool Visited { get; set; }
-
-        public static List<Station> GetNearbyStations(OVDBDatabaseContext dbContext, double latitude, double longitude, double radius)
-        {
-            return dbContext.Stations
-                .Where(s => (s.Lattitude - latitude) * (s.Lattitude - latitude) + (s.Longitude - longitude) * (s.Longitude - longitude) <= radius * radius)
-                .OrderBy(s => (s.Lattitude - latitude) * (s.Lattitude - latitude) + (s.Longitude - longitude) * (s.Longitude - longitude))
-                .Take(5)
-                .ToList();
-        }
     }
 }

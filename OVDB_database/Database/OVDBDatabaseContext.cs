@@ -19,8 +19,6 @@ namespace OVDB_database.Database
         public DbSet<Route> Routes { get; set; }
         public DbSet<Map> Maps { get; set; }
         public DbSet<RouteMap> RoutesMaps { get; set; }
-        public DbSet<Country> Countries { get; set; }
-        public DbSet<RouteCountry> RoutesCountries { get; set; }
         public DbSet<RouteType> RouteTypes { get; set; }
         public DbSet<User> Users { get; set; }
         public DbSet<InviteCode> InviteCodes { get; set; }
@@ -48,8 +46,6 @@ namespace OVDB_database.Database
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
-
-            modelBuilder.Entity<RouteCountry>().HasOne(rc => rc.Route).WithMany(r => r.RouteCountries).OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<Station>().Property(s => s.Hidden).HasDefaultValue(false);
             modelBuilder.Entity<Station>().Property(s => s.Special).HasDefaultValue(false);
