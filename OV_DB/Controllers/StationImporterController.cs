@@ -21,6 +21,7 @@ namespace OV_DB.Controllers
         [HttpPost("region/{regionId}")]
         public async Task<IActionResult> UpdateRegion(int regionId)
         {
+            dbContext.Database.SetCommandTimeout(300);
             var adminClaim = (User.Claims.SingleOrDefault(c => c.Type == "admin").Value ?? "false");
             if (string.Equals(adminClaim, "false", StringComparison.OrdinalIgnoreCase))
             {

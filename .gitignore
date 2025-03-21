@@ -7,3 +7,4 @@ OVDB_database/obj/
 OVDB_database/bin/
 private_vars.txt
 OV_DB/Properties/launchSettings.json
+OV_DB/appsettings.Development.json
