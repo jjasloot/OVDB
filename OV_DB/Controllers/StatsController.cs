@@ -189,49 +189,49 @@ namespace OV_DB.Controllers
                   return new
                   {
                       Route = route,
-                      MinLat = route.Coordinates.OrderBy(c => c.X).First(),
-                      MaxLat = route.Coordinates.OrderByDescending(c => c.X).First(),
-                      MinLong = route.Coordinates.OrderBy(c => c.Y).First(),
-                      MaxLong = route.Coordinates.OrderByDescending(c => c.Y).First()
+                      MinLat = route.Coordinates.OrderBy(c => c.Y).First(),
+                      MaxLat = route.Coordinates.OrderByDescending(c => c.Y).First(),
+                      MinLong = route.Coordinates.OrderBy(c => c.X).First(),
+                      MaxLong = route.Coordinates.OrderByDescending(c => c.X).First()
                   };
               }).ToList();
 
-            var minLatPoint = x3.OrderBy(x => x.MinLat.X).Select(x =>
+            var minLatPoint = x3.OrderBy(x => x.MinLat.Y).Select(x =>
             {
                 return new BoundsPoint
                 {
-                    Lat = x.MinLat.X,
-                    Long = x.MinLat.Y,
+                    Lat = x.MinLat.Y,
+                    Long = x.MinLat.X,
                     Route = x.Route.Route
                 };
             }).First();
 
-            var maxLatPoint = x3.OrderByDescending(x => x.MaxLat.X).Select(x =>
+            var maxLatPoint = x3.OrderByDescending(x => x.MaxLat.Y).Select(x =>
             {
                 return new BoundsPoint
                 {
-                    Lat = x.MaxLat.X,
-                    Long = x.MaxLat.Y,
+                    Lat = x.MaxLat.Y,
+                    Long = x.MaxLat.X,
                     Route = x.Route.Route
                 };
             }).First();
 
-            var minLongPoint = x3.OrderBy(x => x.MinLong.Y).Select(x =>
+            var minLongPoint = x3.OrderBy(x => x.MinLong.X).Select(x =>
         {
             return new BoundsPoint
             {
-                Lat = x.MinLong.X,
-                Long = x.MinLong.Y,
+                Lat = x.MinLong.Y,
+                Long = x.MinLong.X,
                 Route = x.Route.Route
             };
         }).First();
 
-            var maxLongPoint = x3.OrderByDescending(x => x.MaxLong.Y).Select(x =>
+            var maxLongPoint = x3.OrderByDescending(x => x.MaxLong.X).Select(x =>
             {
                 return new BoundsPoint
                 {
-                    Lat = x.MaxLong.X,
-                    Long = x.MaxLong.Y,
+                    Lat = x.MaxLong.Y,
+                    Long = x.MaxLong.X,
                     Route = x.Route.Route
                 };
             }).First();

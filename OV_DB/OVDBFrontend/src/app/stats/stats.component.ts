@@ -155,7 +155,6 @@ export class StatsComponent implements OnInit {
           shadowUrl: 'assets/marker-shadow.png'
         })
       });
-      console.log(this.translateService.instant('EXTREMES.SOUTH'));
       let popup = `<h2>${this.translateService.instant('EXTREMES.SOUTH')}</h2>`;
       popup += '<p>Latitude: ' + data.latMin.lat + '<br>';
       popup += 'Longitude: ' + data.latMin.long + '<br>';
