@@ -169,7 +169,14 @@ namespace OV_DB.Services
             if (headRegion == null)
                 return string.Empty;
 
-            return headRegion.FlagEmoji;
+            var subregionsWithFlags = regions.Where(r => r.HasParentRegion && !string.IsNullOrWhiteSpace(r.FlagEmoji));
+            var flags = headRegion.FlagEmoji;
+            if (subregionsWithFlags.Any())
+            {
+                flags += " ";
+                flags += string.Join(" ", subregionsWithFlags.Select(r => r.FlagEmoji));
+            }
+            return flags;
         }
     }
 }

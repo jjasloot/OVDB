@@ -1,10 +1,12 @@
-﻿using System;
+﻿using Microsoft.EntityFrameworkCore;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Text;
 
 namespace OVDB_database.Models
 {
+    [Index(nameof(StationId), nameof(UserId), IsUnique = true)]
     public class StationVisit
     {
         [Key]
