@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.SignalR;
 using OV_DB.Hubs;
 using OVDB_database.Database;
 using OVDB_database.Models;
+using System.Collections.Concurrent;
 
 namespace OV_DB.Services
 {
@@ -15,7 +16,9 @@ namespace OV_DB.Services
         private readonly OVDBDatabaseContext _dbContext;
         private readonly IRouteRegionsService _routeRegionsService;
         private readonly IHubContext<MapGenerationHub> _hubContext;
-        private Timer _timer;
+        private readonly ConcurrentQueue<int> _routeQueue = new ConcurrentQueue<int>();
+        private Task _backgroundTask;
+        private CancellationTokenSource _cancellationTokenSource;
 
         public RefreshRoutesService(OVDBDatabaseContext dbContext, IRouteRegionsService routeRegionsService, IHubContext<MapGenerationHub> hubContext)
         {
@@ -26,19 +29,33 @@ namespace OV_DB.Services
 
         public Task StartAsync(CancellationToken cancellationToken)
         {
-            _timer = new Timer(RefreshRoutes, null, TimeSpan.Zero, TimeSpan.FromHours(1));
+            _cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            _backgroundTask = Task.Run(() => ProcessQueueAsync(_cancellationTokenSource.Token));
             return Task.CompletedTask;
         }
 
-        private async void RefreshRoutes(object state)
+        public void EnqueueRouteRefresh(int routeId)
         {
-            var regionId = (int)state;
-            var adminClaim = (User.Claims.SingleOrDefault(c => c.Type == "admin").Value ?? "false");
-            if (string.Equals(adminClaim, "false", StringComparison.OrdinalIgnoreCase))
-            {
-                return;
-            }
+            _routeQueue.Enqueue(routeId);
+        }
 
+        private async Task ProcessQueueAsync(CancellationToken cancellationToken)
+        {
+            while (!cancellationToken.IsCancellationRequested)
+            {
+                if (_routeQueue.TryDequeue(out var routeId))
+                {
+                    await RefreshRoutesAsync(routeId);
+                }
+                else
+                {
+                    await Task.Delay(1000, cancellationToken);
+                }
+            }
+        }
+
+        public async Task RefreshRoutesAsync(int regionId)
+        {
             var routes = _dbContext.Routes.Where(r => r.RegionId == regionId).ToList();
             var totalRoutes = routes.Count;
             var processedRoutes = 0;
@@ -58,13 +75,13 @@ namespace OV_DB.Services
 
         public Task StopAsync(CancellationToken cancellationToken)
         {
-            _timer?.Change(Timeout.Infinite, 0);
-            return Task.CompletedTask;
+            _cancellationTokenSource.Cancel();
+            return Task.WhenAny(_backgroundTask, Task.Delay(Timeout.Infinite, cancellationToken));
         }
 
         public void Dispose()
         {
-            _timer?.Dispose();
+            _cancellationTokenSource?.Cancel();
         }
     }
 }

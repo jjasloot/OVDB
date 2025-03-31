@@ -9,6 +9,7 @@ using Newtonsoft.Json;
 using OV_DB.Hubs;
 using OVDB_database.Database;
 using OVDB_database.Models;
+using System.Collections.Concurrent;
 
 namespace OV_DB.Services
 {
@@ -17,7 +18,9 @@ namespace OV_DB.Services
         private readonly OVDBDatabaseContext _dbContext;
         private readonly IStationRegionsService _stationRegionsService;
         private readonly IHubContext<MapGenerationHub> _hubContext;
-        private Timer _timer;
+        private readonly ConcurrentQueue<int> _regionQueue = new ConcurrentQueue<int>();
+        private Task _backgroundTask;
+        private CancellationTokenSource _cancellationTokenSource;
 
         public UpdateRegionService(OVDBDatabaseContext dbContext, IStationRegionsService stationRegionsService, IHubContext<MapGenerationHub> hubContext)
         {
@@ -28,19 +31,33 @@ namespace OV_DB.Services
 
         public Task StartAsync(CancellationToken cancellationToken)
         {
-            _timer = new Timer(UpdateRegion, null, TimeSpan.Zero, TimeSpan.FromHours(1));
+            _cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            _backgroundTask = Task.Run(() => ProcessQueueAsync(_cancellationTokenSource.Token));
             return Task.CompletedTask;
         }
 
-        private async void UpdateRegion(object state)
+        public void EnqueueRegionUpdate(int regionId)
         {
-            var regionId = (int)state;
-            var adminClaim = (User.Claims.SingleOrDefault(c => c.Type == "admin").Value ?? "false");
-            if (string.Equals(adminClaim, "false", StringComparison.OrdinalIgnoreCase))
-            {
-                return;
-            }
+            _regionQueue.Enqueue(regionId);
+        }
 
+        private async Task ProcessQueueAsync(CancellationToken cancellationToken)
+        {
+            while (!cancellationToken.IsCancellationRequested)
+            {
+                if (_regionQueue.TryDequeue(out var regionId))
+                {
+                    await UpdateRegionAsync(regionId);
+                }
+                else
+                {
+                    await Task.Delay(1000, cancellationToken);
+                }
+            }
+        }
+
+        public async Task UpdateRegionAsync(int regionId)
+        {
             var list = await GetStationListAsync(regionId.ToString());
             var tryCount = 1;
             while (list == null && tryCount < 6)
@@ -94,13 +111,13 @@ namespace OV_DB.Services
 
         public Task StopAsync(CancellationToken cancellationToken)
         {
-            _timer?.Change(Timeout.Infinite, 0);
-            return Task.CompletedTask;
+            _cancellationTokenSource.Cancel();
+            return Task.WhenAny(_backgroundTask, Task.Delay(Timeout.Infinite, cancellationToken));
         }
 
         public void Dispose()
         {
-            _timer?.Dispose();
+            _cancellationTokenSource?.Cancel();
         }
 
         [NonAction]
