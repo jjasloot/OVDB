@@ -379,31 +379,11 @@ namespace OV_DB.Controllers
                 return Forbid();
             }
 
-            var routes = await _context.Routes.Where(r => r.Regions.Any(rr => rr.Id == id)).Include(r => r.Regions).ToListAsync();
-            foreach (var route in routes)
-            {
-                try
-                {
-                    var regionsBefore = route.Regions.Select(r => r.Id).ToHashSet();
-                    await routeRegionsService.AssignRegionsToRouteAsync(route);
-                    var regionsAfter = route.Regions.Select(r => r.Id).ToHashSet();
-                    if (regionsBefore.SetEquals(regionsAfter))
-                    {
-                        Console.WriteLine("Route " + route.Name + ": No update");
-                    }
-                    else
-                    {
-                        Console.WriteLine("Route " + route.Name+ ": Updated 👍");
-                    }
-                    await _context.SaveChangesAsync();
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine("Error updating route " + route.Name + ": " + ex.Message);
-                    _context.ChangeTracker.Clear();
-                }
-            }
-            return Ok(routes.Count);
+            // Call the background service to refresh routes
+            var refreshRoutesService = new RefreshRoutesService(_context, routeRegionsService);
+            await refreshRoutesService.RefreshRoutesAsync(id);
+
+            return Ok();
         }
 
         [HttpPost("refreshRoutesWithoutRegions")]
@@ -414,13 +394,12 @@ namespace OV_DB.Controllers
             {
                 return Forbid();
             }
-            var routes = await _context.Routes.Where(r => !r.Regions.Any()).Include(r => r.Regions).ToListAsync();
-            foreach (var route in routes)
-            {
-                await routeRegionsService.AssignRegionsToRouteAsync(route);
-                await _context.SaveChangesAsync();
-            }
-            return Ok(routes.Count);
+
+            // Call the background service to refresh routes without regions
+            var refreshRoutesWithoutRegionsService = new RefreshRoutesWithoutRegionsService(_context, routeRegionsService);
+            await refreshRoutesWithoutRegionsService.RefreshRoutesWithoutRegionsAsync();
+
+            return Ok();
         }
 
     }
