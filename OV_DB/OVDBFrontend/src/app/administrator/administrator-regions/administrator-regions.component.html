@@ -8,9 +8,13 @@
     </button>
   </mat-card-header>
   <mat-card-content>
-    <div *ngIf="progressUpdates[region.id]">
-      Progress: {{ progressUpdates[region.id] }}%
-    </div>
+    @if(progressUpdates[region.id]!=null){
+    <mat-chip [class.finished]="progressUpdates[region.id]>=100">
+      Progress: {{ progressUpdates[region.id] }}% @if(updateResult[region.id]!=null){
+      : {{updateResult[region.id]}}
+      }
+    </mat-chip><br />
+    }
     @for(subregion of region.subRegions; track subregion.id) {
     @if(subregion.subRegions.length>0){
     <mat-card style="margin-bottom: 1rem">
@@ -22,9 +26,13 @@
         </button>
       </mat-card-header>
       <mat-card-content>
-        <div *ngIf="progressUpdates[subregion.id]">
-          Progress: {{ progressUpdates[subregion.id] }}%
-        </div>
+        @if(progressUpdates[subregion.id]!=null){
+        <mat-chip [class.finished]="progressUpdates[subregion.id]>=100">
+          Progress: {{ progressUpdates[subregion.id] }}% @if(updateResult[subregion.id]!=null){
+          : {{updateResult[subregion.id]}}
+          }
+        </mat-chip><br />
+        }
         @for(intermediateRegion of subregion.subRegions; track intermediateRegion.id) {
         {{ intermediateRegion.name }} ({{ intermediateRegion.osmRelationId }}) }
       </mat-card-content>
@@ -41,10 +49,13 @@
   Refresh without regions
 </button>
 
-<div *ngIf="progressUpdates['RefreshRoutesWithoutRegions']">
-  Progress: {{ progressUpdates['RefreshRoutesWithoutRegions'] }}%
-</div>
-
+@if(progressUpdates[0]!=null){
+<mat-chip [class.finished]="progressUpdates[0]>=100">
+  Progress: {{ progressUpdates[0] }}% @if(updateResult[0]!=null){
+  : {{updateResult[0]}}
+  }
+</mat-chip><br />
+}
 <button class="fab" mat-fab color="primary" (click)="addNewRegion()">
   <mat-icon>add</mat-icon>
 </button>

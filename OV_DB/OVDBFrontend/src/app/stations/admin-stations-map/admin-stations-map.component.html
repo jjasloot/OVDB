@@ -1,19 +1,21 @@
 <div class="flex">
   <div class="map-container" #mapContainer>
-    <div
-      class="map"
-      leaflet
-      [leafletOptions]="options"
-      [leafletLayers]="layers"
-      [leafletLayersControl]="leafletLayersControl"
-      [leafletFitBounds]="bounds"
-    ></div>
+    <div class="map" leaflet [leafletOptions]="options" [leafletLayers]="layers"
+      [leafletLayersControl]="leafletLayersControl" [leafletFitBounds]="bounds"></div>
     <div [ngClass]="{ loading: loading, 'loading-indicator': true }">
       <mat-spinner></mat-spinner>
     </div>
   </div>
   <div class="side">
-    @if(!selectedStation){
+    @for(region of progressUpdates | keyvalue; track region.key){
+    <mat-chip [class.finished]="region.value>=100">
+      {{getNameById(+region.key)}}: {{ region.value }}%
+    </mat-chip>
+
+    }
+
+
+    @if(!selectedStation()){
     <mat-expansion-panel>
       <mat-expansion-panel-header>Filter</mat-expansion-panel-header>
       <button mat-raised-button style="margin-bottom: 1rem" (click)="getData()">
@@ -22,12 +24,8 @@
       @for (region of regions; track region.id) {
       <mat-expansion-panel [disabled]="region.subRegions.length === 0">
         <mat-expansion-panel-header>
-          <mat-checkbox
-            (click)="$event.stopPropagation()"
-            [checked]="isRegionChecked(region.id)"
-            (change)="setRegion(region.id, $event, region.subRegions)"
-            [indeterminate]="anyChecked(region.subRegions)"
-          >
+          <mat-checkbox (click)="$event.stopPropagation()" [checked]="isRegionChecked(region.id)"
+            (change)="setRegion(region.id, $event, region.subRegions)" [indeterminate]="anyChecked(region.subRegions)">
             <mat-tooltip-component [textContent]="name(region)">
               {{ region.originalName }}
             </mat-tooltip-component>
@@ -36,14 +34,9 @@
         <div>
           @if(region.subRegions.length > 0){ @for(subRegion of
           region.subRegions; track subRegion.id) {
-          <mat-checkbox
-            style="margin-left: 1rem"
-            [checked]="
+          <mat-checkbox style="margin-left: 1rem" [checked]="
               isRegionChecked(subRegion.id) || isRegionChecked(region.id)
-            "
-            [disabled]="isRegionChecked(region.id)"
-            (change)="setRegion(subRegion.id, $event)"
-          >
+            " [disabled]="isRegionChecked(region.id)" (change)="setRegion(subRegion.id, $event)">
             <div [matTooltip]="name(subRegion)">
               {{ subRegion.originalName }}
             </div>
@@ -69,7 +62,7 @@
         <mat-form-field style="flex: 1">
           <mat-label>Import region</mat-label>
           <mat-select [(ngModel)]="selectedRegionId">
-            @for (region of allRegions; track region.id) {
+            @for (region of allRegions(); track region.id) {
             <mat-option [value]="region.id">{{ name(region) }}</mat-option>
             }
           </mat-select>
@@ -81,7 +74,7 @@
     </mat-expansion-panel>
 
     } @else {
-    <h3>{{ selectedStation.name }}</h3>
+    <h3 (click)="selectedStation.set(null)">{{ selectedStation().name }}</h3>
     <button mat-icon-button color="warn" (click)="deleteStation()">
       <mat-icon>delete</mat-icon>
     </button>

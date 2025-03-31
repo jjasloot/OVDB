@@ -2,12 +2,14 @@
 using AutoMapper.QueryableExtensions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using NetTopologySuite.Geometries;
 using NetTopologySuite.IO;
 using Newtonsoft.Json;
+using OV_DB.Hubs;
 using OV_DB.Models;
 using OV_DB.Services;
 using OVDB_database.Database;
@@ -25,11 +27,10 @@ namespace OV_DB.Controllers
     [Route("api/[controller]")]
     [ApiController]
     [Authorize]
-    public class RegionsController(IMemoryCache memoryCache, OVDBDatabaseContext context, IConfiguration configuration, IRouteRegionsService routeRegionsService, IMapper mapper) : ControllerBase
+    public class RegionsController(IMemoryCache memoryCache, OVDBDatabaseContext context, IMapper mapper, IHubContext<MapGenerationHub> hubContext) : ControllerBase
     {
         private IMemoryCache _cache = memoryCache;
         private OVDBDatabaseContext _context = context;
-        private IConfiguration _configuration = configuration;
 
         private async Task<string> GetPolygonAsync(long id)
         {
@@ -371,7 +372,7 @@ namespace OV_DB.Controllers
         }
 
         [HttpPost("{id}/refreshRoutes")]
-        public async Task<IActionResult> RefreshRoutes(int id)
+        public async Task<IActionResult> RefreshRoutesAsync(int id)
         {
             var adminClaim = (User.Claims.SingleOrDefault(c => c.Type == "admin").Value ?? "false");
             if (string.Equals(adminClaim, "false", StringComparison.OrdinalIgnoreCase))
@@ -380,14 +381,13 @@ namespace OV_DB.Controllers
             }
 
             // Call the background service to refresh routes
-            var refreshRoutesService = new RefreshRoutesService(_context, routeRegionsService);
-            await refreshRoutesService.RefreshRoutesAsync(id);
-
+            RefreshRoutesService.RouteQueue.Enqueue(id);
+            await hubContext.Clients.All.SendAsync(MapGenerationHub.RegionUpdateMethod, id, 0);
             return Ok();
         }
 
         [HttpPost("refreshRoutesWithoutRegions")]
-        public async Task<IActionResult> RefreshRoutesWithoutRegions()
+        public IActionResult RefreshRoutesWithoutRegions()
         {
             var adminClaim = (User.Claims.SingleOrDefault(c => c.Type == "admin").Value ?? "false");
             if (string.Equals(adminClaim, "false", StringComparison.OrdinalIgnoreCase))
@@ -396,8 +396,7 @@ namespace OV_DB.Controllers
             }
 
             // Call the background service to refresh routes without regions
-            var refreshRoutesWithoutRegionsService = new RefreshRoutesWithoutRegionsService(_context, routeRegionsService);
-            await refreshRoutesWithoutRegionsService.RefreshRoutesWithoutRegionsAsync();
+            RefreshRoutesWithoutRegionsService.RouteQueue.Enqueue(true);
 
             return Ok();
         }

@@ -1,25 +1,25 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net.Http;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
+using OV_DB.Hubs;
 using OV_DB.Models;
 using OV_DB.Services;
 using OVDB_database.Database;
 using OVDB_database.Models;
+using System;
+using System.Linq;
+using System.Net.Http;
+using System.Threading.Tasks;
 
 namespace OV_DB.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class StationImporterController(OVDBDatabaseContext dbContext, IStationRegionsService stationRegionsService) : ControllerBase
+    public class StationImporterController(OVDBDatabaseContext dbContext, IStationRegionsService stationRegionsService, IHubContext<MapGenerationHub> mapGenerationHubContext) : ControllerBase
     {
         [HttpPost("region/{regionId}")]
-        public async Task<IActionResult> UpdateRegion(int regionId)
+        public async Task<IActionResult> UpdateRegionAsync(int regionId)
         {
             var adminClaim = (User.Claims.SingleOrDefault(c => c.Type == "admin").Value ?? "false");
             if (string.Equals(adminClaim, "false", StringComparison.OrdinalIgnoreCase))
@@ -28,8 +28,8 @@ namespace OV_DB.Controllers
             }
 
             // Call the background service to update the region
-            var updateRegionService = new UpdateRegionService(dbContext, stationRegionsService);
-            await updateRegionService.UpdateRegionAsync(regionId);
+            await mapGenerationHubContext.Clients.All.SendAsync(MapGenerationHub.RegionStationUpdateMethod, regionId, 0);
+            UpdateRegionService.RegionQueue.Enqueue(regionId);
 
             return Ok();
         }

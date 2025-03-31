@@ -8,24 +8,17 @@ using OV_DB.Hubs;
 using OVDB_database.Database;
 using OVDB_database.Models;
 using System.Collections.Concurrent;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using OV_DB.Models;
 
 namespace OV_DB.Services
 {
-    public class RefreshRoutesService : IHostedService, IDisposable
+    public class RefreshRoutesService(IServiceProvider serviceProvider, IHubContext<MapGenerationHub> hubContext) : IHostedService, IDisposable
     {
-        private readonly OVDBDatabaseContext _dbContext;
-        private readonly IRouteRegionsService _routeRegionsService;
-        private readonly IHubContext<MapGenerationHub> _hubContext;
-        private readonly ConcurrentQueue<int> _routeQueue = new ConcurrentQueue<int>();
+        public static readonly ConcurrentQueue<int> RouteQueue = new ConcurrentQueue<int>();
         private Task _backgroundTask;
         private CancellationTokenSource _cancellationTokenSource;
-
-        public RefreshRoutesService(OVDBDatabaseContext dbContext, IRouteRegionsService routeRegionsService, IHubContext<MapGenerationHub> hubContext)
-        {
-            _dbContext = dbContext;
-            _routeRegionsService = routeRegionsService;
-            _hubContext = hubContext;
-        }
 
         public Task StartAsync(CancellationToken cancellationToken)
         {
@@ -34,18 +27,17 @@ namespace OV_DB.Services
             return Task.CompletedTask;
         }
 
-        public void EnqueueRouteRefresh(int routeId)
-        {
-            _routeQueue.Enqueue(routeId);
-        }
-
         private async Task ProcessQueueAsync(CancellationToken cancellationToken)
         {
             while (!cancellationToken.IsCancellationRequested)
             {
-                if (_routeQueue.TryDequeue(out var routeId))
+                if (RouteQueue.TryDequeue(out var routeId))
                 {
-                    await RefreshRoutesAsync(routeId);
+                    try
+                    {
+                        await RefreshRoutesAsync(routeId);
+                    }
+                    catch { }
                 }
                 else
                 {
@@ -56,21 +48,32 @@ namespace OV_DB.Services
 
         public async Task RefreshRoutesAsync(int regionId)
         {
-            var routes = _dbContext.Routes.Where(r => r.RegionId == regionId).ToList();
+            using var scope = serviceProvider.CreateScope();
+            using var dbContext = scope.ServiceProvider.GetService<OVDBDatabaseContext>();
+            var routeRegionsService = scope.ServiceProvider.GetService<IRouteRegionsService>();
+
+            var routes = await dbContext.Routes.Where(r => r.Regions.Any(r => r.Id == regionId)).Include(r=>r.Regions).ToListAsync();
             var totalRoutes = routes.Count;
             var processedRoutes = 0;
-
+            var progress = 0;
+            var updatedRoutes = 0;
             foreach (var route in routes)
             {
-                await _routeRegionsService.AssignRegionsToRouteAsync(route);
+                var updated = await routeRegionsService.AssignRegionsToRouteAsync(route);
+                if (updated) updatedRoutes += 1;
                 processedRoutes++;
-                var progress = (processedRoutes * 100) / totalRoutes;
-                await _hubContext.Clients.All.SendAsync("GenerationUpdate", regionId, progress);
+                var newProgress = (processedRoutes * 98) / totalRoutes;
+                if (newProgress != progress)
+                {
+                    progress = newProgress;
+                    await hubContext.Clients.All.SendAsync(MapGenerationHub.RegionUpdateMethod, regionId, progress);
+
+                }
             }
 
-            await _dbContext.SaveChangesAsync();
+            await dbContext.SaveChangesAsync();
 
-            await _hubContext.Clients.All.SendAsync("GenerationUpdate", regionId, 100);
+            await hubContext.Clients.All.SendAsync(MapGenerationHub.RegionUpdateMethod, regionId, 100, updatedRoutes);
         }
 
         public Task StopAsync(CancellationToken cancellationToken)
