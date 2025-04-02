@@ -47,38 +47,38 @@ import { MatOption } from "@angular/material/core";
 import { AsyncPipe } from "@angular/common";
 
 @Component({
-    selector: "app-administrator-operators",
-    templateUrl: "./administrator-operators.component.html",
-    styleUrl: "./administrator-operators.component.scss",
-    imports: [
-        MatCard,
-        MatCardHeader,
-        MatCardTitle,
-        MatCardSubtitle,
-        MatIconButton,
-        MatIcon,
-        MatCardContent,
-        MatTable,
-        MatColumnDef,
-        MatHeaderCellDef,
-        MatHeaderCell,
-        MatCellDef,
-        MatCell,
-        MatChipSet,
-        MatChip,
-        MatHeaderRowDef,
-        MatHeaderRow,
-        MatRowDef,
-        MatRow,
-        MatCardActions,
-        MatExpansionPanel,
-        MatExpansionPanelHeader,
-        MatExpansionPanelTitle,
-        MatSelect,
-        FormsModule,
-        MatOption,
-        AsyncPipe,
-    ]
+  selector: "app-administrator-operators",
+  templateUrl: "./administrator-operators.component.html",
+  styleUrl: "./administrator-operators.component.scss",
+  imports: [
+    MatCard,
+    MatCardHeader,
+    MatCardTitle,
+    MatCardSubtitle,
+    MatIconButton,
+    MatIcon,
+    MatCardContent,
+    MatTable,
+    MatColumnDef,
+    MatHeaderCellDef,
+    MatHeaderCell,
+    MatCellDef,
+    MatCell,
+    MatChipSet,
+    MatChip,
+    MatHeaderRowDef,
+    MatHeaderRow,
+    MatRowDef,
+    MatRow,
+    MatCardActions,
+    MatExpansionPanel,
+    MatExpansionPanelHeader,
+    MatExpansionPanelTitle,
+    MatSelect,
+    FormsModule,
+    MatOption,
+    AsyncPipe,
+  ]
 })
 export class AdministratorOperatorsComponent implements OnInit {
   regionsService = inject(RegionsService);
@@ -105,11 +105,13 @@ export class AdministratorOperatorsComponent implements OnInit {
 
   updateOpenOperators = effect(
     () => {
-      this.operatorService
-        .getOpenOperatorsForRegion(this.selectedRegion())
-        .subscribe((data) => {
-          this.openOperators.set(data);
-        });
+      if (!!this.selectedRegion()) {
+        this.operatorService
+          .getOpenOperatorsForRegion(this.selectedRegion())
+          .subscribe((data) => {
+            this.openOperators.set(data);
+          });
+      }
     },
     { allowSignalWrites: true }
   );

@@ -4,22 +4,14 @@
       <h2 style="cursor: pointer" (click)="gotoHome()">OVDB</h2>
 
       @if (isLoggedIn) {
-        <div class="icons">
-          @if (isAdmin) {
-            <button
-              mat-icon-button
-              class="desktop"
-              [routerLink]="['/administrator']"
-              [class.marker]="hasUnreadRequestsAdmin"
-              >
-              <mat-icon>supervisor_account</mat-icon>
-            </button>
-          }
-          <button
-            mat-icon-button
-            [routerLink]="['/requests']"
-            [class.marker]="hasUnreadRequests"
-            >
+      <div class="icons">
+        @if (isAdmin) {
+        <button mat-icon-button [routerLink]="['/administrator']" [class.marker]="hasUnreadRequestsAdmin">
+          <mat-icon>supervisor_account</mat-icon>
+        </button>
+        }
+        <div class="mobile">
+          <button mat-icon-button [routerLink]="['/requests']" [class.marker]="hasUnreadRequests">
             <mat-icon>forum</mat-icon>
           </button>
           <button mat-icon-button [routerLink]="['/']">
@@ -28,39 +20,65 @@
           <button mat-icon-button [routerLink]="['/admin']">
             <mat-icon>backup</mat-icon>
           </button>
-          <button mat-icon-button [routerLink]="['/help']">
-            <mat-icon>help_outline</mat-icon>
+        </div>
+        <div class="desktop">
+          <button mat-button [routerLink]="['/requests']" [class.marker]="hasUnreadRequests">
+            <mat-icon>forum</mat-icon>
+            {{'MENU.REQUESTS'|translate}}
           </button>
-          <mat-select
-            [value]="currentLanguage"
-            hideSingleSelectionIndicator
-            (selectionChange)="setLanguage($event)"
-            >
-            <mat-option [value]="'nl'">nl</mat-option>
-            <mat-option [value]="'en'">en</mat-option>
-          </mat-select>
-          <button mat-icon-button (click)="signOut()">
-            <mat-icon>highlight_off</mat-icon>
+          <button mat-button [routerLink]="['/']">
+            <mat-icon>map</mat-icon>
+            {{'MENU.MAPS'|translate}}
+          </button>
+          <button mat-button [routerLink]="['/admin']">
+            <mat-icon>backup</mat-icon>
+            {{'MENU.DATA'|translate}}
           </button>
         </div>
+        <button mat-button [matMenuTriggerFor]="menu">
+          <mat-icon>menu</mat-icon>
+          {{'MENU.MENU'|translate}}
+        </button>
+        <mat-menu #menu="matMenu">
+          @if(currentLanguage!='nl'){
+          <button mat-menu-item (click)="setLanguage('nl')"><mat-icon>🇳🇱</mat-icon> Nederlands</button>
+          }
+          @if(currentLanguage!='en'){
+          <button mat-menu-item (click)="setLanguage('en')"><mat-icon>🇬🇧</mat-icon> English</button>
+          }
+          <button mat-menu-item [routerLink]="['/images']">
+            <mat-icon>image</mat-icon>
+            {{ "HOME.IMAGES" | translate }}
+          </button>
+          <button mat-menu-item [routerLink]="['/stats']">
+            <mat-icon>query_stats</mat-icon>
+            {{ "HOME.STATS" | translate }}
+          </button>
+          <button mat-menu-item [routerLink]="['/help']">
+            <mat-icon>help_outline</mat-icon>
+            {{'MENU.HELP'|translate}}
+          </button>
+          <button mat-menu-item (click)="signOut()">
+            <mat-icon>highlight_off</mat-icon>
+            <span> {{'MENU.SIGNOUT'|translate}}</span>
+          </button>
+        </mat-menu>
+
+      </div>
       }
       @if (!isLoggedIn) {
-        <div class="icons">
-          <button mat-icon-button [routerLink]="['/help']">
-            <mat-icon>help_outline</mat-icon>
-          </button>
-          <mat-select
-            hideSingleSelectionIndicator
-            [value]="currentLanguage"
-            (selectionChange)="setLanguage($event)"
-            >
-            <mat-option [value]="'nl'">nl</mat-option>
-            <mat-option [value]="'en'">en</mat-option>
-          </mat-select>
-          <button mat-icon-button (click)="signIn()">
-            <mat-icon>person</mat-icon>
-          </button>
-        </div>
+      <div class="icons">
+        <button mat-icon-button [routerLink]="['/help']">
+          <mat-icon>help_outline</mat-icon>
+        </button>
+        <mat-select hideSingleSelectionIndicator [value]="currentLanguage" (selectionChange)="setLanguage($event)">
+          <mat-option [value]="'nl'">nl</mat-option>
+          <mat-option [value]="'en'">en</mat-option>
+        </mat-select>
+        <button mat-icon-button (click)="signIn()">
+          <mat-icon>person</mat-icon>
+        </button>
+      </div>
       }
     </div>
   </mat-toolbar>

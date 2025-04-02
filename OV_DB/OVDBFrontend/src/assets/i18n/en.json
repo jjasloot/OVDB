@@ -69,7 +69,7 @@
   "NO": "No",
   "YES": "Yes",
   "HELP.TITLE": "How does this work?",
-  "HELP.DESCRIPTION": "Keep track of all trips you made. For the first time you make a certain trip add a new route. Then use trips to keep track of ever time you used a route.<br><br>Import the routes from OpenStreetMaps using the wizard or use <a href=\"http://brouter.de/brouter-web/\" target=\"_blank\">BRouter</a>.<br><br>",
+  "HELP.DESCRIPTION": "Keep track of all trips you made. For the first time you make a certain trip add a new route. Then use trips to keep track of ever time you used a route.<br><br>Import the routes from OpenStreetMaps using the wizard or use <a href=\"https://brouter.m11n.de/\" target=\"_blank\">BRouter</a>.<br><br>",
   "HELP.RAIL": "Rail-related (trains, trams, metro):",
   "HELP.BUSSES": "Busses (pay attention at roundabouts) (this one can do with some improving):",
   "HELP.BOATS": "Boats:",
@@ -210,5 +210,13 @@
   "REQUESTS.NEW_REQUEST": "New request",
   "REQUESTS.NEW_REQUEST_PLACEHOLDER": "Could you add Iceland? Could you split Italy into its provinces, e.g. Lomdardy and Tuscany?",
   "REQUESTS.SEND_REQUEST": "Send request",
-  "REQUESTS.RESPONSE": "Response"
+  "REQUESTS.RESPONSE": "Response",
+  "MENU": {
+    "HELP": "Help",
+    "SIGNOUT": "Uitloggen",
+    "MENU": "Menu",
+    "REQUESTS": "Requests",
+    "MAPS": "Maps",
+    "DATA": "Data"
+  }
 }

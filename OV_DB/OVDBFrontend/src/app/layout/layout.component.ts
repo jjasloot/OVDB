@@ -2,26 +2,31 @@ import { Component, OnInit } from "@angular/core";
 import { Router, RouterLink, RouterOutlet } from "@angular/router";
 import { AuthenticationService } from "../services/authentication.service";
 import { TranslationService } from "../services/translation.service";
-import { MatSelectChange, MatSelect } from "@angular/material/select";
+import { MatSelect } from "@angular/material/select";
 import { RequestsService } from "../services/requests.service";
 import { MatToolbar } from "@angular/material/toolbar";
-import { MatIconButton } from "@angular/material/button";
+import { MatButton, MatIconButton } from "@angular/material/button";
 import { MatIcon } from "@angular/material/icon";
 import { MatOption } from "@angular/material/core";
+import { MatMenuModule } from "@angular/material/menu";
+import { TranslateModule } from "@ngx-translate/core";
 
 @Component({
-    selector: "app-layout",
-    templateUrl: "./layout.component.html",
-    styleUrls: ["./layout.component.scss"],
-    imports: [
-        MatToolbar,
-        MatIconButton,
-        RouterLink,
-        MatIcon,
-        MatSelect,
-        MatOption,
-        RouterOutlet,
-    ]
+  selector: "app-layout",
+  templateUrl: "./layout.component.html",
+  styleUrls: ["./layout.component.scss"],
+  imports: [
+    MatToolbar,
+    MatIconButton,
+    MatButton,
+    RouterLink,
+    MatIcon,
+    MatSelect,
+    MatOption,
+    RouterOutlet,
+    MatMenuModule,
+    TranslateModule
+  ]
 })
 export class LayoutComponent implements OnInit {
   hasUnreadRequests: boolean = false;
@@ -31,7 +36,7 @@ export class LayoutComponent implements OnInit {
     private authService: AuthenticationService,
     private requestsService: RequestsService,
     private translationService: TranslationService
-  ) {}
+  ) { }
 
   ngOnInit() {
     if (this.isLoggedIn) {
@@ -51,8 +56,8 @@ export class LayoutComponent implements OnInit {
     this.router.navigate(["/"]);
   }
 
-  setLanguage(language: MatSelectChange) {
-    this.translationService.language = language.value;
+  setLanguage(language: 'nl' | 'en') {
+    this.translationService.language = language;
   }
   get currentLanguage() {
     return this.translationService.language;

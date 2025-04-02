@@ -69,7 +69,7 @@
   "NO": "Nee",
   "YES": "Ja",
   "HELP.TITLE": "Hoe werkt dit?",
-  "HELP.DESCRIPTION": "Houd alle reizen die je gemaakt hebt bij. Maak de eerste keer een nieuwe route aan en vul deze daarna aan met ritten.<br><br>Importeer de routes met de wizard vanuit OpenStreetMaps of maak gebruik van <a href=\"http://brouter.de/brouter-web/\" target=\"_blank\">BRouter</a>.<br><br>",
+  "HELP.DESCRIPTION": "Houd alle reizen die je gemaakt hebt bij. Maak de eerste keer een nieuwe route aan en vul deze daarna aan met ritten.<br><br>Importeer de routes met de wizard vanuit OpenStreetMaps of maak gebruik van <a href=\"https://brouter.m11n.de/\" target=\"_blank\">BRouter</a>.<br><br>",
   "HELP.RAIL": "Spoor (treinen, trams, metro):",
   "HELP.BUSSES": "Bussen (let op bij rotondes) (deze kan waarschijnlijk netter):",
   "HELP.BOATS": "Boten:",
@@ -210,5 +210,13 @@
   "REQUESTS.NEW_REQUEST": "Nieuwe aanvraag",
   "REQUESTS.NEW_REQUEST_PLACEHOLDER": "Zou je IJsland willen toevoegen? Kun je Italië in provincies zoals Lombardije en Toscane opdelen?",
   "REQUESTS.SEND_REQUEST": "Verstuur aanvraag",
-  "REQUESTS.RESPONSE": "Reactie"
+  "REQUESTS.RESPONSE": "Reactie",
+  "MENU": {
+    "HELP": "Help",
+    "SIGNOUT": "Uitloggen",
+    "MENU": "Menu",
+    "REQUESTS": "Aanvragen",
+    "MAPS": "Kaarten",
+    "DATA": "Data"
+  }
 }
