@@ -6,6 +6,7 @@ import { AdministratorNewRegionComponent } from "../administrator-new-region/adm
 import { MatCard, MatCardHeader, MatCardTitle, MatCardSubtitle, MatCardContent } from "@angular/material/card";
 import { MatButton, MatFabButton } from "@angular/material/button";
 import { MatIcon } from "@angular/material/icon";
+import { SignalRService } from "src/app/services/signal-r.service";
 
 @Component({
     selector: "app-administrator-regions",
@@ -26,11 +27,20 @@ export class AdministratorRegionsComponent implements OnInit {
   regions: Region[];
   constructor(
     private regionsService: RegionsService,
-    private dialog: MatDialog
-  ) {}
+    private dialog: MatDialog,
+    private signalRService: SignalRService
+  ) {
+    this.signalRService.regionUpdates$.pipe(takeUntilDestroyed()).subscribe((update) => {
+      this.progressUpdates[update.regionId] = update.percentage;
+      if (update.updatedRoutes != null) {
+        this.updateResult[update.regionId] = update.updatedRoutes;
+      }
+    });
+  }
 
   ngOnInit(): void {
     this.loadData();
+
   }
 
   private loadData() {

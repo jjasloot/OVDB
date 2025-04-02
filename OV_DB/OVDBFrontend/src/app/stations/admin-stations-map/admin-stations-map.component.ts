@@ -116,7 +116,18 @@ export class AdminStationsMapComponent implements OnInit {
   layers = [];
 
   loading = true;
-  constructor(private apiService: ApiService, private cd: ChangeDetectorRef) {}
+
+  progressUpdates: { [key: number]: number } = {};
+
+
+  constructor(private apiService: ApiService, private cd: ChangeDetectorRef) {
+    this.signalRService.stationUpdates$.pipe(takeUntilDestroyed()).subscribe(update => {
+      this.progressUpdates[update.regionId] = update.percentage;
+      if (update.percentage >= 100) {
+        this.getData();
+      }
+    });
+  }
   get percentage() {
     if (this.total === 0) {
       return "?";
@@ -167,7 +178,7 @@ export class AdminStationsMapComponent implements OnInit {
     });
     text.forEach((station) => {
       const marker = circleMarker(
-        new LatLng(station.lattitude, station.longitude, station.elevation),
+        new LatLng(station.lattitude, station.longitude),
         {
           radius: 6,
           fillColor: station.hidden
@@ -189,54 +200,7 @@ export class AdminStationsMapComponent implements OnInit {
       markers.addLayer(marker);
     });
     markers.addEventListener("click", async (f) => {
-      // if (
-      //   !f.propagatedFrom.feature.properties.special &&
-      //   !f.propagatedFrom.feature.properties.hidden
-      // ) {
-      //   f.propagatedFrom.feature.properties.special = true;
-      //   f.propagatedFrom.feature.properties.hidden = false;
-      // } else {
-      //   if (
-      //     !!f.propagatedFrom.feature.properties.special &&
-      //     !f.propagatedFrom.feature.properties.hidden
-      //   ) {
-      //     f.propagatedFrom.feature.properties.special = false;
-      //     f.propagatedFrom.feature.properties.hidden = true;
-      //   } else {
-      //     if (
-      //       !f.propagatedFrom.feature.properties.special &&
-      //       !!f.propagatedFrom.feature.properties.hidden
-      //     ) {
-      //       f.propagatedFrom.feature.properties.special = false;
-      //       f.propagatedFrom.feature.properties.hidden = false;
-      //     }
-      //   }
-      // }
-      // f.target.setStyle({
-      //   fillColor: "#FF7F00",
-      // });
-      // await parent.apiService
-      //   .updateStationAdmin(
-      //     f.propagatedFrom.feature.properties.id,
-      //     f.propagatedFrom.feature.properties.special,
-      //     f.propagatedFrom.feature.properties.hidden
-      //   )
-      //   .toPromise();
-      // if (f.propagatedFrom.feature.properties.visited) {
-      //   parent.visited++;
-      // } else {
-      //   parent.visited--;
-      // }
-      // parent.cd.detectChanges();
-      // f.propagatedFrom.setStyle({
-      //   fillColor: f.propagatedFrom.feature.properties.hidden
-      //     ? "#FF0000"
-      //     : f.propagatedFrom.feature.properties.special
-      //     ? "#0000FF"
-      //     : "#00FF00",
-      // });
-      this.selectedStation = f.propagatedFrom.feature
-        .properties as StationAdminProperties;
+      this.selectedStation.set(f.propagatedFrom.feature.properties as StationAdminProperties);
       this.cd.detectChanges();
     });
 
@@ -300,11 +264,24 @@ export class AdminStationsMapComponent implements OnInit {
         this.getData();
       });
   }
-  updateStation() {
+  loadNewStation() {
     if (!this.selectedNewStationId) return;
     this.apiService.importStation(this.selectedNewStationId).subscribe(() => {
       this.getData();
       this.selectedNewStationId = undefined;
+    });
+  }
+
+  updateStation(hidden: boolean = false, special: boolean = false) {
+    if (!this.selectedStation()) {
+      return;
+    }
+    this.apiService.updateStationAdmin(this.selectedStation().id, special, hidden).subscribe(() => {
+      this.getData();
+      const station = this.selectedStation();
+      station.hidden = hidden;
+      station.special = special;
+      this.selectedStation.set(station);
     });
   }
 }

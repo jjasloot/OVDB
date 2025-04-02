@@ -132,27 +132,17 @@ namespace OV_DB.Controllers
             {
                 stations = stations.Where(s => s.Regions.Any(r => regions.Contains(r.Id)));
             }
-
-            var collection = new List<StationAdminPropertiesDTO>();
-            await stations.ForEachAsync(s =>
+            var stationsQuery = stations.Select(s => new StationAdminPropertiesDTO
             {
-                var properties = new StationAdminPropertiesDTO();
-                if (!string.IsNullOrWhiteSpace(s.Name))
-                    properties.Name = s.Name;
-                if (!string.IsNullOrWhiteSpace(s.Network))
-                    properties.Network = s.Network;
-                if (!string.IsNullOrWhiteSpace(s.Operator))
-                    properties.OperatingCompany = s.Operator;
-                if (s.Elevation.HasValue)
-                    properties.Elevation = s.Elevation.Value;
-                properties.Hidden = s.Hidden;
-                properties.Special = s.Special;
-                properties.Id = s.Id;
-                properties.Lattitude = s.Lattitude;
-                properties.Longitude = s.Longitude;
-                collection.Add(properties);
+                Name = s.Name,
+                Hidden = s.Hidden,
+                Special = s.Special,
+                Id = s.Id,
+                Lattitude = s.Lattitude,
+                Longitude = s.Longitude,
+                StationVisits = s.StationVisits.Count()
             });
-            return Ok(collection);
+            return Ok(await stationsQuery.ToListAsync());
         }
 
         [HttpPut("admin/{id:int}")]
@@ -197,6 +187,6 @@ namespace OV_DB.Controllers
             await DbContext.SaveChangesAsync();
 
             return Ok();
-        }     
+        }
     }
 }
