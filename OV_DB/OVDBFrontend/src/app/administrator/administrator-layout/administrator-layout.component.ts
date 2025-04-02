@@ -2,6 +2,7 @@ import { Component, OnInit } from "@angular/core";
 import { Router, RouterLinkActive, RouterLink, RouterOutlet } from "@angular/router";
 import { TranslateService } from "@ngx-translate/core";
 import { MatTabNav, MatTabLink } from "@angular/material/tabs";
+import { SignalRService } from "src/app/services/signal-r.service";
 
 @Component({
     selector: "app-administrator-layout",
@@ -21,7 +22,8 @@ export class AdministratorLayoutComponent implements OnInit {
 
   constructor(
     private router: Router,
-    private translateService: TranslateService
+    private translateService: TranslateService,
+    private signalRServicve:SignalRService
   ) {
     this.navLinks = [
       {
@@ -57,6 +59,7 @@ export class AdministratorLayoutComponent implements OnInit {
     ];
   }
   ngOnInit(): void {
+    this.signalRServicve.connect();
     this.router.events.subscribe((res) => {
       this.activeLinkIndex = this.navLinks.indexOf(
         this.navLinks.find((tab) => tab.link === "." + this.router.url)

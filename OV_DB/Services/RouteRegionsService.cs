@@ -13,14 +13,15 @@ namespace OV_DB.Services;
 
 public interface IRouteRegionsService
 {
-    Task AssignRegionsToRouteAsync(Route route);
+    Task<bool> AssignRegionsToRouteAsync(Route route);
 }
 
 public class RouteRegionsService(OVDBDatabaseContext dbContext) : IRouteRegionsService
 {
-    public async Task AssignRegionsToRouteAsync(Route route)
+    public async Task<bool> AssignRegionsToRouteAsync(Route route)
     {
         NetTopologySuite.NtsGeometryServices.Instance = new NetTopologySuite.NtsGeometryServices(NetTopologySuite.Geometries.GeometryOverlay.NG);
+        var existingRegions = route.Regions.Select(r => r.Id).ToHashSet();
         if (route.Regions == null)
             route.Regions = [];
         else
@@ -61,5 +62,13 @@ public class RouteRegionsService(OVDBDatabaseContext dbContext) : IRouteRegionsS
                 Console.WriteLine("Unable to check " + region.Name);
             }
         }
+        var newRegions = route.Regions.Select(r => r.Id).ToHashSet();
+        var updated = !existingRegions.SetEquals(newRegions);
+        if (updated)
+        {
+            Console.WriteLine(route.Name + ": " + string.Join(", ", existingRegions) + " => "+string.Join(", ", newRegions));
+        }
+        return updated;
+
     }
 }

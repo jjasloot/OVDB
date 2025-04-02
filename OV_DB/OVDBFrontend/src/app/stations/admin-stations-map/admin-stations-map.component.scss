@@ -44,10 +44,15 @@
   .flex {
     flex-direction: row;
   }
-  .map-container{
+
+  .map-container {
     display: flex;
     flex: 75%;
     height: unset;
     max-height: calc(100svh - 96px);
   }
+}
+
+mat-chip.finished {
+  background-color: greenyellow;
 }

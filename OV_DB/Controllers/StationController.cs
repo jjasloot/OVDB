@@ -183,7 +183,7 @@ namespace OV_DB.Controllers
                 return NotFound();
             }
 
-            DbContext.Remove(station);
+            station.Hidden = true;
             await DbContext.SaveChangesAsync();
 
             return Ok();

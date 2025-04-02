@@ -3,7 +3,8 @@ import {
   Component,
   OnInit,
   inject,
-  input
+  input,
+  signal
 } from "@angular/core";
 import { MatCheckboxChange, MatCheckbox } from "@angular/material/checkbox";
 import { LatLngBounds, LatLng, markerClusterGroup, divIcon, circleMarker } from "leaflet";
@@ -14,7 +15,7 @@ import { ApiService } from "src/app/services/api.service";
 import { RegionsService } from "src/app/services/regions.service";
 import { TranslationService } from "src/app/services/translation.service";
 import { LeafletModule } from "@bluehalo/ngx-leaflet";
-import { NgClass } from "@angular/common";
+import { KeyValuePipe, NgClass } from "@angular/common";
 import { MatProgressSpinner } from "@angular/material/progress-spinner";
 import { MatExpansionPanel, MatExpansionPanelHeader } from "@angular/material/expansion";
 import { MatButton, MatIconButton } from "@angular/material/button";
@@ -26,35 +27,40 @@ import { MatIcon } from "@angular/material/icon";
 import { MatSelect } from "@angular/material/select";
 import { MatOption } from "@angular/material/core";
 import { LeafletMarkerClusterModule } from "@bluehalo/ngx-leaflet-markercluster";
-
+import { SignalRService } from "src/app/services/signal-r.service";
+import { MatChip } from "@angular/material/chips";
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 @Component({
-    selector: "app-admin-stations-map",
-    templateUrl: "./admin-stations-map.component.html",
-    styleUrls: ["./admin-stations-map.component.scss"],
-    imports: [
-        LeafletModule,
-        NgClass,
-        MatProgressSpinner,
-        MatExpansionPanel,
-        MatExpansionPanelHeader,
-        MatButton,
-        MatCheckbox,
-        TooltipComponent,
-        MatTooltip,
-        MatFormField,
-        MatLabel,
-        MatInput,
-        FormsModule,
-        MatIconButton,
-        MatIcon,
-        MatSelect,
-        MatOption,
-        LeafletMarkerClusterModule
-    ]
+  selector: "app-admin-stations-map",
+  templateUrl: "./admin-stations-map.component.html",
+  styleUrls: ["./admin-stations-map.component.scss"],
+  imports: [
+    LeafletModule,
+    NgClass,
+    MatProgressSpinner,
+    MatExpansionPanel,
+    MatExpansionPanelHeader,
+    MatButton,
+    MatCheckbox,
+    TooltipComponent,
+    MatTooltip,
+    MatFormField,
+    MatLabel,
+    MatInput,
+    FormsModule,
+    MatIconButton,
+    MatIcon,
+    MatSelect,
+    MatOption,
+    LeafletMarkerClusterModule,
+    MatChip,
+    KeyValuePipe,
+  ]
 })
 export class AdminStationsMapComponent implements OnInit {
   regionsService = inject(RegionsService);
   translationService = inject(TranslationService);
+  signalRService = inject(SignalRService);
   baseLayers = {
     OpenStreetMap: tileLayer(
       "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
@@ -92,8 +98,8 @@ export class AdminStationsMapComponent implements OnInit {
   visited: number;
   regions: Region[] = [];
   selectedRegions: number[] = [];
-  selectedStation?: StationAdminProperties = undefined;
-  allRegions: Region[];
+  selectedStation = signal<StationAdminProperties | null>(null);
+  allRegions = signal<Region[]>([]);
   selectedRegionId?: number;
   selectedNewStationId?: string;
   get bounds(): LatLngBounds {
@@ -137,6 +143,7 @@ export class AdminStationsMapComponent implements OnInit {
   ngOnInit(): void {
     this.getData(true);
     this.getRegions();
+
   }
 
   getRegions() {
@@ -149,6 +156,10 @@ export class AdminStationsMapComponent implements OnInit {
         console.error(error);
       },
     });
+  }
+
+  getNameById(regionId: number) {
+    return this.name(this.regions.find(r => r.id == regionId));
   }
 
   async getData(updateBounds = false) {
@@ -167,10 +178,10 @@ export class AdminStationsMapComponent implements OnInit {
             .every((r) => r.feature.properties.visited)
             ? "green"
             : cluster
-                .getAllChildMarkers()
-                .every((r) => !r.feature.properties.visited)
-            ? "red"
-            : "orange",
+              .getAllChildMarkers()
+              .every((r) => !r.feature.properties.visited)
+              ? "red"
+              : "orange",
         });
       },
       disableClusteringAtZoom: 10,
@@ -184,8 +195,8 @@ export class AdminStationsMapComponent implements OnInit {
           fillColor: station.hidden
             ? "#FF0000"
             : station.special
-            ? "#0000FF"
-            : "#00FF00",
+              ? "#0000FF"
+              : "#00FF00",
           color: "#000",
           weight: 1,
           opacity: 1,
@@ -241,10 +252,10 @@ export class AdminStationsMapComponent implements OnInit {
 
   deleteStation() {
     this.apiService
-      .deleteStationAdmin(this.selectedStation.id)
+      .deleteStationAdmin(this.selectedStation().id)
       .subscribe(() => {
         this.getData();
-        this.selectedStation = undefined;
+        this.selectedStation.set(null);
       });
   }
 
@@ -253,7 +264,7 @@ export class AdminStationsMapComponent implements OnInit {
     this.regions.forEach((region) => {
       list.push(...region.subRegions);
     });
-    this.allRegions = list;
+    this.allRegions.set(list);
   }
 
   updateRegion() {

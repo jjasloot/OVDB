@@ -22,6 +22,7 @@ using System.Text;
 using System.Threading.Tasks;
 using OV_DB.Services;
 using OV_DB.Hubs;
+using Microsoft.AspNetCore.Http;
 
 namespace OV_DB
 {
@@ -108,7 +109,7 @@ namespace OV_DB
                     {
                         if (context.Exception.GetType() == typeof(SecurityTokenExpiredException))
                         {
-                            context.Response.Headers.Add("Token-Expired", "true");
+                            context.Response.Headers.Append("Token-Expired", "true");
                         }
                         return Task.CompletedTask;
                     }
@@ -145,6 +146,10 @@ namespace OV_DB
             services.AddSingleton<IFontLoader, FontLoader>();
             services.AddScoped<TelegramBotService>();
             services.ConfigureTelegramBotMvc();
+
+            services.AddHostedService<UpdateRegionService>();
+            services.AddHostedService<RefreshRoutesService>();
+            services.AddHostedService<RefreshRoutesWithoutRegionsService>();
 
             NetTopologySuite.NtsGeometryServices.Instance = new NetTopologySuite.NtsGeometryServices(
    NetTopologySuite.Geometries.GeometryOverlay.NG);
