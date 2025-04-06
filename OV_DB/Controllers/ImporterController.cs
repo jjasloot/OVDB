@@ -620,7 +620,8 @@ namespace OV_DB.Controllers
                 LineString = lineString,
                 Name = line.Name,
                 Share = Guid.NewGuid(),
-                RouteMaps = new List<RouteMap>()
+                RouteMaps = [],
+                Regions = []
             };
             if (route.Name == null)
                 route.Name = "Name";
