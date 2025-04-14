@@ -50,7 +50,7 @@ namespace OVDB_database.Models
         public Guid Share { get; set; }
         [JsonProperty]
         public List<RouteInstance> RouteInstances { get; set; }
-        public List<Region> Regions { get; set; }
+        public List<Region> Regions { get; set; } = new();
         public List<Operator> Operators { get; set; }
     }
 }
