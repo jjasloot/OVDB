@@ -10,17 +10,17 @@ import { MatFormField } from "@angular/material/form-field";
 import { MatInput } from "@angular/material/input";
 import { FormsModule } from "@angular/forms";
 @Component({
-    selector: "app-image-creator",
-    templateUrl: "./image-creator.component.html",
-    styleUrls: ["./image-creator.component.scss"],
-    imports: [
-        MatCard,
-        MatCheckbox,
-        MatFormField,
-        MatInput,
-        FormsModule,
-        TranslateModule,
-    ]
+  selector: "app-image-creator",
+  templateUrl: "./image-creator.component.html",
+  styleUrls: ["./image-creator.component.scss"],
+  imports: [
+    MatCard,
+    MatCheckbox,
+    MatFormField,
+    MatInput,
+    FormsModule,
+    TranslateModule,
+  ]
 })
 export class ImageCreatorComponent implements OnInit {
   maps: Map[];
@@ -36,7 +36,7 @@ export class ImageCreatorComponent implements OnInit {
     private translationService: TranslationService,
     public translateService: TranslateService,
     private cd: ChangeDetectorRef
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.apiService.getMaps().subscribe((maps) => {

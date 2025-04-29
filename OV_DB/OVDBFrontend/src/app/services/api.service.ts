@@ -18,7 +18,7 @@ import { StationView } from "../models/stationView.model";
 import { StationCountry } from "../models/stationCountry.model";
 import { StationAdminProperties } from "../models/stationAdminProperties.model";
 import { MapDataDTO } from "../models/map-data.model";
-import { RegionOperatorsDTO } from "../models/region-operators.model";
+import { RegionOperators } from "../models/region-operators.model";
 
 @Injectable({
   providedIn: "root",
@@ -495,8 +495,8 @@ export class ApiService {
     return this.httpClient.get(url, { responseType: "blob" });
   }
 
-  getOperatorsGroupedByRegion(): Observable<RegionOperatorsDTO[]> {
-    return this.httpClient.get<RegionOperatorsDTO[]>(
+  getOperatorsGroupedByRegion(): Observable<RegionOperators[]> {
+    return this.httpClient.get<RegionOperators[]>(
       environment.backend + "api/operators/groupedByRegion"
     );
   }

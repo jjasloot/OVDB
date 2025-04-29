@@ -1,11 +1,13 @@
 import { Component, OnInit, inject, signal } from "@angular/core";
 import { ApiService } from "src/app/services/api.service";
-import { RegionOperatorsDTO } from "src/app/models/region-operators.model";
 import { MatCardModule } from "@angular/material/card";
 import { MatIconModule } from "@angular/material/icon";
 import { MatListModule } from "@angular/material/list";
 import { MatDividerModule } from "@angular/material/divider";
-import { AsyncPipe, NgFor, NgIf } from "@angular/common";
+import { AsyncPipe, NgClass } from "@angular/common";
+import { OperatorService } from "../services/operator.service";
+import { RegionOperator, RegionOperators } from "../models/region-operators.model";
+import { TranslationService } from "../services/translation.service";
 
 @Component({
   selector: "app-used-operators",
@@ -18,13 +20,14 @@ import { AsyncPipe, NgFor, NgIf } from "@angular/common";
     MatListModule,
     MatDividerModule,
     AsyncPipe,
-    NgFor,
-    NgIf,
-  ],
+    NgClass
+],
 })
 export class UsedOperatorsComponent implements OnInit {
   apiService = inject(ApiService);
-  regions = signal<RegionOperatorsDTO[]>([]);
+  operatorService = inject(OperatorService)
+  translationService = inject(TranslationService);
+  regions = signal<RegionOperators[]>([]);
 
   ngOnInit(): void {
     this.apiService.getOperatorsGroupedByRegion().subscribe((data) => {
@@ -32,9 +35,11 @@ export class UsedOperatorsComponent implements OnInit {
     });
   }
 
-  getLogo(operator: RegionOperatorDTO): string {
-    return operator.logoFilePath
-      ? operator.logoFilePath
-      : "assets/greyed-out-logo.png";
+  getLogo(operator: RegionOperator) {
+    return this.operatorService.getOperatorLogo(operator.operatorId)
+  }
+
+  name(region: RegionOperators) {
+    return this.translationService.getNameForItem(region);
   }
 }

@@ -1,20 +1,16 @@
-<div *ngFor="let region of regions()">
-  <mat-card>
-    <mat-card-header>
-      <mat-card-title>{{ region.regionName }}</mat-card-title>
-    </mat-card-header>
-    <mat-card-content>
-      <mat-list>
-        <mat-list-item *ngFor="let operator of region.operators">
-          <img
-            matListAvatar
-            [src]="getLogo(operator)"
-            [ngClass]="{ 'greyed-out': !operator.hasUserRoute }"
-            alt="{{ operator.operatorNames[0] }}"
-          />
-          <h3 matLine>{{ operator.operatorNames.join(', ') }}</h3>
-        </mat-list-item>
-      </mat-list>
-    </mat-card-content>
-  </mat-card>
-</div>
+<mat-card>
+  <mat-card-content>
+    @for (region of regions(); track region) {
+    <div>
+      <p>{{name(region)}}</p>
+      <div style="display: flex; flex-wrap: wrap; gap:4px;">
+        @for (operator of region.operators; track operator) {
+        <img [src]="getLogo(operator)|async" [ngClass]="{ 'greyed-out': !operator.hasUserRoute }"
+          style="width: 75px; max-height: 56px; margin-left: 1rem; object-fit: contain"
+          alt="{{ operator.operatorNames[0] }}" title="{{ operator.operatorNames[0] }}" />
+        }
+      </div>
+    </div>
+    }
+  </mat-card-content>
+</mat-card>

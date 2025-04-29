@@ -11,6 +11,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
 
 namespace OV_DB.Controllers;
@@ -287,28 +288,49 @@ public class OperatorsController : ControllerBase
             return Forbid();
         }
 
-        var operators = await _dbContext.Operators
-            .Include(o => o.RunsTrainsInRegions)
-            .Include(o => o.Routes)
+        var groupedOperators = await _dbContext.Operators
+            .Select(o => new
+            {
+                OperatorId = o.Id,
+                OperatorNames = o.Names,
+                OperatorRegions = o.Routes.Where(r => r.RouteMaps.Any(rm => rm.Map.UserId == userIdClaim)).SelectMany(r => r.Regions.Select(r => r.Id)),
+                Regions = o.RunsTrainsInRegions.Where(r=>!r.ParentRegionId.HasValue).Select(r => new { r.Name, r.NameNL, r.OriginalName, r.Id })
+            })
             .ToListAsync();
 
-        var groupedOperators = operators
-            .SelectMany(o => o.RunsTrainsInRegions.Select(r => new { Region = r, Operator = o }))
-            .GroupBy(ro => ro.Region)
-            .Select(g => new RegionOperatorsDTO
-            {
-                RegionId = g.Key.Id,
-                RegionName = g.Key.Name,
-                Operators = g.Select(ro => new RegionOperatorDTO
-                {
-                    OperatorId = ro.Operator.Id,
-                    OperatorNames = ro.Operator.Names,
-                    LogoFilePath = ro.Operator.LogoFilePath,
-                    HasUserRoute = ro.Operator.Routes.Any(r => r.RouteMaps.Any(rm => rm.Map.UserId == userIdClaim))
-                }).ToList()
-            })
-            .ToList();
+        var groupedRegions = new Dictionary<int, RegionOperatorsDTO>();
 
-        return groupedOperators;
+        foreach (var op in groupedOperators)
+        {
+            foreach (var region in op.Regions)
+            {
+                if (!groupedRegions.ContainsKey(region.Id))
+                {
+                    groupedRegions.Add(region.Id, new RegionOperatorsDTO()
+                    {
+                        RegionId = region.Id,
+                        Name = region.Name,
+                        NameNL = region.NameNL,
+                        OriginalName = region.OriginalName,
+                        Operators = []
+                    });
+                }
+
+                groupedRegions[region.Id].Operators.Add(new RegionOperatorDTO
+                {
+                    HasUserRoute = op.OperatorRegions.Any(r => r == region.Id),
+                    OperatorId = op.OperatorId,
+                    OperatorNames = op.OperatorNames
+                });
+
+            }
+        }
+
+        foreach (var region in groupedRegions)
+        {
+            region.Value.Operators = region.Value.Operators.OrderBy(o => o.OperatorNames[0]).ToList();
+        }
+
+        return groupedRegions.Where(r => r.Value.Operators.Any(o => o.HasUserRoute)).Select(v => v.Value).ToList();
     }
 }

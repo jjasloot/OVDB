@@ -18,6 +18,7 @@ import { CdkCopyToClipboard } from "@angular/cdk/clipboard";
 import { MatIcon } from "@angular/material/icon";
 import { MatProgressSpinner } from "@angular/material/progress-spinner";
 import { TranslateModule } from "@ngx-translate/core";
+import { UsedOperatorsComponent } from "../used-operators/used-operators.component";
 @Component({
   selector: "app-home",
   templateUrl: "./home.component.html",
@@ -37,7 +38,8 @@ import { TranslateModule } from "@ngx-translate/core";
     MatIcon,
     MatProgressSpinner,
     TranslateModule,
-  ],
+    UsedOperatorsComponent
+],
 })
 export class HomeComponent implements OnInit {
   maps: Map[];
