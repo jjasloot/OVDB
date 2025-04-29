@@ -279,9 +279,9 @@ public class OperatorsController : ControllerBase
     }
 
     [HttpGet("groupedByRegion")]
-    public async Task<ActionResult<IEnumerable<RegionOperatorsDTO>>> GetOperatorsGroupedByRegion()
+    public async Task<ActionResult<List<RegionOperatorsDTO>>> GetOperatorsGroupedByRegion()
     {
-        var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == "userId").Value ?? "-1");
+        var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value ?? "-1");
         if (userIdClaim < 0)
         {
             return Forbid();
@@ -292,11 +292,6 @@ public class OperatorsController : ControllerBase
             .Include(o => o.Routes)
             .ToListAsync();
 
-        var userRoutes = await _dbContext.Routes
-            .Where(r => r.RouteMaps.Any(rm => rm.Map.UserId == userIdClaim))
-            .Include(r => r.Operators)
-            .ToListAsync();
-
         var groupedOperators = operators
             .SelectMany(o => o.RunsTrainsInRegions.Select(r => new { Region = r, Operator = o }))
             .GroupBy(ro => ro.Region)
@@ -304,14 +299,12 @@ public class OperatorsController : ControllerBase
             {
                 RegionId = g.Key.Id,
                 RegionName = g.Key.Name,
-                Operators = g.Select(ro => new OperatorDTO
+                Operators = g.Select(ro => new RegionOperatorDTO
                 {
-                    Id = ro.Operator.Id,
-                    Names = ro.Operator.Names,
-                    RunsTrainsInRegions = ro.Operator.RunsTrainsInRegions.Select(r => new RegionMinimalDTO { Id = r.Id, Name = r.Name }).ToList(),
-                    RestrictToRegions = ro.Operator.RestrictToRegions.Select(r => new RegionMinimalDTO { Id = r.Id, Name = r.Name }).ToList(),
+                    OperatorId = ro.Operator.Id,
+                    OperatorNames = ro.Operator.Names,
                     LogoFilePath = ro.Operator.LogoFilePath,
-                    HasUserRoute = userRoutes.Any(r => r.Operators.Any(o => o.Id == ro.Operator.Id))
+                    HasUserRoute = ro.Operator.Routes.Any(r => r.RouteMaps.Any(rm => rm.Map.UserId == userIdClaim))
                 }).ToList()
             })
             .ToList();
