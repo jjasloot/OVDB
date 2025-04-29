@@ -277,4 +277,45 @@ public class OperatorsController : ControllerBase
 
         return operatorStrings;
     }
+
+    [HttpGet("groupedByRegion")]
+    public async Task<ActionResult<IEnumerable<RegionOperatorsDTO>>> GetOperatorsGroupedByRegion()
+    {
+        var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == "userId").Value ?? "-1");
+        if (userIdClaim < 0)
+        {
+            return Forbid();
+        }
+
+        var operators = await _dbContext.Operators
+            .Include(o => o.RunsTrainsInRegions)
+            .Include(o => o.Routes)
+            .ToListAsync();
+
+        var userRoutes = await _dbContext.Routes
+            .Where(r => r.RouteMaps.Any(rm => rm.Map.UserId == userIdClaim))
+            .Include(r => r.Operators)
+            .ToListAsync();
+
+        var groupedOperators = operators
+            .SelectMany(o => o.RunsTrainsInRegions.Select(r => new { Region = r, Operator = o }))
+            .GroupBy(ro => ro.Region)
+            .Select(g => new RegionOperatorsDTO
+            {
+                RegionId = g.Key.Id,
+                RegionName = g.Key.Name,
+                Operators = g.Select(ro => new OperatorDTO
+                {
+                    Id = ro.Operator.Id,
+                    Names = ro.Operator.Names,
+                    RunsTrainsInRegions = ro.Operator.RunsTrainsInRegions.Select(r => new RegionMinimalDTO { Id = r.Id, Name = r.Name }).ToList(),
+                    RestrictToRegions = ro.Operator.RestrictToRegions.Select(r => new RegionMinimalDTO { Id = r.Id, Name = r.Name }).ToList(),
+                    LogoFilePath = ro.Operator.LogoFilePath,
+                    HasUserRoute = userRoutes.Any(r => r.Operators.Any(o => o.Id == ro.Operator.Id))
+                }).ToList()
+            })
+            .ToList();
+
+        return groupedOperators;
+    }
 }
