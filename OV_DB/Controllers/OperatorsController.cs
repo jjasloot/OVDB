@@ -294,7 +294,7 @@ public class OperatorsController : ControllerBase
                 OperatorId = o.Id,
                 OperatorNames = o.Names,
                 OperatorRegions = o.Routes.Where(r => r.RouteMaps.Any(rm => rm.Map.UserId == userIdClaim)).SelectMany(r => r.Regions.Select(r => r.Id)),
-                Regions = o.RunsTrainsInRegions.Where(r=>!r.ParentRegionId.HasValue).Select(r => new { r.Name, r.NameNL, r.OriginalName, r.Id })
+                Regions = o.RunsTrainsInRegions.Where(r => !r.ParentRegionId.HasValue).Select(r => new { r.Name, r.NameNL, r.OriginalName, r.Id })
             })
             .ToListAsync();
 
@@ -331,6 +331,6 @@ public class OperatorsController : ControllerBase
             region.Value.Operators = region.Value.Operators.OrderBy(o => o.OperatorNames[0]).ToList();
         }
 
-        return groupedRegions.Where(r => r.Value.Operators.Any(o => o.HasUserRoute)).Select(v => v.Value).ToList();
+        return groupedRegions.OrderBy(r => r.Value.OriginalName).Where(r => r.Value.Operators.Any(o => o.HasUserRoute)).Select(v => v.Value).ToList();
     }
 }

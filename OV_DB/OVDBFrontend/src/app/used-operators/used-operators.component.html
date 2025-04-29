@@ -2,7 +2,7 @@
   <mat-card-content>
     @for (region of regions(); track region) {
     <div>
-      <p>{{name(region)}}</p>
+      <p>{{region.originalName}} <i>{{name(region)}}</i></p>
       <div style="display: flex; flex-wrap: wrap; gap:4px;">
         @for (operator of region.operators; track operator) {
         <img [src]="getLogo(operator)|async" [ngClass]="{ 'greyed-out': !operator.hasUserRoute }"
