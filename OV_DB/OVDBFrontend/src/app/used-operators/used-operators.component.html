@@ -1,0 +1,19 @@
+<mat-card>
+  <mat-card-content>
+    @for (region of regions(); track region) {
+    <div>
+      <p>{{region.originalName}} <i>{{name(region)}}</i></p>
+      <div style="display: flex; flex-wrap: wrap; gap:4px;">
+        @for (operator of region.operators; track operator) {
+        @let logo = getLogo(operator)|async;
+        @if(!!logo){
+        <img [src]="getLogo(operator)|async" [ngClass]="{ 'greyed-out': !operator.hasUserRoute }"
+          style="width: 75px; max-height: 56px; margin-left: 1rem; object-fit: contain"
+          alt="{{ operator.operatorNames[0] }}" title="{{ operator.operatorNames[0] }}" />
+        }
+        }
+      </div>
+    </div>
+    }
+  </mat-card-content>
+</mat-card>

@@ -132,19 +132,19 @@ namespace OV_DB.Controllers
             };
             periodsCumulative.Keys.ToList().ForEach(k =>
                 {
-                    var dataForKey = periodsCumulative[k].Select(x => new Point { T = x.Key, Y = Math.Round(x.Value, 2) }).ToList();
+                    var dataForKey = periodsCumulative[k].Select(x => new Point { X = x.Key.ToString("yyyy-MM-dd"), Y = Math.Round(x.Value, 2) }).ToList();
                     var colour = typesAndColours[k].ToUpper();
-                    dataCumulative.Datasets.Add(new Dataset { Label = k, Data = dataForKey, PointBackgroundColor = colour, BorderColor = colour });
+                    dataCumulative.Datasets.Add(new Dataset { Label = k, Data = dataForKey, BackgroundColor = colour, BorderColor = colour, Stack=false , Fill=false});
                 });
             var dates = periodsSingle.SelectMany(p => p.Value.Select(d => d.Key)).Distinct();
             periodsSingle.Keys.ToList().ForEach(k =>
                 {
-                    var dataForKey = periodsSingle[k].Select(x => new Point { T = x.Key, Y = Math.Round(x.Value, 2) }).ToList();
-                    var dataToAdd = dates.Where(d => !dataForKey.Any(p => p.T == d)).ToList();
-                    dataToAdd.ForEach(d => dataForKey.Add(new Point { T = d, Y = 0 }));
-                    dataForKey = dataForKey.OrderBy(d => d.T).ToList();
+                    var dataForKey = periodsSingle[k].Select(x => new Point { X = x.Key.ToString("yyyy-MM-dd"), Y = Math.Round(x.Value, 2) }).ToList();
+                    var dataToAdd = dates.Where(d => !dataForKey.Any(p => p.X == d.ToString("yyyy-MM-dd"))).ToList();
+                    dataToAdd.ForEach(d => dataForKey.Add(new Point { X = d.ToString("yyyy-MM-dd"), Y = 0 }));
+                    dataForKey = dataForKey.OrderBy(d => d.X).ToList();
                     var colour = typesAndColours[k].ToUpper();
-                    dataSingle.Datasets.Add(new Dataset { Label = k, Data = dataForKey, BorderColor = colour, PointBackgroundColor = colour });
+                    dataSingle.Datasets.Add(new Dataset { Label = k, Data = dataForKey, BorderColor = colour, BackgroundColor = colour, Fill=true });
                 });
 
             if (year.HasValue)
@@ -154,9 +154,9 @@ namespace OV_DB.Controllers
                 {
                     endDate = DateTime.Now.AddDays(1).Date;
                 }
-                dataCumulative.Datasets.ForEach(ds => ds.Data.Add(new Point { T = endDate, Y = Math.Round(typesAndValuesCumulative[ds.Label], 2) }));
+                dataCumulative.Datasets.ForEach(ds => ds.Data.Add(new Point { X = endDate.ToString("yyyy-MM-dd"), Y = Math.Round(typesAndValuesCumulative[ds.Label], 2) }));
             }
-            return Ok(new { Cumulative = dataCumulative, Single = dataSingle });
+            return Ok(new { Cumulative = dataCumulative , Single = dataSingle });
         }
 
         [HttpGet("reach/{map}")]

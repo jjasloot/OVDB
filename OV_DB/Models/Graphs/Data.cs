@@ -10,4 +10,10 @@ namespace OV_DB.Models.Graphs
     {
         public List<Dataset> Datasets { get; set; }
     }
+
+    public class GraphData
+    {
+        public string Type { get; set; } = "line";
+        public Data Data { get; set; }
+    }
 }

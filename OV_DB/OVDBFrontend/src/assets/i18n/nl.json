@@ -218,5 +218,10 @@
     "REQUESTS": "Aanvragen",
     "MAPS": "Kaarten",
     "DATA": "Data"
+  },
+  "STATS": {
+    "OPERATORS": "Vervoerders",
+    "CUMULATIVE": "Cumulatief",
+    "PER_DAY": "Per dag"
   }
 }

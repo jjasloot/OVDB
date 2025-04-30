@@ -1,0 +1,71 @@
+.container {
+    margin: 24px;
+}
+
+.row {
+    display: flex;
+    flex-direction: row;
+}
+
+table {
+    margin-top: 24px;
+    flex: 1;
+    height: fit-content;
+}
+
+.graph-tab {
+    flex: 2;
+    max-height: 550px;
+    margin-bottom: 32px;
+}
+
+.graph {
+    position: relative;
+    max-height: 500px;
+}
+
+.loading-indicator {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: -1;
+    width: 100%;
+    height: 100%;
+}
+
+.loading {
+    z-index: 3000;
+    opacity: 1;
+    background: rgba($color: #000000, $alpha: 0.7);
+    align-items: center;
+    justify-content: center;
+    display: flex;
+    transition: all ease 0.5s;
+}
+
+.map-container {
+    position: relative;
+    height: 400px;
+    display: flex;
+}
+
+.map {
+    min-height: 400px;
+    position: relative;
+    flex: 1;
+}
+
+/* TODO(mdc-migration): The following rule targets internal classes of tabs that may no longer apply for the MDC version. */
+mat-tab {
+    position: relative;
+}
+
+/* TODO(mdc-migration): The following rule targets internal classes of card that may no longer apply for the MDC version. */
+mat-card {
+    width: 50%;
+    margin: 0 25%;
+
+    mat-form-field {
+        width: 100%;
+    }
+}
