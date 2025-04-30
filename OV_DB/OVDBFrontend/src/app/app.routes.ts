@@ -1,7 +1,4 @@
-import { NgModule } from "@angular/core";
-import { Routes, RouterModule } from "@angular/router";
-import { MapComponent } from "./map/map.component";
-import { AdminComponent } from "./admin/admin.component";
+import { Routes } from "@angular/router";
 import { FillMissingDataListComponent } from "./admin/fill-missing-data-list/fill-missing-data-list.component";
 import { RouteDetailComponent } from "./admin/route-detail/route-detail.component";
 import { RoutesComponent } from "./admin/routes/routes.component";
@@ -27,7 +24,6 @@ import { AdministratorUsersComponent } from "./administrator/administrator-users
 import { AdministratorGuard } from "./guards/administrator.guard";
 import { RouteInstancesComponent } from "./admin/route-instances/route-instances.component";
 import { StatsComponent } from "./stats/stats.component";
-import { StationMapComponent } from "./stations/station-map/station-map.component";
 import { StationMapViewComponent } from "./stations/station-map-view/station-map-view.component";
 import { AdminStationsMapComponent } from "./stations/admin-stations-map/admin-stations-map.component";
 import { ImageCreatorComponent } from "./image-creator/image-creator.component";
@@ -37,7 +33,7 @@ import { RequestsListComponent } from "./requests/requests-list/requests-list.co
 import { AdministratorRequestsComponent } from "./administrator/administrator-requests/administrator-requests.component";
 import { AdministratorOperatorsComponent } from "./administrator/administrator-operators/administrator-operators.component";
 
-const routes: Routes = [
+export const routes: Routes = [
   {
     path: "",
     component: LayoutComponent,
@@ -115,9 +111,3 @@ const routes: Routes = [
     ],
   },
 ];
-
-@NgModule({
-  imports: [RouterModule.forRoot(routes, {})],
-  exports: [RouterModule],
-})
-export class AppRoutingModule {}

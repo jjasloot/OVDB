@@ -23,7 +23,6 @@ import {
 } from "@ngx-translate/core";
 import { DatePipe, registerLocaleData } from "@angular/common";
 import { BrowserModule, bootstrapApplication } from "@angular/platform-browser";
-import { AppRoutingModule } from "./app/app-routing.module";
 import { provideAnimations } from "@angular/platform-browser/animations";
 import { FormsModule, ReactiveFormsModule } from "@angular/forms";
 import { LeafletModule } from "@bluehalo/ngx-leaflet";
@@ -54,6 +53,9 @@ import { TranslateHttpLoader } from "@ngx-translate/http-loader";
 import localeNl from "@angular/common/locales/nl";
 import "hammerjs";
 import "chartjs-plugin-zoom";
+import { provideRouter } from "@angular/router";
+import { routes } from "./app/app.routes";
+import { provideCharts, withDefaultRegisterables } from "ng2-charts";
 
 registerLocaleData(localeNl, "nl-NL");
 
@@ -69,7 +71,6 @@ bootstrapApplication(AppComponent, {
   providers: [
     importProvidersFrom(
       BrowserModule,
-      AppRoutingModule,
       FormsModule,
       ReactiveFormsModule,
       LeafletModule,
@@ -120,5 +121,7 @@ bootstrapApplication(AppComponent, {
     DatePipe,
     provideHttpClient(withInterceptorsFromDi()),
     provideAnimations(),
+    provideRouter(routes),
+    provideCharts(withDefaultRegisterables())
   ],
 }).catch((err) => console.error(err));
