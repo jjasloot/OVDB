@@ -4,7 +4,13 @@
 
 .row {
     display: flex;
-    flex-direction: row;
+    flex-direction: column;
+}
+
+@media (min-width:600px) {
+    .row {
+        flex-direction: row;
+    }
 }
 
 table {
