@@ -13,8 +13,8 @@ namespace OV_DB.Helpers
             var distance = 0d;
             for (var index = 1; index < coordinates.Count; index++)
             {
-                var start = new GeoCoordinatePortable.GeoCoordinate(coordinates[index - 1].X, coordinates[index - 1].Y);
-                var end = new GeoCoordinatePortable.GeoCoordinate(coordinates[index].X, coordinates[index].Y);
+                var start = new GeoCoordinatePortable.GeoCoordinate(coordinates[index - 1].Y, coordinates[index - 1].X);
+                var end = new GeoCoordinatePortable.GeoCoordinate(coordinates[index].Y, coordinates[index].X);
 
                 distance += start.GetDistanceTo(end);
             }
