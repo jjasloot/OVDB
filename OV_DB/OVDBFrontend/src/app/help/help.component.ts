@@ -1,14 +1,14 @@
 import { Component, OnInit } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { TranslationService } from '../services/translation.service';
-import { RouterLink } from '@angular/router';
+
 import { TranslateModule } from '@ngx-translate/core';
 
 @Component({
     selector: 'app-help',
     templateUrl: './help.component.html',
     styleUrls: ['./help.component.scss'],
-    imports: [RouterLink, TranslateModule]
+    imports: [TranslateModule]
 })
 export class HelpComponent implements OnInit {
   changelog: string;

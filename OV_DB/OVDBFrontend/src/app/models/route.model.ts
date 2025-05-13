@@ -11,6 +11,7 @@ export interface Route {
   overrideColour: string;
   routeId: number;
   name: string;
+  nameNL: string;
   description?: string;
   lineNumber?: string;
   operatingCompany?: string;

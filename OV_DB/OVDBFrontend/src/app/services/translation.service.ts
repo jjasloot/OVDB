@@ -26,7 +26,7 @@ export class TranslationService {
   // tslint:disable-next-line: variable-name
   private _language: 'nl' | 'en' = 'nl';
 
-  getNameForItem(item: any) {
+  getNameForItem(item: { name: string, nameNL: string }) {
     if (!item) {
       return '';
     }

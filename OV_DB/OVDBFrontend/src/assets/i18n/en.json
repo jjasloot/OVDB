@@ -218,5 +218,10 @@
     "REQUESTS": "Requests",
     "MAPS": "Maps",
     "DATA": "Data"
+  },
+  "STATS": {
+    "OPERATORS": "Operators",
+    "CUMULATIVE": "Cumulative",
+    "PER_DAY": "Per day"
   }
 }
