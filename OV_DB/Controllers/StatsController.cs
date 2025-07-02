@@ -245,5 +245,87 @@ namespace OV_DB.Controllers
             };
             return Ok(bounds);
         }
+
+        [HttpGet("region")]
+        public async Task<ActionResult<List<RegionStatDTO>>> GetRegionStats()
+        {
+            var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value ?? "-1");
+            if (userIdClaim < 0)
+                return Forbid();
+
+            // Get all visited station ids for user
+            var visitedStationIds = await _context.StationVisits
+                .Where(sv => sv.UserId == userIdClaim)
+                .Select(sv => sv.StationId)
+                .ToListAsync();
+
+            // Fetch all regions and their minimal station data in one query
+            var regions = await _context.Regions
+                .Select(r => new
+                {
+                    r.Id,
+                    r.Name,
+                    r.NameNL,
+                    r.OriginalName,
+                    r.OsmRelationId,
+                    r.ParentRegionId,
+                    Stations = r.Stations.Select(s => new { s.Id, s.Hidden, s.Special }).ToList()
+                })
+                .ToListAsync();
+
+            // Build a dictionary for fast lookup
+            var regionDict = regions.ToDictionary(r => r.Id);
+
+            // Prepare RegionStatDTOs
+            var regionDtos = regions.Select(r => new RegionStatDTO
+            {
+                Id = r.Id,
+                Name = r.Name,
+                NameNL = r.NameNL,
+                OriginalName = r.OriginalName,
+                OsmRelationId = r.OsmRelationId,
+                VisitedStations = r.Stations.Count(s => !s.Hidden && !s.Special && visitedStationIds.Contains(s.Id)),
+                TotalStations = r.Stations.Count(s => !s.Hidden && !s.Special),
+                // Children will be filled in next step
+                Children = new List<RegionStatDTO>()
+            }).ToList();
+
+            // Map region ID to DTO for fast lookup
+            var dtoDict = regionDtos.ToDictionary(r => r.Id);
+
+            // Assign children
+            foreach (var dto in regionDtos)
+            {
+                var parentId = regionDict[dto.Id].ParentRegionId;
+                if (parentId.HasValue && dtoDict.TryGetValue(parentId.Value, out var parentDto))
+                {
+                    parentDto.Children.Add(dto);
+                }
+            }
+
+            // Only return top-level regions (no parent)
+            var topLevel = regionDtos.Where(r => !regionDict[r.Id].ParentRegionId.HasValue).ToList();
+
+            // Recursively filter children to only include visited or have visited children, or always show top-level
+            List<RegionStatDTO> FilterRegions(List<RegionStatDTO> input)
+            {
+                var result = new List<RegionStatDTO>();
+                foreach (var region in input)
+                {
+                    region.Visited = region.VisitedStations > 0;
+                    region.Children = FilterRegions(region.Children);
+                    if (region.Visited || region.Children.Any(c => c.Visited) || regionDict[region.Id].ParentRegionId == null)
+                    {
+                        // Only keep children that are visited or have visited children
+                        region.Children = region.Children.Where(c => c.Visited || c.Children.Any(cc => cc.Visited)).ToList();
+                        result.Add(region);
+                    }
+                }
+                return result;
+            }
+
+            var stats = FilterRegions(topLevel);
+            return Ok(stats);
+        }
     }
 }

@@ -1,13 +1,16 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component } from '@angular/core';
 import { MatTabsModule } from '@angular/material/tabs';
 import { TimeStatsComponent } from "./time-stats/time-stats.component";
 import { TranslateModule } from '@ngx-translate/core';
 import { UsedOperatorsComponent } from "../used-operators/used-operators.component";
+import { RegionStatComponent } from './region-stats/region-stat.component';
+
 @Component({
   selector: 'app-stats',
   templateUrl: './stats.component.html',
   styleUrls: ['./stats.component.scss'],
-  imports: [MatTabsModule, TimeStatsComponent, TranslateModule, UsedOperatorsComponent]
+  imports: [MatTabsModule, TimeStatsComponent, TranslateModule, UsedOperatorsComponent, RegionStatComponent]
 })
-export class StatsComponent {
+export class StatsComponent  {
+
 }

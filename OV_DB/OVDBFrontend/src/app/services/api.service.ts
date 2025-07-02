@@ -19,6 +19,7 @@ import { StationCountry } from "../models/stationCountry.model";
 import { StationAdminProperties } from "../models/stationAdminProperties.model";
 import { MapDataDTO } from "../models/map-data.model";
 import { RegionOperators } from "../models/region-operators.model";
+import { RegionStat } from "../models/region.model";
 
 @Injectable({
   providedIn: "root",
@@ -499,5 +500,11 @@ export class ApiService {
     return this.httpClient.get<RegionOperators[]>(
       environment.backend + "api/operators/groupedByRegion"
     );
+  }
+
+  getRegionStats(): Observable<RegionStat[]> {
+    return this.httpClient.get<RegionStat[]>(
+      environment.backend + "api/stats/region"
+    )
   }
 }

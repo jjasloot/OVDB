@@ -18,3 +18,15 @@ export interface RegionMinimal {
   nameNL: string;
   originalName: string;
 }
+
+export interface RegionStat {
+  id: number;
+  name: string;
+  nameNL: string;
+  originalName: string;
+  osmRelationId: number;
+  visited: boolean;
+  totalStations: number;
+  visitedStations: number;
+  children: RegionStat[];
+}

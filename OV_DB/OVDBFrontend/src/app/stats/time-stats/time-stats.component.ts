@@ -32,7 +32,7 @@ export class TimeStatsComponent {
   selectedMap: string = null;
   selectedYear: number = null;
   bounds = new LatLngBounds(new LatLng(50.656245, 2.921360), new LatLng(53.604563, 7.428211));
-  years = [];
+  years: number[] = [];
   public lineChartOptions: ChartConfiguration['options'] = {
     responsive: true,
     maintainAspectRatio: false,
@@ -115,7 +115,7 @@ export class TimeStatsComponent {
   changeMap(mapGuid: string) {
     this.selectedMap = mapGuid;
 
-    this.apiService.getYears(this.selectedMap).subscribe(years => {
+    this.apiService.getYears(mapGuid).subscribe(years => {
       this.years = years.sort().reverse();
     });
     this.data = null;
@@ -208,13 +208,13 @@ export class TimeStatsComponent {
 
   download() {
     this.apiService.getTripReport(this.selectedMap, this.selectedYear).subscribe(data => {
-      saveAs(data, 'tripreport.xlsx');
+      saveAs(data as Blob, 'tripreport.xlsx');
     });
   }
 
   export() {
     this.apiService.getCompleteExport(this.selectedMap, this.selectedYear).subscribe(data => {
-      saveAs(data, 'export.kml');
+      saveAs(data as Blob, 'export.kml');
     });
   }
 }

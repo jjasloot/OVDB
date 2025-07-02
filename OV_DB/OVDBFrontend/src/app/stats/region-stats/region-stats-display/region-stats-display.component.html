@@ -1,0 +1,25 @@
+<mat-list>
+    @for (region of regionStats(); track region.id) {
+    <mat-list-item>
+        <div style="width:100%">
+            <span [title]="region.originalName">{{ name(region) }}</span>
+            <span style="float:right">
+                @if(region.visited){
+                <mat-icon color="primary">check_circle</mat-icon>
+                }
+            </span>
+            @if(region.totalStations > 0){
+            <mat-progress-bar mode="determinate" [value]="100 * region.visitedStations / region.totalStations"
+                style="margin-top:4px;"></mat-progress-bar>
+
+            <div style="font-size: 0.9em; color: #888;">{{ region.visitedStations }}/{{
+                region.totalStations }} stations</div>}
+        </div>
+    </mat-list-item>
+    @if(region.visited && region.children.length>0){
+    <div style="margin-left:2em">
+        <app-region-stats-display [regionStats]="region.children" />
+    </div>
+    }
+    }
+</mat-list>
