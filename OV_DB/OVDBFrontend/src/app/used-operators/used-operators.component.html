@@ -1,18 +1,45 @@
-<mat-card>
+<mat-card [ngClass]="{ 'compact': compact }">
   <mat-card-content>
-    @for (region of regions(); track region) {
-    <div>
-      <p>{{region.originalName}} <i>{{name(region)}}</i></p>
-      <div style="display: flex; flex-wrap: wrap; gap:4px;">
+    <div class="compact-toggle-switch">
+      <mat-slide-toggle [(ngModel)]="compact" color="primary"
+        style="margin-bottom:0;vertical-align:middle;"></mat-slide-toggle>
+      <span class="compact-toggle-switch-label">Compact</span>
+    </div>
+    @if (!compact) {
+    @for (region of sortedRegion(); track region) {
+    <div class="operator-region-card">
+      <div class="operator-region-title" [title]="region.originalName">
+        {{name(region)}}
+      </div>
+      <div class="operators-list">
         @for (operator of region.operators; track operator) {
         @let logo = getLogo(operator)|async;
         @if(!!logo){
-        <img [src]="getLogo(operator)|async" [ngClass]="{ 'greyed-out': !operator.hasUserRoute }"
-          style="width: 75px; max-height: 56px; margin-left: 1rem; object-fit: contain"
+        <img [src]="logo" [ngClass]="operator.hasUserRoute ? 'operator-logo used' : 'operator-logo unused'"
           alt="{{ operator.operatorNames[0] }}" title="{{ operator.operatorNames[0] }}" />
         }
         }
       </div>
+    </div>
+    }
+    } @else {
+    <div class="compact-operators-overview">
+      @for (region of sortedRegion(); track region) {
+      <div class="compact-operator-region">
+        <span class="compact-region-title" [title]="region.originalName">{{name(region)}}</span>
+        <span class="compact-operators-list">
+          @for (operator of region.operators; track operator) {
+          @let logo = getLogo(operator)|async;
+          @if(!!logo){
+          <span class="compact-operator-logo-wrapper">
+            <img [src]="logo" [ngClass]="operator.hasUserRoute ? 'operator-logo used' : 'operator-logo unused'"
+              alt="{{ operator.operatorNames[0] }}" title="{{ operator.operatorNames[0] }}" />
+          </span>
+          }
+          }
+        </span>
+      </div>
+      }
     </div>
     }
   </mat-card-content>
