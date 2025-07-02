@@ -1,25 +1,29 @@
-<mat-list>
+<div class="region-stats-list">
     @for (region of regionStats(); track region.id) {
-    <mat-list-item>
-        <div style="width:100%">
-            <span [title]="region.originalName">{{ name(region) }}</span>
-            <span style="float:right">
-                @if(region.visited){
-                <mat-icon color="primary">check_circle</mat-icon>
-                }
-            </span>
-            @if(region.totalStations > 0){
-            <mat-progress-bar mode="determinate" [value]="100 * region.visitedStations / region.totalStations"
-                style="margin-top:4px;"></mat-progress-bar>
-
-            <div style="font-size: 0.9em; color: #888;">{{ region.visitedStations }}/{{
-                region.totalStations }} stations</div>}
+    <mat-card class="region-card" [class.top-level]="!region.parentRegionId">
+        <div class="region-header">
+            @if(!!region.flagEmoji){
+            <span class="region-flag">{{ region.flagEmoji }}</span>
+            }
+            <span class="region-name" [title]="region.originalName">{{ name(region) }}</span>
+            @if(region.visited){
+            <mat-icon color="primary" class="visited-icon">check_circle</mat-icon>
+            }
         </div>
-    </mat-list-item>
-    @if(region.visited && region.children.length>0){
-    <div style="margin-left:2em">
-        <app-region-stats-display [regionStats]="region.children" />
-    </div>
+        @if(region.totalStations>0){
+        <div class="region-progress">
+            <mat-progress-bar color="accent" mode="determinate"
+                [value]="100 * region.visitedStations / region.totalStations"></mat-progress-bar>
+            <div class="station-count">
+                {{ region.visitedStations }}/{{ region.totalStations }} stations
+            </div>
+        </div>
+        }
+        @if(region.visited && region.children.length>0){
+        <div class="region-children">
+            <app-region-stats-display [regionStats]="region.children" />
+        </div>
+        }
+    </mat-card>
     }
-    }
-</mat-list>
+</div>

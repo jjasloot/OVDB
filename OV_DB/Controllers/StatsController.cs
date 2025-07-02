@@ -134,7 +134,7 @@ namespace OV_DB.Controllers
                 {
                     var dataForKey = periodsCumulative[k].Select(x => new Point { X = x.Key.ToString("yyyy-MM-dd"), Y = Math.Round(x.Value, 2) }).ToList();
                     var colour = typesAndColours[k].ToUpper();
-                    dataCumulative.Datasets.Add(new Dataset { Label = k, Data = dataForKey, BackgroundColor = colour, BorderColor = colour, Stack=false , Fill=false});
+                    dataCumulative.Datasets.Add(new Dataset { Label = k, Data = dataForKey, BackgroundColor = colour, BorderColor = colour, Stack = false, Fill = false });
                 });
             var dates = periodsSingle.SelectMany(p => p.Value.Select(d => d.Key)).Distinct();
             periodsSingle.Keys.ToList().ForEach(k =>
@@ -144,7 +144,7 @@ namespace OV_DB.Controllers
                     dataToAdd.ForEach(d => dataForKey.Add(new Point { X = d.ToString("yyyy-MM-dd"), Y = 0 }));
                     dataForKey = dataForKey.OrderBy(d => d.X).ToList();
                     var colour = typesAndColours[k].ToUpper();
-                    dataSingle.Datasets.Add(new Dataset { Label = k, Data = dataForKey, BorderColor = colour, BackgroundColor = colour, Fill=true });
+                    dataSingle.Datasets.Add(new Dataset { Label = k, Data = dataForKey, BorderColor = colour, BackgroundColor = colour, Fill = true });
                 });
 
             if (year.HasValue)
@@ -156,7 +156,7 @@ namespace OV_DB.Controllers
                 }
                 dataCumulative.Datasets.ForEach(ds => ds.Data.Add(new Point { X = endDate.ToString("yyyy-MM-dd"), Y = Math.Round(typesAndValuesCumulative[ds.Label], 2) }));
             }
-            return Ok(new { Cumulative = dataCumulative , Single = dataSingle });
+            return Ok(new { Cumulative = dataCumulative, Single = dataSingle });
         }
 
         [HttpGet("reach/{map}")]
@@ -269,6 +269,7 @@ namespace OV_DB.Controllers
                     r.OriginalName,
                     r.OsmRelationId,
                     r.ParentRegionId,
+                    r.FlagEmoji,
                     Stations = r.Stations.Select(s => new { s.Id, s.Hidden, s.Special }).ToList()
                 })
                 .ToListAsync();
@@ -286,6 +287,8 @@ namespace OV_DB.Controllers
                 OsmRelationId = r.OsmRelationId,
                 VisitedStations = r.Stations.Count(s => !s.Hidden && !s.Special && visitedStationIds.Contains(s.Id)),
                 TotalStations = r.Stations.Count(s => !s.Hidden && !s.Special),
+                FlagEmoji = r.FlagEmoji,
+                ParentRegionId = r.ParentRegionId,
                 // Children will be filled in next step
                 Children = new List<RegionStatDTO>()
             }).ToList();
@@ -313,13 +316,12 @@ namespace OV_DB.Controllers
                 foreach (var region in input)
                 {
                     region.Visited = region.VisitedStations > 0;
-                    region.Children = FilterRegions(region.Children);
-                    if (region.Visited || region.Children.Any(c => c.Visited) || regionDict[region.Id].ParentRegionId == null)
+                    if (!region.Visited)
                     {
-                        // Only keep children that are visited or have visited children
-                        region.Children = region.Children.Where(c => c.Visited || c.Children.Any(cc => cc.Visited)).ToList();
-                        result.Add(region);
+                        region.Children = [];
                     }
+                    region.Children = FilterRegions(region.Children);
+                    result.Add(region);
                 }
                 return result;
             }

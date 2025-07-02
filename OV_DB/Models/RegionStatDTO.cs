@@ -13,5 +13,7 @@ namespace OV_DB.Models
         public int TotalStations { get; set; }
         public int VisitedStations { get; set; }
         public List<RegionStatDTO> Children { get; set; } = new();
+        public string? FlagEmoji { get; set; }
+        public int? ParentRegionId { get; set; }
     }
 }

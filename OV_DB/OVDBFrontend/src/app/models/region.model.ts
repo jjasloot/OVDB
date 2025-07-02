@@ -29,4 +29,6 @@ export interface RegionStat {
   totalStations: number;
   visitedStations: number;
   children: RegionStat[];
+  flagEmoji: string | null;
+  parentRegionId: number | null;
 }
