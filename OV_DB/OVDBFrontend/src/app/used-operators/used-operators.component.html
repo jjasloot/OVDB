@@ -5,6 +5,9 @@
         style="margin-bottom:0;vertical-align:middle;"></mat-slide-toggle>
       <span class="compact-toggle-switch-label">Compact</span>
     </div>
+    @if(loading()){
+    <mat-spinner />
+    }
     @if (!compact) {
     @for (region of sortedRegion(); track region) {
     <div class="operator-region-card">
@@ -15,8 +18,10 @@
         @for (operator of region.operators; track operator) {
         @let logo = getLogo(operator)|async;
         @if(!!logo){
-        <img [src]="logo" [ngClass]="operator.hasUserRoute ? 'operator-logo used' : 'operator-logo unused'"
-          alt="{{ operator.operatorNames[0] }}" title="{{ operator.operatorNames[0] }}" />
+        <span class="operator-logo-wrapper {{operator.hasUserRoute ? 'used' : 'unused'}}">
+          <img [src]="logo" class="operator-logo" alt="{{ operator.operatorNames[0] }}"
+            title="{{ operator.operatorNames[0] }}" />
+        </span>
         }
         }
       </div>
@@ -31,9 +36,9 @@
           @for (operator of region.operators; track operator) {
           @let logo = getLogo(operator)|async;
           @if(!!logo){
-          <span class="compact-operator-logo-wrapper">
-            <img [src]="logo" [ngClass]="operator.hasUserRoute ? 'operator-logo used' : 'operator-logo unused'"
-              alt="{{ operator.operatorNames[0] }}" title="{{ operator.operatorNames[0] }}" />
+          <span class="compact-operator-logo-wrapper {{operator.hasUserRoute ? 'used' : 'unused'}}">
+            <img [src]="logo" class="operator-logo" alt="{{ operator.operatorNames[0] }}"
+              title="{{ operator.operatorNames[0] }}" />
           </span>
           }
           }

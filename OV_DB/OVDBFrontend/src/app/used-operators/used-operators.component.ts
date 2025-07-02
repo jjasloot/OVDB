@@ -12,6 +12,7 @@ import { OperatorService } from "../services/operator.service";
 import { RegionOperator, RegionOperators } from "../models/region-operators.model";
 import { TranslationService } from "../services/translation.service";
 import { toSignal } from "@angular/core/rxjs-interop";
+import { MatProgressSpinnerModule } from "@angular/material/progress-spinner";
 
 @Component({
   selector: "app-used-operators",
@@ -27,7 +28,8 @@ import { toSignal } from "@angular/core/rxjs-interop";
     MatSlideToggleModule,
     FormsModule,
     AsyncPipe,
-    NgClass
+    NgClass,
+    MatProgressSpinnerModule
   ],
 })
 export class UsedOperatorsComponent implements OnInit {
@@ -37,6 +39,7 @@ export class UsedOperatorsComponent implements OnInit {
   regions = signal<RegionOperators[]>([]);
   compact = false;
   currentLanguage = toSignal(this.translationService.languageChanged);
+  loading = signal(true);
 
   sortedRegion = computed(() => {
     this.currentLanguage(); //so we update when the language changes
@@ -54,6 +57,7 @@ export class UsedOperatorsComponent implements OnInit {
   ngOnInit(): void {
     this.apiService.getOperatorsGroupedByRegion().subscribe((data) => {
       this.regions.set(data);
+      this.loading.set(false);
     });
   }
 
