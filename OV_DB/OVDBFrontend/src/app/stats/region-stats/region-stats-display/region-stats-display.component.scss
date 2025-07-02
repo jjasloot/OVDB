@@ -11,12 +11,27 @@
   box-shadow: 0 2px 8px rgba(60, 120, 60, 0.08);
   background: #fff;
   border-left: 5px solid #43a047;
-  transition: box-shadow 0.2s;
+  transition: box-shadow 0.2s, background 0.2s;
   margin-bottom: 0.5em;
 
   &.top-level {
     border-left: 8px solid #388e3c;
     background: #f6fff6;
+  }
+
+  &.region-unvisited {
+    background: #ffebee;
+    border-left-color: #e53935;
+  }
+
+  &.region-partial {
+    background: #fff8e1;
+    border-left-color: #ff9800;
+  }
+
+  &.region-visited {
+    background: #e8f5e9;
+    border-left-color: #43a047;
   }
 }
 
@@ -27,6 +42,10 @@
   font-size: 1.2em;
   font-weight: 600;
   margin-bottom: 0.5em;
+
+  &.clickable {
+    cursor: pointer;
+  }
 }
 
 .region-flag {
@@ -39,6 +58,11 @@
 
 .visited-icon {
   margin-left: auto;
+}
+
+.expand-icon {
+  margin-left: 0.5em;
+  color: #388e3c;
 }
 
 .region-progress {
@@ -56,4 +80,10 @@
   margin-top: 0.7em;
   border-left: 2px dashed #c8e6c9;
   padding-left: 1em;
+}
+
+// Highlight top-level progress bar for subregion progress
+.region-card .region-progress.mat-progress-bar-primary {
+  margin-top: 0.5em;
+  margin-bottom: 0.2em;
 }

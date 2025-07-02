@@ -222,6 +222,9 @@
   "STATS": {
     "OPERATORS": "Vervoerders",
     "CUMULATIVE": "Cumulatief",
-    "PER_DAY": "Per dag"
+    "PER_DAY": "Per dag",
+    "REGIONS": "Regio's",
+    "SUBREGIONS_VISITED": "onderliggende regio's",
+    "STATIONS_VISITED": "stations"
   }
 }

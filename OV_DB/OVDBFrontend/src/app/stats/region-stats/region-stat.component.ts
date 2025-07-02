@@ -7,6 +7,7 @@ import { ApiService } from '../../services/api.service';
 import { NgFor } from '@angular/common';
 import { TranslationService } from '../../services/translation.service';
 import { RegionStatsDisplayComponent } from "./region-stats-display/region-stats-display.component";
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'app-region-stat',
@@ -19,12 +20,18 @@ export class RegionStatComponent implements OnInit {
   regionStats = signal([] as RegionStat[]);
 
   private readonly apiService = inject(ApiService);
- 
+  private readonly translationService = inject(TranslationService);
+
+
+
   ngOnInit(): void {
     this.apiService.getRegionStats().subscribe(stats => {
       this.regionStats.set(stats);
     });
   }
 
- 
+  name(region: RegionStat) {
+    return this.translationService.getNameForItem(region);
+  }
+
 }

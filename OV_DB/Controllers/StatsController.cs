@@ -253,6 +253,13 @@ namespace OV_DB.Controllers
             if (userIdClaim < 0)
                 return Forbid();
 
+            // Get all region IDs that are in any of the user's routes
+            var userRouteRegionIds = await _context.Routes
+                .Where(r => r.RouteMaps.Any(rm => rm.Map.UserId == userIdClaim))
+                .SelectMany(r => r.Regions.Select(region => region.Id))
+                .Distinct()
+                .ToListAsync();
+
             // Get all visited station ids for user
             var visitedStationIds = await _context.StationVisits
                 .Where(sv => sv.UserId == userIdClaim)
@@ -289,7 +296,8 @@ namespace OV_DB.Controllers
                 TotalStations = r.Stations.Count(s => !s.Hidden && !s.Special),
                 FlagEmoji = r.FlagEmoji,
                 ParentRegionId = r.ParentRegionId,
-                // Children will be filled in next step
+                // Visited is now based on user's routes (any route in this region)
+                Visited = userRouteRegionIds.Contains(r.Id),
                 Children = new List<RegionStatDTO>()
             }).ToList();
 
@@ -315,7 +323,6 @@ namespace OV_DB.Controllers
                 var result = new List<RegionStatDTO>();
                 foreach (var region in input)
                 {
-                    region.Visited = region.VisitedStations > 0;
                     if (!region.Visited)
                     {
                         region.Children = [];
@@ -326,7 +333,7 @@ namespace OV_DB.Controllers
                 return result;
             }
 
-            var stats = FilterRegions(topLevel);
+            var stats = FilterRegions(topLevel).OrderBy(r=>r.OriginalName);
             return Ok(stats);
         }
     }

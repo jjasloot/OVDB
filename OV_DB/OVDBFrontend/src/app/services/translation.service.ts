@@ -1,11 +1,13 @@
 import { Injectable, EventEmitter } from '@angular/core';
 import { TranslateService } from '@ngx-translate/core';
 
+type Language = 'nl' | 'en';
+
 @Injectable({
   providedIn: 'root'
 })
 export class TranslationService {
-  languageChanged = new EventEmitter<null>();
+  languageChanged = new EventEmitter<Language>();
   constructor(private translateService: TranslateService) {
     if (navigator.language.includes('nl')) {
       this.language = 'nl';
@@ -17,10 +19,10 @@ export class TranslationService {
   get language() {
     return this._language;
   }
-  set language(value: 'nl' | 'en') {
+  set language(value: Language) {
     this._language = value;
     this.translateService.use(value);
-    this.languageChanged.emit(null);
+    this.languageChanged.emit(this._language);
   }
 
   // tslint:disable-next-line: variable-name

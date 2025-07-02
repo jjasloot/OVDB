@@ -1,25 +1,53 @@
 <div class="region-stats-list">
-    @for (region of regionStats(); track region.id) {
-    <mat-card class="region-card" [class.top-level]="!region.parentRegionId">
-        <div class="region-header">
-            @if(!!region.flagEmoji){
+    @for (region of sortedRegionStats(); track region.id) {
+    <mat-card class="region-card" [class.top-level]="!region.parentRegionId" [ngClass]="getRegionClass(region)">
+        @if (!region.parentRegionId) {
+        <div class="region-header clickable" (click)="toggle(region.id)">
+            @if (region.flagEmoji) {
             <span class="region-flag">{{ region.flagEmoji }}</span>
             }
             <span class="region-name" [title]="region.originalName">{{ name(region) }}</span>
-            @if(region.visited){
+            @if (region.visited) {
+            <mat-icon color="primary" class="visited-icon">check_circle</mat-icon>
+            }
+            @if(region.children.length>0){
+            <mat-icon class="expand-icon">
+                {{ isExpanded(region.id) ? 'expand_less' : 'expand_more' }}
+            </mat-icon>
+            }
+        </div>
+        }
+        @if (region.parentRegionId) {
+        <div class="region-header">
+            @if (region.flagEmoji) {
+            <span class="region-flag">{{ region.flagEmoji }}</span>
+            }
+            <span class="region-name" [title]="region.originalName">{{ name(region) }}</span>
+            @if (region.visited) {
             <mat-icon color="primary" class="visited-icon">check_circle</mat-icon>
             }
         </div>
-        @if(region.totalStations>0){
+        }
+        @if (region.totalStations > 0) {
         <div class="region-progress">
             <mat-progress-bar color="accent" mode="determinate"
                 [value]="100 * region.visitedStations / region.totalStations"></mat-progress-bar>
             <div class="station-count">
-                {{ region.visitedStations }}/{{ region.totalStations }} stations
+                {{ region.visitedStations }}/{{ region.totalStations }} {{'STATS.STATIONS_VISITED'|translate}}
             </div>
         </div>
         }
-        @if(region.visited && region.children.length>0){
+        @if (!region.parentRegionId && region.children?.length) {
+        <div class="region-progress">
+            <mat-progress-bar color="primary" mode="determinate"
+                [value]="100 * visitedCount(region.children) / region.children.length"></mat-progress-bar>
+            <div class="station-count">
+                {{ visitedCount(region.children) }}/{{ region.children.length }}
+                {{'STATS.SUBREGIONS_VISITED'|translate}}
+            </div>
+        </div>
+        }
+        @if (region.children?.length && ((!region.parentRegionId && isExpanded(region.id)) || region.parentRegionId)) {
         <div class="region-children">
             <app-region-stats-display [regionStats]="region.children" />
         </div>
