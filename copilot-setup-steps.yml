@@ -1,0 +1,117 @@
+# GitHub Copilot Workspace Setup Steps for OVDB
+# This file configures the development environment for the OVDB project
+
+name: "OVDB Development Environment Setup"
+description: "Sets up .NET 9, Node.js LTS, and MySQL for OVDB development"
+
+steps:
+  # Install .NET 9 SDK
+  - name: "Install .NET 9 SDK"
+    run: |
+      # Download and install .NET 9 SDK
+      curl -sSL https://dot.net/v1/dotnet-install.sh | bash /dev/stdin --channel 9.0
+      # Add to PATH
+      export PATH="$HOME/.dotnet:$PATH"
+      echo 'export PATH="$HOME/.dotnet:$PATH"' >> ~/.bashrc
+      # Verify installation
+      dotnet --version
+
+  # Install Node.js LTS
+  - name: "Install Node.js LTS"
+    run: |
+      # Install Node.js LTS using NodeSource repository
+      curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash -
+      sudo apt-get install -y nodejs
+      # Verify installation
+      node --version
+      npm --version
+
+  # Install and setup MySQL
+  - name: "Install and Configure MySQL"
+    run: |
+      # Install MySQL server
+      sudo apt-get update
+      sudo apt-get install -y mysql-server mysql-client
+      
+      # Start MySQL service
+      sudo systemctl start mysql
+      sudo systemctl enable mysql
+      
+      # Create database and user for OVDB
+      sudo mysql -e "CREATE DATABASE IF NOT EXISTS ovdb_test;"
+      sudo mysql -e "CREATE USER IF NOT EXISTS 'ovdb_user'@'localhost' IDENTIFIED BY 'ovdb_password';"
+      sudo mysql -e "GRANT ALL PRIVILEGES ON ovdb_test.* TO 'ovdb_user'@'localhost';"
+      sudo mysql -e "FLUSH PRIVILEGES;"
+      
+      # Verify MySQL is running
+      sudo systemctl status mysql
+
+  # Install .NET tools and restore dependencies
+  - name: "Install .NET Tools and Restore Dependencies"
+    run: |
+      # Install Entity Framework Core CLI tools
+      dotnet tool install --global dotnet-ef
+      
+      # Restore dependencies for both projects
+      cd OV_DB
+      dotnet restore
+      cd ../OVDB_database
+      dotnet restore
+
+  # Install Node.js dependencies for frontend
+  - name: "Install Frontend Dependencies"
+    run: |
+      cd OV_DB/OVDBFrontend
+      npm install
+
+  # Setup database schema
+  - name: "Initialize Database"
+    run: |
+      # Set connection string for test database
+      export ConnectionStrings__DefaultConnection="Server=localhost;Database=ovdb_test;User=ovdb_user;Password=ovdb_password;"
+      
+      # Run Entity Framework migrations to create schema
+      cd OVDB_database
+      dotnet ef database update --connection "Server=localhost;Database=ovdb_test;User=ovdb_user;Password=ovdb_password;"
+
+  # Build projects to verify setup
+  - name: "Build and Verify Setup"
+    run: |
+      # Build backend
+      cd OV_DB
+      dotnet build
+      
+      # Build frontend
+      cd OVDBFrontend
+      npm run build
+      
+      echo "✅ OVDB development environment setup complete!"
+      echo "🔹 .NET 9 installed and ready"
+      echo "🔹 Node.js LTS installed and ready" 
+      echo "🔹 MySQL database 'ovdb_test' configured"
+      echo "🔹 Entity Framework Core CLI tools installed"
+      echo "🔹 All dependencies restored"
+      echo "🔹 Projects built successfully"
+      echo ""
+      echo "📋 Development Database Info:"
+      echo "   Database: ovdb_test"
+      echo "   User: ovdb_user"
+      echo "   Password: ovdb_password"
+      echo ""
+      echo "🚀 Ready for GitHub Copilot development!"
+      echo "   Backend: cd OV_DB && dotnet run"
+      echo "   Frontend: cd OV_DB/OVDBFrontend && npm start"
+
+# Environment variables for development
+environment:
+  DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: "1"
+  ConnectionStrings__DefaultConnection: "Server=localhost;Database=ovdb_test;User=ovdb_user;Password=ovdb_password;"
+  ASPNETCORE_ENVIRONMENT: "Development"
+
+# Required tools and versions
+requirements:
+  dotnet: "9.0.x"
+  node: "lts/*"
+  mysql: "8.0+"
+  npm: "latest"
