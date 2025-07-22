@@ -226,5 +226,35 @@
     "REGIONS": "Regio's",
     "SUBREGIONS_VISITED": "onderliggende regio's",
     "STATIONS_VISITED": "stations"
+  },
+  "MENU": {
+    "PROFILE": "Profiel",
+    "HELP": "Help",
+    "SIGNOUT": "Uitloggen",
+    "MENU": "Menu",
+    "MAPS": "Kaarten",
+    "DATA": "Data",
+    "REQUESTS": "Verzoeken"
+  },
+  "PROFILE": {
+    "TITLE": "Gebruikersprofiel",
+    "GENERAL_SETTINGS": "Algemene Instellingen",
+    "EMAIL": "E-mail",
+    "PREFERRED_LANGUAGE": "Voorkeurstaal",
+    "TELEGRAM_USER_ID": "Telegram Gebruiker ID",
+    "TELEGRAM_EXPLANATION": "Je kunt meldingen ontvangen via de Telegram bot. Om je Telegram gebruiker ID te krijgen, start een gesprek met @ovdb_bot en stuur /start.",
+    "TELEGRAM_BOT_INFO": "Vind de bot: @ovdb_bot",
+    "SAVE_PROFILE": "Profiel Opslaan",
+    "CHANGE_PASSWORD": "Wachtwoord Wijzigen",
+    "CURRENT_PASSWORD": "Huidig Wachtwoord",
+    "NEW_PASSWORD": "Nieuw Wachtwoord",
+    "CONFIRM_PASSWORD": "Bevestig Wachtwoord",
+    "PASSWORD_MIN_LENGTH": "Wachtwoord moet minimaal 10 tekens lang zijn",
+    "PASSWORDS_DO_NOT_MATCH": "Wachtwoorden komen niet overeen",
+    "SAVED_SUCCESSFULLY": "Profiel succesvol opgeslagen",
+    "ERROR_SAVING": "Fout bij opslaan profiel",
+    "ERROR_LOADING": "Fout bij laden profiel",
+    "PASSWORD_CHANGED_SUCCESSFULLY": "Wachtwoord succesvol gewijzigd",
+    "ERROR_CHANGING_PASSWORD": "Fout bij wijzigen wachtwoord"
   }
 }

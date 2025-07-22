@@ -54,6 +54,10 @@
             <mat-icon>query_stats</mat-icon>
             {{ "HOME.STATS" | translate }}
           </button>
+          <button mat-menu-item [routerLink]="['/profile']">
+            <mat-icon>person</mat-icon>
+            {{ "MENU.PROFILE" | translate }}
+          </button>
           <button mat-menu-item [routerLink]="['/help']">
             <mat-icon>help_outline</mat-icon>
             {{'MENU.HELP'|translate}}

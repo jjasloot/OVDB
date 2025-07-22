@@ -20,6 +20,7 @@ import { StationAdminProperties } from "../models/stationAdminProperties.model";
 import { MapDataDTO } from "../models/map-data.model";
 import { RegionOperators } from "../models/region-operators.model";
 import { RegionStat } from "../models/region.model";
+import { UserProfile, UpdateProfile, ChangePassword } from "../models/user-profile.model";
 
 @Injectable({
   providedIn: "root",
@@ -506,5 +507,26 @@ export class ApiService {
     return this.httpClient.get<RegionStat[]>(
       environment.backend + "api/stats/region"
     )
+  }
+
+  // User Profile methods
+  getUserProfile(): Observable<UserProfile> {
+    return this.httpClient.get<UserProfile>(
+      environment.backend + "api/user/profile"
+    );
+  }
+
+  updateUserProfile(profile: UpdateProfile): Observable<any> {
+    return this.httpClient.put(
+      environment.backend + "api/user/profile",
+      profile
+    );
+  }
+
+  changePassword(changePassword: ChangePassword): Observable<any> {
+    return this.httpClient.post(
+      environment.backend + "api/user/change-password",
+      changePassword
+    );
   }
 }
