@@ -59,7 +59,7 @@ export class ProfileComponent implements OnInit {
     private userPreferenceService: UserPreferenceService
   ) {
     this.profileForm = this.formBuilder.group({
-      preferredLanguage: ['en', Validators.required],
+      preferredLanguage: ['', Validators.required],
       telegramUserId: [null]
     });
 
@@ -88,7 +88,7 @@ export class ProfileComponent implements OnInit {
       next: (profile) => {
         this.userProfile = profile;
         this.profileForm.patchValue({
-          preferredLanguage: profile.preferredLanguage || 'en',
+          preferredLanguage: profile.preferredLanguage || '',
           telegramUserId: profile.telegramUserId || null
         });
         this.loading = false;

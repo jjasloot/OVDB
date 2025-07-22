@@ -47,7 +47,7 @@ namespace OV_DB.Controllers
             return Ok(new UserProfileDTO
             {
                 Email = user.Email,
-                PreferredLanguage = user.PreferredLanguage?.ToLanguageCode() ?? "en",
+                PreferredLanguage = user.PreferredLanguage?.ToLanguageCode(),
                 TelegramUserId = user.TelegramUserId
             });
         }
@@ -67,13 +67,17 @@ namespace OV_DB.Controllers
                 return NotFound();
             }
 
-            // Validate language preference
-            if (updateProfile.PreferredLanguage != "en" && updateProfile.PreferredLanguage != "nl")
+            // Validate language preference if provided
+            if (updateProfile.PreferredLanguage != null && 
+                updateProfile.PreferredLanguage != "en" && 
+                updateProfile.PreferredLanguage != "nl")
             {
-                return BadRequest("Invalid language preference. Must be 'en' or 'nl'.");
+                return BadRequest("Invalid language preference. Must be 'en', 'nl', or null.");
             }
 
-            user.PreferredLanguage = LanguageHelper.FromLanguageCode(updateProfile.PreferredLanguage);
+            user.PreferredLanguage = updateProfile.PreferredLanguage != null 
+                ? LanguageHelper.FromLanguageCode(updateProfile.PreferredLanguage) 
+                : null;
             user.TelegramUserId = updateProfile.TelegramUserId;
 
             DatabaseContext.Update(user);
