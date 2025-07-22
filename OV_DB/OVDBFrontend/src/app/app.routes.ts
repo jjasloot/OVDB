@@ -32,6 +32,7 @@ import { AdministratorRegionsComponent } from "./administrator/administrator-reg
 import { RequestsListComponent } from "./requests/requests-list/requests-list.component";
 import { AdministratorRequestsComponent } from "./administrator/administrator-requests/administrator-requests.component";
 import { AdministratorOperatorsComponent } from "./administrator/administrator-operators/administrator-operators.component";
+import { ProfileComponent } from "./profile/profile.component";
 
 export const routes: Routes = [
   {
@@ -51,6 +52,11 @@ export const routes: Routes = [
       { path: "help", component: HelpComponent },
       { path: "route/:routeId/:guid", component: SingleRouteMapComponent },
       { path: "stats", component: StatsComponent, canActivate: [LoginGuard] },
+      {
+        path: "profile",
+        component: ProfileComponent,
+        canActivate: [LoginGuard],
+      },
       {
         path: "images",
         component: ImageCreatorComponent,

@@ -226,5 +226,35 @@
     "REGIONS": "Regions",
     "SUBREGIONS_VISITED": "underlying regions",
     "STATIONS_VISITED": "stations"
+  },
+  "MENU": {
+    "PROFILE": "Profile",
+    "HELP": "Help",
+    "SIGNOUT": "Sign out",
+    "MENU": "Menu",
+    "MAPS": "Maps",
+    "DATA": "Data",
+    "REQUESTS": "Requests"
+  },
+  "PROFILE": {
+    "TITLE": "User Profile",
+    "GENERAL_SETTINGS": "General Settings",
+    "EMAIL": "Email",
+    "PREFERRED_LANGUAGE": "Preferred Language",
+    "TELEGRAM_USER_ID": "Telegram User ID",
+    "TELEGRAM_EXPLANATION": "You can mark stations you visited on the go using the Telegram bot. Share your location with @ovdb_bot to find nearby stations and toggle your visit status.",
+    "TELEGRAM_BOT_INFO": "Find the bot: ",
+    "SAVE_PROFILE": "Save Profile",
+    "CHANGE_PASSWORD": "Change Password",
+    "CURRENT_PASSWORD": "Current Password",
+    "NEW_PASSWORD": "New Password",
+    "CONFIRM_PASSWORD": "Confirm Password",
+    "PASSWORD_MIN_LENGTH": "Password must be at least 10 characters long",
+    "PASSWORDS_DO_NOT_MATCH": "Passwords do not match",
+    "SAVED_SUCCESSFULLY": "Profile saved successfully",
+    "ERROR_SAVING": "Error saving profile",
+    "ERROR_LOADING": "Error loading profile",
+    "PASSWORD_CHANGED_SUCCESSFULLY": "Password changed successfully",
+    "ERROR_CHANGING_PASSWORD": "Error changing password"
   }
 }

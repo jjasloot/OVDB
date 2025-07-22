@@ -1,0 +1,102 @@
+.profile-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+
+  h1 {
+    text-align: center;
+    margin-bottom: 30px;
+    color: #333;
+  }
+}
+
+.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 200px;
+}
+
+.profile-card,
+.password-card {
+  margin-bottom: 30px;
+
+  mat-card-header {
+    background-color: #f5f5f5;
+    padding: 16px;
+    margin: -16px -16px 16px -16px;
+
+    mat-card-title {
+      color: #333;
+      font-weight: 500;
+    }
+  }
+
+  mat-form-field {
+    width: 100%;
+    margin-bottom: 16px;
+  }
+}
+
+.telegram-info {
+  display: flex;
+  align-items: flex-start;
+  background-color: #e3f2fd;
+  padding: 16px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  border-left: 4px solid #2196f3;
+
+  mat-icon {
+    color: #2196f3;
+    margin-right: 12px;
+    margin-top: 2px;
+  }
+
+  .telegram-text {
+    flex: 1;
+
+    p {
+      margin: 0 0 8px 0;
+      line-height: 1.5;
+      color: #333;
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+    }
+  }
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 20px;
+
+  button {
+    min-width: 150px;
+
+    mat-spinner {
+      margin-right: 8px;
+    }
+
+    mat-icon {
+      margin-right: 8px;
+    }
+  }
+}
+
+// Responsive design
+@media (max-width: 600px) {
+  .profile-container {
+    padding: 10px;
+  }
+
+  .form-actions {
+    justify-content: center;
+
+    button {
+      width: 100%;
+    }
+  }
+}
