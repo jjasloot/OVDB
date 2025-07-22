@@ -4,6 +4,7 @@ import { ApiService } from '../services/api.service';
 import { UserProfile, UpdateProfile, ChangePassword } from '../models/user-profile.model';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import { TranslationService } from '../services/translation.service';
 import { MatFormField, MatLabel, MatError } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 import { MatButton } from '@angular/material/button';
@@ -52,7 +53,8 @@ export class ProfileComponent implements OnInit {
     private formBuilder: UntypedFormBuilder,
     private apiService: ApiService,
     private snackBar: MatSnackBar,
-    private translateService: TranslateService
+    private translateService: TranslateService,
+    private translationService: TranslationService
   ) {
     this.profileForm = this.formBuilder.group({
       preferredLanguage: ['en', Validators.required],
@@ -111,8 +113,8 @@ export class ProfileComponent implements OnInit {
           this.savingProfile = false;
           
           // Update language if changed
-          if (updateProfile.preferredLanguage !== this.translateService.currentLang) {
-            this.translateService.use(updateProfile.preferredLanguage);
+          if (updateProfile.preferredLanguage !== this.translationService.language) {
+            this.translationService.language = updateProfile.preferredLanguage as 'nl' | 'en';
           }
         },
         error: (error) => {
