@@ -243,7 +243,7 @@
     "PREFERRED_LANGUAGE": "Voorkeurstaal",
     "TELEGRAM_USER_ID": "Telegram Gebruiker ID",
     "TELEGRAM_EXPLANATION": "Je kunt stations die je hebt bezocht onderweg markeren met de Telegram bot. Deel je locatie met @ovdb_bot om nabijgelegen stations te vinden en je bezoekstatus te wijzigen.",
-    "TELEGRAM_BOT_INFO": "Vind de bot: @ovdb_bot",
+    "TELEGRAM_BOT_INFO": "Vind de bot: ",
     "SAVE_PROFILE": "Profiel Opslaan",
     "CHANGE_PASSWORD": "Wachtwoord Wijzigen",
     "CURRENT_PASSWORD": "Huidig Wachtwoord",
