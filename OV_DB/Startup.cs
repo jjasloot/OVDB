@@ -77,7 +77,6 @@ namespace OV_DB
                 options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString),
                     options => options
                     .UseNetTopologySuite()
-                    .TranslateParameterizedCollectionsToConstants()
                     .EnableRetryOnFailure()
                     );
 #if DEBUG
