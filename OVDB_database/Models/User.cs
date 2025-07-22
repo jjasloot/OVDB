@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using OVDB_database.Enums;
 
 namespace OVDB_database.Models
 {
@@ -19,6 +20,6 @@ namespace OVDB_database.Models
         public List<Map> Maps { get; set; }
         public List<RouteType> RouteTypes { get; set; }
         public long TelegramUserId { get; set; }
-        public string PreferredLanguage { get; set; } = "en";
+        public PreferredLanguage PreferredLanguage { get; set; } = PreferredLanguage.English;
     }
 }

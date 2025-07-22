@@ -242,7 +242,7 @@
     "EMAIL": "Email",
     "PREFERRED_LANGUAGE": "Preferred Language",
     "TELEGRAM_USER_ID": "Telegram User ID",
-    "TELEGRAM_EXPLANATION": "You can receive notifications via Telegram bot. To get your Telegram user ID, start a conversation with @ovdb_bot and send /start.",
+    "TELEGRAM_EXPLANATION": "You can mark stations you visited on the go using the Telegram bot. Share your location with @ovdb_bot to find nearby stations and toggle your visit status.",
     "TELEGRAM_BOT_INFO": "Find the bot: @ovdb_bot",
     "SAVE_PROFILE": "Save Profile",
     "CHANGE_PASSWORD": "Change Password",

@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using OV_DB.Models;
+using OV_DB.Helpers;
 using OVDB_database.Database;
 using OVDB_database.Models;
 
@@ -46,7 +47,7 @@ namespace OV_DB.Controllers
             return Ok(new UserProfileDTO
             {
                 Email = user.Email,
-                PreferredLanguage = user.PreferredLanguage ?? "en",
+                PreferredLanguage = user.PreferredLanguage.ToLanguageCode(),
                 TelegramUserId = user.TelegramUserId
             });
         }
@@ -72,7 +73,7 @@ namespace OV_DB.Controllers
                 return BadRequest("Invalid language preference. Must be 'en' or 'nl'.");
             }
 
-            user.PreferredLanguage = updateProfile.PreferredLanguage;
+            user.PreferredLanguage = LanguageHelper.FromLanguageCode(updateProfile.PreferredLanguage);
             user.TelegramUserId = updateProfile.TelegramUserId;
 
             DatabaseContext.Update(user);
