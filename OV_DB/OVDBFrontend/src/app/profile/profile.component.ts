@@ -5,6 +5,7 @@ import { UserProfile, UpdateProfile, ChangePassword } from '../models/user-profi
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { TranslationService } from '../services/translation.service';
+import { UserPreferenceService } from '../services/user-preference.service';
 import { MatFormField, MatLabel, MatError } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 import { MatButton } from '@angular/material/button';
@@ -54,11 +55,12 @@ export class ProfileComponent implements OnInit {
     private apiService: ApiService,
     private snackBar: MatSnackBar,
     private translateService: TranslateService,
-    private translationService: TranslationService
+    private translationService: TranslationService,
+    private userPreferenceService: UserPreferenceService
   ) {
     this.profileForm = this.formBuilder.group({
       preferredLanguage: ['en', Validators.required],
-      telegramUserId: [0]
+      telegramUserId: [null]
     });
 
     this.passwordForm = this.formBuilder.group({
@@ -87,7 +89,7 @@ export class ProfileComponent implements OnInit {
         this.userProfile = profile;
         this.profileForm.patchValue({
           preferredLanguage: profile.preferredLanguage || 'en',
-          telegramUserId: profile.telegramUserId || 0
+          telegramUserId: profile.telegramUserId || null
         });
         this.loading = false;
       },

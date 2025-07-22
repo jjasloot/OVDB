@@ -47,7 +47,7 @@ namespace OV_DB.Controllers
             return Ok(new UserProfileDTO
             {
                 Email = user.Email,
-                PreferredLanguage = user.PreferredLanguage.ToLanguageCode(),
+                PreferredLanguage = user.PreferredLanguage?.ToLanguageCode() ?? "en",
                 TelegramUserId = user.TelegramUserId
             });
         }

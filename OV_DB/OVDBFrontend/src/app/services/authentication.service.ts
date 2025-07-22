@@ -5,8 +5,6 @@ import { Router } from '@angular/router';
 import { JwtHelperService } from '@auth0/angular-jwt';
 import { RegistrationRequest } from '../models/registrationRequest.model';
 import { tap } from 'rxjs/operators';
-import { ApiService } from './api.service';
-import { TranslationService } from './translation.service';
 
 @Injectable({
   providedIn: 'root'
@@ -19,14 +17,12 @@ export class AuthenticationService {
   helper = new JwtHelperService();
   refreshTrigger: any;
   returnUrl: string;
-  constructor(private httpClient: HttpClient, private router: Router, private apiService: ApiService, private translationService: TranslationService) {
+  constructor(private httpClient: HttpClient, private router: Router) {
     this.token = localStorage.getItem('OVDBToken');
     setTimeout(() => {
       if (!!this.token) {
         this.refreshTheToken();
       }
-      // Also apply language preference if already logged in
-      this.applyUserLanguagePreference();
     }, 100);
   }
 
@@ -60,27 +56,6 @@ export class AuthenticationService {
     this.token = data.token;
     const expiry = this.helper.getTokenExpirationDate(this.token).valueOf() - new Date().valueOf();
     this.refreshTrigger = setTimeout(() => this.refreshTheToken(), Math.max(expiry - (5 * 60 * 1000), 0));
-    
-    // Apply user's preferred language if set
-    this.applyUserLanguagePreference();
-  }
-
-  private applyUserLanguagePreference() {
-    // Only fetch profile if we have a valid token
-    if (this.isLoggedIn) {
-      this.apiService.getUserProfile().subscribe({
-        next: (profile) => {
-          // Apply preferred language if set and different from current
-          if (profile.preferredLanguage && profile.preferredLanguage !== this.translationService.language) {
-            this.translationService.language = profile.preferredLanguage as 'nl' | 'en';
-          }
-        },
-        error: (error) => {
-          // Silently fail - if profile can't be fetched, just use browser language
-          console.debug('Could not fetch user profile for language preference:', error);
-        }
-      });
-    }
   }
 
   refreshTheToken() {

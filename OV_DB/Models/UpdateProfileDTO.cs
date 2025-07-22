@@ -3,6 +3,6 @@
     public class UpdateProfileDTO
     {
         public string PreferredLanguage { get; set; }
-        public long TelegramUserId { get; set; }
+        public long? TelegramUserId { get; set; }
     }
 }

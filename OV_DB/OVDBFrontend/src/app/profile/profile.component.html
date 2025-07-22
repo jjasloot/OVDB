@@ -14,14 +14,14 @@
       <mat-card-content>
         <form [formGroup]="profileForm" (ngSubmit)="saveProfile()">
           <!-- Email (readonly) -->
-          <mat-form-field appearance="outline">
+          <mat-form-field>
             <mat-label>{{ 'PROFILE.EMAIL' | translate }}</mat-label>
             <input matInput [value]="userProfile?.email" readonly>
             <mat-icon matSuffix>email</mat-icon>
           </mat-form-field>
 
           <!-- Language Preference -->
-          <mat-form-field appearance="outline">
+          <mat-form-field>
             <mat-label>{{ 'PROFILE.PREFERRED_LANGUAGE' | translate }}</mat-label>
             <mat-select formControlName="preferredLanguage">
               @for (language of languages; track language.value) {
@@ -32,9 +32,9 @@
           </mat-form-field>
 
           <!-- Telegram User ID -->
-          <mat-form-field appearance="outline">
+          <mat-form-field>
             <mat-label>{{ 'PROFILE.TELEGRAM_USER_ID' | translate }}</mat-label>
-            <input matInput type="number" formControlName="telegramUserId" placeholder="0">
+            <input matInput type="number" formControlName="telegramUserId" placeholder="">
             <mat-icon matSuffix>telegram</mat-icon>
           </mat-form-field>
 
@@ -43,7 +43,10 @@
             <mat-icon>info</mat-icon>
             <div class="telegram-text">
               <p>{{ 'PROFILE.TELEGRAM_EXPLANATION' | translate }}</p>
-              <p>{{ 'PROFILE.TELEGRAM_BOT_INFO' | translate }}</p>
+              <p>
+                {{ 'PROFILE.TELEGRAM_BOT_INFO' | translate }} 
+                <a href="https://t.me/ovdb_bot" target="_blank" rel="noopener noreferrer">&#64;ovdb_bot</a>
+              </p>
             </div>
           </div>
 
@@ -69,14 +72,14 @@
       <mat-card-content>
         <form [formGroup]="passwordForm" (ngSubmit)="changePassword()">
           <!-- Current Password -->
-          <mat-form-field appearance="outline">
+          <mat-form-field>
             <mat-label>{{ 'PROFILE.CURRENT_PASSWORD' | translate }}</mat-label>
             <input matInput type="password" formControlName="currentPassword">
             <mat-icon matSuffix>lock</mat-icon>
           </mat-form-field>
 
           <!-- New Password -->
-          <mat-form-field appearance="outline">
+          <mat-form-field>
             <mat-label>{{ 'PROFILE.NEW_PASSWORD' | translate }}</mat-label>
             <input matInput type="password" formControlName="newPassword">
             <mat-icon matSuffix>lock_open</mat-icon>
@@ -86,7 +89,7 @@
           </mat-form-field>
 
           <!-- Confirm Password -->
-          <mat-form-field appearance="outline">
+          <mat-form-field>
             <mat-label>{{ 'PROFILE.CONFIRM_PASSWORD' | translate }}</mat-label>
             <input matInput type="password" formControlName="confirmPassword">
             <mat-icon matSuffix>lock_outline</mat-icon>

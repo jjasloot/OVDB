@@ -19,7 +19,7 @@ namespace OVDB_database.Models
         public Guid Guid { get; set; }
         public List<Map> Maps { get; set; }
         public List<RouteType> RouteTypes { get; set; }
-        public long TelegramUserId { get; set; }
-        public PreferredLanguage PreferredLanguage { get; set; } = PreferredLanguage.English;
+        public long? TelegramUserId { get; set; }
+        public PreferredLanguage? PreferredLanguage { get; set; }
     }
 }
