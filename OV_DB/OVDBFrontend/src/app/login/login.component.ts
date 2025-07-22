@@ -7,12 +7,13 @@ import { MatInput } from '@angular/material/input';
 import { MatButton } from '@angular/material/button';
 import { MatProgressSpinner } from '@angular/material/progress-spinner';
 import { TranslateModule } from '@ngx-translate/core';
+import { UserPreferenceService } from '../services/user-preference.service';
 
 @Component({
-    selector: 'app-login',
-    templateUrl: './login.component.html',
-    styleUrls: ['./login.component.scss'],
-    imports: [FormsModule, ReactiveFormsModule, MatFormField, MatLabel, MatInput, MatButton, MatProgressSpinner, TranslateModule]
+  selector: 'app-login',
+  templateUrl: './login.component.html',
+  styleUrls: ['./login.component.scss'],
+  imports: [FormsModule, ReactiveFormsModule, MatFormField, MatLabel, MatInput, MatButton, MatProgressSpinner, TranslateModule]
 })
 export class LoginComponent implements OnInit {
   form: UntypedFormGroup;
@@ -23,6 +24,7 @@ export class LoginComponent implements OnInit {
   constructor(
     private authService: AuthenticationService,
     private formBuilder: UntypedFormBuilder,
+    private userPreferenceService: UserPreferenceService,
     private activatedRoute: ActivatedRoute) { }
 
   ngOnInit() {
@@ -48,6 +50,8 @@ export class LoginComponent implements OnInit {
     if (this.form.valid) {
       this.authService.login(this.form.value.email, this.form.value.password).subscribe(() => {
         this.loading = false;
+        this.userPreferenceService.applyUserLanguagePreference();
+
       },
         err => { this.error = err; this.loading = false; this.failed = true; });
     }
