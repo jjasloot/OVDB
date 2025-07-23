@@ -4,16 +4,12 @@
 // Include the common styles for Angular Material
 @include mat.core();
 
-// Define Material 3 theme using the new API
+// Define Material 3 theme using the new API with custom bright green
 $OVDBFrontend-theme: mat.define-theme((
   color: (
     theme-type: light,
     primary: mat.$green-palette,
     tertiary: mat.$blue-palette,
-  ),
-  typography: (
-    brand-family: 'Roboto',
-    plain-family: 'Roboto',
   ),
   density: (
     scale: 0,
@@ -26,10 +22,6 @@ $OVDBFrontend-dark-theme: mat.define-theme((
     primary: mat.$green-palette,
     tertiary: mat.$blue-palette,
   ),
-  typography: (
-    brand-family: 'Roboto',
-    plain-family: 'Roboto',
-  ),
   density: (
     scale: 0,
   )
@@ -38,11 +30,67 @@ $OVDBFrontend-dark-theme: mat.define-theme((
 // Apply the light theme by default
 :root {
   @include mat.all-component-themes($OVDBFrontend-theme);
+  
+  // Override with bright green colors to match original design
+  --mdc-theme-primary: #4caf50;
+  --mat-toolbar-container-background-color: #4caf50;
+  --mat-app-background-color: white;
+}
+
+// Ensure toolbar has the bright green color
+mat-toolbar.mat-primary {
+  background-color: #4caf50 !important;
+  color: white !important;
+}
+
+// Ensure primary buttons use bright green
+.mat-mdc-raised-button.mat-primary,
+.mat-mdc-unelevated-button.mat-primary,
+.mat-mdc-fab.mat-primary {
+  --mdc-filled-button-container-color: #4caf50 !important;
+  --mdc-fab-container-color: #4caf50 !important;
 }
 
 // Apply dark theme when .dark-theme class is present
 .dark-theme {
   @include mat.all-component-colors($OVDBFrontend-dark-theme);
+  
+  // Override with bright green colors to match original design
+  --mdc-theme-primary: #4caf50;
+  --mat-toolbar-container-background-color: #4caf50;
+  --mat-app-background-color: #303030;
+  
+  // Ensure the page background is dark
+  background-color: #303030 !important;
+  color: white;
+  
+  // Ensure content areas have dark background
+  .router-container {
+    background-color: #303030;
+    color: white;
+    min-height: 100vh;
+  }
+  
+  // Ensure container has dark background
+  .container {
+    background-color: #303030;
+    color: white;
+    min-height: 100vh;
+  }
+  
+  // Ensure toolbar has the bright green color in dark mode too
+  mat-toolbar.mat-primary {
+    background-color: #4caf50 !important;
+    color: white !important;
+  }
+  
+  // Ensure primary buttons use bright green in dark mode
+  .mat-mdc-raised-button.mat-primary,
+  .mat-mdc-unelevated-button.mat-primary,
+  .mat-mdc-fab.mat-primary {
+    --mdc-filled-button-container-color: #4caf50 !important;
+    --mdc-fab-container-color: #4caf50 !important;
+  }
 }
 
 /* You can add global styles to this file, and also import other style files */

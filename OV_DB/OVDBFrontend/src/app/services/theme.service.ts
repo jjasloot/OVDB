@@ -24,11 +24,16 @@ export class ThemeService {
   setDarkMode(isDark: boolean): void {
     this.darkModeSubject.next(isDark);
     
-    // Apply theme to document body
+    // Apply theme to document root and body
+    const htmlElement = document.documentElement;
+    const bodyElement = document.body;
+    
     if (isDark) {
-      document.body.classList.add('dark-theme');
+      htmlElement.classList.add('dark-theme');
+      bodyElement.classList.add('dark-theme');
     } else {
-      document.body.classList.remove('dark-theme');
+      htmlElement.classList.remove('dark-theme');
+      bodyElement.classList.remove('dark-theme');
     }
     
     // Save preference
