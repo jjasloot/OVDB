@@ -46,6 +46,10 @@
           @if(currentLanguage!='en'){
           <button mat-menu-item (click)="setLanguage('en')"><mat-icon>🇬🇧</mat-icon> English</button>
           }
+          <button mat-menu-item (click)="toggleTheme()">
+            <mat-icon>{{themeService.isDarkMode ? 'light_mode' : 'dark_mode'}}</mat-icon>
+            {{themeService.isDarkMode ? ('MENU.LIGHT_MODE' | translate) : ('MENU.DARK_MODE' | translate)}}
+          </button>
           <button mat-menu-item [routerLink]="['/images']">
             <mat-icon>image</mat-icon>
             {{ "HOME.IMAGES" | translate }}
@@ -72,6 +76,10 @@
       }
       @if (!isLoggedIn) {
       <div class="icons">
+        <button mat-icon-button (click)="toggleTheme()"
+          [title]="themeService.isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'">
+          <mat-icon>{{themeService.isDarkMode ? 'light_mode' : 'dark_mode'}}</mat-icon>
+        </button>
         <button mat-icon-button [routerLink]="['/help']">
           <mat-icon>help_outline</mat-icon>
         </button>

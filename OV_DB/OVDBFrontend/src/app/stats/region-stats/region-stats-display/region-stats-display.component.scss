@@ -8,29 +8,26 @@
 .region-card {
   padding: 1.2em 1.5em;
   border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(60, 120, 60, 0.08);
-  background: #fff;
+  // box-shadow: 0 2px 8px var(--app-shadow-color);
+  // background: var(--app-card-background);
   border-left: 5px solid #43a047;
   transition: box-shadow 0.2s, background 0.2s;
   margin-bottom: 0.5em;
+  color: var(--app-text-color);
 
   &.top-level {
     border-left: 8px solid #388e3c;
-    background: #f6fff6;
   }
 
   &.region-unvisited {
-    background: #ffebee;
     border-left-color: #e53935;
   }
 
   &.region-partial {
-    background: #fff8e1;
     border-left-color: #ff9800;
   }
 
   &.region-visited {
-    background: #e8f5e9;
     border-left-color: #43a047;
   }
 }
@@ -42,6 +39,7 @@
   font-size: 1.2em;
   font-weight: 600;
   margin-bottom: 0.5em;
+  color: var(--app-text-color);
 
   &.clickable {
     cursor: pointer;
@@ -54,6 +52,7 @@
 
 .region-name {
   flex: 1;
+  color: var(--app-text-color);
 }
 
 .visited-icon {
@@ -71,14 +70,14 @@
 
 .station-count {
   font-size: 0.95em;
-  color: #666;
+  color: var(--app-text-secondary);
   margin-top: 0.2em;
 }
 
 .region-children {
   margin-left: 1.5em;
   margin-top: 0.7em;
-  border-left: 2px dashed #c8e6c9;
+  border-left: 2px dashed var(--app-border-color);
   padding-left: 1em;
 }
 

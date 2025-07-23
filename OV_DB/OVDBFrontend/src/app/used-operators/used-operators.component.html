@@ -1,34 +1,34 @@
-<mat-card [ngClass]="{ 'compact': compact }">
-  <mat-card-content>
-    <div class="compact-toggle-switch">
-      <mat-slide-toggle [(ngModel)]="compact" color="primary"
-        style="margin-bottom:0;vertical-align:middle;"></mat-slide-toggle>
-      <span class="compact-toggle-switch-label">Compact</span>
+<div [ngClass]="{ 'compact': compact }">
+  <div class="compact-toggle-switch">
+    <mat-slide-toggle [(ngModel)]="compact" color="primary"
+      style="margin-bottom:0;vertical-align:middle;"></mat-slide-toggle>
+    <span class="compact-toggle-switch-label">Compact</span>
+  </div>
+  @if(loading()){
+  <mat-spinner />
+  }
+  @if (!compact) {
+  @for (region of sortedRegion(); track region) {
+  <mat-card class="operator-region-card">
+    <div class="operator-region-title" [title]="region.originalName">
+      {{name(region)}}
     </div>
-    @if(loading()){
-    <mat-spinner />
-    }
-    @if (!compact) {
-    @for (region of sortedRegion(); track region) {
-    <div class="operator-region-card">
-      <div class="operator-region-title" [title]="region.originalName">
-        {{name(region)}}
-      </div>
-      <div class="operators-list">
-        @for (operator of region.operators; track operator) {
-        @let logo = getLogo(operator)|async;
-        @if(!!logo){
-        <span class="operator-logo-wrapper {{operator.hasUserRoute ? 'used' : 'unused'}}">
-          <img [src]="logo" class="operator-logo" alt="{{ operator.operatorNames[0] }}"
-            title="{{ operator.operatorNames[0] }}" />
-        </span>
-        }
-        }
-      </div>
+    <div class="operators-list">
+      @for (operator of region.operators; track operator) {
+      @let logo = getLogo(operator)|async;
+      @if(!!logo){
+      <span class="operator-logo-wrapper {{operator.hasUserRoute ? 'used' : 'unused'}}">
+        <img [src]="logo" class="operator-logo" alt="{{ operator.operatorNames[0] }}"
+          title="{{ operator.operatorNames[0] }}" />
+      </span>
+      }
+      }
     </div>
-    }
-    } @else {
-    <div class="compact-operators-overview">
+  </mat-card>
+  }
+  } @else {
+  <mat-card class="compact-operators-overview">
+    <mat-card-content>
       @for (region of sortedRegion(); track region) {
       <div class="compact-operator-region">
         <span class="compact-region-title" [title]="region.originalName">{{name(region)}}</span>
@@ -45,7 +45,7 @@
         </span>
       </div>
       }
-    </div>
-    }
-  </mat-card-content>
-</mat-card>
+    </mat-card-content>
+  </mat-card>
+  }
+</div>

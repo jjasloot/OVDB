@@ -1,29 +1,31 @@
 <div class="container">
     <mat-card appearance="outlined">
         <mat-card-title>{{'SELECTION'|translate}}</mat-card-title>
-        <mat-form-field>
-            <mat-label>{{'CHOOSEMAP'|translate}}</mat-label>
-            <mat-select (selectionChange)="changeMap($event.value)">
-                @for (map of maps; track map) {
-                <mat-option [value]="map.mapGuid">
-                    {{map.name}}
-                </mat-option>
-                }
-            </mat-select>
-        </mat-form-field>
-        <mat-form-field>
-            <mat-label>{{'CHOOSEYEAR'|translate}}</mat-label>
-            <mat-select (selectionChange)="getData($event.value)" [(ngModel)]="selectedYear">
-                @for (year of years; track year) {
-                <mat-option [value]="year">
-                    {{year}}
-                </mat-option>
-                }
-                <mat-option [value]="0">
-                    {{'ALL'|translate}}
-                </mat-option>
-            </mat-select>
-        </mat-form-field>
+        <mat-card-content>
+            <mat-form-field>
+                <mat-label>{{'CHOOSEMAP'|translate}}</mat-label>
+                <mat-select (selectionChange)="changeMap($event.value)">
+                    @for (map of maps; track map) {
+                    <mat-option [value]="map.mapGuid">
+                        {{map.name}}
+                    </mat-option>
+                    }
+                </mat-select>
+            </mat-form-field>
+            <mat-form-field>
+                <mat-label>{{'CHOOSEYEAR'|translate}}</mat-label>
+                <mat-select (selectionChange)="getData($event.value)" [(ngModel)]="selectedYear">
+                    @for (year of years; track year) {
+                    <mat-option [value]="year">
+                        {{year}}
+                    </mat-option>
+                    }
+                    <mat-option [value]="0">
+                        {{'ALL'|translate}}
+                    </mat-option>
+                </mat-select>
+            </mat-form-field>
+        </mat-card-content>
     </mat-card>
 
     <div class="row">

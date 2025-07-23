@@ -204,8 +204,8 @@
   "FILTER.INCLUDELINECOLOURS": "Show line colours",
   "SAVE_GO_TO_INSTANCES": "Save and go to trips",
   "FILTER.LIMITTOSELECTEDAREAS": "Cut routes to selected areas. Attention: this will take longer.",
-  "UPDATE.TITLE": "Update 🚀",
-  "UPDATE.DESCRIPTION": "A bit of colour is nice right? That's why, from now on, you can see the logo (if it's already loaded) at a route at the serving company. You also get some support in choosing the serving company. Some companies are filtered by certain regions. For example, you won't see RENFE in Denmark and ScotRail in Japan. Are you missing a company? You can request it with the button below.",
+  "UPDATE.TITLE": "Dark mode",
+  "UPDATE.DESCRIPTION": "A bit less bright on your screen, toggle via the menu. Also, new statistics about the regions you've visited and which train companies you've used.",
   "UPDATE.NEW_COUNTRY_OR_REGION": "Request new country, regions or companies",
   "REQUESTS.NEW_REQUEST": "New request",
   "REQUESTS.NEW_REQUEST_PLACEHOLDER": "Could you add Iceland? Could you split Italy into its provinces, e.g. Lomdardy and Tuscany?",
@@ -234,7 +234,9 @@
     "MENU": "Menu",
     "MAPS": "Maps",
     "DATA": "Data",
-    "REQUESTS": "Requests"
+    "REQUESTS": "Requests",
+    "DARK_MODE": "Dark mode",
+    "LIGHT_MODE": "Light mode"
   },
   "PROFILE": {
     "TITLE": "User Profile",

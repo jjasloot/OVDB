@@ -8,13 +8,11 @@
   @for (option of filteredOperators(); track option) {
   <mat-option [value]="otherSelectedOperators() + option.name">{{
     option.name
-  }}</mat-option>
+    }}</mat-option>
   }
 </mat-autocomplete>
 @for (operator of selectedOperators(); track operator) {
-<img
-  [src]="getLogo(operator) | async"
-  alt="logo"
-  style="width: 75px; max-height: 56px; margin-left: 1rem; object-fit: contain"
-/>
+<img [src]="getLogo(operator) | async" alt="logo" style="width: 75px; max-height: 56px; margin-left: 1rem; object-fit: contain;background: white;
+  padding: .125rem;
+  border-radius: .25rem;" />
 } }

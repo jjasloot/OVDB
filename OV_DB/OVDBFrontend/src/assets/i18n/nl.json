@@ -204,8 +204,8 @@
   "FILTER.INCLUDELINECOLOURS": "Toon lijnkleuren",
   "SAVE_GO_TO_INSTANCES": "Opslaan en naar ritten",
   "FILTER.LIMITTOSELECTEDAREAS": "Knip routes bij tot geselecteerde gebieden. Let op! Dit duurt wat langer.",
-  "UPDATE.TITLE": "Logo update 🚀 ",
-  "UPDATE.DESCRIPTION": "Een beetje kleur is wel leuk toch? Daarom kun je vanaf nu bij een route bij het bedienend bedrijf het logo zien (als die al geladen is). Ook krijg je wat ondersteuning in het kiezen van het bedienend bedrijf. Sommige bedrijven zijn gefilterd op bepaalde regio's. Zo zie je het GVB niet in Limburg en de RENFE niet in Denemarken. Mis je een bedrijf? Je kunt 'm met de knop hieronder aanvragen.",
+  "UPDATE.TITLE": "Dark mode",
+  "UPDATE.DESCRIPTION": "Iets minder fel op je scherm, toggle via het menu. Ook sinds een tijdje nieuwe statistieken over de regio's die je bezocht hebt en welke treinmaatschappijen je gebruikt hebt.",
   "UPDATE.NEW_COUNTRY_OR_REGION": "Nieuw land, regio of bedrijf aanvragen",
   "REQUESTS.NEW_REQUEST": "Nieuwe aanvraag",
   "REQUESTS.NEW_REQUEST_PLACEHOLDER": "Zou je IJsland willen toevoegen? Kun je Italië in provincies zoals Lombardije en Toscane opdelen?",
@@ -234,7 +234,9 @@
     "MENU": "Menu",
     "MAPS": "Kaarten",
     "DATA": "Data",
-    "REQUESTS": "Verzoeken"
+    "REQUESTS": "Verzoeken",
+    "DARK_MODE": "Donkere modus",
+    "LIGHT_MODE": "Lichte modus"
   },
   "PROFILE": {
     "TITLE": "Gebruikersprofiel",
