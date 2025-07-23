@@ -2,7 +2,12 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "outDir": "./out-tsc/app",
-    "types": []
+    "types": [],
+    "paths": {
+      "chart.js/dist/types/utils": [
+        "node_modules/chart.js/types/utils"
+      ]
+    }
   },
   "files": [
     "src/main.ts",

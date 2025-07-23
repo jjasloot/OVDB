@@ -8,7 +8,7 @@
     "declaration": false,
     "experimentalDecorators": true,
     "module": "es2020",
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "importHelpers": true,
     "target": "ES2022",
     "typeRoots": [
@@ -18,7 +18,12 @@
       "es2018",
       "dom"
     ],
-    "useDefineForClassFields": false
+    "useDefineForClassFields": false,
+    "paths": {
+      "chart.js/dist/types/utils": [
+        "node_modules/chart.js/types/utils"
+      ]
+    }
   },
   "angularCompilerOptions": {
     "fullTemplateTypeCheck": true,
