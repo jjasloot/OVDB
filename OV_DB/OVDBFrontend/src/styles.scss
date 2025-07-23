@@ -56,9 +56,9 @@ mat-toolbar.mat-primary {
   @include mat.all-component-colors($OVDBFrontend-dark-theme);
   
   // Override with bright green colors to match original design
-  --mdc-theme-primary: #4caf50;
-  --mat-toolbar-container-background-color: #4caf50;
-  --mat-app-background-color: #303030;
+  --mdc-theme-primary: #006b0e;
+  --mat-toolbar-container-background-color: #006b0e;
+  --mat-app-background-color: #006b0e;
   
   // Ensure the page background is dark
   background-color: #303030 !important;
@@ -80,7 +80,7 @@ mat-toolbar.mat-primary {
   
   // Ensure toolbar has the bright green color in dark mode too
   mat-toolbar.mat-primary {
-    background-color: #4caf50 !important;
+    background-color: #006b0e !important;
     color: white !important;
   }
   
@@ -88,8 +88,8 @@ mat-toolbar.mat-primary {
   .mat-mdc-raised-button.mat-primary,
   .mat-mdc-unelevated-button.mat-primary,
   .mat-mdc-fab.mat-primary {
-    --mdc-filled-button-container-color: #4caf50 !important;
-    --mdc-fab-container-color: #4caf50 !important;
+    --mdc-filled-button-container-color: #006b0e !important;
+    --mdc-fab-container-color: #006b0e !important;
   }
 }
 
