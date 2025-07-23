@@ -6,8 +6,6 @@
   margin-bottom: 2.5em;
   padding: 1.5em 2em 1.5em 2em;
   border-radius: 14px;
-  background: var(--app-card-background);
-  box-shadow: 0 2px 12px var(--app-shadow-color);
   border-left: 6px solid #43a047;
   transition: box-shadow 0.2s;
 }
@@ -42,7 +40,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: var(--app-surface-color);
+  background: white;
   border-radius: 8px;
   padding: 6px 10px;
   margin: 0 6px 6px 0;
@@ -80,8 +78,6 @@
   margin-bottom: 1.2em;
   padding: 0.7em 1em 0.7em 1em;
   border-radius: 10px;
-  background: var(--app-card-background);
-  box-shadow: 0 1px 4px var(--app-shadow-color);
   border-left: 4px solid #43a047;
 }
 
@@ -131,10 +127,6 @@
 .compact-operators-overview {
   display: table;
   width: 100%;
-  background: var(--app-card-background);
-  border-radius: 10px;
-  padding: 0.5em 0.5em 0.5em 0.5em;
-  box-shadow: 0 1px 4px var(--app-shadow-color);
   border-collapse: separate;
   border-spacing: 0 0.1em;
 }
@@ -178,7 +170,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: var(--app-surface-color);
+  background: white;
   border-radius: 4px;
   padding: 1px 2px;
   margin-right: 2px;

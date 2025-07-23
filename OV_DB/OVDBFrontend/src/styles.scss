@@ -26,6 +26,11 @@ $OVDBFrontend-dark-theme: mat.define-theme((
     scale: 0,
   )
 ));
+@media (prefers-color-scheme: dark) {
+  html{
+    background: #303030;
+  }
+}
 
 // Apply the light theme by default
 :root {
@@ -35,17 +40,6 @@ $OVDBFrontend-dark-theme: mat.define-theme((
   --mdc-theme-primary: #4caf50;
   --mat-toolbar-container-background-color: #4caf50;
   --mat-app-background-color: white;
-  
-  // Define theme-aware custom properties for light mode
-  --app-background-color: #ffffff;
-  --app-surface-color: #ffffff;
-  --app-card-background: #f8fafc;
-  --app-input-background: #ffffff;
-  --app-table-background: #ffffff;
-  --app-border-color: #e0e0e0;
-  --app-text-color: #333333;
-  --app-text-secondary: #666666;
-  --app-shadow-color: rgba(60, 120, 60, 0.07);
 }
 
 // Ensure toolbar has the bright green color
@@ -67,42 +61,31 @@ mat-toolbar.mat-primary {
   @include mat.all-component-colors($OVDBFrontend-dark-theme);
   
   // Override with bright green colors to match original design
-  --mdc-theme-primary: #4caf50;
-  --mat-toolbar-container-background-color: #4caf50;
-  --mat-app-background-color: #303030;
-  
-  // Define theme-aware custom properties for dark mode
-  --app-background-color: #303030;
-  --app-surface-color: #424242;
-  --app-card-background: #424242;
-  --app-input-background: #616161;
-  --app-table-background: #424242;
-  --app-border-color: #616161;
-  --app-text-color: #ffffff;
-  --app-text-secondary: #cccccc;
-  --app-shadow-color: rgba(0, 0, 0, 0.2);
+  --mdc-theme-primary: #006b0e;
+  --mat-toolbar-container-background-color: #006b0e;
+  --mat-app-background-color: #006b0e;
   
   // Ensure the page background is dark
-  background-color: var(--app-background-color) !important;
-  color: var(--app-text-color);
+  background-color: #303030 !important;
+  color: white;
   
   // Ensure content areas have dark background
   .router-container {
-    background-color: var(--app-background-color);
-    color: var(--app-text-color);
+    background-color: #303030;
+    color: white;
     min-height: 100vh;
   }
   
   // Ensure container has dark background
   .container {
-    background-color: var(--app-background-color);
-    color: var(--app-text-color);
+    background-color: #303030;
+    color: white;
     min-height: 100vh;
   }
   
   // Ensure toolbar has the bright green color in dark mode too
   mat-toolbar.mat-primary {
-    background-color: #4caf50 !important;
+    background-color: #006b0e !important;
     color: white !important;
   }
   
@@ -110,41 +93,8 @@ mat-toolbar.mat-primary {
   .mat-mdc-raised-button.mat-primary,
   .mat-mdc-unelevated-button.mat-primary,
   .mat-mdc-fab.mat-primary {
-    --mdc-filled-button-container-color: #4caf50 !important;
-    --mdc-fab-container-color: #4caf50 !important;
-  }
-  
-  // Style input fields for dark mode
-  .mat-mdc-form-field {
-    --mdc-filled-text-field-container-color: var(--app-input-background);
-    --mdc-filled-text-field-label-text-color: var(--app-text-secondary);
-    --mdc-filled-text-field-input-text-color: var(--app-text-color);
-  }
-  
-  // Style tables for dark mode
-  .mat-mdc-table {
-    background-color: var(--app-table-background);
-    color: var(--app-text-color);
-    
-    .mat-mdc-header-cell {
-      background-color: var(--app-surface-color);
-      color: var(--app-text-color);
-      border-bottom-color: var(--app-border-color);
-    }
-    
-    .mat-mdc-row {
-      border-bottom-color: var(--app-border-color);
-      
-      &:hover {
-        background-color: var(--app-surface-color);
-      }
-    }
-  }
-  
-  // Style cards for dark mode
-  .mat-mdc-card {
-    background-color: var(--app-card-background);
-    color: var(--app-text-color);
+    --mdc-filled-button-container-color: #006b0e !important;
+    --mdc-fab-container-color: #006b0e !important;
   }
 }
 
