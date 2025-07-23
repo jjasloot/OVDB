@@ -144,7 +144,6 @@ namespace OV_DB
             services.AddTransient<IStationRegionsService, StationRegionsService>();
             services.AddSingleton<IFontLoader, FontLoader>();
             services.AddScoped<TelegramBotService>();
-            services.ConfigureTelegramBotMvc();
 
             services.AddHostedService<UpdateRegionService>();
             services.AddHostedService<RefreshRoutesService>();
