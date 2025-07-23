@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { UserPreferenceService } from './services/user-preference.service';
+import { ThemeService } from './services/theme.service';
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
@@ -9,7 +10,10 @@ import { UserPreferenceService } from './services/user-preference.service';
 })
 export class AppComponent implements OnInit {
 
-  constructor(private userPreferenceService: UserPreferenceService) { }
+  constructor(
+    private userPreferenceService: UserPreferenceService,
+    private themeService: ThemeService
+  ) { }
   ngOnInit() {
     // Apply user language preference if logged in
     setTimeout(() => {

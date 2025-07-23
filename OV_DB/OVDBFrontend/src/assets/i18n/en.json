@@ -234,7 +234,9 @@
     "MENU": "Menu",
     "MAPS": "Maps",
     "DATA": "Data",
-    "REQUESTS": "Requests"
+    "REQUESTS": "Requests",
+    "DARK_MODE": "Dark mode",
+    "LIGHT_MODE": "Light mode"
   },
   "PROFILE": {
     "TITLE": "User Profile",

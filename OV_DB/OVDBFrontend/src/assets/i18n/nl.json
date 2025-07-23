@@ -234,7 +234,9 @@
     "MENU": "Menu",
     "MAPS": "Kaarten",
     "DATA": "Data",
-    "REQUESTS": "Verzoeken"
+    "REQUESTS": "Verzoeken",
+    "DARK_MODE": "Donkere modus",
+    "LIGHT_MODE": "Lichte modus"
   },
   "PROFILE": {
     "TITLE": "Gebruikersprofiel",

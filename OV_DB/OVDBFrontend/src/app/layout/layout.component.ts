@@ -2,6 +2,7 @@ import { Component, OnInit } from "@angular/core";
 import { Router, RouterLink, RouterOutlet } from "@angular/router";
 import { AuthenticationService } from "../services/authentication.service";
 import { TranslationService } from "../services/translation.service";
+import { ThemeService } from "../services/theme.service";
 import { MatSelect } from "@angular/material/select";
 import { RequestsService } from "../services/requests.service";
 import { MatToolbar } from "@angular/material/toolbar";
@@ -29,13 +30,15 @@ import { TranslateModule } from "@ngx-translate/core";
   ]
 })
 export class LayoutComponent implements OnInit {
-  hasUnreadRequests: boolean = false;
-  hasUnreadRequestsAdmin: boolean = false;
+  hasUnreadRequests = false;
+  hasUnreadRequestsAdmin = false;
+  
   constructor(
     private router: Router,
     private authService: AuthenticationService,
     private requestsService: RequestsService,
-    private translationService: TranslationService
+    private translationService: TranslationService,
+    public themeService: ThemeService
   ) { }
 
   ngOnInit() {
@@ -84,5 +87,9 @@ export class LayoutComponent implements OnInit {
       return false;
     }
     return this.authService.admin;
+  }
+
+  toggleTheme() {
+    this.themeService.toggleDarkMode();
   }
 }
