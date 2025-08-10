@@ -142,6 +142,7 @@ namespace OV_DB
             services.AddSignalR();
             services.AddTransient<IRouteRegionsService, RouteRegionsService>();
             services.AddTransient<IStationRegionsService, StationRegionsService>();
+            services.AddTransient<ITimezoneService, TimezoneService>();
             services.AddSingleton<IFontLoader, FontLoader>();
             services.AddScoped<TelegramBotService>();
 

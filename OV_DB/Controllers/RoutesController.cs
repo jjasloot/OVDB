@@ -956,6 +956,8 @@ namespace OV_DB.Controllers
                 if (current != null)
                 {
                     current.Date = update.Date;
+                    current.StartTime = update.StartTime;
+                    current.EndTime = update.EndTime;
                     var toDelete = current.RouteInstanceProperties.Where(ri => !update.RouteInstanceProperties.Any(uri => uri.RouteInstancePropertyId == ri.RouteInstancePropertyId)).ToList();
                     current.RouteInstanceProperties = current.RouteInstanceProperties.Where(ri => !toDelete.Any(dri => dri.RouteInstancePropertyId == ri.RouteInstancePropertyId)).ToList();
 
@@ -991,7 +993,9 @@ namespace OV_DB.Controllers
             {
                 var newInstance = new RouteInstance
                 {
-                    Date = update.Date
+                    Date = update.Date,
+                    StartTime = update.StartTime,
+                    EndTime = update.EndTime
                 };
                 newInstance.RouteInstanceProperties = new List<RouteInstanceProperty>();
                 update.RouteInstanceProperties.ForEach(rip =>

@@ -4,6 +4,8 @@ export interface RouteInstance {
   routeInstanceMaps: RouteInstanceMaps[];
   routeInstanceId: number;
   date: Date;
+  startTime?: Date;
+  endTime?: Date;
   routeInstanceProperties: RouteInstanceProperty[];
   routeId: number;
 }

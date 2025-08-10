@@ -36,6 +36,36 @@ export class RouteInstancesEditComponent implements OnInit {
   filteredOptions: BehaviorSubject<string[]> = new BehaviorSubject<string[]>(this.options);
   maps: Map[];
   selectedMaps: number[] = [];
+  
+  // Getter and setter for datetime-local inputs
+  get startTimeLocal(): string {
+    if (!this.instance.startTime) return '';
+    const date = new Date(this.instance.startTime);
+    return this.formatDateTimeLocal(date);
+  }
+  
+  set startTimeLocal(value: string) {
+    this.instance.startTime = value ? new Date(value) : undefined;
+  }
+  
+  get endTimeLocal(): string {
+    if (!this.instance.endTime) return '';
+    const date = new Date(this.instance.endTime);
+    return this.formatDateTimeLocal(date);
+  }
+  
+  set endTimeLocal(value: string) {
+    this.instance.endTime = value ? new Date(value) : undefined;
+  }
+
+  private formatDateTimeLocal(date: Date): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+  }
   constructor(
     public dialogRef: MatDialogRef<RouteInstancesEditComponent>,
     private translationService: TranslationService,
