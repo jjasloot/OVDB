@@ -34,12 +34,14 @@ namespace OV_DB.Controllers
         private readonly OVDBDatabaseContext _context;
         private readonly IMapper _mapper;
         private readonly IRouteRegionsService _routeRegionsService;
+        private readonly ITimezoneService _timezoneService;
 
-        public RoutesController(OVDBDatabaseContext context, IMapper mapper, IRouteRegionsService routeRegionsService)
+        public RoutesController(OVDBDatabaseContext context, IMapper mapper, IRouteRegionsService routeRegionsService, ITimezoneService timezoneService)
         {
             _context = context;
             _mapper = mapper;
             _routeRegionsService = routeRegionsService;
+            _timezoneService = timezoneService;
         }
 
         // GET: api/RoutesAPI
@@ -958,6 +960,20 @@ namespace OV_DB.Controllers
                     current.Date = update.Date;
                     current.StartTime = update.StartTime;
                     current.EndTime = update.EndTime;
+                    
+                    // Calculate and store duration if both start and end times are provided
+                    if (current.StartTime.HasValue && current.EndTime.HasValue)
+                    {
+                        current.DurationHours = _timezoneService.CalculateDurationInHours(
+                            current.StartTime.Value, 
+                            current.EndTime.Value, 
+                            route.LineString);
+                    }
+                    else
+                    {
+                        current.DurationHours = null;
+                    }
+
                     var toDelete = current.RouteInstanceProperties.Where(ri => !update.RouteInstanceProperties.Any(uri => uri.RouteInstancePropertyId == ri.RouteInstancePropertyId)).ToList();
                     current.RouteInstanceProperties = current.RouteInstanceProperties.Where(ri => !toDelete.Any(dri => dri.RouteInstancePropertyId == ri.RouteInstancePropertyId)).ToList();
 
@@ -997,6 +1013,16 @@ namespace OV_DB.Controllers
                     StartTime = update.StartTime,
                     EndTime = update.EndTime
                 };
+                
+                // Calculate and store duration if both start and end times are provided
+                if (newInstance.StartTime.HasValue && newInstance.EndTime.HasValue)
+                {
+                    newInstance.DurationHours = _timezoneService.CalculateDurationInHours(
+                        newInstance.StartTime.Value, 
+                        newInstance.EndTime.Value, 
+                        route.LineString);
+                }
+
                 newInstance.RouteInstanceProperties = new List<RouteInstanceProperty>();
                 update.RouteInstanceProperties.ForEach(rip =>
                 {
