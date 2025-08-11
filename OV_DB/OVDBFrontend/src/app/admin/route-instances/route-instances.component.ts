@@ -94,7 +94,7 @@ export class RouteInstancesComponent implements OnInit {
   edit(instance: RouteInstance) {
     const dialogRef = this.dialog.open(RouteInstancesEditComponent, {
       width: "100%",
-      data: { instance },
+      data: { instance, route: this.route },
     });
     dialogRef.afterClosed().subscribe((result: RouteInstance) => {
       if (!!result) {
@@ -128,6 +128,7 @@ export class RouteInstancesComponent implements OnInit {
           routeInstanceProperties: [],
         } as RouteInstance,
         new: true,
+        route: this.route,
       },
     });
     dialogRef.afterClosed().subscribe((result: RouteInstance) => {

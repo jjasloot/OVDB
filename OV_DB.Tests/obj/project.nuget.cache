@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "0WCVaUQZSXk=",
+  "dgSpecHash": "lnMc5HpbxHc=",
   "success": true,
   "projectFilePath": "/home/runner/work/OVDB/OVDB/OV_DB.Tests/OV_DB.Tests.csproj",
   "expectedPackageFiles": [
@@ -290,6 +290,7 @@
     "/home/runner/.nuget/packages/system.xml.readerwriter/4.3.0/system.xml.readerwriter.4.3.0.nupkg.sha512",
     "/home/runner/.nuget/packages/system.xml.xdocument/4.3.0/system.xml.xdocument.4.3.0.nupkg.sha512",
     "/home/runner/.nuget/packages/telegram.bot/22.6.0/telegram.bot.22.6.0.nupkg.sha512",
+    "/home/runner/.nuget/packages/timezoneconverter/7.0.0/timezoneconverter.7.0.0.nupkg.sha512",
     "/home/runner/.nuget/packages/xunit/2.9.2/xunit.2.9.2.nupkg.sha512",
     "/home/runner/.nuget/packages/xunit.abstractions/2.0.3/xunit.abstractions.2.0.3.nupkg.sha512",
     "/home/runner/.nuget/packages/xunit.analyzers/1.16.0/xunit.analyzers.1.16.0.nupkg.sha512",

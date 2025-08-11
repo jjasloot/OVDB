@@ -5383,6 +5383,19 @@
           }
         }
       },
+      "TimeZoneConverter/7.0.0": {
+        "type": "package",
+        "compile": {
+          "lib/net9.0/TimeZoneConverter.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/net9.0/TimeZoneConverter.dll": {
+            "related": ".xml"
+          }
+        }
+      },
       "xunit/2.9.2": {
         "type": "package",
         "dependencies": {
@@ -5525,7 +5538,8 @@
           "Swashbuckle.AspNetCore": "9.0.3",
           "System.Drawing.Common": "9.0.7",
           "System.IdentityModel.Tokens.Jwt": "8.13.0",
-          "Telegram.Bot": "22.6.0"
+          "Telegram.Bot": "22.6.0",
+          "TimeZoneConverter": "7.0.0"
         },
         "compile": {
           "bin/placeholder/OV_DB.dll": {}
@@ -15113,6 +15127,28 @@
         "package-icon.png",
         "telegram.bot.22.6.0.nupkg.sha512",
         "telegram.bot.nuspec"
+      ]
+    },
+    "TimeZoneConverter/7.0.0": {
+      "sha512": "sFbY65N/5GdsHx7nkdHFHUG+5Ar4W0w6Aks7Y2X+Q4NOTw6XyX2Il7jm+4tPkc//4mA3nG0RdxI8gKgoJitdLw==",
+      "type": "package",
+      "path": "timezoneconverter/7.0.0",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "README.md",
+        "lib/net462/TimeZoneConverter.dll",
+        "lib/net462/TimeZoneConverter.xml",
+        "lib/net6.0/TimeZoneConverter.dll",
+        "lib/net6.0/TimeZoneConverter.xml",
+        "lib/net8.0/TimeZoneConverter.dll",
+        "lib/net8.0/TimeZoneConverter.xml",
+        "lib/net9.0/TimeZoneConverter.dll",
+        "lib/net9.0/TimeZoneConverter.xml",
+        "lib/netstandard2.0/TimeZoneConverter.dll",
+        "lib/netstandard2.0/TimeZoneConverter.xml",
+        "timezoneconverter.7.0.0.nupkg.sha512",
+        "timezoneconverter.nuspec"
       ]
     },
     "xunit/2.9.2": {

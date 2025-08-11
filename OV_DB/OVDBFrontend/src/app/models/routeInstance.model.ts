@@ -6,6 +6,7 @@ export interface RouteInstance {
   date: Date;
   startTime?: Date;
   endTime?: Date;
+  durationHours?: number;
   routeInstanceProperties: RouteInstanceProperty[];
   routeId: number;
 }

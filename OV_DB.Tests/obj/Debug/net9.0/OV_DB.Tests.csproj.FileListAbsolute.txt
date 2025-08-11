@@ -438,3 +438,4 @@
 /home/runner/work/OVDB/OVDB/OV_DB.Tests/obj/Debug/net9.0/OV_DB.Tests.pdb
 /home/runner/work/OVDB/OVDB/OV_DB.Tests/obj/Debug/net9.0/OV_DB.Tests.genruntimeconfig.cache
 /home/runner/work/OVDB/OVDB/OV_DB.Tests/obj/Debug/net9.0/ref/OV_DB.Tests.dll
+/home/runner/work/OVDB/OVDB/OV_DB.Tests/bin/Debug/net9.0/TimeZoneConverter.dll

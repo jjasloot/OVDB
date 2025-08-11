@@ -21,12 +21,13 @@ import { MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle } fr
 import { MatSelectionList, MatListOption } from '@angular/material/list';
 import { AsyncPipe } from '@angular/common';
 import { TranslateModule } from '@ngx-translate/core';
+import { MatCard, MatCardContent } from '@angular/material/card';
 
 @Component({
     selector: 'app-route-instances-edit',
     templateUrl: './route-instances-edit.component.html',
     styleUrls: ['./route-instances-edit.component.scss'],
-    imports: [MatDialogTitle, CdkScrollable, MatDialogContent, MatFormField, MatLabel, MatInput, MatDatepickerInput, FormsModule, MatDatepickerToggle, MatSuffix, MatDatepicker, MatTable, MatColumnDef, MatHeaderCellDef, MatHeaderCell, MatCellDef, MatCell, MatAutocompleteTrigger, MatAutocomplete, MatOption, MatFooterCellDef, MatFooterCell, MatIconButton, MatIcon, MatCheckbox, MatHeaderRowDef, MatHeaderRow, MatRowDef, MatRow, MatFooterRowDef, MatFooterRow, MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle, MatSelectionList, MatListOption, MatDialogActions, MatButton, AsyncPipe, TranslateModule]
+    imports: [MatDialogTitle, CdkScrollable, MatDialogContent, MatFormField, MatLabel, MatInput, MatDatepickerInput, FormsModule, MatDatepickerToggle, MatSuffix, MatDatepicker, MatCard, MatCardContent, MatIcon, MatTable, MatColumnDef, MatHeaderCellDef, MatHeaderCell, MatCellDef, MatCell, MatAutocompleteTrigger, MatAutocomplete, MatOption, MatFooterCellDef, MatFooterCell, MatIconButton, MatCheckbox, MatHeaderRowDef, MatHeaderRow, MatRowDef, MatRow, MatFooterRowDef, MatFooterRow, MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle, MatSelectionList, MatListOption, MatDialogActions, MatButton, AsyncPipe, TranslateModule]
 })
 export class RouteInstancesEditComponent implements OnInit {
   readonly table = viewChild<MatTable<RouteInstanceProperty>>('table');
@@ -36,6 +37,7 @@ export class RouteInstancesEditComponent implements OnInit {
   filteredOptions: BehaviorSubject<string[]> = new BehaviorSubject<string[]>(this.options);
   maps: Map[];
   selectedMaps: number[] = [];
+  routeDistance: number | null = null;
   
   // Getter and setter for datetime-local inputs
   get startTimeLocal(): string {
@@ -58,6 +60,24 @@ export class RouteInstancesEditComponent implements OnInit {
     this.instance.endTime = value ? new Date(value) : undefined;
   }
 
+  // Trip information getters
+  get showTripInfo(): boolean {
+    return this.instance.startTime && this.instance.endTime && this.routeDistance !== null;
+  }
+
+  get calculatedDuration(): number | null {
+    if (!this.instance.startTime || !this.instance.endTime) return null;
+    const start = new Date(this.instance.startTime);
+    const end = new Date(this.instance.endTime);
+    return (end.getTime() - start.getTime()) / (1000 * 60 * 60); // Hours
+  }
+
+  get estimatedSpeed(): number | null {
+    const duration = this.calculatedDuration;
+    if (!duration || duration <= 0 || this.routeDistance === null || this.routeDistance <= 0) return null;
+    return this.routeDistance / duration;
+  }
+
   private formatDateTimeLocal(date: Date): string {
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -65,6 +85,18 @@ export class RouteInstancesEditComponent implements OnInit {
     const hours = String(date.getHours()).padStart(2, '0');
     const minutes = String(date.getMinutes()).padStart(2, '0');
     return `${year}-${month}-${day}T${hours}:${minutes}`;
+  }
+
+  formatDuration(durationHours: number): string {
+    const hours = Math.floor(durationHours);
+    const minutes = Math.round((durationHours - hours) * 60);
+    if (hours === 0) {
+      return `${minutes}m`;
+    } else if (minutes === 0) {
+      return `${hours}h`;
+    } else {
+      return `${hours}h ${minutes}m`;
+    }
   }
   constructor(
     public dialogRef: MatDialogRef<RouteInstancesEditComponent>,
@@ -79,6 +111,11 @@ export class RouteInstancesEditComponent implements OnInit {
         this.new = true;
       }
       this.selectedMaps = this.instance.routeInstanceMaps.map(rim => rim.mapId);
+      
+      // Get route information for distance calculation
+      if (data.route) {
+        this.routeDistance = data.route.overrideDistance || data.route.calculatedDistance;
+      }
     }
   }
 

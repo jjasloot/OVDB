@@ -25,6 +25,41 @@
       <input matInput type="datetime-local" [(ngModel)]="endTimeLocal">
     </mat-form-field>
   </div>
+
+  <!-- Trip Duration and Speed Information -->
+  @if (showTripInfo) {
+    <mat-card appearance="outlined" style="margin: 16px 0; padding: 16px; background-color: #f5f5f5;">
+      <mat-card-content>
+        <h4 style="margin-top: 0; color: #2e7d32;">
+          <mat-icon style="vertical-align: text-bottom; margin-right: 8px;">schedule</mat-icon>
+          Trip Information
+        </h4>
+        <div style="display: flex; gap: 24px; flex-wrap: wrap;">
+          @if (calculatedDuration !== null) {
+            <div class="trip-info-item">
+              <mat-icon style="color: #1976d2;">timer</mat-icon>
+              <span class="info-label">Duration:</span>
+              <span class="info-value">{{ formatDuration(calculatedDuration) }}</span>
+            </div>
+          }
+          @if (estimatedSpeed !== null) {
+            <div class="trip-info-item">
+              <mat-icon style="color: #1976d2;">speed</mat-icon>
+              <span class="info-label">Average Speed:</span>
+              <span class="info-value">{{ estimatedSpeed.toFixed(1) }} km/h</span>
+            </div>
+          }
+          @if (routeDistance !== null) {
+            <div class="trip-info-item">
+              <mat-icon style="color: #1976d2;">straighten</mat-icon>
+              <span class="info-label">Distance:</span>
+              <span class="info-value">{{ routeDistance.toFixed(1) }} km</span>
+            </div>
+          }
+        </div>
+      </mat-card-content>
+    </mat-card>
+  }
   <mat-table [dataSource]="instance.routeInstanceProperties" #table>
     <ng-container matColumnDef="key">
       <mat-header-cell *matHeaderCellDef> {{'INSTANCE.KEY'|translate}} </mat-header-cell>

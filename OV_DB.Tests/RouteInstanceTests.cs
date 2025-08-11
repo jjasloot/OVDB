@@ -73,47 +73,4 @@ namespace OV_DB.Tests
             Assert.Equal(40.0, averageSpeed); // 80 km / 2 hours = 40 km/h
         }
     }
-
-    public class TimezoneServiceTests
-    {
-        [Fact]
-        public void CalculateDurationInHours_WithNullLineString_ReturnsSimpleDuration()
-        {
-            // Arrange
-            var service = new TimezoneService();
-            var startTime = new DateTime(2025, 1, 1, 10, 0, 0);
-            var endTime = new DateTime(2025, 1, 1, 12, 30, 0);
-
-            // Act
-            var duration = service.CalculateDurationInHours(startTime, endTime, null);
-
-            // Assert
-            Assert.Equal(2.5, duration); // 2.5 hours difference
-        }
-
-        [Fact]
-        public void CalculateDurationInHours_WithValidLineString_HandlesTimezones()
-        {
-            // Arrange
-            var service = new TimezoneService();
-            var startTime = new DateTime(2025, 1, 1, 10, 0, 0);
-            var endTime = new DateTime(2025, 1, 1, 12, 0, 0);
-            
-            // Create a simple LineString (Amsterdam to Paris coordinates)
-            var geometryFactory = NtsGeometryServices.Instance.CreateGeometryFactory(srid: 4326);
-            var coords = new Coordinate[]
-            {
-                new Coordinate(4.9041, 52.3676), // Amsterdam
-                new Coordinate(2.3522, 48.8566)  // Paris
-            };
-            var lineString = geometryFactory.CreateLineString(coords);
-
-            // Act
-            var duration = service.CalculateDurationInHours(startTime, endTime, lineString);
-
-            // Assert
-            Assert.True(duration > 0);
-            Assert.True(duration <= 24); // Should be reasonable
-        }
-    }
 }

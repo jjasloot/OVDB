@@ -1,6 +1,7 @@
 using System;
 using GeoTimeZone;
 using NetTopologySuite.Geometries;
+using TimeZoneConverter;
 
 namespace OV_DB.Services
 {
@@ -64,8 +65,8 @@ namespace OV_DB.Services
             {
                 try
                 {
-                    // On Windows, try to convert IANA to Windows timezone ID
-                    var windowsId = ConvertIanaToWindows(ianaTimeZoneId);
+                    // On Windows, use TimeZoneConverter library to convert IANA to Windows timezone ID
+                    var windowsId = TZConvert.IanaToWindows(ianaTimeZoneId);
                     return TimeZoneInfo.FindSystemTimeZoneById(windowsId);
                 }
                 catch
@@ -74,28 +75,6 @@ namespace OV_DB.Services
                     return TimeZoneInfo.Utc;
                 }
             }
-        }
-
-        private string ConvertIanaToWindows(string ianaTimeZoneId)
-        {
-            // Use TimeZoneConverter library or implement basic conversion
-            // For now, fallback to a few common ones and UTC for others
-            return ianaTimeZoneId switch
-            {
-                "Europe/Amsterdam" => "W. Europe Standard Time",
-                "Europe/London" => "GMT Standard Time", 
-                "Europe/Paris" => "Romance Standard Time",
-                "Europe/Berlin" => "W. Europe Standard Time",
-                "Europe/Rome" => "W. Europe Standard Time",
-                "America/New_York" => "Eastern Standard Time",
-                "America/Chicago" => "Central Standard Time",
-                "America/Denver" => "Mountain Standard Time",
-                "America/Los_Angeles" => "Pacific Standard Time",
-                "Asia/Tokyo" => "Tokyo Standard Time",
-                "Asia/Shanghai" => "China Standard Time",
-                "UTC" => "UTC",
-                _ => "UTC" // Fallback to UTC for unknown timezones
-            };
         }
     }
 }

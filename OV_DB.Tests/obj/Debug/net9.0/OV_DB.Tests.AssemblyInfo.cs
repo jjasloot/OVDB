@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("OV_DB.Tests")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+5b1a973614bdeb43e49eac9922813ce38421e8e7")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+beb6c4db1b8a1205c9901f2539b64cba6642f7d5")]
 [assembly: System.Reflection.AssemblyProductAttribute("OV_DB.Tests")]
 [assembly: System.Reflection.AssemblyTitleAttribute("OV_DB.Tests")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
