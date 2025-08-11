@@ -18,26 +18,16 @@ namespace OV_DB.Mappings
                 .ForMember(dest => dest.RouteInstancesCount, ops => ops.MapFrom(r => r.RouteInstances.Count))
                 .ForMember(dest => dest.MinAverageSpeedKmh, ops => ops.MapFrom(r => 
                     r.RouteInstances.Where(ri => ri.DurationHours.HasValue && ri.DurationHours > 0)
-                    .Select(ri => ri.GetAverageSpeedKmh())
-                    .Where(speed => speed.HasValue)
-                    .Select(speed => speed.Value)
                     .Any() ? 
                     r.RouteInstances.Where(ri => ri.DurationHours.HasValue && ri.DurationHours > 0)
-                    .Select(ri => ri.GetAverageSpeedKmh())
-                    .Where(speed => speed.HasValue)
-                    .Select(speed => speed.Value)
+                    .Select(ri => (ri.Route.OverrideDistance??ri.Route.CalculatedDistance) / ri.DurationHours)
                     .Min() : (double?)null
                 ))
-                .ForMember(dest => dest.MaxAverageSpeedKmh, ops => ops.MapFrom(r => 
+                .ForMember(dest => dest.MaxAverageSpeedKmh, ops => ops.MapFrom(r =>
                     r.RouteInstances.Where(ri => ri.DurationHours.HasValue && ri.DurationHours > 0)
-                    .Select(ri => ri.GetAverageSpeedKmh())
-                    .Where(speed => speed.HasValue)
-                    .Select(speed => speed.Value)
-                    .Any() ? 
+                    .Any() ?
                     r.RouteInstances.Where(ri => ri.DurationHours.HasValue && ri.DurationHours > 0)
-                    .Select(ri => ri.GetAverageSpeedKmh())
-                    .Where(speed => speed.HasValue)
-                    .Select(speed => speed.Value)
+                    .Select(ri => (ri.Route.OverrideDistance ?? ri.Route.CalculatedDistance) / ri.DurationHours)
                     .Max() : (double?)null
                 ))
                 .ForMember(dest => dest.OperatorIds, ops => ops.MapFrom(r => r.Operators.Select(o => o.Id)));

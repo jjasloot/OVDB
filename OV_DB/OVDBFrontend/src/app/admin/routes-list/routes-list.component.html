@@ -48,7 +48,7 @@
       </th>
       <td mat-cell *matCellDef="let element">
         @for (operatorId of element.operatorIds; track operatorId) {
-        <img style="max-height: 1rem; max-width: 2rem" [src]="getOperatorLogo(operatorId) | async" />
+        <img style="max-height: 1rem; max-width: 2rem; background:white;padding:4px; border-radius: 2px;" [src]="getOperatorLogo(operatorId) | async" />
         }
       </td>
     </ng-container>
