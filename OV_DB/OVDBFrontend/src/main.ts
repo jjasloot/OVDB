@@ -1,8 +1,9 @@
-import { enableProdMode, importProvidersFrom } from "@angular/core";
+import { enableProdMode, importProvidersFrom, LOCALE_ID } from "@angular/core";
 import { environment } from "./environments/environment";
 import {
   MAT_MOMENT_DATE_ADAPTER_OPTIONS,
   MatMomentDateModule,
+  provideMomentDateAdapter,
 } from "@angular/material-moment-adapter";
 import {
   HTTP_INTERCEPTORS,
@@ -51,13 +52,41 @@ import { LeafletMarkerClusterModule } from "@bluehalo/ngx-leaflet-markercluster"
 import { AppComponent } from "./app/app.component";
 import { TranslateHttpLoader } from "@ngx-translate/http-loader";
 import localeNl from "@angular/common/locales/nl";
+import localeEnGB from "@angular/common/locales/en-GB";
 import "hammerjs";
 import "chartjs-plugin-zoom";
 import { provideRouter } from "@angular/router";
 import { routes } from "./app/app.routes";
 import { provideCharts, withDefaultRegisterables } from "ng2-charts";
+import { MAT_DATE_LOCALE } from "@angular/material/core";
 
 registerLocaleData(localeNl, "nl-NL");
+registerLocaleData(localeEnGB, "en-GB");
+
+function translateLanguage(lang: string) {
+  console.log(lang);
+  switch (lang) {
+    case "nl":
+      return "nl";
+    default:
+      return "en-GB";
+  }
+}
+
+export class LocaleId extends String {
+  constructor(private translateSevice: TranslateService) {
+    super();
+  }
+
+  override toString(): string {
+    return translateLanguage(this.translateSevice.currentLang);
+  }
+
+  override valueOf(): string {
+    return this.toString();
+  }
+}
+
 
 export function HttpLoaderFactory(http: HttpClient) {
   return new TranslateHttpLoader(http);
@@ -66,6 +95,8 @@ export function HttpLoaderFactory(http: HttpClient) {
 if (environment.production) {
   enableProdMode();
 }
+
+
 
 bootstrapApplication(AppComponent, {
   providers: [
@@ -107,8 +138,7 @@ bootstrapApplication(AppComponent, {
       MatCardModule,
       LeafletMarkerClusterModule
     ),
-    { provide: MAT_MOMENT_DATE_ADAPTER_OPTIONS, useValue: { useUtc: true } },
-    { provide: HTTP_INTERCEPTORS, useClass: AuthInterceptor, multi: true },
+    provideMomentDateAdapter(undefined, { useUtc: true }), { provide: HTTP_INTERCEPTORS, useClass: AuthInterceptor, multi: true },
     {
       provide: MatPaginatorIntl,
       useFactory: (translate) => {
@@ -116,6 +146,16 @@ bootstrapApplication(AppComponent, {
         service.injectTranslateService(translate);
         return service;
       },
+      deps: [TranslateService],
+    },
+    {
+      provide: LOCALE_ID,
+      useClass: LocaleId,
+      deps: [TranslateService],
+    },
+    {
+      provide: MAT_DATE_LOCALE,
+      useClass: LocaleId,
       deps: [TranslateService],
     },
     DatePipe,

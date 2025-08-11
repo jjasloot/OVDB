@@ -1,49 +1,40 @@
 <div class="container">
   <h3>{{'RIDES.FOR'|translate}} {{typeName}} {{routeName}}</h3>
   @if (!loading) {
-    <div>
-      @for (instance of instances; track instance) {
-        <mat-expansion-panel>
-          <mat-expansion-panel-header>
-            <mat-panel-title>
-              {{instance.date|date:'longDate':null:currentLocale}}
-              @if (getAverageSpeed(instance) !== '-') {
-                <span class="speed-indicator">• {{getAverageSpeed(instance)}}</span>
-              }
-            </mat-panel-title>
-          </mat-expansion-panel-header>
-          <mat-list>
-            @if (instance.startTime && instance.endTime) {
-              <mat-list-item>
-                <b>{{'ROUTEINSTANCES.STARTTIME'|translate}}</b>: {{instance.startTime|date:'short':null:currentLocale}}
-              </mat-list-item>
-              <mat-list-item>
-                <b>{{'ROUTEINSTANCES.ENDTIME'|translate}}</b>: {{instance.endTime|date:'short':null:currentLocale}}
-              </mat-list-item>
-              <mat-list-item>
-                <b>{{'ROUTEINSTANCES.DURATION'|translate}}</b>: {{getTripDuration(instance)}}
-              </mat-list-item>
-              <mat-list-item>
-                <b>{{'ROUTEINSTANCES.AVERAGESPEED'|translate}}</b>: {{getAverageSpeed(instance)}}
-              </mat-list-item>
-            }
-            @for (property of instance.routeInstanceProperties; track property) {
-              <mat-list-item>
-                <b>{{property.key}}</b>: {{value(property)}}
-              </mat-list-item>
-            }
-            <button mat-button (click)="edit(instance)">{{"EDIT"|translate}}</button>
-            <button mat-button (click)="delete(instance)">{{"DELETE"|translate}}</button>
-          </mat-list>
-        </mat-expansion-panel>
-      }
-    </div>
+  <div>
+    @for (instance of instances; track instance) {
+    <mat-expansion-panel>
+      <mat-expansion-panel-header>
+        <mat-panel-title>
+          {{instance.date|date:'longDate':null:currentLocale}}
+          @if (getAverageSpeed(instance) !== '-') {
+          <span class="speed-indicator">• {{getAverageSpeed(instance)}}</span>
+          }
+        </mat-panel-title>
+      </mat-expansion-panel-header>
+      <mat-list>
+        @if (instance.startTime && instance.endTime) {
+        <mat-list-item>
+          <b>{{'ROUTEINSTANCES.TIMES'|translate}}</b>: {{instance.startTime|date:'short':null:currentLocale}} -
+          {{instance.endTime|date:'short':null:currentLocale}} ({{getTripDuration(instance)}})
+        </mat-list-item>
+        }
+        @for (property of instance.routeInstanceProperties; track property) {
+        <mat-list-item>
+          <b>{{property.key}}</b>: {{value(property)}}
+        </mat-list-item>
+        }
+        <button mat-button (click)="edit(instance)">{{"EDIT"|translate}}</button>
+        <button mat-button (click)="delete(instance)">{{"DELETE"|translate}}</button>
+      </mat-list>
+    </mat-expansion-panel>
+    }
+  </div>
   } @else {
-    <mat-spinner></mat-spinner>
+  <mat-spinner></mat-spinner>
   }
 </div>
 
 <button class="add" mat-fab (click)="add()">
   <mat-icon>add</mat-icon>
 </button>
-

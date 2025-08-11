@@ -5,7 +5,7 @@ import { RouteInstance } from "src/app/models/routeInstance.model";
 import { TranslationService } from "src/app/services/translation.service";
 import { RouteInstanceProperty } from "src/app/models/routeInstanceProperty.model";
 import { TranslateService, TranslateModule } from "@ngx-translate/core";
-import { DatePipe, DecimalPipe } from "@angular/common";
+import { DatePipe, DecimalPipe, formatNumber } from "@angular/common";
 import { MatDialog } from "@angular/material/dialog";
 import { RouteInstancesEditComponent } from "../route-instances-edit/route-instances-edit.component";
 import { Route } from "src/app/models/route.model";
@@ -19,23 +19,22 @@ import { MatProgressSpinner } from "@angular/material/progress-spinner";
 import { MatIcon } from "@angular/material/icon";
 
 @Component({
-    selector: "app-route-instances",
-    templateUrl: "./route-instances.component.html",
-    styleUrls: ["./route-instances.component.scss"],
-    imports: [
-        MatExpansionPanel,
-        MatExpansionPanelHeader,
-        MatExpansionPanelTitle,
-        MatList,
-        MatListItem,
-        MatButton,
-        MatProgressSpinner,
-        MatFabButton,
-        MatIcon,
-        DatePipe,
-        DecimalPipe,
-        TranslateModule,
-    ]
+  selector: "app-route-instances",
+  templateUrl: "./route-instances.component.html",
+  styleUrls: ["./route-instances.component.scss"],
+  imports: [
+    MatExpansionPanel,
+    MatExpansionPanelHeader,
+    MatExpansionPanelTitle,
+    MatList,
+    MatListItem,
+    MatButton,
+    MatProgressSpinner,
+    MatFabButton,
+    MatIcon,
+    DatePipe,
+    TranslateModule,
+  ],
 })
 export class RouteInstancesComponent implements OnInit {
   routeId: number;
@@ -54,8 +53,7 @@ export class RouteInstancesComponent implements OnInit {
     private translateService: TranslateService,
     private dateAdapter: DateAdapter<any>,
     private dialog: MatDialog,
-    private decimalPipe: DecimalPipe
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.dateAdapter.setLocale(this.translationService.dateLocale);
@@ -98,7 +96,7 @@ export class RouteInstancesComponent implements OnInit {
       return "-";
     }
 
-    const formattedSpeed = this.decimalPipe.transform(instance.averageSpeedKmh, '1.1-1', this.currentLocale) || instance.averageSpeedKmh.toFixed(1);
+    const formattedSpeed = formatNumber(instance.averageSpeedKmh, this.currentLocale, '1.1-1') || instance.averageSpeedKmh.toFixed(1);
     return `${formattedSpeed} km/h`;
   }
 
