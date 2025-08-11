@@ -1,10 +1,11 @@
 import { enableProdMode, importProvidersFrom, LOCALE_ID } from "@angular/core";
 import { environment } from "./environments/environment";
 import {
-  MAT_MOMENT_DATE_ADAPTER_OPTIONS,
   MatMomentDateModule,
-  provideMomentDateAdapter,
-} from "@angular/material-moment-adapter";
+  MAT_MOMENT_DATE_FORMATS} from "@angular/material-moment-adapter";
+import { DateAdapter, MAT_DATE_FORMATS } from '@angular/material/core';
+import { TranslationService } from "./app/services/translation.service";
+import { DynamicMomentDateAdapter } from "./app/adapters/dynamic-moment-date-adapter";
 import {
   HTTP_INTERCEPTORS,
   provideHttpClient,
@@ -138,7 +139,9 @@ bootstrapApplication(AppComponent, {
       MatCardModule,
       LeafletMarkerClusterModule
     ),
-    provideMomentDateAdapter(undefined, { useUtc: true }), { provide: HTTP_INTERCEPTORS, useClass: AuthInterceptor, multi: true },
+    { provide: DateAdapter, useClass: DynamicMomentDateAdapter, deps: [MAT_DATE_LOCALE, TranslationService] },
+    { provide: MAT_DATE_FORMATS, useValue: MAT_MOMENT_DATE_FORMATS },
+    { provide: HTTP_INTERCEPTORS, useClass: AuthInterceptor, multi: true },
     {
       provide: MatPaginatorIntl,
       useFactory: (translate) => {
@@ -155,7 +158,7 @@ bootstrapApplication(AppComponent, {
     },
     {
       provide: MAT_DATE_LOCALE,
-      useClass: LocaleId,
+      useFactory: (translate: TranslateService) => translateLanguage(translate.currentLang),
       deps: [TranslateService],
     },
     DatePipe,
