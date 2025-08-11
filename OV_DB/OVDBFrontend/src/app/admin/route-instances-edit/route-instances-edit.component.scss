@@ -11,20 +11,3 @@ mat-form-field {
 .mdc-data-table__header-cell{
   padding:0 !important
 }
-
-.trip-info-item {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-
-.info-label {
-    font-weight: 500;
-    color: #666;
-}
-
-.info-value {
-    font-weight: 600;
-    color: #1976d2;
-    font-size: 1.1em;
-}

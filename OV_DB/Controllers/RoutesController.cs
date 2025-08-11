@@ -54,6 +54,7 @@ namespace OV_DB.Controllers
                 return Forbid();
             }
             var originalQuery = _context.Routes
+                .Include(r => r.RouteInstances)
                 .Where(r => r.RouteMaps.Any(rm => rm.Map.UserId == userIdClaim));
 
             if (!string.IsNullOrWhiteSpace(filter))
@@ -90,6 +91,13 @@ namespace OV_DB.Controllers
                         query = query.OrderByDescending(r => r.RouteMaps.FirstOrDefault().Name ?? "");
                     else
                         query = query.OrderBy(r => r.RouteMaps.FirstOrDefault().Name ?? "");
+                }
+                if (sortColumn == "speed")
+                {
+                    if (descending.GetValueOrDefault(false))
+                        query = query.OrderByDescending(r => r.MaxAverageSpeedKmh ?? 0);
+                    else
+                        query = query.OrderBy(r => r.MaxAverageSpeedKmh ?? 0);
                 }
             }
 

@@ -81,6 +81,7 @@ export class RoutesListComponent implements OnInit, AfterViewInit {
     "name",
     "date",
     "instances",
+    "speed",
     "maps",
     "type",
     "edit",
@@ -123,6 +124,7 @@ export class RoutesListComponent implements OnInit, AfterViewInit {
         "operator",
         "date",
         "instances",
+        "speed",
         "maps",
         "type",
         "edit",
@@ -286,5 +288,26 @@ export class RoutesListComponent implements OnInit, AfterViewInit {
     this.apiService.getExportForSet(this.selectedRoutes).subscribe((data) => {
       saveAs(data, "Export.zip");
     });
+  }
+
+  getSpeedDisplay(route: Route): string {
+    if (!route.minAverageSpeedKmh && !route.maxAverageSpeedKmh) {
+      return "-";
+    }
+    
+    const min = route.minAverageSpeedKmh;
+    const max = route.maxAverageSpeedKmh;
+    
+    if (!min || !max) {
+      return (min || max)?.toFixed(1) + " km/h" || "-";
+    }
+    
+    if (Math.abs(min - max) < 0.1) {
+      // If min and max are essentially the same, show single value
+      return min.toFixed(1) + " km/h";
+    } else {
+      // Show range
+      return `${min.toFixed(1)} - ${max.toFixed(1)} km/h`;
+    }
   }
 }

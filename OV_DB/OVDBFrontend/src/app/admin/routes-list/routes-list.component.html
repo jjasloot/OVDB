@@ -80,6 +80,15 @@
       </td>
     </ng-container>
 
+    <ng-container matColumnDef="speed">
+      <th mat-header-cell *matHeaderCellDef mat-sort-header>
+        Average Speed
+      </th>
+      <td mat-cell *matCellDef="let element">
+        {{ getSpeedDisplay(element) }}
+      </td>
+    </ng-container>
+
     <ng-container matColumnDef="type">
       <th mat-header-cell *matHeaderCellDef mat-sort-header>
         {{ "ROUTESLIST.TYPE" | translate }}
