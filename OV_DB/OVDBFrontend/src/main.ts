@@ -2,7 +2,9 @@ import { enableProdMode, importProvidersFrom, LOCALE_ID } from "@angular/core";
 import { environment } from "./environments/environment";
 import {
   MatMomentDateModule,
-  MAT_MOMENT_DATE_FORMATS} from "@angular/material-moment-adapter";
+  MAT_MOMENT_DATE_FORMATS,
+  MAT_MOMENT_DATE_ADAPTER_OPTIONS
+} from "@angular/material-moment-adapter";
 import { DateAdapter, MAT_DATE_FORMATS } from '@angular/material/core';
 import { TranslationService } from "./app/services/translation.service";
 import { DynamicMomentDateAdapter } from "./app/adapters/dynamic-moment-date-adapter";

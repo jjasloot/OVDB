@@ -25,10 +25,10 @@ import { MatCard, MatCardContent } from '@angular/material/card';
 import { MatSlideToggle } from '@angular/material/slide-toggle';
 
 @Component({
-    selector: 'app-route-instances-edit',
-    templateUrl: './route-instances-edit.component.html',
-    styleUrls: ['./route-instances-edit.component.scss'],
-    imports: [MatDialogTitle, CdkScrollable, MatDialogContent, MatCard, MatCardContent, MatSlideToggle, MatFormField, MatLabel, MatInput, MatDatepickerInput, FormsModule, MatDatepickerToggle, MatSuffix, MatDatepicker, MatIcon, MatTable, MatColumnDef, MatHeaderCellDef, MatHeaderCell, MatCellDef, MatCell, MatAutocompleteTrigger, MatAutocomplete, MatOption, MatFooterCellDef, MatFooterCell, MatIconButton, MatCheckbox, MatHeaderRowDef, MatHeaderRow, MatRowDef, MatRow, MatFooterRowDef, MatFooterRow, MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle, MatSelectionList, MatListOption, MatDialogActions, MatButton, AsyncPipe, TranslateModule]
+  selector: 'app-route-instances-edit',
+  templateUrl: './route-instances-edit.component.html',
+  styleUrls: ['./route-instances-edit.component.scss'],
+  imports: [MatDialogTitle, CdkScrollable, MatDialogContent, MatCard, MatCardContent, MatSlideToggle, MatFormField, MatLabel, MatInput, MatDatepickerInput, FormsModule, MatDatepickerToggle, MatSuffix, MatDatepicker, MatIcon, MatTable, MatColumnDef, MatHeaderCellDef, MatHeaderCell, MatCellDef, MatCell, MatAutocompleteTrigger, MatAutocomplete, MatOption, MatFooterCellDef, MatFooterCell, MatIconButton, MatCheckbox, MatHeaderRowDef, MatHeaderRow, MatRowDef, MatRow, MatFooterRowDef, MatFooterRow, MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle, MatSelectionList, MatListOption, MatDialogActions, MatButton, AsyncPipe, TranslateModule]
 })
 export class RouteInstancesEditComponent implements OnInit {
   readonly table = viewChild<MatTable<RouteInstanceProperty>>('table');
@@ -39,7 +39,7 @@ export class RouteInstancesEditComponent implements OnInit {
   maps: Map[];
   selectedMaps: number[] = [];
   useDetailedTime = false;
-  
+
   // Getter and setter for datetime-local inputs (legacy - keeping for compatibility)
   get startTimeLocal(): string {
     if (!this.instance.startTime) return '';
@@ -47,67 +47,69 @@ export class RouteInstancesEditComponent implements OnInit {
     // Use local time representation to avoid timezone shifts
     return this.formatDateTimeLocal(date);
   }
-  
+
   set startTimeLocal(value: string) {
     if (!value) {
       this.instance.startTime = undefined;
       return;
     }
     // Parse as local time to prevent timezone conversion issues
-    this.instance.startTime = new Date(value);
+    this.instance.startTime = this.formatDateTimeLocal(new Date(value));
   }
-  
+
   get endTimeLocal(): string {
     if (!this.instance.endTime) return '';
     const date = new Date(this.instance.endTime);
     // Use local time representation to avoid timezone shifts  
     return this.formatDateTimeLocal(date);
   }
-  
+
   set endTimeLocal(value: string) {
     if (!value) {
       this.instance.endTime = undefined;
       return;
     }
     // Parse as local time to prevent timezone conversion issues
-    this.instance.endTime = new Date(value);
+    this.instance.endTime = this.formatDateTimeLocal(new Date(value));
   }
-  
+
   // Separate time inputs for better UX
   get startTimeOnly(): string {
     if (!this.instance.startTime) return '';
     const date = new Date(this.instance.startTime);
     return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
   }
-  
+
   set startTimeOnly(value: string) {
     if (!value) {
       this.instance.startTime = undefined;
       return;
     }
-    
+    console.log(value);
+
     const baseDate = this.instance.date ? new Date(this.instance.date) : new Date();
     const [hours, minutes] = value.split(':').map(num => parseInt(num, 10));
     const combinedDate = new Date(baseDate.getFullYear(), baseDate.getMonth(), baseDate.getDate(), hours, minutes);
-    this.instance.startTime = combinedDate;
+    this.instance.startTime = this.formatDateTimeLocal(combinedDate);
+    console.log(combinedDate);
   }
-  
+
   get endTimeOnly(): string {
     if (!this.instance.endTime) return '';
     const date = new Date(this.instance.endTime);
     return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
   }
-  
+
   set endTimeOnly(value: string) {
     if (!value) {
       this.instance.endTime = undefined;
       return;
     }
-    
+
     const baseDate = this.instance.date ? new Date(this.instance.date) : new Date();
     const [hours, minutes] = value.split(':').map(num => parseInt(num, 10));
     const combinedDate = new Date(baseDate.getFullYear(), baseDate.getMonth(), baseDate.getDate(), hours, minutes);
-    this.instance.endTime = combinedDate;
+    this.instance.endTime = this.formatDateTimeLocal(combinedDate);
   }
 
   private formatDateTimeLocal(date: Date): string {
@@ -138,7 +140,7 @@ export class RouteInstancesEditComponent implements OnInit {
   ngOnInit() {
     // Check if the instance already has time information
     this.useDetailedTime = !!(this.instance.startTime || this.instance.endTime);
-    
+
     this.apiService.getAutocompleteForTags().subscribe(data => {
       this.options = data;
       this.updateSuggestions('');
@@ -147,7 +149,7 @@ export class RouteInstancesEditComponent implements OnInit {
       this.maps = data;
     })
   }
-  
+
   onTimeModeChange() {
     if (!this.useDetailedTime) {
       // Switching to date-only mode, clear time information
