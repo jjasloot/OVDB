@@ -70,6 +70,7 @@ import { AsyncPipe, DatePipe, DecimalPipe } from "@angular/common";
         MatPaginator,
         AsyncPipe,
         DatePipe,
+        DecimalPipe,
         TranslateModule,
     ]
 })

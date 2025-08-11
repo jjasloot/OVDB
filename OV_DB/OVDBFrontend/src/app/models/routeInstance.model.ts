@@ -7,6 +7,7 @@ export interface RouteInstance {
   startTime?: Date;
   endTime?: Date;
   durationHours?: number;
+  averageSpeedKmh?: number;
   routeInstanceProperties: RouteInstanceProperty[];
   routeId: number;
 }

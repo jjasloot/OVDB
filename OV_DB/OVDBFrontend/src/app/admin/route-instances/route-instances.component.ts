@@ -33,6 +33,7 @@ import { MatIcon } from "@angular/material/icon";
         MatFabButton,
         MatIcon,
         DatePipe,
+        DecimalPipe,
         TranslateModule,
     ]
 })
@@ -93,17 +94,11 @@ export class RouteInstancesComponent implements OnInit {
   }
 
   getAverageSpeed(instance: RouteInstance): string {
-    if (!instance.durationHours || instance.durationHours <= 0 || !this.route) {
+    if (!instance.averageSpeedKmh) {
       return "-";
     }
 
-    const distance = this.route.overrideDistance ?? this.route.calculatedDistance;
-    if (!distance || distance <= 0) {
-      return "-";
-    }
-
-    const speed = distance / instance.durationHours;
-    const formattedSpeed = this.decimalPipe.transform(speed, '1.1-1', this.currentLocale) || speed.toFixed(1);
+    const formattedSpeed = this.decimalPipe.transform(instance.averageSpeedKmh, '1.1-1', this.currentLocale) || instance.averageSpeedKmh.toFixed(1);
     return `${formattedSpeed} km/h`;
   }
 

@@ -29,4 +29,9 @@ namespace OV_DB.Models
         public List<RegionMinimalDTO> Regions { get; set; }
         public List<int> OperatorIds { get; set; }
     }
+
+    public class RouteWithInstancesDTO : RouteDTO
+    {
+        public List<RouteInstanceDTO> RouteInstances { get; set; }
+    }
 }

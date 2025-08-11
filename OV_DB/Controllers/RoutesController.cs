@@ -874,7 +874,7 @@ namespace OV_DB.Controllers
         }
 
         [HttpGet("instances/{id}")]
-        public async Task<ActionResult<Route>> GetRouteInstances(int id, [FromQuery] DateTime from, [FromQuery] DateTime to)
+        public async Task<ActionResult<RouteWithInstancesDTO>> GetRouteInstances(int id, [FromQuery] DateTime from, [FromQuery] DateTime to)
         {
             Claim claim = User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier);
             var userIdClaim = int.Parse(claim != null ? claim.Value : "-1");
@@ -885,6 +885,7 @@ namespace OV_DB.Controllers
               .ThenInclude(ri => ri.RouteInstanceProperties)
               .Include(r => r.RouteInstances)
               .ThenInclude(ri => ri.RouteInstanceMaps)
+              .ThenInclude(rim => rim.Map)
               .Where(r => r.RouteMaps.Any(rm => rm.Map.UserId == userIdClaim))
               .SingleOrDefaultAsync();
             if (route == null)
@@ -897,12 +898,12 @@ namespace OV_DB.Controllers
                 route.RouteInstances = route.RouteInstances.Where(ri => ri.Date >= from && ri.Date < to).ToList();
             }
 
-            return route;
+            return _mapper.Map<RouteWithInstancesDTO>(route);
         }
 
         [HttpGet("instances/{mapGuid}/{id}")]
         [AllowAnonymous]
-        public async Task<ActionResult<Route>> GetRouteInstances(Guid mapGuid, int id, [FromQuery] DateTime from, [FromQuery] DateTime to)
+        public async Task<ActionResult<RouteWithInstancesDTO>> GetRouteInstances(Guid mapGuid, int id, [FromQuery] DateTime from, [FromQuery] DateTime to)
         {
             Claim claim = User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier);
             var userIdClaim = int.Parse(claim != null ? claim.Value : "-1");
@@ -933,7 +934,7 @@ namespace OV_DB.Controllers
             }
 
 
-            return route;
+            return _mapper.Map<RouteWithInstancesDTO>(route);
         }
 
         [HttpPut("instances")]
