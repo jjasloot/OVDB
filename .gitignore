@@ -11,3 +11,4 @@ OV_DB/appsettings.Development.json
 bin/Debug/net9.0/
 **/bin/Debug/net9.0/
 TestTimeZones/bin/
+/OV_DB.Tests/obj
