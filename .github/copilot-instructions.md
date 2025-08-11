@@ -46,9 +46,8 @@ Always reference these instructions first and fallback to search or bash command
 - **Issue**: Docker build currently fails - npm not found during build process
 
 ## Database Setup
-- **Local SQLite**: Application includes `ovdb.db` SQLite database file
 - **Configuration**: Database connection string in `OV_DB/appsettings.json` points to remote MySQL
-- **For local development**: Application works with local SQLite database
+- **For local development**: Spin up a local MariaDB docker container
 - **Entity Framework**: Uses Entity Framework Core with migrations in `OVDB_database/Migrations`
 
 ## Validation Scenarios
