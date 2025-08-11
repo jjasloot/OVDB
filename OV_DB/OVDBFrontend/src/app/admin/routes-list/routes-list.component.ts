@@ -38,7 +38,7 @@ import { MatTable, MatColumnDef, MatHeaderCellDef, MatHeaderCell, MatCellDef, Ma
 import { MatChipListbox, MatChipOption } from "@angular/material/chips";
 import { MatTooltip } from "@angular/material/tooltip";
 import { MatIcon } from "@angular/material/icon";
-import { AsyncPipe, DatePipe } from "@angular/common";
+import { AsyncPipe, DatePipe, DecimalPipe } from "@angular/common";
 
 @Component({
     selector: "app-routes-list",
@@ -106,7 +106,8 @@ export class RoutesListComponent implements OnInit, AfterViewInit {
     private translationService: TranslationService,
     private dialog: MatDialog,
     private bottomSheet: MatBottomSheet,
-    private operatorService: OperatorService
+    private operatorService: OperatorService,
+    private decimalPipe: DecimalPipe
   ) {}
 
   ngOnInit() {
@@ -299,15 +300,21 @@ export class RoutesListComponent implements OnInit, AfterViewInit {
     const max = route.maxAverageSpeedKmh;
     
     if (!min || !max) {
-      return (min || max)?.toFixed(1) + " km/h" || "-";
+      const speed = min || max;
+      if (!speed) return "-";
+      const formattedSpeed = this.decimalPipe.transform(speed, '1.1-1', this.currentLocale) || speed.toFixed(1);
+      return `${formattedSpeed} km/h`;
     }
     
     if (Math.abs(min - max) < 0.1) {
       // If min and max are essentially the same, show single value
-      return min.toFixed(1) + " km/h";
+      const formattedSpeed = this.decimalPipe.transform(min, '1.1-1', this.currentLocale) || min.toFixed(1);
+      return `${formattedSpeed} km/h`;
     } else {
       // Show range
-      return `${min.toFixed(1)} - ${max.toFixed(1)} km/h`;
+      const formattedMin = this.decimalPipe.transform(min, '1.1-1', this.currentLocale) || min.toFixed(1);
+      const formattedMax = this.decimalPipe.transform(max, '1.1-1', this.currentLocale) || max.toFixed(1);
+      return `${formattedMin} - ${formattedMax} km/h`;
     }
   }
 }

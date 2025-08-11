@@ -5,7 +5,7 @@ import { RouteInstance } from "src/app/models/routeInstance.model";
 import { TranslationService } from "src/app/services/translation.service";
 import { RouteInstanceProperty } from "src/app/models/routeInstanceProperty.model";
 import { TranslateService, TranslateModule } from "@ngx-translate/core";
-import { DatePipe } from "@angular/common";
+import { DatePipe, DecimalPipe } from "@angular/common";
 import { MatDialog } from "@angular/material/dialog";
 import { RouteInstancesEditComponent } from "../route-instances-edit/route-instances-edit.component";
 import { Route } from "src/app/models/route.model";
@@ -53,6 +53,7 @@ export class RouteInstancesComponent implements OnInit {
     private translateService: TranslateService,
     private dateAdapter: DateAdapter<any>,
     private dialog: MatDialog,
+    private decimalPipe: DecimalPipe
   ) {}
 
   ngOnInit(): void {
@@ -89,6 +90,38 @@ export class RouteInstancesComponent implements OnInit {
         : this.translateService.instant("NO");
     }
     return "";
+  }
+
+  getAverageSpeed(instance: RouteInstance): string {
+    if (!instance.durationHours || instance.durationHours <= 0 || !this.route) {
+      return "-";
+    }
+
+    const distance = this.route.overrideDistance ?? this.route.calculatedDistance;
+    if (!distance || distance <= 0) {
+      return "-";
+    }
+
+    const speed = distance / instance.durationHours;
+    const formattedSpeed = this.decimalPipe.transform(speed, '1.1-1', this.currentLocale) || speed.toFixed(1);
+    return `${formattedSpeed} km/h`;
+  }
+
+  getTripDuration(instance: RouteInstance): string {
+    if (!instance.durationHours || instance.durationHours <= 0) {
+      return "-";
+    }
+
+    const hours = Math.floor(instance.durationHours);
+    const minutes = Math.round((instance.durationHours - hours) * 60);
+
+    if (hours > 0 && minutes > 0) {
+      return `${hours}h ${minutes}m`;
+    } else if (hours > 0) {
+      return `${hours}h`;
+    } else {
+      return `${minutes}m`;
+    }
   }
 
   edit(instance: RouteInstance) {
