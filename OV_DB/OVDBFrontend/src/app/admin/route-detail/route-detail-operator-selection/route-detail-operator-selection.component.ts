@@ -101,12 +101,12 @@ export class RouteDetailOperatorSelectionComponent implements OnInit {
 
   operatorSelected() {
     const operators = (this.formField().value as string).split(";");
-    let operatorIds: number[] = [];
+    const operatorIds: number[] = [];
     operators.forEach((o) => {
       const selectedOperator = this.operators().find(
         (op) => op.name.toLowerCase() === o.trim().toLowerCase()
       );
-      if (!!selectedOperator) {
+      if (selectedOperator) {
         operatorIds.push(selectedOperator.id);
       }
     });

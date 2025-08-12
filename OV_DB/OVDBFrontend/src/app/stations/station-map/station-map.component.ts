@@ -49,8 +49,7 @@ export class StationMapComponent implements OnInit {
       "https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}",
       {
         opacity: 0.65,
-        // tslint:disable-next-line: max-line-length
-        attribution:
+               attribution:
           "Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ, TomTom, Intermap, iPC, USGS, FAO, NPS, NRCAN, GeoBase, Kadaster NL, Ordnance Survey, Esri Japan, METI, Esri China (Hong Kong), and the GIS User Community",
       }
     ),
@@ -110,7 +109,7 @@ export class StationMapComponent implements OnInit {
       name: text.name,
       nameNL: text.nameNL,
     };
-    var markers = window.L.markerClusterGroup({
+    const markers = window.L.markerClusterGroup({
       iconCreateFunction: (cluster) => {
         return divIcon({
           html: "<b>" + cluster.getChildCount() + "</b>",

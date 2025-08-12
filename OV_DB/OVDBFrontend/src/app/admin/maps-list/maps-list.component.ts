@@ -66,7 +66,7 @@ export class MapsListComponent implements OnInit {
       width: this.getWidth(),
     });
     dialogRef.afterClosed().subscribe((result: boolean) => {
-      if (!!result) {
+      if (result) {
         this.loadData();
       }
     });
@@ -78,7 +78,7 @@ export class MapsListComponent implements OnInit {
       data: { map },
     });
     dialogRef.afterClosed().subscribe((result: boolean) => {
-      if (!!result) {
+      if (result) {
         this.loadData();
       }
     });
@@ -128,7 +128,7 @@ export class MapsListComponent implements OnInit {
       },
     });
     dialogRef.afterClosed().subscribe((result: boolean) => {
-      if (!!result) {
+      if (result) {
         this.apiService.deleteMap(map.mapId).subscribe(() => {
           this.loadData();
           this.dataUpdateService.requestUpdate();

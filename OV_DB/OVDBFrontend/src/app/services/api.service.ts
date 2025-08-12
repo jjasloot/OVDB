@@ -202,15 +202,15 @@ export class ApiService {
 
     url = environment.backend + "odata/" + guid;
     let params = new HttpParams();
-    if (!!filter) {
+    if (filter) {
       params = params.append("$filter", filter);
     }
-    if (!!language) {
+    if (language) {
       params = params.append("language", language);
     }
     params = params.append("limitToSelectedArea", limitToSelectedAreas);
     params = params.append("includeLineColours", includeLineColours);
-    if (!!identifier) {
+    if (identifier) {
       params = params.append("requestIdentifier", identifier);
     }
     return this.httpClient.get<MapDataDTO>(url, { params });
@@ -315,13 +315,13 @@ export class ApiService {
     dateTime: Moment
   ): Observable<OSMDataLine[]> {
     let url = environment.backend + "api/importer/find?reference=" + reference;
-    if (!!network) {
+    if (network) {
       url += "&network=" + network;
     }
-    if (!!type) {
+    if (type) {
       url += "&routeType=" + type;
     }
-    if (!!dateTime) {
+    if (dateTime) {
       url += "&dateTime=" + dateTime.toISOString();
     }
     return this.httpClient.get<OSMDataLine[]>(url);
@@ -331,7 +331,7 @@ export class ApiService {
     dateTime: Moment
   ): Observable<OSMDataLine[]> {
     let url = environment.backend + "api/importer/network?network=" + network;
-    if (!!dateTime) {
+    if (dateTime) {
       url += "&dateTime=" + dateTime.toISOString();
     }
     return this.httpClient.get<OSMDataLine[]>(url);
@@ -347,7 +347,7 @@ export class ApiService {
     if (!!from && !!to) {
       url += "?from=" + from + "&to=" + to;
     }
-    if (!!dateTime) {
+    if (dateTime) {
       if (!!from && !!to) {
         url += "&dateTime=" + dateTime.toISOString();
       } else {
@@ -361,7 +361,7 @@ export class ApiService {
     dateTime: Moment = null
   ): Observable<OSMLineStop[]> {
     let url = environment.backend + "api/importer/" + id + "/stops";
-    if (!!dateTime) {
+    if (dateTime) {
       url += "?dateTime=" + dateTime.toISOString();
     }
     return this.httpClient.get<OSMLineStop[]>(url);
@@ -392,7 +392,7 @@ export class ApiService {
   }
   getStatsForGraph(map: string, year?: number): Observable<any> {
     let url = environment.backend + "api/stats/time/" + map;
-    if (!!year) {
+    if (year) {
       url += `?year=${year}`;
     }
     return this.httpClient.get(url);
@@ -400,7 +400,7 @@ export class ApiService {
 
   getStats(map: string, year: number) {
     let url = environment.backend + "api/stats/" + map;
-    if (!!year) {
+    if (year) {
       url += `?year=${year}`;
     }
     return this.httpClient.get(url);
@@ -408,7 +408,7 @@ export class ApiService {
 
   getStatsReach(map: string, year: number) {
     let url = environment.backend + "api/stats/reach/" + map;
-    if (!!year) {
+    if (year) {
       url += `?year=${year}`;
     }
     return this.httpClient.get(url);
@@ -421,7 +421,7 @@ export class ApiService {
   }
 
   getStationMap(guid) {
-    let url = environment.backend + "api/stationmaps/map/" + guid;
+    const url = environment.backend + "api/stationmaps/map/" + guid;
     return this.httpClient.get<StationView>(url);
   }
   getStationsAdminMap(
@@ -458,7 +458,7 @@ export class ApiService {
   }
 
   listStationMaps() {
-    let url = environment.backend + "api/stationmaps";
+    const url = environment.backend + "api/stationmaps";
     return this.httpClient.get<StationMap[]>(url);
   }
 
@@ -493,7 +493,7 @@ export class ApiService {
     );
   }
   getTripReport(selectedMap: string, selectedYear: number) {
-    let url = `${environment.backend}api/tripreport?guid=${selectedMap}&year=${selectedYear}`;
+    const url = `${environment.backend}api/tripreport?guid=${selectedMap}&year=${selectedYear}`;
     return this.httpClient.get(url, { responseType: "blob" });
   }
 

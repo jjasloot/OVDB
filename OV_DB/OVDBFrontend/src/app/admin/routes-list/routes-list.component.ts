@@ -30,6 +30,8 @@ import { RoutesListBottomsheetComponent } from "./routes-list-bottomsheet/routes
 import { RoutesListActions } from "src/app/models/routes-list-actions.enum";
 import { MatBottomSheet } from "@angular/material/bottom-sheet";
 import { OperatorService } from "src/app/services/operator.service";
+import { TableStateService } from "src/app/services/table-state.service";
+import { TableState } from "src/app/models/table-state.model";
 import { MatProgressSpinner } from "@angular/material/progress-spinner";
 import { MatFormField } from "@angular/material/form-field";
 import { MatInput } from "@angular/material/input";
@@ -74,6 +76,8 @@ import { AsyncPipe, DatePipe, DecimalPipe, formatNumber } from "@angular/common"
   ]
 })
 export class RoutesListComponent implements OnInit, AfterViewInit {
+  private readonly TABLE_ID = 'routes-list';
+  
   routes: Route[];
   loading: boolean;
   displayedColumns: string[] = [
@@ -107,13 +111,20 @@ export class RoutesListComponent implements OnInit, AfterViewInit {
     private dialog: MatDialog,
     private bottomSheet: MatBottomSheet,
     private operatorService: OperatorService,
-  ) { }
+    private tableStateService: TableStateService
+  ) {}
+
 
   ngOnInit() {
     this.dataSource = new RoutesDataSource(this.apiService);
-    this.dataSource.loadRoutes();
     this.loading = true;
     this.restrictColumnsOnWidth();
+    
+    // Restore saved table state
+    this.restoreTableState();
+    
+    // Load routes with restored state
+    this.dataSource.loadRoutes();
   }
 
   restrictColumnsOnWidth() {
@@ -152,33 +163,100 @@ export class RoutesListComponent implements OnInit, AfterViewInit {
   }
 
   ngAfterViewInit() {
+    // Apply restored table state to components after they're initialized
+    this.applyRestoredState();
+
     fromEvent(this.input().nativeElement, "keyup")
       .pipe(
         debounceTime(150),
         distinctUntilChanged(),
         tap(() => {
           this.paginator().pageIndex = 0;
+          this.saveCurrentTableState();
           this.filter$.next();
         })
       )
       .subscribe();
 
-    this.sort().sortChange.subscribe(() => (this.paginator().pageIndex = 0));
+    this.sort().sortChange.subscribe(() => {
+      this.paginator().pageIndex = 0;
+      this.saveCurrentTableState();
+    });
+
+    this.paginator().page.subscribe(() => {
+      this.saveCurrentTableState();
+    });
 
     merge(this.sort().sortChange, this.paginator().page, this.filter$)
       .pipe(
         tap(() => {
           this.loading = true;
+          // Save state whenever table changes, but not on initial filter trigger
+          if (this.hasInitialized) {
+            this.saveCurrentTableState();
+          }
         }),
         switchMap(() => this.loadRoutesPage())
       )
       .subscribe({
         next: (routes) => {
           this.count = routes.count;
+          this.hasInitialized = true;
         },
       });
 
     this.filter$.next();
+  }
+
+  private hasInitialized = false;
+
+  private restoreTableState(): void {
+    const savedState = this.tableStateService.getTableState(this.TABLE_ID, {
+      defaultPageSize: 10,
+      defaultSortActive: 'date',
+      defaultSortDirection: 'desc'
+    });
+
+    this.restoredState = savedState;
+  }
+
+  private restoredState: TableState | null = null;
+
+  private applyRestoredState(): void {
+    if (this.restoredState) {
+      // Apply pagination state
+      if (this.paginator()) {
+        this.paginator().pageIndex = this.restoredState.pageIndex;
+        this.paginator().pageSize = this.restoredState.pageSize;
+      }
+
+      // Apply sorting state
+      if (this.sort()) {
+        this.sort().active = this.restoredState.sortActive;
+        this.sort().direction = this.restoredState.sortDirection;
+      }
+
+      // Apply filter state
+      if (this.input() && this.restoredState.filter) {
+        this.input().nativeElement.value = this.restoredState.filter;
+      }
+
+      this.restoredState = null; // Clear the restored state after applying
+    }
+  }
+
+  private saveCurrentTableState(): void {
+    if (!this.paginator() || !this.sort()) return;
+
+    const currentState = this.tableStateService.getCurrentState(
+      this.paginator().pageIndex,
+      this.paginator().pageSize,
+      this.sort().active,
+      this.sort().direction,
+      this.filterValue
+    );
+
+    this.tableStateService.saveTableState(this.TABLE_ID, currentState);
   }
 
   loadRoutesPage() {
@@ -262,7 +340,7 @@ export class RoutesListComponent implements OnInit, AfterViewInit {
   }
 
   getDistance(route: Route) {
-    if (!!route.overrideDistance) {
+    if (route.overrideDistance) {
       return route.overrideDistance;
     }
     return route.calculatedDistance;

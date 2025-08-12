@@ -61,7 +61,7 @@
       </button>
     }
   }
-  @if (active() != 'filter') {
+  @if (active() !== 'filter') {
     <button
       mat-button
       color="primary"
@@ -70,7 +70,7 @@
       {{ "MAP.FILTER" | translate }}
     </button>
   }
-  @if (active() == 'filter') {
+  @if (active() === 'filter') {
     <button
       mat-stroked-button
       color="primary"

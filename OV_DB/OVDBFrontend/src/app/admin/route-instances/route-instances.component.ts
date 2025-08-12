@@ -39,7 +39,7 @@ import { MatIcon } from "@angular/material/icon";
 export class RouteInstancesComponent implements OnInit {
   routeId: number;
   route: Route;
-  loading: boolean = false;
+  loading = false;
   get instances() {
     if (!this.route) {
       return [];
@@ -80,7 +80,7 @@ export class RouteInstancesComponent implements OnInit {
   }
 
   value(property: RouteInstanceProperty) {
-    if (!!property.value) {
+    if (property.value) {
       return property.value;
     }
     if (property.bool !== null && property.bool !== undefined) {
@@ -123,7 +123,7 @@ export class RouteInstancesComponent implements OnInit {
       data: { instance, route: this.route },
     });
     dialogRef.afterClosed().subscribe((result: RouteInstance) => {
-      if (!!result) {
+      if (result) {
         this.apiService.updateRouteInstance(result).subscribe(() => {
           this.getData();
         });
@@ -158,7 +158,7 @@ export class RouteInstancesComponent implements OnInit {
       },
     });
     dialogRef.afterClosed().subscribe((result: RouteInstance) => {
-      if (!!result) {
+      if (result) {
         this.apiService.updateRouteInstance(result).subscribe(() => {
           this.getData();
         });
@@ -172,7 +172,7 @@ export class RouteInstancesComponent implements OnInit {
       data: { item: "deze rit wilt verwijderen" },
     });
     dialogRef.afterClosed().subscribe((result: RouteInstance) => {
-      if (!!result) {
+      if (result) {
         this.apiService
           .deleteRouteInstance(instance.routeInstanceId)
           .subscribe(() => {

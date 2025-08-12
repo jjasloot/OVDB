@@ -82,8 +82,7 @@ export class AdminStationsMapComponent implements OnInit {
       "https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}",
       {
         opacity: 0.65,
-        // tslint:disable-next-line: max-line-length
-        attribution:
+               attribution:
           "Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ, TomTom, Intermap, iPC, USGS, FAO, NPS, NRCAN, GeoBase, Kadaster NL, Ordnance Survey, Esri Japan, METI, Esri China (Hong Kong), and the GIS User Community",
       }
     ),
@@ -123,7 +122,7 @@ export class AdminStationsMapComponent implements OnInit {
 
   loading = true;
 
-  progressUpdates: { [key: number]: number } = {};
+  progressUpdates: Record<number, number> = {};
 
 
   constructor(private apiService: ApiService, private cd: ChangeDetectorRef) {
@@ -169,7 +168,7 @@ export class AdminStationsMapComponent implements OnInit {
       .getStationsAdminMap(this.selectedRegions)
       .toPromise();
     const parent = this;
-    var markers = markerClusterGroup({
+    const markers = markerClusterGroup({
       iconCreateFunction: (cluster) => {
         return divIcon({
           html: "<b>" + cluster.getChildCount() + "</b>",
@@ -283,7 +282,7 @@ export class AdminStationsMapComponent implements OnInit {
     });
   }
 
-  updateStation(hidden: boolean = false, special: boolean = false) {
+  updateStation(hidden = false, special = false) {
     if (!this.selectedStation()) {
       return;
     }

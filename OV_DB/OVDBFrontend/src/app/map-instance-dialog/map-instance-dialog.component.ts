@@ -25,7 +25,7 @@ export class MapInstanceDialogComponent implements OnInit {
   instances: RouteInstance[] = [];
   loading = true;
   loadAll = false;
-  mapGuid: string = '';
+  mapGuid = '';
   constructor(
     private apiService: ApiService,
     private translationService: TranslationService,
@@ -54,7 +54,7 @@ export class MapInstanceDialogComponent implements OnInit {
     this.dialogRef.close();
   }
   value(property: RouteInstanceProperty) {
-    if (!!property.value) {
+    if (property.value) {
       return property.value;
     }
     if (property.bool !== null && property.bool !== undefined) {
