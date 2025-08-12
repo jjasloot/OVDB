@@ -23,8 +23,15 @@ namespace OV_DB.Models
         public double? OverrideDistance { get; set; }
         public List<RouteMapDTO> RouteMaps { get; set; }
         public int RouteInstancesCount { get; set; }
+        public double? MinAverageSpeedKmh { get; set; }
+        public double? MaxAverageSpeedKmh { get; set; }
         public Guid Share { get; set; }
         public List<RegionMinimalDTO> Regions { get; set; }
         public List<int> OperatorIds { get; set; }
+    }
+
+    public class RouteWithInstancesDTO : RouteDTO
+    {
+        public List<RouteInstanceDTO> RouteInstances { get; set; }
     }
 }

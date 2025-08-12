@@ -5,7 +5,7 @@ import { RouteInstance } from "src/app/models/routeInstance.model";
 import { TranslationService } from "src/app/services/translation.service";
 import { RouteInstanceProperty } from "src/app/models/routeInstanceProperty.model";
 import { TranslateService, TranslateModule } from "@ngx-translate/core";
-import { DatePipe } from "@angular/common";
+import { DatePipe, DecimalPipe, formatNumber } from "@angular/common";
 import { MatDialog } from "@angular/material/dialog";
 import { RouteInstancesEditComponent } from "../route-instances-edit/route-instances-edit.component";
 import { Route } from "src/app/models/route.model";
@@ -19,22 +19,22 @@ import { MatProgressSpinner } from "@angular/material/progress-spinner";
 import { MatIcon } from "@angular/material/icon";
 
 @Component({
-    selector: "app-route-instances",
-    templateUrl: "./route-instances.component.html",
-    styleUrls: ["./route-instances.component.scss"],
-    imports: [
-        MatExpansionPanel,
-        MatExpansionPanelHeader,
-        MatExpansionPanelTitle,
-        MatList,
-        MatListItem,
-        MatButton,
-        MatProgressSpinner,
-        MatFabButton,
-        MatIcon,
-        DatePipe,
-        TranslateModule,
-    ]
+  selector: "app-route-instances",
+  templateUrl: "./route-instances.component.html",
+  styleUrls: ["./route-instances.component.scss"],
+  imports: [
+    MatExpansionPanel,
+    MatExpansionPanelHeader,
+    MatExpansionPanelTitle,
+    MatList,
+    MatListItem,
+    MatButton,
+    MatProgressSpinner,
+    MatFabButton,
+    MatIcon,
+    DatePipe,
+    TranslateModule,
+  ],
 })
 export class RouteInstancesComponent implements OnInit {
   routeId: number;
@@ -53,7 +53,7 @@ export class RouteInstancesComponent implements OnInit {
     private translateService: TranslateService,
     private dateAdapter: DateAdapter<any>,
     private dialog: MatDialog,
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.dateAdapter.setLocale(this.translationService.dateLocale);
@@ -91,10 +91,36 @@ export class RouteInstancesComponent implements OnInit {
     return "";
   }
 
+  getAverageSpeed(instance: RouteInstance): string {
+    if (!instance.averageSpeedKmh) {
+      return "-";
+    }
+
+    const formattedSpeed = formatNumber(instance.averageSpeedKmh, this.currentLocale, '1.1-1') || instance.averageSpeedKmh.toFixed(1);
+    return `${formattedSpeed} km/h`;
+  }
+
+  getTripDuration(instance: RouteInstance): string {
+    if (!instance.durationHours || instance.durationHours <= 0) {
+      return "-";
+    }
+
+    const hours = Math.floor(instance.durationHours);
+    const minutes = Math.round((instance.durationHours - hours) * 60);
+
+    if (hours > 0 && minutes > 0) {
+      return `${hours}h ${minutes}m`;
+    } else if (hours > 0) {
+      return `${hours}h`;
+    } else {
+      return `${minutes}m`;
+    }
+  }
+
   edit(instance: RouteInstance) {
     const dialogRef = this.dialog.open(RouteInstancesEditComponent, {
       width: "100%",
-      data: { instance },
+      data: { instance, route: this.route },
     });
     dialogRef.afterClosed().subscribe((result: RouteInstance) => {
       if (result) {
@@ -128,6 +154,7 @@ export class RouteInstancesComponent implements OnInit {
           routeInstanceProperties: [],
         } as RouteInstance,
         new: true,
+        route: this.route,
       },
     });
     dialogRef.afterClosed().subscribe((result: RouteInstance) => {

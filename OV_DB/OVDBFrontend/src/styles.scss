@@ -5,37 +5,29 @@
 @include mat.core();
 
 // Define Material 3 theme using the new API with custom bright green
-$OVDBFrontend-theme: mat.define-theme((
-  color: (
-    theme-type: light,
-    primary: mat.$green-palette,
-    tertiary: mat.$blue-palette,
-  ),
-  density: (
-    scale: 0,
-  )
-));
+$OVDBFrontend-theme: mat.define-theme((color: (theme-type: light,
+        primary: mat.$green-palette,
+        tertiary: mat.$blue-palette,
+      ),
+      density: (scale: 0,
+      )));
 
-$OVDBFrontend-dark-theme: mat.define-theme((
-  color: (
-    theme-type: dark,
-    primary: mat.$green-palette,
-    tertiary: mat.$blue-palette,
-  ),
-  density: (
-    scale: 0,
-  )
-));
-@media (prefers-color-scheme: dark) {
-  html{
-    background: #303030;
-  }
+$OVDBFrontend-dark-theme: mat.define-theme((color: (theme-type: dark,
+        primary: mat.$green-palette,
+        tertiary: mat.$blue-palette,
+      ),
+      density: (scale: 0,
+      )));
+
+html {
+  background: var(--mat-app-background-color);
 }
+
 
 // Apply the light theme by default
 :root {
   @include mat.all-component-themes($OVDBFrontend-theme);
-  
+
   // Override with bright green colors to match original design
   --mdc-theme-primary: #4caf50;
   --mat-toolbar-container-background-color: #4caf50;
@@ -59,36 +51,36 @@ mat-toolbar.mat-primary {
 // Apply dark theme when .dark-theme class is present
 .dark-theme {
   @include mat.all-component-colors($OVDBFrontend-dark-theme);
-  
+
   // Override with bright green colors to match original design
   --mdc-theme-primary: #006b0e;
   --mat-toolbar-container-background-color: #006b0e;
   --mat-app-background-color: #006b0e;
-  
+
   // Ensure the page background is dark
   background-color: #303030 !important;
   color: white;
-  
+
   // Ensure content areas have dark background
   .router-container {
     background-color: #303030;
     color: white;
     min-height: 100vh;
   }
-  
+
   // Ensure container has dark background
   .container {
     background-color: #303030;
     color: white;
     min-height: 100vh;
   }
-  
+
   // Ensure toolbar has the bright green color in dark mode too
   mat-toolbar.mat-primary {
     background-color: #006b0e !important;
     color: white !important;
   }
-  
+
   // Ensure primary buttons use bright green in dark mode
   .mat-mdc-raised-button.mat-primary,
   .mat-mdc-unelevated-button.mat-primary,
@@ -102,53 +94,53 @@ mat-toolbar.mat-primary {
 
 html,
 body {
-    height: 100%;
+  height: 100%;
 }
 
 body {
-    margin: 0;
-    font-family: Roboto, "Helvetica Neue", sans-serif;
+  margin: 0;
+  font-family: Roboto, "Helvetica Neue", sans-serif;
 }
 
 .mat-mdc-tab-body {
-    height: calc(100vh - 128px);
+  height: calc(100vh - 128px);
 }
 
 .green {
-    background-color: #00FF00;
-    padding: 8px;
-    border-radius: 100px;
-    display: flex !important;
-    justify-content: center;
-    align-items: center;
+  background-color: #00FF00;
+  padding: 8px;
+  border-radius: 100px;
+  display: flex !important;
+  justify-content: center;
+  align-items: center;
 }
 
 .red {
-    background-color: #FF0000;
-    padding: 8px;
-    border-radius: 100px;
-    display: flex !important;
-    justify-content: center;
-    align-items: center;
+  background-color: #FF0000;
+  padding: 8px;
+  border-radius: 100px;
+  display: flex !important;
+  justify-content: center;
+  align-items: center;
 }
 
 .orange {
-    background-color: #FF7F00;
-    padding: 8px;
-    border-radius: 100px;
-    display: flex !important;
-    justify-content: center;
-    align-items: center;
+  background-color: #FF7F00;
+  padding: 8px;
+  border-radius: 100px;
+  display: flex !important;
+  justify-content: center;
+  align-items: center;
 }
 
 .cdk-overlay-pane {
-    max-width: 95vw !important;
+  max-width: 95vw !important;
 }
 
 .mat-mdc-dialog-container {
-    max-height: 90vh !important;
+  max-height: 90vh !important;
 }
 
-.mdc-fab{
-z-index: 500;
+.mdc-fab {
+  z-index: 500;
 }

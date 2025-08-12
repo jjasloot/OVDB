@@ -40,40 +40,40 @@ import { MatTable, MatColumnDef, MatHeaderCellDef, MatHeaderCell, MatCellDef, Ma
 import { MatChipListbox, MatChipOption } from "@angular/material/chips";
 import { MatTooltip } from "@angular/material/tooltip";
 import { MatIcon } from "@angular/material/icon";
-import { AsyncPipe, DatePipe } from "@angular/common";
+import { AsyncPipe, DatePipe, DecimalPipe, formatNumber } from "@angular/common";
 
 @Component({
-    selector: "app-routes-list",
-    templateUrl: "./routes-list.component.html",
-    styleUrls: ["./routes-list.component.scss"],
-    imports: [
-        MatProgressSpinner,
-        MatFormField,
-        MatInput,
-        MatButton,
-        MatTable,
-        MatSort,
-        MatColumnDef,
-        MatHeaderCellDef,
-        MatHeaderCell,
-        MatSortHeader,
-        MatCellDef,
-        MatCell,
-        MatCheckbox,
-        MatChipListbox,
-        MatChipOption,
-        MatTooltip,
-        MatIconButton,
-        MatIcon,
-        MatHeaderRowDef,
-        MatHeaderRow,
-        MatRowDef,
-        MatRow,
-        MatPaginator,
-        AsyncPipe,
-        DatePipe,
-        TranslateModule,
-    ]
+  selector: "app-routes-list",
+  templateUrl: "./routes-list.component.html",
+  styleUrls: ["./routes-list.component.scss"],
+  imports: [
+    MatProgressSpinner,
+    MatFormField,
+    MatInput,
+    MatButton,
+    MatTable,
+    MatSort,
+    MatColumnDef,
+    MatHeaderCellDef,
+    MatHeaderCell,
+    MatSortHeader,
+    MatCellDef,
+    MatCell,
+    MatCheckbox,
+    MatChipListbox,
+    MatChipOption,
+    MatTooltip,
+    MatIconButton,
+    MatIcon,
+    MatHeaderRowDef,
+    MatHeaderRow,
+    MatRowDef,
+    MatRow,
+    MatPaginator,
+    AsyncPipe,
+    DatePipe,
+    TranslateModule,
+  ]
 })
 export class RoutesListComponent implements OnInit, AfterViewInit {
   private readonly TABLE_ID = 'routes-list';
@@ -85,6 +85,7 @@ export class RoutesListComponent implements OnInit, AfterViewInit {
     "name",
     "date",
     "instances",
+    "speed",
     "maps",
     "type",
     "edit",
@@ -113,6 +114,7 @@ export class RoutesListComponent implements OnInit, AfterViewInit {
     private tableStateService: TableStateService
   ) {}
 
+
   ngOnInit() {
     this.dataSource = new RoutesDataSource(this.apiService);
     this.loading = true;
@@ -133,6 +135,7 @@ export class RoutesListComponent implements OnInit, AfterViewInit {
         "operator",
         "date",
         "instances",
+        "speed",
         "maps",
         "type",
         "edit",
@@ -363,5 +366,32 @@ export class RoutesListComponent implements OnInit, AfterViewInit {
     this.apiService.getExportForSet(this.selectedRoutes).subscribe((data) => {
       saveAs(data, "Export.zip");
     });
+  }
+
+  getSpeedDisplay(route: Route): string {
+    if (!route.minAverageSpeedKmh && !route.maxAverageSpeedKmh) {
+      return "-";
+    }
+
+    const min = route.minAverageSpeedKmh;
+    const max = route.maxAverageSpeedKmh;
+
+    if (!min || !max) {
+      const speed = min || max;
+      if (!speed) return "-";
+      const formattedSpeed = formatNumber(speed, this.currentLocale, '1.1-1') || speed.toFixed(1);
+      return `${formattedSpeed} km/h`;
+    }
+
+    if (Math.abs(min - max) < 0.1) {
+      // If min and max are essentially the same, show single value
+      const formattedSpeed = formatNumber(min, this.currentLocale, '1.1-1') || min.toFixed(1);
+      return `${formattedSpeed} km/h`;
+    } else {
+      // Show range
+      const formattedMin = formatNumber(min, this.currentLocale, '1.1-1') || min.toFixed(1);
+      const formattedMax = formatNumber(max, this.currentLocale, '1.1-1') || max.toFixed(1);
+      return `${formattedMin} - ${formattedMax} km/h`;
+    }
   }
 }

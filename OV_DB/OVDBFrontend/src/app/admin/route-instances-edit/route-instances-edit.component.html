@@ -7,17 +7,54 @@
   }
 </h3>
 <div mat-dialog-content>
-  <mat-form-field>
-    <mat-label>Datum</mat-label>
-    <input matInput [matDatepicker]="pickerDate" [(ngModel)]="instance.date">
-    <mat-datepicker-toggle matSuffix [for]="pickerDate"></mat-datepicker-toggle>
-    <mat-datepicker #pickerDate></mat-datepicker>
-  </mat-form-field>
+  <!-- Date and Time Section -->
+  <mat-card class="time-section">
+    <mat-card-content>
+      <div class="time-mode-toggle">
+        <mat-slide-toggle [(ngModel)]="useDetailedTime" (change)="onTimeModeChange()">
+          {{'ROUTEINSTANCESEDIT.ADDTIMES'|translate}}
+        </mat-slide-toggle>
+      </div>
+      
+      @if (!useDetailedTime) {
+        <!-- Date only mode -->
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>{{'ROUTEINSTANCESEDIT.DATE'|translate}}</mat-label>
+          <input matInput [matDatepicker]="pickerDate" [(ngModel)]="instance.date">
+          <mat-datepicker-toggle matSuffix [for]="pickerDate"></mat-datepicker-toggle>
+          <mat-datepicker #pickerDate></mat-datepicker>
+        </mat-form-field>
+      } @else {
+        <!-- Date and time mode -->
+        <div class="time-inputs-row">
+          <mat-form-field appearance="outline" class="date-field">
+            <mat-label>{{'ROUTEINSTANCESEDIT.DATE'|translate}}</mat-label>
+            <input matInput [matDatepicker]="pickerDateDetailed" [(ngModel)]="instance.date">
+            <mat-datepicker-toggle matSuffix [for]="pickerDateDetailed"></mat-datepicker-toggle>
+            <mat-datepicker #pickerDateDetailed></mat-datepicker>
+          </mat-form-field>
+          
+          <mat-form-field appearance="outline" class="time-field">
+            <mat-label>{{'ROUTEINSTANCESEDIT.STARTTIME'|translate}}</mat-label>
+            <input matInput type="time" [(ngModel)]="startTimeOnly">
+            <mat-icon matSuffix>access_time</mat-icon>
+          </mat-form-field>
+          
+          <mat-form-field appearance="outline" class="time-field">
+            <mat-label>{{'ROUTEINSTANCESEDIT.ENDTIME'|translate}}</mat-label>
+            <input matInput type="time" [(ngModel)]="endTimeOnly">
+            <mat-icon matSuffix>access_time</mat-icon>
+          </mat-form-field>
+        </div>
+      }
+    </mat-card-content>
+  </mat-card>
+
   <mat-table [dataSource]="instance.routeInstanceProperties" #table>
     <ng-container matColumnDef="key">
-      <mat-header-cell *matHeaderCellDef> {{'INSTANCE.KEY'|translate}} </mat-header-cell>
+      <mat-header-cell *matHeaderCellDef> {{'ROUTEINSTANCESEDIT.PROPERTYKEY'|translate}} </mat-header-cell>
       <mat-cell *matCellDef="let row">
-        <mat-form-field>
+        <mat-form-field appearance="outline">
           <input matInput [(ngModel)]="row.key" [matAutocomplete]="auto" (focus)="updateSuggestions($event.target.value)" (input)="updateSuggestions($event.target.value)">
           <mat-autocomplete autoActiveFirstOption #auto="matAutocomplete">
             @for (option of filteredOptions|async; track option) {
@@ -36,16 +73,16 @@
     </ng-container>
 
     <ng-container matColumnDef="string">
-      <mat-header-cell *matHeaderCellDef> {{'INSTANCE.TEXT'|translate}} </mat-header-cell>
+      <mat-header-cell *matHeaderCellDef> {{'ROUTEINSTANCESEDIT.PROPERTYVALUE'|translate}} </mat-header-cell>
       <mat-cell *matCellDef="let row">
-        <mat-form-field>
+        <mat-form-field appearance="outline">
           <input matInput [(ngModel)]="row.value" [disabled]="disableValue(row)">
         </mat-form-field>
       </mat-cell>
 
     </ng-container>
     <ng-container matColumnDef="bool">
-      <mat-header-cell *matHeaderCellDef> {{'INSTANCE.BOOL'|translate}} </mat-header-cell>
+      <mat-header-cell *matHeaderCellDef> {{'ROUTEINSTANCESEDIT.PROPERTYBOOL'|translate}} </mat-header-cell>
       <mat-cell *matCellDef="let row">
         <mat-checkbox [(ngModel)]="row.bool" [disabled]="disableBool(row)" [indeterminate]="row.bool===undefined||row.bool===null"></mat-checkbox>
       </mat-cell>
@@ -69,7 +106,7 @@
   <mat-expansion-panel>
     <mat-expansion-panel-header>
       <mat-panel-title>
-        {{'INSTANCE.SELECT_ADDITIONAL_MAPS'|translate}}
+        {{'ROUTEINSTANCESEDIT.SELECTADDITIONALMAPS'|translate}}
       </mat-panel-title>
     </mat-expansion-panel-header>
     <mat-selection-list [(ngModel)]="selectedMaps">

@@ -2,6 +2,36 @@ mat-form-field {
     width: 80%;
 }
 
+.full-width {
+    width: 100% !important;
+}
+
+.time-section {
+    margin-bottom: 20px;
+}
+
+.time-mode-toggle {
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+}
+
+.time-inputs-row {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.date-field {
+    flex: 2;
+    min-width: 200px;
+}
+
+.time-field {
+    flex: 1;
+    min-width: 140px;
+}
+
 .mat-column-buttons,
 .mat-column-bool {
     max-width: 36px;

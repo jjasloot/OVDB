@@ -26,6 +26,8 @@ export interface Route {
   overrideDistance: number;
   calculatedDistance: number;
   routeInstancesCount: number;
+  minAverageSpeedKmh?: number;
+  maxAverageSpeedKmh?: number;
   routeInstances: RouteInstance[];
   from?: string;
   to?: string;

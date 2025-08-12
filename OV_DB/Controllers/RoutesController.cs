@@ -34,12 +34,14 @@ namespace OV_DB.Controllers
         private readonly OVDBDatabaseContext _context;
         private readonly IMapper _mapper;
         private readonly IRouteRegionsService _routeRegionsService;
+        private readonly ITimezoneService _timezoneService;
 
-        public RoutesController(OVDBDatabaseContext context, IMapper mapper, IRouteRegionsService routeRegionsService)
+        public RoutesController(OVDBDatabaseContext context, IMapper mapper, IRouteRegionsService routeRegionsService, ITimezoneService timezoneService)
         {
             _context = context;
             _mapper = mapper;
             _routeRegionsService = routeRegionsService;
+            _timezoneService = timezoneService;
         }
 
         // GET: api/RoutesAPI
@@ -52,6 +54,7 @@ namespace OV_DB.Controllers
                 return Forbid();
             }
             var originalQuery = _context.Routes
+                .Include(r => r.RouteInstances)
                 .Where(r => r.RouteMaps.Any(rm => rm.Map.UserId == userIdClaim));
 
             if (!string.IsNullOrWhiteSpace(filter))
@@ -88,6 +91,13 @@ namespace OV_DB.Controllers
                         query = query.OrderByDescending(r => r.RouteMaps.FirstOrDefault().Name ?? "");
                     else
                         query = query.OrderBy(r => r.RouteMaps.FirstOrDefault().Name ?? "");
+                }
+                if (sortColumn == "speed")
+                {
+                    if (descending.GetValueOrDefault(false))
+                        query = query.OrderByDescending(r => r.MaxAverageSpeedKmh ?? 0);
+                    else
+                        query = query.OrderBy(r => r.MaxAverageSpeedKmh ?? 0);
                 }
             }
 
@@ -864,7 +874,7 @@ namespace OV_DB.Controllers
         }
 
         [HttpGet("instances/{id}")]
-        public async Task<ActionResult<Route>> GetRouteInstances(int id, [FromQuery] DateTime from, [FromQuery] DateTime to)
+        public async Task<ActionResult<RouteWithInstancesDTO>> GetRouteInstances(int id, [FromQuery] DateTime from, [FromQuery] DateTime to)
         {
             Claim claim = User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier);
             var userIdClaim = int.Parse(claim != null ? claim.Value : "-1");
@@ -875,6 +885,7 @@ namespace OV_DB.Controllers
               .ThenInclude(ri => ri.RouteInstanceProperties)
               .Include(r => r.RouteInstances)
               .ThenInclude(ri => ri.RouteInstanceMaps)
+              .ThenInclude(rim => rim.Map)
               .Where(r => r.RouteMaps.Any(rm => rm.Map.UserId == userIdClaim))
               .SingleOrDefaultAsync();
             if (route == null)
@@ -887,12 +898,12 @@ namespace OV_DB.Controllers
                 route.RouteInstances = route.RouteInstances.Where(ri => ri.Date >= from && ri.Date < to).ToList();
             }
 
-            return route;
+            return _mapper.Map<RouteWithInstancesDTO>(route);
         }
 
         [HttpGet("instances/{mapGuid}/{id}")]
         [AllowAnonymous]
-        public async Task<ActionResult<Route>> GetRouteInstances(Guid mapGuid, int id, [FromQuery] DateTime from, [FromQuery] DateTime to)
+        public async Task<ActionResult<RouteWithInstancesDTO>> GetRouteInstances(Guid mapGuid, int id, [FromQuery] DateTime from, [FromQuery] DateTime to)
         {
             Claim claim = User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier);
             var userIdClaim = int.Parse(claim != null ? claim.Value : "-1");
@@ -923,7 +934,7 @@ namespace OV_DB.Controllers
             }
 
 
-            return route;
+            return _mapper.Map<RouteWithInstancesDTO>(route);
         }
 
         [HttpPut("instances")]
@@ -956,6 +967,22 @@ namespace OV_DB.Controllers
                 if (current != null)
                 {
                     current.Date = update.Date;
+                    current.StartTime = update.StartTime;
+                    current.EndTime = update.EndTime;
+                    
+                    // Calculate and store duration if both start and end times are provided
+                    if (current.StartTime.HasValue && current.EndTime.HasValue)
+                    {
+                        current.DurationHours = _timezoneService.CalculateDurationInHours(
+                            current.StartTime.Value, 
+                            current.EndTime.Value, 
+                            route.LineString);
+                    }
+                    else
+                    {
+                        current.DurationHours = null;
+                    }
+
                     var toDelete = current.RouteInstanceProperties.Where(ri => !update.RouteInstanceProperties.Any(uri => uri.RouteInstancePropertyId == ri.RouteInstancePropertyId)).ToList();
                     current.RouteInstanceProperties = current.RouteInstanceProperties.Where(ri => !toDelete.Any(dri => dri.RouteInstancePropertyId == ri.RouteInstancePropertyId)).ToList();
 
@@ -991,8 +1018,20 @@ namespace OV_DB.Controllers
             {
                 var newInstance = new RouteInstance
                 {
-                    Date = update.Date
+                    Date = update.Date,
+                    StartTime = update.StartTime,
+                    EndTime = update.EndTime
                 };
+                
+                // Calculate and store duration if both start and end times are provided
+                if (newInstance.StartTime.HasValue && newInstance.EndTime.HasValue)
+                {
+                    newInstance.DurationHours = _timezoneService.CalculateDurationInHours(
+                        newInstance.StartTime.Value, 
+                        newInstance.EndTime.Value, 
+                        route.LineString);
+                }
+
                 newInstance.RouteInstanceProperties = new List<RouteInstanceProperty>();
                 update.RouteInstanceProperties.ForEach(rip =>
                 {

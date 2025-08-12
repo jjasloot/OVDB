@@ -7,6 +7,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OVDB_database", "OVDB_datab
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OV_DB", "OV_DB\OV_DB.csproj", "{7A200765-F221-4D95-BA80-D213DA1F1969}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OV_DB.Tests", "OV_DB.Tests\OV_DB.Tests.csproj", "{C3062B55-D91A-4ADF-B8D6-A4E1C5DB37D0}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{7A200765-F221-4D95-BA80-D213DA1F1969}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7A200765-F221-4D95-BA80-D213DA1F1969}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7A200765-F221-4D95-BA80-D213DA1F1969}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C3062B55-D91A-4ADF-B8D6-A4E1C5DB37D0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C3062B55-D91A-4ADF-B8D6-A4E1C5DB37D0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C3062B55-D91A-4ADF-B8D6-A4E1C5DB37D0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C3062B55-D91A-4ADF-B8D6-A4E1C5DB37D0}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
