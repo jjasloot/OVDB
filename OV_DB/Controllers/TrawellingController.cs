@@ -42,11 +42,7 @@ namespace OV_DB.Controllers
                 if (!userId.HasValue)
                     return Unauthorized();
 
-                var state = Guid.NewGuid().ToString();
-                // TODO: Store state in a more secure way (cache, database, etc.)
-                // For now, we'll pass it back and validate on callback
-                // HttpContext.Session.SetString($"traewelling_oauth_state_{userId}", state);
-
+                var state = _trawellingService.GenerateAndStoreState(userId.Value);
                 var authUrl = _trawellingService.GetAuthorizationUrl(userId.Value, state);
                 
                 return Ok(new { authorizationUrl = authUrl });
@@ -70,21 +66,18 @@ namespace OV_DB.Controllers
                 if (string.IsNullOrEmpty(request.Code) || string.IsNullOrEmpty(request.State))
                     return BadRequest("Code and state are required");
 
-                // TODO: Implement proper state validation
-                // For now, we'll accept any state and extract user from JWT token
-                // var sessionState = HttpContext.Session.GetString($"traewelling_oauth_state_{userId}");
-                // if (sessionState != request.State)
-                //     return BadRequest("Invalid state parameter");
-
                 var userId = GetCurrentUserId();
                 if (!userId.HasValue)
                     return Unauthorized();
+
+                // Validate state parameter
+                if (!_trawellingService.ValidateAndConsumeState(request.State, userId.Value))
+                    return BadRequest("Invalid or expired state parameter");
 
                 var success = await _trawellingService.ExchangeCodeForTokensAsync(request.Code, request.State, userId.Value);
                 
                 if (success)
                 {
-                    // HttpContext.Session.Remove($"traewelling_oauth_state_{userId}");
                     return Ok(new { success = true, message = "Träwelling account connected successfully" });
                 }
 
@@ -272,6 +265,56 @@ namespace OV_DB.Controllers
                 var userId = GetCurrentUserId();
                 _logger.LogError(ex, "Error disconnecting Träwelling account for user {UserId}", userId);
                 return StatusCode(500, "Error disconnecting account");
+            }
+        }
+
+        /// <summary>
+        /// Get statistics about user's Träwelling integration
+        /// </summary>
+        [HttpGet("stats")]
+        public async Task<IActionResult> GetStats()
+        {
+            try
+            {
+                var userId = GetCurrentUserId();
+                if (!userId.HasValue)
+                    return Unauthorized();
+
+                var user = await _dbContext.Users.FindAsync(userId.Value);
+                if (user == null)
+                    return NotFound("User not found");
+
+                if (!_trawellingService.HasValidTokens(user))
+                    return Ok(new { connected = false });
+
+                // Count RouteInstances linked to Träwelling
+                var importedTripsCount = await _dbContext.RouteInstances
+                    .Where(ri => ri.TrawellingStatusId.HasValue)
+                    .CountAsync();
+
+                // Count RouteInstances with timing data
+                var tripsWithTimingCount = await _dbContext.RouteInstances
+                    .Where(ri => ri.StartTime.HasValue && ri.EndTime.HasValue)
+                    .CountAsync();
+
+                // Count RouteInstances with source = traewelling
+                var userTrawellingTripsCount = await _dbContext.RouteInstances
+                    .Where(ri => ri.RouteInstanceProperties.Any(p => p.Key == "source" && p.Value.StartsWith("traewelling")))
+                    .CountAsync();
+
+                return Ok(new 
+                { 
+                    connected = true,
+                    importedTripsCount = importedTripsCount,
+                    tripsWithTimingCount = tripsWithTimingCount,
+                    userTrawellingTripsCount = userTrawellingTripsCount
+                });
+            }
+            catch (Exception ex)
+            {
+                var userId = GetCurrentUserId();
+                _logger.LogError(ex, "Error getting Träwelling stats for user {UserId}", userId);
+                return StatusCode(500, "Error retrieving statistics");
             }
         }
 

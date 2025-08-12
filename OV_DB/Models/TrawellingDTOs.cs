@@ -200,4 +200,11 @@ namespace OV_DB.Models
         public string Code { get; set; }
         public string State { get; set; }
     }
+
+    // Single Status Response for import
+    public class TrawellingStatusResponse
+    {
+        [JsonProperty("data")]
+        public TrawellingStatus Data { get; set; }
+    }
 }

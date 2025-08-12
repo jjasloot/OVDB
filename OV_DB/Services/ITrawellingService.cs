@@ -17,6 +17,21 @@ namespace OV_DB.Services
         string GetAuthorizationUrl(int userId, string state);
 
         /// <summary>
+        /// Generate and store OAuth2 state for validation
+        /// </summary>
+        /// <param name="userId">OVDB User ID</param>
+        /// <returns>Generated state parameter</returns>
+        string GenerateAndStoreState(int userId);
+
+        /// <summary>
+        /// Validate OAuth2 state parameter
+        /// </summary>
+        /// <param name="state">State parameter from callback</param>
+        /// <param name="userId">OVDB User ID</param>
+        /// <returns>True if state is valid</returns>
+        bool ValidateAndConsumeState(string state, int userId);
+
+        /// <summary>
         /// Exchange OAuth2 authorization code for access tokens and store with user
         /// </summary>
         /// <param name="code">Authorization code from OAuth callback</param>
