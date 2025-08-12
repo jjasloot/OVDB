@@ -21,5 +21,10 @@ namespace OVDB_database.Models
         public List<RouteType> RouteTypes { get; set; }
         public long? TelegramUserId { get; set; }
         public PreferredLanguage? PreferredLanguage { get; set; }
+        
+        // Träwelling OAuth2 integration fields
+        public string TrawellingAccessToken { get; set; }
+        public string TrawellingRefreshToken { get; set; }
+        public DateTime? TrawellingTokenExpiresAt { get; set; }
     }
 }
