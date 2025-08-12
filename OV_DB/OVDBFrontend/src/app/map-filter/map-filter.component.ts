@@ -61,7 +61,7 @@ export class MapFilterComponent implements OnInit {
   years: number[];
   ownMap = false;
   guid: string;
-  includeLineColours: boolean = true;
+  includeLineColours = true;
   limitToSelectedAreas = false;
   constructor(
     private apiService: ApiService,
@@ -103,7 +103,7 @@ export class MapFilterComponent implements OnInit {
     });
   }
   sortNames() {
-    if (!!this.regions) {
+    if (this.regions) {
       this.regions = this.regions.sort((a, b) => {
         if (this.name(a) > this.name(b)) {
           return 1;
@@ -252,7 +252,7 @@ export class MapFilterComponent implements OnInit {
   }
 
   displayYear(year: number) {
-    if (!!year) {
+    if (year) {
       return year;
     }
     return this.translateService.instant("FILTER.UNKNOWNYEAR");

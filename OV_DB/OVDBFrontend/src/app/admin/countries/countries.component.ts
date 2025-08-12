@@ -66,7 +66,7 @@ export class CountriesComponent implements OnInit {
       width: this.getWidth(),
     });
     dialogRef.afterClosed().subscribe((result: boolean) => {
-      if (!!result) {
+      if (result) {
         this.loadData();
       }
     });
@@ -78,7 +78,7 @@ export class CountriesComponent implements OnInit {
       data: { country }
     });
     dialogRef.afterClosed().subscribe((result: boolean) => {
-      if (!!result) {
+      if (result) {
         this.loadData();
       }
     });
@@ -89,7 +89,7 @@ export class CountriesComponent implements OnInit {
       data: { item: this.translateService.instant('COUNTRIES.DELETEFRONT') + ' ' + country.name + ' ' + this.translateService.instant('COUNTRIES.DELETEREAR') }
     });
     dialogRef.afterClosed().subscribe((result: boolean) => {
-      if (!!result) {
+      if (result) {
         this.apiService.deleteCountry(country.countryId).subscribe(() => {
           this.loadData();
           this.dataUpdateService.requestUpdate();

@@ -52,13 +52,13 @@ export class ImageCreatorComponent implements OnInit {
     this.selectedGuids.forEach((guid) => {
       query += `&guid=${guid}`;
     });
-    if (!!this.title) {
+    if (this.title) {
       query += `&title=${this.title}`;
     }
-    if (!!this.width) {
+    if (this.width) {
       query += `&width=${this.width}`;
     }
-    if (!!this.height) {
+    if (this.height) {
       query += `&height=${this.height}`;
     }
     this.imageSrc = this.baseUrl + query;

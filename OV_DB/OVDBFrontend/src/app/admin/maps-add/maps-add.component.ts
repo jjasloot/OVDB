@@ -58,7 +58,7 @@ export class MapsAddComponent implements OnInit {
       showRouteInfo: this.showRouteInfo,
       showRouteOutline: this.showRouteOutline
     } as Map);
-    if (!!this.id) {
+    if (this.id) {
       map.mapId = this.id;
     }
     return map;

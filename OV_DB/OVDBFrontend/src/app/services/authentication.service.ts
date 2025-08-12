@@ -20,7 +20,7 @@ export class AuthenticationService {
   constructor(private httpClient: HttpClient, private router: Router) {
     this.token = localStorage.getItem('OVDBToken');
     setTimeout(() => {
-      if (!!this.token) {
+      if (this.token) {
         this.refreshTheToken();
       }
     }, 100);
@@ -31,7 +31,7 @@ export class AuthenticationService {
       { email, password }).pipe(tap((data: any) => {
         this.HandleArrivalOfTokens(data);
 
-        if (!!this.returnUrl) {
+        if (this.returnUrl) {
           this.router.navigateByUrl(this.returnUrl);
         } else {
           this.router.navigate(['/']);
@@ -42,7 +42,7 @@ export class AuthenticationService {
     return this.httpClient.post(environment.backend + 'api/Authentication/register', registration).pipe(tap(data => {
       this.HandleArrivalOfTokens(data);
 
-      if (!!this.returnUrl) {
+      if (this.returnUrl) {
         this.router.navigateByUrl(this.returnUrl);
       } else {
         this.router.navigate(['/']);

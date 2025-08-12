@@ -114,7 +114,7 @@ export class WizzardStep2Component implements OnInit {
       },
     });
     dialogRef.afterClosed().subscribe((result: boolean) => {
-      if (!!result) {
+      if (result) {
         this.loading = true;
 
         this.apiService.importerAddRoute(this.data).subscribe(

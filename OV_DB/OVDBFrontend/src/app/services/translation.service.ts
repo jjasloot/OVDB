@@ -25,8 +25,7 @@ export class TranslationService {
     this.languageChanged.emit(this._language);
   }
 
-  // tslint:disable-next-line: variable-name
-  private _language: 'nl' | 'en' = 'nl';
+   private _language: 'nl' | 'en' = 'nl';
 
   getNameForItem(item: { name: string, nameNL: string }) {
     if (!item) {

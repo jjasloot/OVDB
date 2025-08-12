@@ -28,8 +28,8 @@ import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 })
 export class AdministratorRegionsComponent implements OnInit {
   regions: Region[];
-  progressUpdates: { [key: number]: number } = {};
-  updateResult: { [key: number]: number } = {};
+  progressUpdates: Record<number, number> = {};
+  updateResult: Record<number, number> = {};
 
   constructor(
     private regionsService: RegionsService,
@@ -60,7 +60,7 @@ export class AdministratorRegionsComponent implements OnInit {
       data: { regions: this.regions },
     });
     dialogRef.afterClosed().subscribe((result?: NewRegion) => {
-      if (!!result) {
+      if (result) {
         this.regionsService.addRegion(result).subscribe({
           next: () => {
             this.loadData();

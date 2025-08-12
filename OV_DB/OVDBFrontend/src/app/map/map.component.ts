@@ -76,7 +76,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
   error: boolean;
   active = signal<string>("");
   selectedRoute;
-  includeLineColours: boolean = true;
+  includeLineColours = true;
   requestIdentifier?: string;
   limitToSelectedArea = false;
   get bounds(): LatLngBounds {
@@ -92,8 +92,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
       );
     }
   }
-  // tslint:disable-next-line: variable-name
-  private _bounds: LatLngBounds;
+   private _bounds: LatLngBounds;
 
   defaults = new Map<string, FilterSettings>([
     [
@@ -176,8 +175,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
       "https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}",
       {
         opacity: 0.65,
-        // tslint:disable-next-line: max-line-length
-        attribution:
+               attribution:
           "Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ, TomTom, Intermap, iPC, USGS, FAO, NPS, NRCAN, GeoBase, Kadaster NL, Ordnance Survey, Esri Japan, METI, Esri China (Hong Kong), and the GIS User Community",
       }
     ),
@@ -205,8 +203,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     private cd: ChangeDetectorRef,
     ngZone: NgZone
   ) {
-    // tslint:disable-next-line: no-string-literal
-    window["angularComponentRef"] = { component: this, zone: ngZone };
+       window["angularComponentRef"] = { component: this, zone: ngZone };
   }
   ngAfterViewInit(): void {
     this.cd.detectChanges();
@@ -307,7 +304,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
         };
       },
       onEachFeature(feature, layer) {
-        if (!!feature.properties.name) {
+        if (feature.properties.name) {
           let popup = "<h2>" + feature.properties.name + "</h2><p>";
           popup +=
             `<a href="javascript:void(0)" onclick="
@@ -325,28 +322,28 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
             parent.translateService.instant("MAP.POPUP.TYPE") +
             ": " +
             feature.properties.type;
-          if (!!feature.properties.description) {
+          if (feature.properties.description) {
             popup +=
               "<br>" +
               parent.translateService.instant("MAP.POPUP.REMARK") +
               ": " +
               feature.properties.description;
           }
-          if (!!feature.properties.lineNumber) {
+          if (feature.properties.lineNumber) {
             popup +=
               "<br>" +
               parent.translateService.instant("MAP.POPUP.LINENUMBER") +
               ": " +
               feature.properties.lineNumber;
           }
-          if (!!feature.properties.operatingCompany) {
+          if (feature.properties.operatingCompany) {
             popup +=
               "<br>" +
               parent.translateService.instant("MAP.POPUP.OPERATINGCOMPANY") +
               ": " +
               feature.properties.operatingCompany;
           }
-          if (!!feature.properties.distance) {
+          if (feature.properties.distance) {
             popup +=
               "<br>" +
               parent.translateService.instant("ROUTES.DISTANCE") +
@@ -354,7 +351,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
               feature.properties.distance +
               " km";
           }
-          if (!!feature.properties.owner) {
+          if (feature.properties.owner) {
             popup +=
               `<br><a href="javascript:void(0)" onclick="
             parent.angularComponentRef.zone.run(()=>
@@ -375,15 +372,15 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
           popup += "</p>";
           layer.bindPopup(popup);
         }
-        if (!!feature.properties.o) {
+        if (feature.properties.o) {
           layer.on("click", (f) => {
-            if (!!parent.selectedRoute) {
+            if (parent.selectedRoute) {
               parent.selectedRoute.setStyle({ weight: 3 });
             }
             parent.selectedRoute = f.target;
             f.target.setStyle({ weight: 8 });
             f.target.bringToFront();
-            if (!!feature.properties.name) {
+            if (feature.properties.name) {
               f.target.getPopup().on("remove", () => {
                 f.target.setStyle({
                   weight: 3,
@@ -413,8 +410,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
   }
   private getFilter() {
     const queryParams = {};
-    // tslint:disable: no-string-literal
-    if (!!this.to && !!this.from) {
+       if (!!this.to && !!this.from) {
       queryParams["to"] = this.to.valueOf();
       queryParams["from"] = this.from.valueOf();
     }
@@ -433,8 +429,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     if (this.limitToSelectedArea) {
       queryParams["limitToSelectedArea"] = "true";
     }
-    // tslint:enable: no-string-literal
-    this.router.navigate(
+       this.router.navigate(
       this.activatedRoute.snapshot.url.map((u) => u.path),
       { queryParams }
     );
@@ -540,7 +535,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
       data: { settings, guid: this.guid() },
     });
     dialogRef.afterClosed().subscribe((result: FilterSettings) => {
-      if (!!result) {
+      if (result) {
         result.name = "filter";
         this.setOption(result);
       }

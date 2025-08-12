@@ -1,5 +1,5 @@
 import { NgClass } from '@angular/common';
-import { Component, Signal, viewChild } from '@angular/core';
+import { Component, Signal, viewChild, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButton } from '@angular/material/button';
 import { MatCard, MatCardContent, MatCardTitle } from '@angular/material/card';
@@ -24,7 +24,7 @@ import { MatTabsModule } from '@angular/material/tabs';
   templateUrl: './time-stats.component.html',
   styleUrl: './time-stats.component.scss'
 })
-export class TimeStatsComponent {
+export class TimeStatsComponent implements OnInit {
   data: ChartConfiguration['data'];
   singleData: any;
 
@@ -81,8 +81,7 @@ export class TimeStatsComponent {
       'Esri WorldTopoMap': tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',
         {
           opacity: 0.65,
-          // tslint:disable-next-line: max-line-length
-          attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ, TomTom, Intermap, iPC, USGS, FAO, NPS, NRCAN, GeoBase, Kadaster NL, Ordnance Survey, Esri Japan, METI, Esri China (Hong Kong), and the GIS User Community'
+                   attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ, TomTom, Intermap, iPC, USGS, FAO, NPS, NRCAN, GeoBase, Kadaster NL, Ordnance Survey, Esri Japan, METI, Esri China (Hong Kong), and the GIS User Community'
         })
     };
 
