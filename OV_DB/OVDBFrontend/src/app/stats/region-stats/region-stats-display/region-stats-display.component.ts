@@ -18,7 +18,7 @@ import { TranslationService } from 'src/app/services/translation.service';
 export class RegionStatsDisplayComponent {
   regionStats = input.required<RegionStat[]>();
   private readonly translationService = inject(TranslationService);
-  expanded: { [id: number]: boolean } = {};
+  expanded: Record<number, boolean> = {};
 
   name(region: RegionStat) {
     return this.translationService.getNameForItem(region);

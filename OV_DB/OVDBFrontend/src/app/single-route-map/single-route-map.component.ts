@@ -33,8 +33,7 @@ export class SingleRouteMapComponent implements OnInit {
       this.bounds = new LatLngBounds(new LatLng(50.656245, 2.921360), new LatLng(53.604563, 7.428211));
     }
   }
-  // tslint:disable-next-line: variable-name
-  private _bounds: LatLngBounds;
+   private _bounds: LatLngBounds;
 
   get mapHeight() {
     const mapContainer = this.mapContainer();
@@ -53,8 +52,7 @@ export class SingleRouteMapComponent implements OnInit {
       'Esri WorldTopoMap': tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',
         {
           opacity: 0.65,
-          // tslint:disable-next-line: max-line-length
-          attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ, TomTom, Intermap, iPC, USGS, FAO, NPS, NRCAN, GeoBase, Kadaster NL, Ordnance Survey, Esri Japan, METI, Esri China (Hong Kong), and the GIS User Community'
+                   attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ, TomTom, Intermap, iPC, USGS, FAO, NPS, NRCAN, GeoBase, Kadaster NL, Ordnance Survey, Esri Japan, METI, Esri China (Hong Kong), and the GIS User Community'
         })
     };
 
@@ -108,13 +106,13 @@ export class SingleRouteMapComponent implements OnInit {
           let popup = '<h2>' + feature.properties.name + '</h2><p>'
             + parent.translateService.instant('MAP.POPUP.TYPE')
             + ': ' + feature.properties.type;
-          if (!!feature.properties.description) {
+          if (feature.properties.description) {
             popup += '<br>' + parent.translateService.instant('MAP.POPUP.REMARK') + ': ' + feature.properties.description;
           }
-          if (!!feature.properties.lineNumber) {
+          if (feature.properties.lineNumber) {
             popup += '<br>' + parent.translateService.instant('MAP.POPUP.LINENUMBER') + ': ' + feature.properties.lineNumber;
           }
-          if (!!feature.properties.operatingCompany) {
+          if (feature.properties.operatingCompany) {
             popup += '<br>' + parent.translateService.instant('MAP.POPUP.OPERATINGCOMPANY') + ': ' + feature.properties.operatingCompany;
           }
           popup += '</p>';

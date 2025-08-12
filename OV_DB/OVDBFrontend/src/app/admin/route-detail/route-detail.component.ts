@@ -153,7 +153,7 @@ export class RouteDetailComponent implements OnInit {
     route.maps = mapsSelection.selectedOptions.selected.map(
       (s) => s.value
     );
-    if (!!this.activeOperators()) {
+    if (this.activeOperators()) {
       route.operatorIds = this.activeOperators();
     }
     this.apiService.updateRoute(values as Route).subscribe((_) => {
@@ -187,7 +187,7 @@ export class RouteDetailComponent implements OnInit {
       },
     });
     dialogRef.afterClosed().subscribe((result: boolean) => {
-      if (!!result) {
+      if (result) {
         this.apiService.deleteRoute(this.route.routeId).subscribe((_) => {
           this.goBack();
         });

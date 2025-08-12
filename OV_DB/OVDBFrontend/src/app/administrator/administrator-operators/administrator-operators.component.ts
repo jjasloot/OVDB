@@ -105,7 +105,7 @@ export class AdministratorOperatorsComponent implements OnInit {
 
   updateOpenOperators = effect(
     () => {
-      if (!!this.selectedRegion()) {
+      if (this.selectedRegion()) {
         this.operatorService
           .getOpenOperatorsForRegion(this.selectedRegion())
           .subscribe((data) => {

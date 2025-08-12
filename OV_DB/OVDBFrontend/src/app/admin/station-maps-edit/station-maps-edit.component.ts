@@ -96,7 +96,7 @@ export class StationMapsEditComponent implements OnInit {
     this.map.nameNL = this.form.value.nameNL;
     this.map.sharingLinkName = this.form.value.sharingLinkName;
     this.map.regionIds = this.selectedOptions;
-    if (!!this.map.id) {
+    if (this.map.id) {
       this.apiService.updateStationMap(this.map).subscribe(() => {
         this.dialogRef.close(true);
       });

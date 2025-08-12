@@ -50,7 +50,7 @@ export class RouteTypesComponent implements OnInit {
       width: this.getWidth(),
     });
     dialogRef.afterClosed().subscribe((result: boolean) => {
-      if (!!result) {
+      if (result) {
         this.loadData();
       }
     });
@@ -82,7 +82,7 @@ export class RouteTypesComponent implements OnInit {
       data: { routeType }
     });
     dialogRef.afterClosed().subscribe((result: boolean) => {
-      if (!!result) {
+      if (result) {
         this.loadData();
       }
     });
@@ -95,7 +95,7 @@ export class RouteTypesComponent implements OnInit {
       }
     });
     dialogRef.afterClosed().subscribe((result: boolean) => {
-      if (!!result) {
+      if (result) {
         this.apiService.deleteRouteType(routeType.typeId).subscribe(() => {
           this.loadData();
           this.dataUpdateService.requestUpdate();

@@ -34,7 +34,7 @@ export class LoginComponent implements OnInit {
       }
     }
     this.activatedRoute.data.subscribe((data: Data) => {
-      if (!!data.failed) {
+      if (data.failed) {
         this.failed = true;
       }
     });

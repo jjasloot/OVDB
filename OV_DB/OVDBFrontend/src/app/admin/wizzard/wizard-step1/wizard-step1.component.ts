@@ -141,7 +141,7 @@ export class WizzardStep1Component implements OnInit {
     }, err => { this.error = true; });
   }
   select(line: OSMDataLine) {
-    if (!!this.dateTime) {
+    if (this.dateTime) {
       this.router.navigate(['/', 'admin', 'wizard', line.id], { queryParams: { date: this.dateTime.unix() } });
     } else {
       this.router.navigate(['/', 'admin', 'wizard', line.id]);

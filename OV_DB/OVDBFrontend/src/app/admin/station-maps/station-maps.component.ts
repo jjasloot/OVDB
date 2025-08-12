@@ -70,7 +70,7 @@ export class StationMapsComponent implements OnInit {
       width: this.getWidth(),
     });
     dialogRef.afterClosed().subscribe((result: boolean) => {
-      if (!!result) {
+      if (result) {
         this.loadData();
       }
     });
@@ -82,7 +82,7 @@ export class StationMapsComponent implements OnInit {
       data: { map },
     });
     dialogRef.afterClosed().subscribe((result: boolean) => {
-      if (!!result) {
+      if (result) {
         this.loadData();
       }
     });
@@ -125,7 +125,7 @@ export class StationMapsComponent implements OnInit {
       },
     });
     dialogRef.afterClosed().subscribe((result: boolean) => {
-      if (!!result) {
+      if (result) {
         this.apiService.deleteStationMap(map.id).subscribe(() => {
           this.loadData();
           this.dataUpdateService.requestUpdate();

@@ -40,10 +40,10 @@
           {{'MENU.MENU'|translate}}
         </button>
         <mat-menu #menu="matMenu">
-          @if(currentLanguage!='nl'){
+          @if(currentLanguage!=='nl'){
           <button mat-menu-item (click)="setLanguage('nl')"><mat-icon>🇳🇱</mat-icon> Nederlands</button>
           }
-          @if(currentLanguage!='en'){
+          @if(currentLanguage!=='en'){
           <button mat-menu-item (click)="setLanguage('en')"><mat-icon>🇬🇧</mat-icon> English</button>
           }
           <button mat-menu-item (click)="toggleTheme()">
