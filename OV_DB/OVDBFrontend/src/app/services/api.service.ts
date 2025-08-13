@@ -24,16 +24,12 @@ import { UserProfile, UpdateProfile, ChangePassword } from "../models/user-profi
 import { 
   TrawellingConnectionStatus, 
   TrawellingConnectResponse, 
-  TrawellingOAuthRequest,
-  TrawellingUnimportedResponse,
-  TrawellingImportRequest,
-  TrawellingImportResponse,
+  TrawellingStatusesResponse,
   TrawellingStats,
-  TrawellingProcessBacklogRequest,
-  TrawellingProcessBacklogResponse,
   RouteInstanceSearchResult,
   LinkToRouteInstanceRequest,
-  LinkToRouteInstanceResponse
+  LinkToRouteInstanceResponse,
+  TrawellingIgnoreResponse
 } from "../models/traewelling.model";
 
 @Injectable({
@@ -551,38 +547,24 @@ export class ApiService {
     );
   }
 
-  handleTrawellingCallback(request: TrawellingOAuthRequest): Observable<any> {
-    return this.httpClient.post(
-      environment.backend + "api/traewelling/callback",
-      request
-    );
-  }
-
   getTrawellingStatus(): Observable<TrawellingConnectionStatus> {
     return this.httpClient.get<TrawellingConnectionStatus>(
       environment.backend + "api/traewelling/status"
     );
   }
 
-  getTrawellingUnimported(page: number = 1): Observable<TrawellingUnimportedResponse> {
+  getTrawellingUnimported(page: number = 1): Observable<TrawellingStatusesResponse> {
     const params = new HttpParams().set('page', page.toString());
-    return this.httpClient.get<TrawellingUnimportedResponse>(
+    return this.httpClient.get<TrawellingStatusesResponse>(
       environment.backend + "api/traewelling/unimported",
       { params }
     );
   }
 
-  importTrawellingTrip(request: TrawellingImportRequest): Observable<TrawellingImportResponse> {
-    return this.httpClient.post<TrawellingImportResponse>(
-      environment.backend + "api/traewelling/import",
-      request
-    );
-  }
-
-  processTrawellingBacklog(request?: TrawellingProcessBacklogRequest): Observable<TrawellingProcessBacklogResponse> {
-    return this.httpClient.post<TrawellingProcessBacklogResponse>(
-      environment.backend + "api/traewelling/process-backlog",
-      request || {}
+  ignoreTrawellingStatus(statusId: number): Observable<TrawellingIgnoreResponse> {
+    return this.httpClient.post<TrawellingIgnoreResponse>(
+      environment.backend + "api/traewelling/ignore",
+      { statusId }
     );
   }
 

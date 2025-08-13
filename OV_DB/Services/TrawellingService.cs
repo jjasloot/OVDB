@@ -261,14 +261,20 @@ namespace OV_DB.Services
 
                 if (statusesResponse?.Data != null)
                 {
-                    // Filter out statuses that are already imported
+                    // Filter out statuses that are already imported or ignored
                     var existingTrawellingIds = await _dbContext.RouteInstances
                         .Where(ri => ri.TrawellingStatusId.HasValue)
                         .Select(ri => ri.TrawellingStatusId.Value)
                         .ToListAsync();
 
+                    var ignoredTrawellingIds = await _dbContext.TrawellingIgnoredStatuses
+                        .Where(tis => tis.UserId == user.Id)
+                        .Select(tis => tis.TrawellingStatusId)
+                        .ToListAsync();
+
                     statusesResponse.Data = statusesResponse.Data
-                        .Where(status => !existingTrawellingIds.Contains(status.Id))
+                        .Where(status => !existingTrawellingIds.Contains(status.Id) && 
+                                       !ignoredTrawellingIds.Contains(status.Id))
                         .ToList();
                 }
 
@@ -281,221 +287,39 @@ namespace OV_DB.Services
             }
         }
 
-        public async Task<RouteInstance> ImportStatusAsync(User user, int statusId, bool importMetadata = true, bool importTags = true)
+        public async Task<bool> IgnoreStatusAsync(User user, int statusId)
         {
             try
             {
-                if (!await EnsureValidTokenAsync(user))
-                    return null;
+                // Check if already ignored
+                var existingIgnore = await _dbContext.TrawellingIgnoredStatuses
+                    .AnyAsync(tis => tis.UserId == user.Id && tis.TrawellingStatusId == statusId);
 
-                // Check if already imported
-                var existing = await _dbContext.RouteInstances
-                    .FirstOrDefaultAsync(ri => ri.TrawellingStatusId == statusId);
-                if (existing != null)
+                if (existingIgnore)
                 {
-                    _logger.LogWarning("Status {StatusId} already imported as RouteInstance {RouteInstanceId}", 
-                        statusId, existing.RouteInstanceId);
-                    return existing;
+                    _logger.LogInformation("Status {StatusId} is already ignored by user {UserId}", statusId, user.Id);
+                    return false; // Already ignored
                 }
 
-                _httpClient.DefaultRequestHeaders.Clear();
-                _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {user.TrawellingAccessToken}");
-
-                // Get status details from Träwelling
-                var response = await _httpClient.GetAsync($"{_baseUrl}/statuses/{statusId}");
-                
-                if (!response.IsSuccessStatusCode)
+                // Add to ignored statuses
+                var ignoredStatus = new TrawellingIgnoredStatus
                 {
-                    _logger.LogError("Failed to get status {StatusId} for import. Status: {StatusCode}", 
-                        statusId, response.StatusCode);
-                    return null;
-                }
-
-                var responseContent = await response.Content.ReadAsStringAsync();
-                var statusData = JsonConvert.DeserializeObject<TrawellingStatusResponse>(responseContent);
-                var status = statusData?.Data;
-
-                if (status == null)
-                {
-                    _logger.LogError("No status data found for status {StatusId}", statusId);
-                    return null;
-                }
-
-                // Create or find route based on Träwelling data
-                var route = await FindOrCreateRouteAsync(status);
-                if (route == null)
-                {
-                    _logger.LogError("Failed to find or create route for status {StatusId}", statusId);
-                    return null;
-                }
-
-                // Create RouteInstance
-                var routeInstance = new RouteInstance
-                {
-                    RouteId = route.RouteId,
-                    Date = status.CreatedAt.Date,
-                    StartTime = status.Train?.Origin?.Departure,
-                    EndTime = status.Train?.Destination?.Arrival,
-                    TrawellingStatusId = statusId
+                    UserId = user.Id,
+                    TrawellingStatusId = statusId,
+                    IgnoredAt = DateTime.UtcNow
                 };
 
-                // Calculate duration if we have both start and end times
-                if (routeInstance.StartTime.HasValue && routeInstance.EndTime.HasValue)
-                {
-                    var duration = routeInstance.EndTime.Value - routeInstance.StartTime.Value;
-                    routeInstance.DurationHours = duration.TotalHours;
-                }
-
-                _dbContext.RouteInstances.Add(routeInstance);
+                _dbContext.TrawellingIgnoredStatuses.Add(ignoredStatus);
                 await _dbContext.SaveChangesAsync();
 
-                // Add properties if requested
-                if (importMetadata && !string.IsNullOrEmpty(status.Body))
-                {
-                    var descriptionProperty = new RouteInstanceProperty
-                    {
-                        RouteInstanceId = routeInstance.RouteInstanceId,
-                        Key = "traewelling_description",
-                        Value = status.Body
-                    };
-                    _dbContext.RouteInstanceProperties.Add(descriptionProperty);
-                }
-
-                // Add Träwelling metadata properties
-                var trawellingProperties = new List<RouteInstanceProperty>();
-
-                if (status.Train != null)
-                {
-                    if (!string.IsNullOrEmpty(status.Train.LineName))
-                    {
-                        trawellingProperties.Add(new RouteInstanceProperty
-                        {
-                            RouteInstanceId = routeInstance.RouteInstanceId,
-                            Key = "traewelling_line",
-                            Value = status.Train.LineName
-                        });
-                    }
-
-                    if (!string.IsNullOrEmpty(status.Train.Category))
-                    {
-                        trawellingProperties.Add(new RouteInstanceProperty
-                        {
-                            RouteInstanceId = routeInstance.RouteInstanceId,
-                            Key = "traewelling_category",
-                            Value = status.Train.Category
-                        });
-                    }
-
-                    if (status.Train.Distance > 0)
-                    {
-                        trawellingProperties.Add(new RouteInstanceProperty
-                        {
-                            RouteInstanceId = routeInstance.RouteInstanceId,
-                            Key = "traewelling_distance",
-                            Value = status.Train.Distance.ToString()
-                        });
-                    }
-
-                    if (status.Train.Duration > 0)
-                    {
-                        trawellingProperties.Add(new RouteInstanceProperty
-                        {
-                            RouteInstanceId = routeInstance.RouteInstanceId,
-                            Key = "traewelling_duration",
-                            Value = status.Train.Duration.ToString()
-                        });
-                    }
-                }
-
-                // Add source property
-                trawellingProperties.Add(new RouteInstanceProperty
-                {
-                    RouteInstanceId = routeInstance.RouteInstanceId,
-                    Key = "source",
-                    Value = "traewelling"
-                });
-
-                _dbContext.RouteInstanceProperties.AddRange(trawellingProperties);
-                await _dbContext.SaveChangesAsync();
-
-                _logger.LogInformation("Successfully imported Träwelling status {StatusId} as RouteInstance {RouteInstanceId}", 
-                    statusId, routeInstance.RouteInstanceId);
-
-                return routeInstance;
+                _logger.LogInformation("Successfully ignored status {StatusId} for user {UserId}", statusId, user.Id);
+                return true;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error importing status {StatusId} for user {UserId}", statusId, user.Id);
-                return null;
+                _logger.LogError(ex, "Error ignoring status {StatusId} for user {UserId}", statusId, user.Id);
+                return false;
             }
-        }
-
-        public async Task<int> ProcessBacklogAsync(User user, int maxPages = 10)
-        {
-            int processedCount = 0;
-            int updatedCount = 0;
-            
-            try
-            {
-                _logger.LogInformation("Starting backlog processing for user {UserId}, maxPages: {MaxPages}", user.Id, maxPages);
-
-                for (int page = 1; page <= maxPages; page++)
-                {
-                    _logger.LogDebug("Processing page {Page} of {MaxPages} for user {UserId}", page, maxPages, user.Id);
-                    
-                    var statusesResponse = await GetUnimportedStatusesAsync(user, page);
-                    
-                    if (statusesResponse?.Data == null || !statusesResponse.Data.Any())
-                    {
-                        _logger.LogInformation("No more data found at page {Page}, stopping backlog processing", page);
-                        break;
-                    }
-
-                    foreach (var status in statusesResponse.Data)
-                    {
-                        try
-                        {
-                            // First try to import as new RouteInstance
-                            var imported = await ImportStatusAsync(user, status.Id, true, true);
-                            if (imported != null)
-                            {
-                                processedCount++;
-                                _logger.LogInformation("Imported status {StatusId} as new RouteInstance {RouteInstanceId}", 
-                                    status.Id, imported.RouteInstanceId);
-                                continue;
-                            }
-
-                            // If import failed, try to update existing RouteInstance with timing data
-                            var updated = await UpdateExistingRouteInstanceWithTrawellingDataAsync(user, status);
-                            if (updated)
-                            {
-                                updatedCount++;
-                                _logger.LogInformation("Updated existing RouteInstance with data from status {StatusId}", status.Id);
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            _logger.LogError(ex, "Error processing status {StatusId} in backlog", status.Id);
-                            // Continue with next status rather than failing entire backlog
-                        }
-                    }
-
-                    // Add delay to avoid rate limiting
-                    await Task.Delay(2000); // Increased delay for better rate limiting compliance
-                    
-                    _logger.LogDebug("Completed page {Page}, imported: {ImportedCount}, updated: {UpdatedCount}", 
-                        page, processedCount, updatedCount);
-                }
-
-                _logger.LogInformation("Backlog processing completed for user {UserId}. Imported: {ImportedCount}, Updated: {UpdatedCount}", 
-                    user.Id, processedCount, updatedCount);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error processing backlog for user {UserId}", user.Id);
-            }
-
-            return processedCount + updatedCount;
         }
 
         public bool HasValidTokens(User user)

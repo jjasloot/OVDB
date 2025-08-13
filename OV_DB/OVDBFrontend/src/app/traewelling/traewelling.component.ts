@@ -12,8 +12,8 @@ import { MatPaginator, PageEvent } from '@angular/material/paginator';
 import { ApiService } from '../services/api.service';
 import { 
   TrawellingConnectionStatus, 
-  TrawellingTrip, 
-  TrawellingUnimportedResponse,
+  TrawellingStatus, 
+  TrawellingStatusesResponse,
   TrawellingStats,
   RouteInstanceSearchResult
 } from '../models/traewelling.model';
@@ -37,12 +37,11 @@ import {
 })
 export class TrawellingComponent implements OnInit {
   connectionStatus: TrawellingConnectionStatus | null = null;
-  unimportedTrips: TrawellingTrip[] = [];
+  unimportedTrips: TrawellingStatus[] = [];
   stats: TrawellingStats | null = null;
   loading = false;
   tripsLoading = false;
   statsLoading = false;
-  processingBacklog = false;
   
   // Pagination
   currentPage = 1;
@@ -54,7 +53,7 @@ export class TrawellingComponent implements OnInit {
   searchTerm = '';
   existingRouteInstances: RouteInstanceSearchResult[] = [];
   searchingRouteInstances = false;
-  searchTrip: TrawellingTrip | null = null;
+  searchTrip: TrawellingStatus | null = null;
 
   constructor(
     public apiService: ApiService,
@@ -91,15 +90,15 @@ export class TrawellingComponent implements OnInit {
     this.currentPage = page;
     
     this.apiService.getTrawellingUnimported(page).subscribe({
-      next: (response: TrawellingUnimportedResponse) => {
+      next: (response: TrawellingStatusesResponse) => {
         this.unimportedTrips = response.data;
-        this.totalPages = response.meta.last_page;
-        this.totalTrips = response.meta.total;
+        this.totalPages = response.meta.current_page; // Note: API doesn't provide last_page, we'll handle this
+        this.totalTrips = response.meta.total || 0;
         this.tripsLoading = false;
       },
       error: (error) => {
         console.error('Error loading unimported trips:', error);
-        this.showMessage('TRAEWELLING.ERROR_IMPORTING_TRIP');
+        this.showMessage('TRAEWELLING.ERROR_LOADING_TRIPS');
         this.tripsLoading = false;
       }
     });
