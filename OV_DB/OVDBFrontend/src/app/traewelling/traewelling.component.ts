@@ -92,8 +92,11 @@ export class TrawellingComponent implements OnInit {
     this.apiService.getTrawellingUnimported(page).subscribe({
       next: (response: TrawellingStatusesResponse) => {
         this.unimportedTrips = response.data;
-        this.totalPages = response.meta.current_page; // Note: API doesn't provide last_page, we'll handle this
+        this.currentPage = response.meta.current_page;
+        this.tripsPerPage = response.meta.per_page;
         this.totalTrips = response.meta.total || 0;
+        // Calculate total pages if not provided
+        this.totalPages = response.meta.total ? Math.ceil(response.meta.total / response.meta.per_page) : page;
         this.tripsLoading = false;
       },
       error: (error) => {
@@ -122,47 +125,40 @@ export class TrawellingComponent implements OnInit {
     this.loadUnimportedTrips(event.pageIndex + 1);
   }
 
-  importTrip(trip: TrawellingTrip): void {
-    const importRequest = {
-      statusId: trip.id,
-      createRoute: true
-    };
-
-    this.apiService.importTrawellingTrip(importRequest).subscribe({
+  ignoreTrip(trip: TrawellingStatus): void {
+    this.apiService.ignoreTrawellingStatus(trip.id).subscribe({
       next: (response) => {
         if (response.success) {
-          this.showMessage('TRAEWELLING.TRIP_IMPORTED');
-          // Remove the imported trip from the list
+          this.showMessage('TRAEWELLING.TRIP_IGNORED');
+          // Remove the ignored trip from the list
           this.unimportedTrips = this.unimportedTrips.filter(t => t.id !== trip.id);
           this.loadStats(); // Refresh stats
         } else {
-          this.showMessage('TRAEWELLING.ERROR_IMPORTING_TRIP');
+          this.showMessage('TRAEWELLING.ERROR_IGNORING_TRIP');
         }
       },
       error: (error) => {
-        console.error('Error importing trip:', error);
-        this.showMessage('TRAEWELLING.ERROR_IMPORTING_TRIP');
+        console.error('Error ignoring trip:', error);
+        this.showMessage('TRAEWELLING.ERROR_IGNORING_TRIP');
       }
     });
   }
 
-  useWizardForTrip(trip: TrawellingTrip): void {
-    // Store trip data in session storage for the wizard
-    sessionStorage.setItem('trawellingTrip', JSON.stringify(trip));
-    this.router.navigate(['/admin/wizard']);
-  }
-
-  searchExistingRoutes(trip: TrawellingTrip): void {
+  searchExistingRoutes(trip: TrawellingStatus): void {
     this.searchTrip = trip;
     this.searchingRouteInstances = true;
     this.existingRouteInstances = [];
     
-    // Parse the trip departure date
-    const tripDate = new Date(trip.departure);
+    // Parse the trip departure date from createdAt or train origin departure
+    const tripDate = trip.train?.origin?.departure 
+      ? new Date(trip.train.origin.departure) 
+      : new Date(trip.createdAt);
     const dateString = tripDate.toISOString().split('T')[0]; // YYYY-MM-DD format
     
     // Create search query from origin and destination
-    const searchQuery = `${trip.origin.name} ${trip.destination.name}`;
+    const searchQuery = trip.train?.origin?.name && trip.train?.destination?.name 
+      ? `${trip.train.origin.name} ${trip.train.destination.name}`
+      : '';
     
     this.apiService.searchRouteInstances(dateString, searchQuery).subscribe({
       next: (routeInstances) => {
@@ -181,7 +177,7 @@ export class TrawellingComponent implements OnInit {
     });
   }
 
-  linkToExistingRouteInstance(trip: TrawellingTrip, routeInstance: RouteInstanceSearchResult): void {
+  linkToExistingRouteInstance(trip: TrawellingStatus, routeInstance: RouteInstanceSearchResult): void {
     const linkRequest = {
       statusId: trip.id,
       routeInstanceId: routeInstance.id
@@ -204,27 +200,6 @@ export class TrawellingComponent implements OnInit {
       error: (error) => {
         console.error('Error linking trip:', error);
         this.showMessage('TRAEWELLING.ERROR_LINKING_TRIP');
-      }
-    });
-  }
-
-  processBacklog(): void {
-    this.processingBacklog = true;
-    this.apiService.processTrawellingBacklog().subscribe({
-      next: (response) => {
-        if (response.success) {
-          this.showMessage('TRAEWELLING.BACKLOG_PROCESSED');
-          this.loadUnimportedTrips(); // Refresh the list
-          this.loadStats(); // Refresh stats
-        } else {
-          this.showMessage('TRAEWELLING.ERROR_PROCESSING_BACKLOG');
-        }
-        this.processingBacklog = false;
-      },
-      error: (error) => {
-        console.error('Error processing backlog:', error);
-        this.showMessage('TRAEWELLING.ERROR_PROCESSING_BACKLOG');
-        this.processingBacklog = false;
       }
     });
   }

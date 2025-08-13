@@ -69,14 +69,6 @@
           {{ 'TRAEWELLING.REFRESH' | translate }}
         </button>
 
-        <button mat-raised-button color="accent" (click)="processBacklog()" [disabled]="processingBacklog">
-          @if (processingBacklog) {
-          <mat-spinner diameter="20"></mat-spinner>
-          } @else {
-          <mat-icon>upload</mat-icon>
-          }
-          {{ 'TRAEWELLING.PROCESS_BACKLOG' | translate }}
-        </button>
       </div>
     </mat-card-content>
   </mat-card>
@@ -113,7 +105,7 @@
               }
             </div>
             <div class="trip-date">
-              {{ trip.departure | date:'short' }}
+              {{ trip.train?.origin?.departure | date:'short' }}
             </div>
           </div>
 
@@ -146,14 +138,9 @@
           }
 
           <div class="trip-actions">
-            <button mat-raised-button color="primary" (click)="importTrip(trip)">
-              <mat-icon>download</mat-icon>
-              {{ 'TRAEWELLING.IMPORT_TRIP' | translate }}
-            </button>
-
-            <button mat-stroked-button (click)="useWizardForTrip(trip)">
-              <mat-icon>assistant</mat-icon>
-              {{ 'TRAEWELLING.USE_WIZARD' | translate }}
+            <button mat-stroked-button (click)="ignoreTrip(trip)">
+              <mat-icon>visibility_off</mat-icon>
+              {{ 'TRAEWELLING.IGNORE_TRIP' | translate }}
             </button>
 
             <button mat-stroked-button (click)="searchExistingRoutes(trip)">

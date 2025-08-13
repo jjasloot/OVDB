@@ -52,7 +52,7 @@ namespace OV_DB.Services
         /// </summary>
         /// <param name="user">User with valid tokens</param>
         /// <returns>Träwelling user data</returns>
-        Task<TrawellingUserData> GetUserInfoAsync(User user);
+        Task<TrawellingUserAuthData> GetUserInfoAsync(User user);
 
         /// <summary>
         /// Get user's statuses/check-ins from Träwelling that haven't been imported to OVDB or ignored

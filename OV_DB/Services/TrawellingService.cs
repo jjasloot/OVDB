@@ -205,7 +205,7 @@ namespace OV_DB.Services
             }
         }
 
-        public async Task<TrawellingUserData> GetUserInfoAsync(User user)
+        public async Task<TrawellingUserAuthData> GetUserInfoAsync(User user)
         {
             try
             {

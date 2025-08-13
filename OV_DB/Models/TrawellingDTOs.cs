@@ -534,4 +534,3 @@ namespace OV_DB.Models
     // Legacy aliases for backward compatibility (will be removed)
     public class TrawellingUserData : TrawellingUserAuthData { }
 }
-}
