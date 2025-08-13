@@ -1,7 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -10,20 +6,25 @@ using Microsoft.Extensions.Logging;
 using OV_DB.Models;
 using OV_DB.Services;
 using OVDB_database.Database;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Security.Claims;
+using System.Threading.Tasks;
 
 namespace OV_DB.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
     [Authorize]
-    public class TrawellingController : ControllerBase
+    public class TraewellingController : ControllerBase
     {
         private readonly ITrawellingService _trawellingService;
         private readonly OVDBDatabaseContext _dbContext;
-        private readonly ILogger<TrawellingController> _logger;
+        private readonly ILogger<TraewellingController> _logger;
 
-        public TrawellingController(ITrawellingService trawellingService, 
-            OVDBDatabaseContext dbContext, ILogger<TrawellingController> logger)
+        public TraewellingController(ITrawellingService trawellingService, 
+            OVDBDatabaseContext dbContext, ILogger<TraewellingController> logger)
         {
             _trawellingService = trawellingService;
             _dbContext = dbContext;
@@ -57,24 +58,20 @@ namespace OV_DB.Controllers
         /// <summary>
         /// Handle OAuth2 callback from Träwelling
         /// </summary>
-        [HttpPost("callback")]
+        [HttpGet("callback")]
         [AllowAnonymous]
-        public async Task<IActionResult> HandleCallback([FromBody] TrawellingOAuthRequest request)
+        public async Task<IActionResult> HandleCallback([FromQuery] string code, [FromQuery] string state)
         {
             try
             {
-                if (string.IsNullOrEmpty(request.Code) || string.IsNullOrEmpty(request.State))
+                if (string.IsNullOrEmpty(code) || string.IsNullOrEmpty(state))
                     return BadRequest("Code and state are required");
 
-                var userId = GetCurrentUserId();
-                if (!userId.HasValue)
-                    return Unauthorized();
-
                 // Validate state parameter
-                if (!_trawellingService.ValidateAndConsumeState(request.State, userId.Value))
+                if (!_trawellingService.ValidateAndConsumeState(state,out var userId))
                     return BadRequest("Invalid or expired state parameter");
 
-                var success = await _trawellingService.ExchangeCodeForTokensAsync(request.Code, request.State, userId.Value);
+                var success = await _trawellingService.ExchangeCodeForTokensAsync(code, state, userId.Value);
                 
                 if (success)
                 {
@@ -409,7 +406,7 @@ namespace OV_DB.Controllers
 
         private int? GetCurrentUserId()
         {
-            var userIdClaim = User.Claims.FirstOrDefault(x => x.Type == "UserId");
+            var userIdClaim = User.Claims.FirstOrDefault(x => x.Type == ClaimTypes.NameIdentifier);
             if (userIdClaim != null && int.TryParse(userIdClaim.Value, out int userId))
             {
                 return userId;

@@ -29,7 +29,7 @@ namespace OV_DB.Services
         /// <param name="state">State parameter from callback</param>
         /// <param name="userId">OVDB User ID</param>
         /// <returns>True if state is valid</returns>
-        bool ValidateAndConsumeState(string state, int userId);
+        bool ValidateAndConsumeState(string state,out int? userId);
 
         /// <summary>
         /// Exchange OAuth2 authorization code for access tokens and store with user

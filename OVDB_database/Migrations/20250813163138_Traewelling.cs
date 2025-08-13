@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace OVDB_database.Migrations
 {
     /// <inheritdoc />
-    public partial class AddTrawellingIntegration : Migration
+    public partial class Traewelling : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -14,25 +14,27 @@ namespace OVDB_database.Migrations
             migrationBuilder.AddColumn<string>(
                 name: "TrawellingAccessToken",
                 table: "Users",
-                type: "TEXT",
-                nullable: true);
+                type: "longtext",
+                nullable: true)
+                .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.AddColumn<string>(
                 name: "TrawellingRefreshToken",
                 table: "Users",
-                type: "TEXT",
-                nullable: true);
+                type: "longtext",
+                nullable: true)
+                .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.AddColumn<DateTime>(
                 name: "TrawellingTokenExpiresAt",
                 table: "Users",
-                type: "TEXT",
+                type: "datetime(6)",
                 nullable: true);
 
             migrationBuilder.AddColumn<int>(
                 name: "TrawellingStatusId",
                 table: "RouteInstances",
-                type: "INTEGER",
+                type: "int",
                 nullable: true);
         }
 

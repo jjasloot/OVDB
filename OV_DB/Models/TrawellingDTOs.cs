@@ -103,7 +103,9 @@ namespace OV_DB.Models
         public string LineName { get; set; }
 
         [JsonProperty("journeyNumber")]
-        public int JourneyNumber { get; set; }
+        public int? JourneyNumber { get; set; }
+        [JsonProperty("manualJourneyNumber")]
+        public int? ManuelJourneyNumber { get; set; }
 
         [JsonProperty("distance")]
         public int Distance { get; set; }

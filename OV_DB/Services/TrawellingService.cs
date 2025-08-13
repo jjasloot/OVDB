@@ -82,8 +82,9 @@ namespace OV_DB.Services
             return state;
         }
 
-        public bool ValidateAndConsumeState(string state, int userId)
+        public bool ValidateAndConsumeState(string state, out int? userId)
         {
+            userId = null;
             if (string.IsNullOrEmpty(state))
                 return false;
 
@@ -101,13 +102,7 @@ namespace OV_DB.Services
                         return false;
                     }
 
-                    // Check if user matches
-                    if (stateInfo.UserId != userId)
-                    {
-                        _logger.LogWarning("OAuth state {State} user mismatch. Expected: {ExpectedUserId}, Actual: {ActualUserId}", 
-                            state, stateInfo.UserId, userId);
-                        return false;
-                    }
+                    userId = stateInfo.UserId;
 
                     _logger.LogDebug("OAuth state {State} validated for user {UserId}", state, userId);
                     return true;
@@ -252,7 +247,7 @@ namespace OV_DB.Services
                 _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {user.TrawellingAccessToken}");
 
                 // Get user's statuses from Träwelling
-                var response = await _httpClient.GetAsync($"{_baseUrl}/dashboard?page={page}");
+                var response = await _httpClient.GetAsync($"{_baseUrl}/user/jjasloot/statuses?page={page}");
                 
                 if (!response.IsSuccessStatusCode)
                 {
