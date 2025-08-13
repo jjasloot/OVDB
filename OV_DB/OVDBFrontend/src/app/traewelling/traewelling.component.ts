@@ -3,11 +3,12 @@ import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
-import { MatCard, MatCardContent, MatCardHeader, MatCardTitle } from '@angular/material/card';
+import { MatCard, MatCardContent, MatCardHeader, MatCardTitle, MatCardSubtitle, MatCardActions } from '@angular/material/card';
 import { MatButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
 import { MatProgressSpinner } from '@angular/material/progress-spinner';
 import { MatPaginator, PageEvent } from '@angular/material/paginator';
+import { MatChipSet, MatChip } from '@angular/material/chips';
 
 import { ApiService } from '../services/api.service';
 import { 
@@ -29,10 +30,14 @@ import {
     MatCardContent,
     MatCardHeader,
     MatCardTitle,
+    MatCardSubtitle,
+    MatCardActions,
     MatButton,
     MatIcon,
     MatProgressSpinner,
-    MatPaginator
+    MatPaginator,
+    MatChipSet,
+    MatChip
   ]
 })
 export class TrawellingComponent implements OnInit {
@@ -233,6 +238,30 @@ export class TrawellingComponent implements OnInit {
       8: 'TRAEWELLING.CATEGORY_8'
     };
     return categories[category] || '';
+  }
+
+  formatTime(dateString: string | null | undefined): string {
+    if (!dateString) return '';
+    return new Date(dateString).toLocaleTimeString('en-GB', { 
+      hour: '2-digit', 
+      minute: '2-digit' 
+    });
+  }
+
+  formatDateTime(dateString: string | null | undefined): string {
+    if (!dateString) return '';
+    return new Date(dateString).toLocaleString('en-GB', { 
+      day: '2-digit',
+      month: '2-digit', 
+      year: 'numeric',
+      hour: '2-digit', 
+      minute: '2-digit' 
+    });
+  }
+
+  isDelayed(planned: string | null | undefined, actual: string | null | undefined): boolean {
+    if (!planned || !actual) return false;
+    return new Date(actual).getTime() > new Date(planned).getTime();
   }
 
   private showMessage(messageKey: string): void {

@@ -78,7 +78,7 @@ export interface TrawellingTransport {
   category: TrawellingHafasTravelType;
   number: string;
   lineName: string;
-  journeyNumber: number;
+  journeyNumber: number | null;
   manualJourneyNumber?: string;
   distance: number;
   points: number;

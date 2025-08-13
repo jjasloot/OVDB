@@ -340,6 +340,17 @@
     "CATEGORY_6": "Ferry",
     "CATEGORY_7": "Subway",
     "CATEGORY_8": "Flight",
-    "REFRESH": "Refresh"
+    "REFRESH": "Refresh",
+    "IGNORE_TRIP": "Ignore Trip",
+    "TRIP_IGNORED": "Trip ignored successfully",
+    "ERROR_IGNORING_TRIP": "Error ignoring trip",
+    "ERROR_LOADING_TRIPS": "Error loading trips",
+    "DEPARTURE_PLANNED": "Planned Departure",
+    "DEPARTURE_ACTUAL": "Actual Departure",
+    "ARRIVAL_PLANNED": "Planned Arrival",
+    "ARRIVAL_ACTUAL": "Actual Arrival",
+    "PLATFORM": "Platform",
+    "DELAYED": "Delayed",
+    "ON_TIME": "On Time"
   }
 }

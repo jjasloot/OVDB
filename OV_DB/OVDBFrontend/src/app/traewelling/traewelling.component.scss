@@ -56,17 +56,6 @@
 }
 
 .stats-card {
-  mat-card-header {
-    background-color: #f5f5f5;
-    padding: 16px;
-    margin: -16px -16px 16px -16px;
-
-    mat-card-title {
-      color: #333;
-      font-weight: 500;
-    }
-  }
-
   .stats-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -115,10 +104,6 @@
     button {
       min-width: 160px;
 
-      mat-spinner {
-        margin-right: 8px;
-      }
-
       mat-icon {
         margin-right: 8px;
       }
@@ -127,17 +112,6 @@
 }
 
 .trips-card {
-  mat-card-header {
-    background-color: #f5f5f5;
-    padding: 16px;
-    margin: -16px -16px 16px -16px;
-
-    mat-card-title {
-      color: #333;
-      font-weight: 500;
-    }
-  }
-
   .no-trips {
     text-align: center;
     padding: 60px 20px;
@@ -160,71 +134,28 @@
 
 .trips-list {
   .trip-card {
-    border: 1px solid #e0e0e0;
-    border-radius: 8px;
-    margin-bottom: 20px;
-    padding: 20px;
-    background-color: #fafafa;
-    transition: box-shadow 0.2s ease;
+    margin-bottom: 24px;
 
-    &:hover {
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    }
-
-    .trip-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
+    .timing-section {
       margin-bottom: 16px;
 
-      .trip-route {
-        flex: 1;
-
-        h3 {
-          margin: 0 0 8px 0;
-          color: #333;
-          font-size: 18px;
-          font-weight: 500;
-        }
-
-        .trip-line {
-          background-color: #e3f2fd;
-          color: #1976d2;
-          padding: 4px 8px;
-          border-radius: 4px;
-          font-size: 14px;
-          font-weight: 500;
-          display: inline-block;
-        }
+      h4 {
+        font-size: 14px;
+        font-weight: 500;
+        margin: 0 0 8px 0;
+        color: #666;
+        text-transform: uppercase;
       }
 
-      .trip-date {
-        color: #666;
-        font-size: 14px;
-        text-align: right;
-        min-width: 120px;
+      .time-details {
+        mat-chip-set {
+          margin-bottom: 8px;
+        }
       }
     }
 
     .trip-details {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 16px;
       margin-bottom: 16px;
-
-      .trip-detail {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        color: #666;
-        font-size: 14px;
-
-        mat-icon {
-          font-size: 18px;
-          width: 18px;
-          height: 18px;
-        }
-      }
     }
 
     .trip-description {
@@ -233,8 +164,8 @@
       gap: 8px;
       margin-bottom: 16px;
       padding: 12px;
-      background-color: #fff;
-      border-radius: 4px;
+      background-color: #f5f5f5;
+      border-radius: 8px;
       border-left: 3px solid #ff9800;
 
       mat-icon {
@@ -249,127 +180,39 @@
       }
     }
 
-    .trip-actions {
-      display: flex;
-      gap: 12px;
-      flex-wrap: wrap;
-      margin-bottom: 16px;
-
-      button {
-        mat-icon {
-          margin-right: 6px;
-        }
-      }
-    }
-
     .route-search-loading {
       display: flex;
       align-items: center;
       gap: 12px;
       padding: 16px;
-      background-color: #fff;
-      border-radius: 4px;
-      margin-top: 16px;
       
       span {
         color: #666;
       }
     }
 
-    .existing-routes {
-      margin-top: 16px;
-      padding: 16px;
-      background-color: #fff;
-      border-radius: 4px;
-      border: 1px solid #e0e0e0;
+    .routes-list {
+      .route-option {
+        margin-bottom: 16px;
 
-      h4 {
-        margin: 0 0 12px 0;
-        color: #333;
-        font-size: 16px;
-      }
+        &.already-linked {
+          opacity: 0.7;
+        }
 
-      .routes-list {
-        .route-option {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          padding: 12px;
-          border: 1px solid #f0f0f0;
-          border-radius: 4px;
-          margin-bottom: 8px;
-          background-color: #fafafa;
-
-          &:last-child {
-            margin-bottom: 0;
+        .route-info {
+          strong {
+            display: block;
+            margin-bottom: 4px;
           }
 
-          &.already-linked {
-            background-color: #f5f5f5;
-            opacity: 0.7;
+          .route-description {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 8px;
           }
 
-          .route-info {
-            flex: 1;
-
-            strong {
-              display: block;
-              color: #333;
-              margin-bottom: 4px;
-            }
-
-            .route-description {
-              font-size: 14px;
-              color: #666;
-              margin-bottom: 6px;
-            }
-
-            .route-details {
-              display: flex;
-              align-items: center;
-              gap: 12px;
-              flex-wrap: wrap;
-
-              .time {
-                font-size: 12px;
-                color: #888;
-              }
-
-              .duration {
-                font-size: 12px;
-                color: #4caf50;
-                font-weight: 500;
-              }
-
-              .linked-indicator {
-                display: flex;
-                align-items: center;
-                gap: 4px;
-                font-size: 12px;
-                color: #ff9800;
-                background-color: #fff3e0;
-                padding: 2px 8px;
-                border-radius: 12px;
-
-                mat-icon {
-                  font-size: 14px;
-                  width: 14px;
-                  height: 14px;
-                }
-              }
-            }
-          }
-
-          button {
-            margin-left: 16px;
-            
-            mat-icon {
-              margin-right: 6px;
-            }
-
-            &:disabled {
-              opacity: 0.6;
-            }
+          .route-details {
+            margin-bottom: 8px;
           }
         }
       }
@@ -380,9 +223,6 @@
       align-items: center;
       gap: 8px;
       padding: 16px;
-      background-color: #fff;
-      border-radius: 4px;
-      margin-top: 16px;
       color: #666;
 
       mat-icon {
@@ -407,40 +247,6 @@
   .stats-grid {
     grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
     gap: 12px;
-  }
-
-  .trip-card {
-    .trip-header {
-      flex-direction: column;
-      align-items: flex-start;
-
-      .trip-date {
-        text-align: left;
-        margin-top: 8px;
-        min-width: auto;
-      }
-    }
-
-    .trip-actions {
-      flex-direction: column;
-
-      button {
-        width: 100%;
-      }
-    }
-
-    .existing-routes {
-      .route-option {
-        flex-direction: column;
-        align-items: flex-start;
-
-        button {
-          margin-left: 0;
-          margin-top: 12px;
-          width: 100%;
-        }
-      }
-    }
   }
 
   .actions-row {

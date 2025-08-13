@@ -340,6 +340,17 @@
     "CATEGORY_6": "Veerboot",
     "CATEGORY_7": "Metro",
     "CATEGORY_8": "Vliegtuig",
-    "REFRESH": "Verversen"
+    "REFRESH": "Verversen",
+    "IGNORE_TRIP": "Reis Negeren",
+    "TRIP_IGNORED": "Reis succesvol genegeerd",
+    "ERROR_IGNORING_TRIP": "Fout bij negeren van reis",
+    "ERROR_LOADING_TRIPS": "Fout bij laden van reizen",
+    "DEPARTURE_PLANNED": "Geplande Vertrek",
+    "DEPARTURE_ACTUAL": "Werkelijke Vertrek",
+    "ARRIVAL_PLANNED": "Geplande Aankomst",
+    "ARRIVAL_ACTUAL": "Werkelijke Aankomst",
+    "PLATFORM": "Perron",
+    "DELAYED": "Vertraagd",
+    "ON_TIME": "Op Tijd"
   }
 }
