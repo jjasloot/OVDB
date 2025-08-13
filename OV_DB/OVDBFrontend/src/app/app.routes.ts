@@ -33,6 +33,7 @@ import { RequestsListComponent } from "./requests/requests-list/requests-list.co
 import { AdministratorRequestsComponent } from "./administrator/administrator-requests/administrator-requests.component";
 import { AdministratorOperatorsComponent } from "./administrator/administrator-operators/administrator-operators.component";
 import { ProfileComponent } from "./profile/profile.component";
+import { TrawellingComponent } from "./traewelling/traewelling.component";
 
 export const routes: Routes = [
   {
@@ -55,6 +56,11 @@ export const routes: Routes = [
       {
         path: "profile",
         component: ProfileComponent,
+        canActivate: [LoginGuard],
+      },
+      {
+        path: "traewelling",
+        component: TrawellingComponent,
         canActivate: [LoginGuard],
       },
       {

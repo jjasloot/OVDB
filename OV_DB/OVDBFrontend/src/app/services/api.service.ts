@@ -21,6 +21,17 @@ import { MapDataDTO } from "../models/map-data.model";
 import { RegionOperators } from "../models/region-operators.model";
 import { RegionStat } from "../models/region.model";
 import { UserProfile, UpdateProfile, ChangePassword } from "../models/user-profile.model";
+import { 
+  TrawellingConnectionStatus, 
+  TrawellingConnectResponse, 
+  TrawellingOAuthRequest,
+  TrawellingUnimportedResponse,
+  TrawellingImportRequest,
+  TrawellingImportResponse,
+  TrawellingStats,
+  TrawellingProcessBacklogRequest,
+  TrawellingProcessBacklogResponse
+} from "../models/traewelling.model";
 
 @Injectable({
   providedIn: "root",
@@ -527,6 +538,60 @@ export class ApiService {
     return this.httpClient.post(
       environment.backend + "api/user/change-password",
       changePassword
+    );
+  }
+
+  // Träwelling API methods
+  getTrawellingConnectUrl(): Observable<TrawellingConnectResponse> {
+    return this.httpClient.get<TrawellingConnectResponse>(
+      environment.backend + "api/traewelling/connect"
+    );
+  }
+
+  handleTrawellingCallback(request: TrawellingOAuthRequest): Observable<any> {
+    return this.httpClient.post(
+      environment.backend + "api/traewelling/callback",
+      request
+    );
+  }
+
+  getTrawellingStatus(): Observable<TrawellingConnectionStatus> {
+    return this.httpClient.get<TrawellingConnectionStatus>(
+      environment.backend + "api/traewelling/status"
+    );
+  }
+
+  getTrawellingUnimported(page: number = 1): Observable<TrawellingUnimportedResponse> {
+    const params = new HttpParams().set('page', page.toString());
+    return this.httpClient.get<TrawellingUnimportedResponse>(
+      environment.backend + "api/traewelling/unimported",
+      { params }
+    );
+  }
+
+  importTrawellingTrip(request: TrawellingImportRequest): Observable<TrawellingImportResponse> {
+    return this.httpClient.post<TrawellingImportResponse>(
+      environment.backend + "api/traewelling/import",
+      request
+    );
+  }
+
+  processTrawellingBacklog(request?: TrawellingProcessBacklogRequest): Observable<TrawellingProcessBacklogResponse> {
+    return this.httpClient.post<TrawellingProcessBacklogResponse>(
+      environment.backend + "api/traewelling/process-backlog",
+      request || {}
+    );
+  }
+
+  disconnectTraewelling(): Observable<any> {
+    return this.httpClient.delete(
+      environment.backend + "api/traewelling/disconnect"
+    );
+  }
+
+  getTrawellingStats(): Observable<TrawellingStats> {
+    return this.httpClient.get<TrawellingStats>(
+      environment.backend + "api/traewelling/stats"
     );
   }
 }

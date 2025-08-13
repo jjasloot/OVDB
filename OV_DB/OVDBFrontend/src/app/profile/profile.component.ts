@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { UntypedFormBuilder, UntypedFormGroup, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { ApiService } from '../services/api.service';
 import { UserProfile, UpdateProfile, ChangePassword } from '../models/user-profile.model';
+import { TrawellingConnectionStatus } from '../models/traewelling.model';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { TranslationService } from '../services/translation.service';
@@ -13,6 +14,7 @@ import { MatSelect, MatOption } from '@angular/material/select';
 import { MatCard, MatCardContent, MatCardHeader, MatCardTitle } from '@angular/material/card';
 import { MatProgressSpinner } from '@angular/material/progress-spinner';
 import { MatIcon } from '@angular/material/icon';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-profile',
@@ -41,9 +43,13 @@ export class ProfileComponent implements OnInit {
   profileForm: UntypedFormGroup;
   passwordForm: UntypedFormGroup;
   userProfile: UserProfile | null = null;
+  trawellingStatus: TrawellingConnectionStatus | null = null;
   loading = false;
   savingProfile = false;
   changingPassword = false;
+  trawellingLoading = false;
+  trawellingConnecting = false;
+  trawellingDisconnecting = false;
 
   languages = [
     { value: 'en', label: 'English' },
@@ -56,7 +62,8 @@ export class ProfileComponent implements OnInit {
     private snackBar: MatSnackBar,
     private translateService: TranslateService,
     private translationService: TranslationService,
-    private userPreferenceService: UserPreferenceService
+    private userPreferenceService: UserPreferenceService,
+    private router: Router
   ) {
     this.profileForm = this.formBuilder.group({
       preferredLanguage: ['', Validators.required],
@@ -74,6 +81,7 @@ export class ProfileComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadProfile();
+    this.loadTrawellingStatus();
   }
 
   passwordMatchValidator(group: UntypedFormGroup) {
@@ -156,5 +164,64 @@ export class ProfileComponent implements OnInit {
     this.translateService.get(messageKey).subscribe(message => {
       this.snackBar.open(message, '', { duration: 3000 });
     });
+  }
+
+  loadTrawellingStatus(): void {
+    this.trawellingLoading = true;
+    this.apiService.getTrawellingStatus().subscribe({
+      next: (status) => {
+        this.trawellingStatus = status;
+        this.trawellingLoading = false;
+      },
+      error: (error) => {
+        console.error('Error loading Träwelling status:', error);
+        this.trawellingLoading = false;
+      }
+    });
+  }
+
+  connectTraewelling(): void {
+    this.trawellingConnecting = true;
+    this.apiService.getTrawellingConnectUrl().subscribe({
+      next: (response) => {
+        // Open the authorization URL in a new window
+        const authWindow = window.open(response.authorizationUrl, '_blank', 'width=600,height=700');
+        
+        // Poll for the window to be closed (user completed auth)
+        const checkClosed = setInterval(() => {
+          if (authWindow?.closed) {
+            clearInterval(checkClosed);
+            this.trawellingConnecting = false;
+            // Reload status to check if connection was successful
+            this.loadTrawellingStatus();
+          }
+        }, 1000);
+      },
+      error: (error) => {
+        console.error('Error getting Träwelling connect URL:', error);
+        this.showMessage('PROFILE.TRAEWELLING_ERROR_CONNECTING');
+        this.trawellingConnecting = false;
+      }
+    });
+  }
+
+  disconnectTraewelling(): void {
+    this.trawellingDisconnecting = true;
+    this.apiService.disconnectTraewelling().subscribe({
+      next: () => {
+        this.showMessage('PROFILE.TRAEWELLING_DISCONNECTED_SUCCESSFULLY');
+        this.trawellingStatus = { connected: false };
+        this.trawellingDisconnecting = false;
+      },
+      error: (error) => {
+        console.error('Error disconnecting Träwelling:', error);
+        this.showMessage('PROFILE.TRAEWELLING_ERROR_DISCONNECTING');
+        this.trawellingDisconnecting = false;
+      }
+    });
+  }
+
+  viewTrawellingTrips(): void {
+    this.router.navigate(['/traewelling']);
   }
 }

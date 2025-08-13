@@ -1,0 +1,221 @@
+<div class="traewelling-container">
+  @if (loading) {
+    <div class="loading-container">
+      <mat-spinner></mat-spinner>
+      <span>{{ 'TRAEWELLING.LOADING_TRIPS' | translate }}</span>
+    </div>
+  } @else if (!connectionStatus?.connected) {
+    <div class="not-connected">
+      <mat-card>
+        <mat-card-header>
+          <mat-card-title>{{ 'TRAEWELLING.TITLE' | translate }}</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="not-connected-content">
+            <mat-icon>link_off</mat-icon>
+            <p>{{ 'PROFILE.TRAEWELLING_NOT_CONNECTED' | translate }}</p>
+            <button mat-raised-button color="primary" (click)="router.navigate(['/profile'])">
+              <mat-icon>arrow_back</mat-icon>
+              {{ 'BACK' | translate }}
+            </button>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+  } @else {
+    <h1>{{ 'TRAEWELLING.TITLE' | translate }}</h1>
+
+    <!-- Statistics Card -->
+    @if (stats) {
+      <mat-card class="stats-card">
+        <mat-card-header>
+          <mat-card-title>{{ 'TRAEWELLING.STATS' | translate }}</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="stats-grid">
+            <div class="stat-item">
+              <div class="stat-number">{{ stats.totalTrips }}</div>
+              <div class="stat-label">{{ 'TRAEWELLING.TOTAL_TRIPS' | translate }}</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-number">{{ stats.importedTrips }}</div>
+              <div class="stat-label">{{ 'TRAEWELLING.IMPORTED_TRIPS' | translate }}</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-number">{{ stats.unimportedTrips }}</div>
+              <div class="stat-label">{{ 'TRAEWELLING.UNIMPORTED_COUNT' | translate }}</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-number">{{ stats.enhancedInstances }}</div>
+              <div class="stat-label">{{ 'TRAEWELLING.ENHANCED_INSTANCES' | translate }}</div>
+            </div>
+          </div>
+          @if (stats.connectedSince) {
+            <div class="connected-since">
+              {{ 'TRAEWELLING.CONNECTED_SINCE' | translate }}: 
+              {{ stats.connectedSince | date:'medium' }}
+            </div>
+          }
+        </mat-card-content>
+      </mat-card>
+    }
+
+    <!-- Actions Card -->
+    <mat-card class="actions-card">
+      <mat-card-content>
+        <div class="actions-row">
+          <button mat-raised-button color="primary" (click)="refreshTrips()" [disabled]="tripsLoading">
+            <mat-icon>refresh</mat-icon>
+            {{ 'TRAEWELLING.REFRESH' | translate }}
+          </button>
+          
+          <button mat-raised-button color="accent" (click)="processBacklog()" [disabled]="processingBacklog">
+            @if (processingBacklog) {
+              <mat-spinner diameter="20"></mat-spinner>
+            } @else {
+              <mat-icon>upload</mat-icon>
+            }
+            {{ 'TRAEWELLING.PROCESS_BACKLOG' | translate }}
+          </button>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Trips List Card -->
+    <mat-card class="trips-card">
+      <mat-card-header>
+        <mat-card-title>{{ 'TRAEWELLING.UNIMPORTED_TRIPS' | translate }}</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        @if (tripsLoading) {
+          <div class="loading-container">
+            <mat-spinner></mat-spinner>
+            <span>{{ 'TRAEWELLING.LOADING_TRIPS' | translate }}</span>
+          </div>
+        } @else if (unimportedTrips.length === 0) {
+          <div class="no-trips">
+            <mat-icon>check_circle</mat-icon>
+            <p>{{ 'TRAEWELLING.NO_TRIPS' | translate }}</p>
+          </div>
+        } @else {
+          <div class="trips-list">
+            @for (trip of unimportedTrips; track trip.id) {
+              <div class="trip-card">
+                <div class="trip-header">
+                  <div class="trip-route">
+                    <h3>{{ trip.origin.name }} → {{ trip.destination.name }}</h3>
+                    @if (trip.train?.lineName) {
+                      <div class="trip-line">
+                        {{ trip.train.lineName }}
+                        @if (trip.train.number) {
+                          {{ trip.train.number }}
+                        }
+                      </div>
+                    }
+                  </div>
+                  <div class="trip-date">
+                    {{ trip.departure | date:'short' }}
+                  </div>
+                </div>
+
+                <div class="trip-details">
+                  @if (trip.duration) {
+                    <div class="trip-detail">
+                      <mat-icon>schedule</mat-icon>
+                      <span>{{ formatDuration(trip.duration) }}</span>
+                    </div>
+                  }
+                  @if (trip.distance) {
+                    <div class="trip-detail">
+                      <mat-icon>straighten</mat-icon>
+                      <span>{{ formatDistance(trip.distance) }}</span>
+                    </div>
+                  }
+                  @if (trip.category) {
+                    <div class="trip-detail">
+                      <mat-icon>directions_transit</mat-icon>
+                      <span>{{ getCategoryName(trip.category) | translate }}</span>
+                    </div>
+                  }
+                </div>
+
+                @if (trip.body) {
+                  <div class="trip-description">
+                    <mat-icon>description</mat-icon>
+                    <span>{{ trip.body }}</span>
+                  </div>
+                }
+
+                <div class="trip-actions">
+                  <button mat-raised-button color="primary" (click)="importTrip(trip)">
+                    <mat-icon>download</mat-icon>
+                    {{ 'TRAEWELLING.IMPORT_TRIP' | translate }}
+                  </button>
+                  
+                  <button mat-stroked-button (click)="useWizardForTrip(trip)">
+                    <mat-icon>assistant</mat-icon>
+                    {{ 'TRAEWELLING.USE_WIZARD' | translate }}
+                  </button>
+                  
+                  <button mat-stroked-button (click)="searchExistingRoutes(trip)">
+                    <mat-icon>search</mat-icon>
+                    {{ 'TRAEWELLING.SEARCH_ROUTE' | translate }}
+                  </button>
+                </div>
+
+                <!-- Route Search Results -->
+                @if (searchingRoutes) {
+                  <div class="route-search-loading">
+                    <mat-spinner diameter="20"></mat-spinner>
+                    <span>{{ 'TRAEWELLING.SEARCH_EXISTING_ROUTE' | translate }}</span>
+                  </div>
+                }
+
+                @if (existingRoutes.length > 0) {
+                  <div class="existing-routes">
+                    <h4>{{ 'TRAEWELLING.SELECT_ROUTE' | translate }}</h4>
+                    <div class="routes-list">
+                      @for (route of existingRoutes; track route.id) {
+                        <div class="route-option">
+                          <div class="route-info">
+                            <strong>{{ route.name }}</strong>
+                            @if (route.description) {
+                              <div class="route-description">{{ route.description }}</div>
+                            }
+                          </div>
+                          <button mat-button color="primary" (click)="linkToExistingRoute(trip, route)">
+                            <mat-icon>link</mat-icon>
+                            {{ 'TRAEWELLING.LINK_TO_EXISTING' | translate }}
+                          </button>
+                        </div>
+                      }
+                    </div>
+                  </div>
+                } @else if (existingRoutes.length === 0 && !searchingRoutes) {
+                  <div class="no-routes-found">
+                    <mat-icon>search_off</mat-icon>
+                    <span>{{ 'TRAEWELLING.NO_ROUTES_FOUND' | translate }}</span>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+
+          <!-- Pagination -->
+          @if (totalPages > 1) {
+            <div class="pagination-container">
+              <mat-paginator
+                [length]="totalTrips"
+                [pageSize]="tripsPerPage"
+                [pageIndex]="currentPage - 1"
+                [pageSizeOptions]="[15, 30, 50]"
+                [showFirstLastButtons]="true"
+                (page)="onPageChange($event)">
+              </mat-paginator>
+            </div>
+          }
+        }
+      </mat-card-content>
+    </mat-card>
+  }
+</div>
