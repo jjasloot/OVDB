@@ -207,4 +207,11 @@ namespace OV_DB.Models
         [JsonProperty("data")]
         public TrawellingStatus Data { get; set; }
     }
+
+    // Link to existing RouteInstance request
+    public class LinkToRouteInstanceRequest
+    {
+        public int StatusId { get; set; }
+        public int RouteInstanceId { get; set; }
+    }
 }

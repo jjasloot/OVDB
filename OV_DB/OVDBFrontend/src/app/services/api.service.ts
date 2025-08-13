@@ -30,7 +30,10 @@ import {
   TrawellingImportResponse,
   TrawellingStats,
   TrawellingProcessBacklogRequest,
-  TrawellingProcessBacklogResponse
+  TrawellingProcessBacklogResponse,
+  RouteInstanceSearchResult,
+  LinkToRouteInstanceRequest,
+  LinkToRouteInstanceResponse
 } from "../models/traewelling.model";
 
 @Injectable({
@@ -592,6 +595,24 @@ export class ApiService {
   getTrawellingStats(): Observable<TrawellingStats> {
     return this.httpClient.get<TrawellingStats>(
       environment.backend + "api/traewelling/stats"
+    );
+  }
+
+  searchRouteInstances(date: string, query?: string): Observable<RouteInstanceSearchResult[]> {
+    let params = new HttpParams().set('date', date);
+    if (query) {
+      params = params.set('query', query);
+    }
+    return this.httpClient.get<RouteInstanceSearchResult[]>(
+      environment.backend + "api/traewelling/route-instances",
+      { params }
+    );
+  }
+
+  linkToRouteInstance(request: LinkToRouteInstanceRequest): Observable<LinkToRouteInstanceResponse> {
+    return this.httpClient.post<LinkToRouteInstanceResponse>(
+      environment.backend + "api/traewelling/link",
+      request
     );
   }
 }

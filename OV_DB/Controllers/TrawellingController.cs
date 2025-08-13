@@ -318,6 +318,95 @@ namespace OV_DB.Controllers
             }
         }
 
+        /// <summary>
+        /// Search for existing RouteInstances by date and optional search query
+        /// </summary>
+        [HttpGet("route-instances")]
+        public async Task<IActionResult> SearchRouteInstances([FromQuery] string date, [FromQuery] string query = null)
+        {
+            try
+            {
+                var userId = GetCurrentUserId();
+                if (!userId.HasValue)
+                    return Unauthorized();
+
+                var user = await _dbContext.Users.FindAsync(userId.Value);
+                if (user == null)
+                    return NotFound("User not found");
+
+                if (!DateTime.TryParse(date, out var searchDate))
+                    return BadRequest("Invalid date format");
+
+                var routeInstances = await _trawellingService.GetRouteInstancesByDateAsync(user, searchDate, query);
+
+                var result = routeInstances.Select(ri => new
+                {
+                    id = ri.RouteInstanceId,
+                    routeId = ri.RouteId,
+                    routeName = ri.Route?.Name,
+                    from = ri.Route?.From,
+                    to = ri.Route?.To,
+                    date = ri.Date,
+                    startTime = ri.StartTime,
+                    endTime = ri.EndTime,
+                    durationHours = ri.DurationHours,
+                    trawellingStatusId = ri.TrawellingStatusId,
+                    hasTraewellingLink = ri.TrawellingStatusId.HasValue
+                }).ToList();
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                var userId = GetCurrentUserId();
+                _logger.LogError(ex, "Error searching RouteInstances for user {UserId}", userId);
+                return StatusCode(500, "Error searching RouteInstances");
+            }
+        }
+
+        /// <summary>
+        /// Link a Träwelling status to an existing RouteInstance
+        /// </summary>
+        [HttpPost("link")]
+        public async Task<IActionResult> LinkToRouteInstance([FromBody] LinkToRouteInstanceRequest request)
+        {
+            try
+            {
+                var userId = GetCurrentUserId();
+                if (!userId.HasValue)
+                    return Unauthorized();
+
+                var user = await _dbContext.Users.FindAsync(userId.Value);
+                if (user == null)
+                    return NotFound("User not found");
+
+                var routeInstance = await _trawellingService.LinkStatusToRouteInstanceAsync(
+                    user, request.StatusId, request.RouteInstanceId);
+
+                if (routeInstance == null)
+                    return BadRequest("Failed to link status to RouteInstance. Status may already be linked or RouteInstance may not exist.");
+
+                return Ok(new 
+                {
+                    success = true,
+                    routeInstance = new
+                    {
+                        id = routeInstance.RouteInstanceId,
+                        routeName = routeInstance.Route?.Name,
+                        startTime = routeInstance.StartTime,
+                        endTime = routeInstance.EndTime,
+                        trawellingStatusId = routeInstance.TrawellingStatusId
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                var userId = GetCurrentUserId();
+                _logger.LogError(ex, "Error linking Träwelling status to RouteInstance for user {UserId}", userId);
+                return StatusCode(500, "Error linking status");
+            }
+        }
+
         private int? GetCurrentUserId()
         {
             var userIdClaim = User.Claims.FirstOrDefault(x => x.Type == "UserId");

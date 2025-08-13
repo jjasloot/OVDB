@@ -86,5 +86,23 @@ namespace OV_DB.Services
         /// <param name="user">User to check</param>
         /// <returns>True if user has valid tokens</returns>
         bool HasValidTokens(User user);
+
+        /// <summary>
+        /// Get existing RouteInstances for a specific date and optionally filter by route name
+        /// </summary>
+        /// <param name="user">User to search RouteInstances for</param>
+        /// <param name="date">Date to search for</param>
+        /// <param name="searchQuery">Optional search query to filter by route name</param>
+        /// <returns>List of matching RouteInstances</returns>
+        Task<List<RouteInstance>> GetRouteInstancesByDateAsync(User user, DateTime date, string searchQuery = null);
+
+        /// <summary>
+        /// Link a Träwelling status to an existing RouteInstance
+        /// </summary>
+        /// <param name="user">User performing the link</param>
+        /// <param name="statusId">Träwelling status ID</param>
+        /// <param name="routeInstanceId">Existing OVDB RouteInstance ID</param>
+        /// <returns>Updated RouteInstance or null if failed</returns>
+        Task<RouteInstance> LinkStatusToRouteInstanceAsync(User user, int statusId, int routeInstanceId);
     }
 }

@@ -159,42 +159,67 @@
                   
                   <button mat-stroked-button (click)="searchExistingRoutes(trip)">
                     <mat-icon>search</mat-icon>
-                    {{ 'TRAEWELLING.SEARCH_ROUTE' | translate }}
+                    {{ 'TRAEWELLING.SEARCH_ROUTE_INSTANCES' | translate }}
                   </button>
                 </div>
 
-                <!-- Route Search Results -->
-                @if (searchingRoutes) {
+                <!-- RouteInstance Search Results -->
+                @if (searchTrip?.id === trip.id && searchingRouteInstances) {
                   <div class="route-search-loading">
                     <mat-spinner diameter="20"></mat-spinner>
-                    <span>{{ 'TRAEWELLING.SEARCH_EXISTING_ROUTE' | translate }}</span>
+                    <span>{{ 'TRAEWELLING.SEARCHING_ROUTE_INSTANCES' | translate }}</span>
                   </div>
                 }
 
-                @if (existingRoutes.length > 0) {
+                @if (searchTrip?.id === trip.id && existingRouteInstances.length > 0) {
                   <div class="existing-routes">
-                    <h4>{{ 'TRAEWELLING.SELECT_ROUTE' | translate }}</h4>
+                    <h4>{{ 'TRAEWELLING.SELECT_ROUTE_INSTANCE' | translate }}</h4>
                     <div class="routes-list">
-                      @for (route of existingRoutes; track route.id) {
-                        <div class="route-option">
+                      @for (routeInstance of existingRouteInstances; track routeInstance.id) {
+                        <div class="route-option" [class.already-linked]="routeInstance.hasTraewellingLink">
                           <div class="route-info">
-                            <strong>{{ route.name }}</strong>
-                            @if (route.description) {
-                              <div class="route-description">{{ route.description }}</div>
-                            }
+                            <strong>{{ routeInstance.routeName || (routeInstance.from + ' - ' + routeInstance.to) }}</strong>
+                            <div class="route-description">
+                              {{ routeInstance.from }} → {{ routeInstance.to }}
+                            </div>
+                            <div class="route-details">
+                              @if (routeInstance.startTime) {
+                                <span class="time">{{ routeInstance.startTime | date:'short' }}</span>
+                              }
+                              @if (routeInstance.endTime) {
+                                <span class="time"> - {{ routeInstance.endTime | date:'short' }}</span>
+                              }
+                              @if (routeInstance.durationHours) {
+                                <span class="duration">({{ formatDuration(routeInstance.durationHours * 60) }})</span>
+                              }
+                              @if (routeInstance.hasTraewellingLink) {
+                                <span class="linked-indicator">
+                                  <mat-icon>link</mat-icon>
+                                  {{ 'TRAEWELLING.ALREADY_LINKED' | translate }}
+                                </span>
+                              }
+                            </div>
                           </div>
-                          <button mat-button color="primary" (click)="linkToExistingRoute(trip, route)">
+                          <button 
+                            mat-button 
+                            color="primary" 
+                            (click)="linkToExistingRouteInstance(trip, routeInstance)"
+                            [disabled]="routeInstance.hasTraewellingLink">
                             <mat-icon>link</mat-icon>
-                            {{ 'TRAEWELLING.LINK_TO_EXISTING' | translate }}
+                            @if (routeInstance.hasTraewellingLink) {
+                              {{ 'TRAEWELLING.ALREADY_LINKED' | translate }}
+                            } @else {
+                              {{ 'TRAEWELLING.LINK_TO_EXISTING' | translate }}
+                            }
                           </button>
                         </div>
                       }
                     </div>
                   </div>
-                } @else if (existingRoutes.length === 0 && !searchingRoutes) {
+                } @else if (searchTrip?.id === trip.id && existingRouteInstances.length === 0 && !searchingRouteInstances) {
                   <div class="no-routes-found">
                     <mat-icon>search_off</mat-icon>
-                    <span>{{ 'TRAEWELLING.NO_ROUTES_FOUND' | translate }}</span>
+                    <span>{{ 'TRAEWELLING.NO_ROUTE_INSTANCES_FOUND' | translate }}</span>
                   </div>
                 }
               </div>

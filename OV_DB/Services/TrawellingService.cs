@@ -704,5 +704,130 @@ namespace OV_DB.Services
                 return false;
             }
         }
+
+        public async Task<List<RouteInstance>> GetRouteInstancesByDateAsync(User user, DateTime date, string searchQuery = null)
+        {
+            try
+            {
+                var query = _dbContext.RouteInstances
+                    .Include(ri => ri.Route)
+                    .Where(ri => ri.Date.Date == date.Date);
+
+                // Filter by user - assuming there's a relationship or we need to add one
+                // For now, we'll search all RouteInstances since there's no user relationship in the model
+                // In a real implementation, you might want to add a UserId to RouteInstance or filter differently
+
+                if (!string.IsNullOrWhiteSpace(searchQuery))
+                {
+                    query = query.Where(ri => ri.Route.Name.Contains(searchQuery) ||
+                                            ri.Route.From.Contains(searchQuery) ||
+                                            ri.Route.To.Contains(searchQuery));
+                }
+
+                var routeInstances = await query
+                    .OrderByDescending(ri => ri.StartTime ?? ri.Date)
+                    .Take(20) // Limit to 20 results
+                    .ToListAsync();
+
+                _logger.LogInformation("Found {Count} RouteInstances for date {Date} with query '{Query}'", 
+                    routeInstances.Count, date.Date, searchQuery ?? "none");
+
+                return routeInstances;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error searching RouteInstances for date {Date} with query '{Query}'", date, searchQuery);
+                return new List<RouteInstance>();
+            }
+        }
+
+        public async Task<RouteInstance> LinkStatusToRouteInstanceAsync(User user, int statusId, int routeInstanceId)
+        {
+            try
+            {
+                // Check if the Träwelling status is already linked to another RouteInstance
+                var existingLink = await _dbContext.RouteInstances
+                    .FirstOrDefaultAsync(ri => ri.TrawellingStatusId == statusId);
+
+                if (existingLink != null)
+                {
+                    _logger.LogWarning("Träwelling status {StatusId} is already linked to RouteInstance {ExistingRouteInstanceId}", 
+                        statusId, existingLink.RouteInstanceId);
+                    return null;
+                }
+
+                // Get the target RouteInstance
+                var routeInstance = await _dbContext.RouteInstances
+                    .Include(ri => ri.Route)
+                    .FirstOrDefaultAsync(ri => ri.RouteInstanceId == routeInstanceId);
+
+                if (routeInstance == null)
+                {
+                    _logger.LogWarning("RouteInstance {RouteInstanceId} not found", routeInstanceId);
+                    return null;
+                }
+
+                // Get the Träwelling status to potentially update timing data
+                var statusData = await GetStatusAsync(user, statusId);
+                if (statusData != null && routeInstance.StartTime == null && routeInstance.EndTime == null)
+                {
+                    // Update timing data if the RouteInstance doesn't have it
+                    if (statusData.Train?.Origin?.Departure.HasValue == true)
+                    {
+                        routeInstance.StartTime = statusData.Train.Origin.Departure;
+                    }
+
+                    if (statusData.Train?.Destination?.Arrival.HasValue == true)
+                    {
+                        routeInstance.EndTime = statusData.Train.Destination.Arrival;
+                    }
+
+                    if (routeInstance.StartTime.HasValue && routeInstance.EndTime.HasValue)
+                    {
+                        routeInstance.DurationHours = (routeInstance.EndTime.Value - routeInstance.StartTime.Value).TotalHours;
+                    }
+                }
+
+                // Link the status
+                routeInstance.TrawellingStatusId = statusId;
+                await _dbContext.SaveChangesAsync();
+
+                _logger.LogInformation("Successfully linked Träwelling status {StatusId} to RouteInstance {RouteInstanceId}", 
+                    statusId, routeInstanceId);
+
+                return routeInstance;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error linking Träwelling status {StatusId} to RouteInstance {RouteInstanceId}", 
+                    statusId, routeInstanceId);
+                return null;
+            }
+        }
+
+        private async Task<TrawellingStatus> GetStatusAsync(User user, int statusId)
+        {
+            try
+            {
+                if (!await EnsureValidTokenAsync(user))
+                    return null;
+
+                _httpClient.DefaultRequestHeaders.Authorization = 
+                    new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", user.TrawellingAccessToken);
+
+                var response = await _httpClient.GetAsync($"{_baseUrl}/statuses/{statusId}");
+                response.EnsureSuccessStatusCode();
+
+                var content = await response.Content.ReadAsStringAsync();
+                var statusResponse = JsonConvert.DeserializeObject<TrawellingStatusResponse>(content);
+
+                return statusResponse?.Data;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting Träwelling status {StatusId}", statusId);
+                return null;
+            }
+        }
     }
 }

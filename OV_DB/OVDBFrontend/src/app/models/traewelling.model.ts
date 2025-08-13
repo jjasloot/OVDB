@@ -163,3 +163,27 @@ export interface TrawellingProcessBacklogResponse {
   errors: number;
   message: string;
 }
+
+export interface RouteInstanceSearchResult {
+  id: number;
+  routeId: number;
+  routeName: string;
+  from: string;
+  to: string;
+  date: string;
+  startTime?: string;
+  endTime?: string;
+  durationHours?: number;
+  trawellingStatusId?: number;
+  hasTraewellingLink: boolean;
+}
+
+export interface LinkToRouteInstanceRequest {
+  statusId: number;
+  routeInstanceId: number;
+}
+
+export interface LinkToRouteInstanceResponse {
+  success: boolean;
+  routeInstance?: RouteInstanceSearchResult;
+}

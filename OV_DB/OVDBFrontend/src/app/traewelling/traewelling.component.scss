@@ -304,6 +304,11 @@
             margin-bottom: 0;
           }
 
+          &.already-linked {
+            background-color: #f5f5f5;
+            opacity: 0.7;
+          }
+
           .route-info {
             flex: 1;
 
@@ -316,6 +321,42 @@
             .route-description {
               font-size: 14px;
               color: #666;
+              margin-bottom: 6px;
+            }
+
+            .route-details {
+              display: flex;
+              align-items: center;
+              gap: 12px;
+              flex-wrap: wrap;
+
+              .time {
+                font-size: 12px;
+                color: #888;
+              }
+
+              .duration {
+                font-size: 12px;
+                color: #4caf50;
+                font-weight: 500;
+              }
+
+              .linked-indicator {
+                display: flex;
+                align-items: center;
+                gap: 4px;
+                font-size: 12px;
+                color: #ff9800;
+                background-color: #fff3e0;
+                padding: 2px 8px;
+                border-radius: 12px;
+
+                mat-icon {
+                  font-size: 14px;
+                  width: 14px;
+                  height: 14px;
+                }
+              }
             }
           }
 
@@ -324,6 +365,10 @@
             
             mat-icon {
               margin-right: 6px;
+            }
+
+            &:disabled {
+              opacity: 0.6;
             }
           }
         }

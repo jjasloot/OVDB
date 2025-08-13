@@ -14,7 +14,8 @@ import {
   TrawellingConnectionStatus, 
   TrawellingTrip, 
   TrawellingUnimportedResponse,
-  TrawellingStats
+  TrawellingStats,
+  RouteInstanceSearchResult
 } from '../models/traewelling.model';
 
 @Component({
@@ -51,8 +52,9 @@ export class TrawellingComponent implements OnInit {
   
   // Search and filters
   searchTerm = '';
-  existingRoutes: any[] = [];
-  searchingRoutes = false;
+  existingRouteInstances: RouteInstanceSearchResult[] = [];
+  searchingRouteInstances = false;
+  searchTrip: TrawellingTrip | null = null;
 
   constructor(
     public apiService: ApiService,
@@ -152,22 +154,59 @@ export class TrawellingComponent implements OnInit {
   }
 
   searchExistingRoutes(trip: TrawellingTrip): void {
-    this.searchingRoutes = true;
+    this.searchTrip = trip;
+    this.searchingRouteInstances = true;
+    this.existingRouteInstances = [];
+    
+    // Parse the trip departure date
+    const tripDate = new Date(trip.departure);
+    const dateString = tripDate.toISOString().split('T')[0]; // YYYY-MM-DD format
+    
+    // Create search query from origin and destination
     const searchQuery = `${trip.origin.name} ${trip.destination.name}`;
     
-    // For now, we'll simulate this functionality
-    // In a real implementation, we'd need a routes search endpoint
-    setTimeout(() => {
-      this.existingRoutes = [];
-      this.searchingRoutes = false;
-      this.showMessage('Feature coming soon - search existing routes');
-    }, 1000);
+    this.apiService.searchRouteInstances(dateString, searchQuery).subscribe({
+      next: (routeInstances) => {
+        this.existingRouteInstances = routeInstances;
+        this.searchingRouteInstances = false;
+        
+        if (routeInstances.length === 0) {
+          this.showMessage('TRAEWELLING.NO_ROUTE_INSTANCES_FOUND');
+        }
+      },
+      error: (error) => {
+        console.error('Error searching RouteInstances:', error);
+        this.searchingRouteInstances = false;
+        this.showMessage('TRAEWELLING.ERROR_SEARCHING_ROUTES');
+      }
+    });
   }
 
-  linkToExistingRoute(trip: TrawellingTrip, route: any): void {
-    // This would create a route instance for the existing route
-    // We'd need to implement this in the backend
-    this.showMessage('Feature coming soon - link to existing route');
+  linkToExistingRouteInstance(trip: TrawellingTrip, routeInstance: RouteInstanceSearchResult): void {
+    const linkRequest = {
+      statusId: trip.id,
+      routeInstanceId: routeInstance.id
+    };
+
+    this.apiService.linkToRouteInstance(linkRequest).subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.showMessage('TRAEWELLING.TRIP_LINKED');
+          // Remove the linked trip from the unimported list
+          this.unimportedTrips = this.unimportedTrips.filter(t => t.id !== trip.id);
+          // Clear the search results
+          this.existingRouteInstances = [];
+          this.searchTrip = null;
+          this.loadStats(); // Refresh stats
+        } else {
+          this.showMessage('TRAEWELLING.ERROR_LINKING_TRIP');
+        }
+      },
+      error: (error) => {
+        console.error('Error linking trip:', error);
+        this.showMessage('TRAEWELLING.ERROR_LINKING_TRIP');
+      }
+    });
   }
 
   processBacklog(): void {
