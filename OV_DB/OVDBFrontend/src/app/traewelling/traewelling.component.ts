@@ -219,7 +219,21 @@ export class TrawellingComponent implements OnInit {
   }
 
   getCategoryName(category: TrawellingHafasTravelType): string {
-    return 'TRAEWELLING.CATEGORY_' + category.toUpperCase();
+    // Map API category values to translation keys
+    const categoryMap: Record<TrawellingHafasTravelType, string> = {
+      [TrawellingHafasTravelType.NATIONAL_EXPRESS]: 'TRAEWELLING.CATEGORY_NATIONALEXPRESS',
+      [TrawellingHafasTravelType.NATIONAL]: 'TRAEWELLING.CATEGORY_NATIONAL',
+      [TrawellingHafasTravelType.REGIONAL_EXP]: 'TRAEWELLING.CATEGORY_REGIONALEXP',
+      [TrawellingHafasTravelType.REGIONAL]: 'TRAEWELLING.CATEGORY_REGIONAL',
+      [TrawellingHafasTravelType.SUBURBAN]: 'TRAEWELLING.CATEGORY_SUBURBAN',
+      [TrawellingHafasTravelType.BUS]: 'TRAEWELLING.CATEGORY_BUS',
+      [TrawellingHafasTravelType.FERRY]: 'TRAEWELLING.CATEGORY_FERRY',
+      [TrawellingHafasTravelType.SUBWAY]: 'TRAEWELLING.CATEGORY_SUBWAY',
+      [TrawellingHafasTravelType.TRAM]: 'TRAEWELLING.CATEGORY_TRAM',
+      [TrawellingHafasTravelType.TAXI]: 'TRAEWELLING.CATEGORY_TAXI',
+      [TrawellingHafasTravelType.PLANE]: 'TRAEWELLING.CATEGORY_PLANE'
+    };
+    return categoryMap[category] || 'TRAEWELLING.CATEGORY_UNKNOWN';
   }
 
   isDelayed(planned: string | null | undefined, actual: string | null | undefined): boolean {

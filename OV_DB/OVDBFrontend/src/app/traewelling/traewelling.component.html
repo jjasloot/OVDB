@@ -52,6 +52,7 @@
       <div class="no-trips">
         <mat-icon>check_circle</mat-icon>
         <p>{{ 'TRAEWELLING.NO_TRIPS' | translate }}</p>
+        <p class="no-trips-message">{{ 'TRAEWELLING.NO_UNIMPORTED_TRIPS_MESSAGE' | translate }}</p>
       </div>
       } @else {
       <div class="trips-list">
@@ -124,6 +125,18 @@
                       {{ trip.train.origin.departureReal | date:'shortTime' }}
                     </mat-chip>
                     }
+                    @if (trip.train?.origin?.departurePlatformPlanned) {
+                    <mat-chip>
+                      <mat-icon>train</mat-icon>
+                      {{ 'TRAEWELLING.PLATFORM' | translate }} {{ trip.train.origin.departurePlatformPlanned }}
+                    </mat-chip>
+                    }
+                    @if (trip.train?.origin?.departurePlatformReal && trip.train?.origin?.departurePlatformReal !== trip.train?.origin?.departurePlatformPlanned) {
+                    <mat-chip color="warn">
+                      <mat-icon>warning</mat-icon>
+                      {{ 'TRAEWELLING.PLATFORM' | translate }} {{ trip.train.origin.departurePlatformReal }}
+                    </mat-chip>
+                    }
                   </mat-chip-set>
                 </div>
 
@@ -143,6 +156,18 @@
                       'warning' : 'check' }}</mat-icon>
                     {{ trip.train.destination.arrivalReal | date:'shortTime' }}
                   </mat-chip>}
+                  @if (trip.train?.destination?.arrivalPlatformPlanned) {
+                  <mat-chip>
+                    <mat-icon>train</mat-icon>
+                    {{ 'TRAEWELLING.PLATFORM' | translate }} {{ trip.train.destination.arrivalPlatformPlanned }}
+                  </mat-chip>
+                  }
+                  @if (trip.train?.destination?.arrivalPlatformReal && trip.train?.destination?.arrivalPlatformReal !== trip.train?.destination?.arrivalPlatformPlanned) {
+                  <mat-chip color="warn">
+                    <mat-icon>warning</mat-icon>
+                    {{ 'TRAEWELLING.PLATFORM' | translate }} {{ trip.train.destination.arrivalPlatformReal }}
+                  </mat-chip>
+                  }
                 </mat-chip-set>
                 }
               </div>

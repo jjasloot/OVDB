@@ -33,6 +33,16 @@ namespace OV_DB.Services
         private static readonly Dictionary<string, (int UserId, DateTime Expiry)> _oauthStates = new();
         private static readonly object _statelock = new object();
 
+        // Simple in-memory cache for status data - in production, use Redis or database
+        private static readonly Dictionary<int, (TrawellingStatus Status, DateTime CachedAt)> _statusCache = new();
+        private static readonly object _cacheLock = new object();
+        private static readonly TimeSpan _cacheExpiry = TimeSpan.FromMinutes(30); // Cache for 30 minutes
+
+        // Rate limiting tracking
+        private int? _rateLimitLimit;
+        private int? _rateLimitRemaining;
+        private DateTime _rateLimitUpdated;
+
         public TrawellingService(HttpClient httpClient, IConfiguration configuration, ITimezoneService timezoneService,
             OVDBDatabaseContext dbContext, ILogger<TrawellingService> logger)
         {
@@ -219,6 +229,9 @@ namespace OV_DB.Services
 
                 var response = await _httpClient.GetAsync($"{_baseUrl}/auth/user");
                 
+                // Update rate limit tracking
+                UpdateRateLimitInfo(response);
+                
                 if (!response.IsSuccessStatusCode)
                 {
                     _logger.LogError("Failed to get user info for user {UserId}. Status: {StatusCode}", 
@@ -251,6 +264,9 @@ namespace OV_DB.Services
                 // Get user's statuses from Träwelling
                 var response = await _httpClient.GetAsync($"{_baseUrl}/user/jjasloot/statuses?page={page}");
                 
+                // Update rate limit tracking
+                UpdateRateLimitInfo(response);
+                
                 if (!response.IsSuccessStatusCode)
                 {
                     _logger.LogError("Failed to get statuses for user {UserId}. Status: {StatusCode}", 
@@ -263,6 +279,23 @@ namespace OV_DB.Services
 
                 if (statusesResponse?.Data != null)
                 {
+                    // Cache all status data for potential linking operations
+                    lock (_cacheLock)
+                    {
+                        var now = DateTime.UtcNow;
+                        foreach (var status in statusesResponse.Data)
+                        {
+                            _statusCache[status.Id] = (status, now);
+                        }
+                        
+                        // Clean up expired cache entries
+                        var expiredEntries = _statusCache.Where(kvp => now - kvp.Value.CachedAt > _cacheExpiry).ToList();
+                        foreach (var expired in expiredEntries)
+                        {
+                            _statusCache.Remove(expired.Key);
+                        }
+                    }
+
                     // Filter out statuses that are already imported or ignored
                     var existingTrawellingIds = await _dbContext.RouteInstances
                         .Where(ri => ri.TrawellingStatusId.HasValue)
@@ -633,6 +666,26 @@ namespace OV_DB.Services
         {
             try
             {
+                // Check cache first
+                lock (_cacheLock)
+                {
+                    if (_statusCache.TryGetValue(statusId, out var cachedData))
+                    {
+                        var age = DateTime.UtcNow - cachedData.CachedAt;
+                        if (age <= _cacheExpiry)
+                        {
+                            _logger.LogDebug("Using cached status data for status {StatusId}", statusId);
+                            return cachedData.Status;
+                        }
+                        else
+                        {
+                            // Remove expired entry
+                            _statusCache.Remove(statusId);
+                        }
+                    }
+                }
+
+                // Cache miss or expired - fetch from API
                 if (!await EnsureValidTokenAsync(user))
                     return null;
 
@@ -640,17 +693,71 @@ namespace OV_DB.Services
                     new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", user.TrawellingAccessToken);
 
                 var response = await _httpClient.GetAsync($"{_baseUrl}/status/{statusId}");
+                
+                // Update rate limit tracking
+                UpdateRateLimitInfo(response);
+                
                 response.EnsureSuccessStatusCode();
 
                 var content = await response.Content.ReadAsStringAsync();
                 var statusResponse = JsonConvert.DeserializeObject<TrawellingStatusResponse>(content);
 
-                return statusResponse?.Data;
+                var status = statusResponse?.Data;
+                if (status != null)
+                {
+                    // Cache the fetched status
+                    lock (_cacheLock)
+                    {
+                        _statusCache[statusId] = (status, DateTime.UtcNow);
+                    }
+                }
+
+                return status;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting Träwelling status {StatusId}", statusId);
                 return null;
+            }
+        }
+
+        private void UpdateRateLimitInfo(HttpResponseMessage response)
+        {
+            try
+            {
+                if (response.Headers.TryGetValues("x-ratelimit-limit", out var limitValues))
+                {
+                    if (int.TryParse(limitValues.FirstOrDefault(), out var limit))
+                    {
+                        _rateLimitLimit = limit;
+                    }
+                }
+
+                if (response.Headers.TryGetValues("x-ratelimit-remaining", out var remainingValues))
+                {
+                    if (int.TryParse(remainingValues.FirstOrDefault(), out var remaining))
+                    {
+                        _rateLimitRemaining = remaining;
+                    }
+                }
+
+                _rateLimitUpdated = DateTime.UtcNow;
+
+                if (_rateLimitLimit.HasValue && _rateLimitRemaining.HasValue)
+                {
+                    _logger.LogDebug("Träwelling API rate limit: {Remaining}/{Limit} remaining", 
+                        _rateLimitRemaining.Value, _rateLimitLimit.Value);
+
+                    if (_rateLimitRemaining.Value < 10)
+                    {
+                        _logger.LogWarning("Träwelling API rate limit is low: {Remaining}/{Limit} remaining", 
+                            _rateLimitRemaining.Value, _rateLimitLimit.Value);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogDebug(ex, "Error parsing rate limit headers");
             }
         }
     }

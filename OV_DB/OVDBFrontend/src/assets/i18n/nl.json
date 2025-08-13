@@ -343,17 +343,21 @@
     "CATEGORY_SUBWAY": "Metro",
     "CATEGORY_PLANE": "Vliegtuig",
     "CATEGORY_TAXI": "Taxi",
+    "CATEGORY_UNKNOWN": "Onbekend",
     "REFRESH": "Verversen",
     "IGNORE_TRIP": "Reis Negeren",
     "TRIP_IGNORED": "Reis succesvol genegeerd",
     "ERROR_IGNORING_TRIP": "Fout bij negeren van reis",
     "ERROR_LOADING_TRIPS": "Fout bij laden van reizen",
+    "DEPARTURE": "Vertrek",
+    "ARRIVAL": "Aankomst",
     "DEPARTURE_PLANNED": "Geplande Vertrek",
     "DEPARTURE_ACTUAL": "Werkelijke Vertrek",
     "ARRIVAL_PLANNED": "Geplande Aankomst",
     "ARRIVAL_ACTUAL": "Werkelijke Aankomst",
     "PLATFORM": "Perron",
     "DELAYED": "Vertraagd",
-    "ON_TIME": "Op Tijd"
+    "ON_TIME": "Op Tijd",
+    "NO_UNIMPORTED_TRIPS_MESSAGE": "Al je recente Träwelling reizen zijn geïmporteerd of genegeerd. Kom later terug voor nieuwe reizen!"
   }
 }
