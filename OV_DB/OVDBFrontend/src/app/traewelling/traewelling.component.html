@@ -117,12 +117,13 @@
                       {{ trip.train.origin.departurePlanned | date:'shortTime' }}
                     </mat-chip>
                     }
-                    @if (trip.train?.origin?.departureReal) {
+                    @if (trip.train?.origin?.departureReal || trip.train?.manualDeparture) {
                     <mat-chip
-                      [color]="isDelayed(trip.train.origin.departurePlanned, trip.train.origin.departureReal) ? 'warn' : 'primary'">
-                      <mat-icon>{{ isDelayed(trip.train.origin.departurePlanned, trip.train.origin.departureReal) ?
+                      [color]="isDelayed(trip.train.origin.departurePlanned, trip.train?.manualDeparture??trip.train.origin.departureReal) ? 'warn' : 'primary'">
+                      <mat-icon>{{ isDelayed(trip.train.origin.departurePlanned,
+                        trip.train?.manualDeparture??trip.train.origin.departureReal) ?
                         'warning' : 'check' }}</mat-icon>
-                      {{ trip.train.origin.departureReal | date:'shortTime' }}
+                      {{ trip.train?.manualDeparture?? trip.train.origin.departureReal | date:'shortTime' }}
                     </mat-chip>
                     }
                     @if (trip.train?.origin?.departurePlatformPlanned) {
@@ -131,7 +132,8 @@
                       {{ 'TRAEWELLING.PLATFORM' | translate }} {{ trip.train.origin.departurePlatformPlanned }}
                     </mat-chip>
                     }
-                    @if (trip.train?.origin?.departurePlatformReal && trip.train?.origin?.departurePlatformReal !== trip.train?.origin?.departurePlatformPlanned) {
+                    @if (trip.train?.origin?.departurePlatformReal && trip.train?.origin?.departurePlatformReal !==
+                    trip.train?.origin?.departurePlatformPlanned) {
                     <mat-chip color="warn">
                       <mat-icon>warning</mat-icon>
                       {{ 'TRAEWELLING.PLATFORM' | translate }} {{ trip.train.origin.departurePlatformReal }}
@@ -140,7 +142,8 @@
                   </mat-chip-set>
                 </div>
 
-                @if (trip.train?.destination?.arrivalPlanned || trip.train?.destination?.arrivalReal) {
+                @if (trip.train?.destination?.arrivalPlanned || trip.train?.destination?.arrivalReal||
+                trip.train?.manualArrival) {
                 <h4>{{ 'TRAEWELLING.ARRIVAL' | translate }}</h4>
                 <mat-chip-set>
                   @if (trip.train?.destination?.arrivalPlanned) {
@@ -149,12 +152,13 @@
                     {{ trip.train.destination.arrivalPlanned | date:'shortTime' }}
                   </mat-chip>
                   }
-                  @if (trip.train?.destination?.arrivalReal) {
+                  @if (trip.train?.destination?.arrivalReal|| trip.train?.manualArrival) {
                   <mat-chip
-                    [color]="isDelayed(trip.train.destination.arrivalPlanned, trip.train.destination.arrivalReal) ? 'warn' : 'primary'">
-                    <mat-icon>{{ isDelayed(trip.train.destination.arrivalPlanned, trip.train.destination.arrivalReal) ?
+                    [color]="isDelayed(trip.train.destination.arrivalPlanned,trip.train?.manualArrival?? trip.train.destination.arrivalReal) ? 'warn' : 'primary'">
+                    <mat-icon>{{ isDelayed(trip.train.destination.arrivalPlanned,trip.train?.manualArrival??
+                      trip.train.destination.arrivalReal) ?
                       'warning' : 'check' }}</mat-icon>
-                    {{ trip.train.destination.arrivalReal | date:'shortTime' }}
+                    {{trip.train?.manualArrival|| trip.train.destination.arrivalReal | date:'shortTime' }}
                   </mat-chip>}
                   @if (trip.train?.destination?.arrivalPlatformPlanned) {
                   <mat-chip>
@@ -162,7 +166,8 @@
                     {{ 'TRAEWELLING.PLATFORM' | translate }} {{ trip.train.destination.arrivalPlatformPlanned }}
                   </mat-chip>
                   }
-                  @if (trip.train?.destination?.arrivalPlatformReal && trip.train?.destination?.arrivalPlatformReal !== trip.train?.destination?.arrivalPlatformPlanned) {
+                  @if (trip.train?.destination?.arrivalPlatformReal && trip.train?.destination?.arrivalPlatformReal !==
+                  trip.train?.destination?.arrivalPlatformPlanned) {
                   <mat-chip color="warn">
                     <mat-icon>warning</mat-icon>
                     {{ 'TRAEWELLING.PLATFORM' | translate }} {{ trip.train.destination.arrivalPlatformReal }}

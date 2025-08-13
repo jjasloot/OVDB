@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
@@ -28,30 +29,28 @@ namespace OV_DB.Services
         private readonly string _redirectUri;
         private readonly string _authorizeUrl;
         private readonly string _tokenUrl;
+        private readonly IMemoryCache _memoryCache;
 
         // Simple in-memory cache for OAuth states - in production, use Redis or database
         private static readonly Dictionary<string, (int UserId, DateTime Expiry)> _oauthStates = new();
         private static readonly object _statelock = new object();
 
-        // Simple in-memory cache for status data - in production, use Redis or database
-        private static readonly Dictionary<int, (TrawellingStatus Status, DateTime CachedAt)> _statusCache = new();
-        private static readonly object _cacheLock = new object();
-        private static readonly TimeSpan _cacheExpiry = TimeSpan.FromMinutes(30); // Cache for 30 minutes
 
         // Rate limiting tracking
         private int? _rateLimitLimit;
         private int? _rateLimitRemaining;
         private DateTime _rateLimitUpdated;
 
+
         public TrawellingService(HttpClient httpClient, IConfiguration configuration, ITimezoneService timezoneService,
-            OVDBDatabaseContext dbContext, ILogger<TrawellingService> logger)
+            OVDBDatabaseContext dbContext, ILogger<TrawellingService> logger, IMemoryCache memoryCache)
         {
             _httpClient = httpClient;
             _configuration = configuration;
             _timezoneService = timezoneService;
             _dbContext = dbContext;
             _logger = logger;
-            
+            _memoryCache = memoryCache;
             _baseUrl = _configuration["Traewelling:BaseUrl"];
             _clientId = _configuration["Traewelling:ClientId"];
             _clientSecret = _configuration["Traewelling:ClientSecret"];
@@ -139,10 +138,10 @@ namespace OV_DB.Services
                 });
 
                 var response = await _httpClient.PostAsync(_tokenUrl, tokenRequest);
-                
+
                 if (!response.IsSuccessStatusCode)
                 {
-                    _logger.LogError("Failed to exchange code for tokens. Status: {StatusCode}, Content: {Content}", 
+                    _logger.LogError("Failed to exchange code for tokens. Status: {StatusCode}, Content: {Content}",
                         response.StatusCode, await response.Content.ReadAsStringAsync());
                     return false;
                 }
@@ -191,10 +190,10 @@ namespace OV_DB.Services
                 });
 
                 var response = await _httpClient.PostAsync(_tokenUrl, refreshRequest);
-                
+
                 if (!response.IsSuccessStatusCode)
                 {
-                    _logger.LogError("Failed to refresh tokens for user {UserId}. Status: {StatusCode}", 
+                    _logger.LogError("Failed to refresh tokens for user {UserId}. Status: {StatusCode}",
                         user.Id, response.StatusCode);
                     return false;
                 }
@@ -228,20 +227,20 @@ namespace OV_DB.Services
                 _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {user.TrawellingAccessToken}");
 
                 var response = await _httpClient.GetAsync($"{_baseUrl}/auth/user");
-                
+
                 // Update rate limit tracking
                 UpdateRateLimitInfo(response);
-                
+
                 if (!response.IsSuccessStatusCode)
                 {
-                    _logger.LogError("Failed to get user info for user {UserId}. Status: {StatusCode}", 
+                    _logger.LogError("Failed to get user info for user {UserId}. Status: {StatusCode}",
                         user.Id, response.StatusCode);
                     return null;
                 }
 
                 var responseContent = await response.Content.ReadAsStringAsync();
                 var userResponse = JsonConvert.DeserializeObject<TrawellingUserAuthResponse>(responseContent);
-                
+
                 return userResponse?.Data;
             }
             catch (Exception ex)
@@ -263,13 +262,13 @@ namespace OV_DB.Services
 
                 // Get user's statuses from Träwelling
                 var response = await _httpClient.GetAsync($"{_baseUrl}/user/jjasloot/statuses?page={page}");
-                
+
                 // Update rate limit tracking
                 UpdateRateLimitInfo(response);
-                
+
                 if (!response.IsSuccessStatusCode)
                 {
-                    _logger.LogError("Failed to get statuses for user {UserId}. Status: {StatusCode}", 
+                    _logger.LogError("Failed to get statuses for user {UserId}. Status: {StatusCode}",
                         user.Id, response.StatusCode);
                     return null;
                 }
@@ -279,21 +278,10 @@ namespace OV_DB.Services
 
                 if (statusesResponse?.Data != null)
                 {
-                    // Cache all status data for potential linking operations
-                    lock (_cacheLock)
+
+                    foreach (var status in statusesResponse.Data)
                     {
-                        var now = DateTime.UtcNow;
-                        foreach (var status in statusesResponse.Data)
-                        {
-                            _statusCache[status.Id] = (status, now);
-                        }
-                        
-                        // Clean up expired cache entries
-                        var expiredEntries = _statusCache.Where(kvp => now - kvp.Value.CachedAt > _cacheExpiry).ToList();
-                        foreach (var expired in expiredEntries)
-                        {
-                            _statusCache.Remove(expired.Key);
-                        }
+                        _memoryCache.Set("TraewellingStatus|" + status.Id, status, TimeSpan.FromMinutes(30)); 
                     }
 
                     // Filter out statuses that are already imported or ignored
@@ -308,7 +296,7 @@ namespace OV_DB.Services
                         .ToListAsync();
 
                     statusesResponse.Data = statusesResponse.Data
-                        .Where(status => !existingTrawellingIds.Contains(status.Id) && 
+                        .Where(status => !existingTrawellingIds.Contains(status.Id) &&
                                        !ignoredTrawellingIds.Contains(status.Id))
                         .ToList();
                 }
@@ -395,12 +383,12 @@ namespace OV_DB.Services
                 // Try to find existing route by name pattern
                 var routeName = $"{originName} - {destinationName}";
                 var existingRoute = await _dbContext.Routes
-                    .FirstOrDefaultAsync(r => r.Name == routeName || 
+                    .FirstOrDefaultAsync(r => r.Name == routeName ||
                                             (r.From == originName && r.To == destinationName));
 
                 if (existingRoute != null)
                 {
-                    _logger.LogInformation("Found existing route {RouteId} for {Origin} to {Destination}", 
+                    _logger.LogInformation("Found existing route {RouteId} for {Origin} to {Destination}",
                         existingRoute.RouteId, originName, destinationName);
                     return existingRoute;
                 }
@@ -422,7 +410,7 @@ namespace OV_DB.Services
                 _dbContext.Routes.Add(newRoute);
                 await _dbContext.SaveChangesAsync();
 
-                _logger.LogInformation("Created new route {RouteId} for {Origin} to {Destination}", 
+                _logger.LogInformation("Created new route {RouteId} for {Origin} to {Destination}",
                     newRoute.RouteId, originName, destinationName);
 
                 return newRoute;
@@ -461,7 +449,7 @@ namespace OV_DB.Services
                 var routeIds = candidateRoutes.Select(r => r.RouteId).ToList();
                 var candidateInstances = await _dbContext.RouteInstances
                     .Include(ri => ri.RouteInstanceProperties)
-                    .Where(ri => routeIds.Contains(ri.RouteId) && 
+                    .Where(ri => routeIds.Contains(ri.RouteId) &&
                                 ri.Date.Date == tripDate &&
                                 ri.TrawellingStatusId == null && // Not already linked to Träwelling
                                 (!ri.StartTime.HasValue || !ri.EndTime.HasValue)) // Missing timing data
@@ -472,13 +460,13 @@ namespace OV_DB.Services
 
                 // Find the best match - prefer exact route match, then by route name similarity
                 var bestMatch = candidateInstances
-                    .OrderByDescending(ri => 
-                        candidateRoutes.First(r => r.RouteId == ri.RouteId).From == originName && 
+                    .OrderByDescending(ri =>
+                        candidateRoutes.First(r => r.RouteId == ri.RouteId).From == originName &&
                         candidateRoutes.First(r => r.RouteId == ri.RouteId).To == destinationName)
-                    .ThenByDescending(ri => 
+                    .ThenByDescending(ri =>
                         candidateRoutes.First(r => r.RouteId == ri.RouteId).Name
                             .Split(new[] { " - ", "-" }, StringSplitOptions.RemoveEmptyEntries)
-                            .Count(part => originName.Contains(part, StringComparison.OrdinalIgnoreCase) || 
+                            .Count(part => originName.Contains(part, StringComparison.OrdinalIgnoreCase) ||
                                           destinationName.Contains(part, StringComparison.OrdinalIgnoreCase)))
                     .FirstOrDefault();
 
@@ -545,7 +533,7 @@ namespace OV_DB.Services
                 if (updated)
                 {
                     await _dbContext.SaveChangesAsync();
-                    _logger.LogInformation("Updated RouteInstance {RouteInstanceId} with Träwelling data from status {StatusId}", 
+                    _logger.LogInformation("Updated RouteInstance {RouteInstanceId} with Träwelling data from status {StatusId}",
                         bestMatch.RouteInstanceId, status.Id);
                     return true;
                 }
@@ -565,7 +553,7 @@ namespace OV_DB.Services
             {
                 var query = _dbContext.RouteInstances
                     .Include(ri => ri.Route)
-                    .Where(ri=>ri.Route.RouteMaps.Any(rm=>rm.Map.UserId==user.Id))
+                    .Where(ri => ri.Route.RouteMaps.Any(rm => rm.Map.UserId == user.Id))
                     .Where(ri => ri.Date.Date == date.Date);
 
 
@@ -578,12 +566,12 @@ namespace OV_DB.Services
                 //}
 
                 var routeInstances = await query
-                    .OrderBy(ri=>ri.TrawellingStatusId.HasValue)
+                    .OrderBy(ri => ri.TrawellingStatusId.HasValue)
                     .ThenByDescending(ri => ri.StartTime ?? ri.Date)
-                    .ThenByDescending(ri=>ri.RouteInstanceId)
+                    .ThenByDescending(ri => ri.RouteInstanceId)
                     .ToListAsync();
 
-                _logger.LogInformation("Found {Count} RouteInstances for date {Date} with query '{Query}'", 
+                _logger.LogInformation("Found {Count} RouteInstances for date {Date} with query '{Query}'",
                     routeInstances.Count, date.Date, searchQuery ?? "none");
 
                 return routeInstances;
@@ -605,7 +593,7 @@ namespace OV_DB.Services
 
                 if (existingLink != null)
                 {
-                    _logger.LogWarning("Träwelling status {StatusId} is already linked to RouteInstance {ExistingRouteInstanceId}", 
+                    _logger.LogWarning("Träwelling status {StatusId} is already linked to RouteInstance {ExistingRouteInstanceId}",
                         statusId, existingLink.RouteInstanceId);
                     return null;
                 }
@@ -628,12 +616,12 @@ namespace OV_DB.Services
                     // Update timing data if the RouteInstance doesn't have it
                     if (statusData.Train?.Origin?.Departure.HasValue == true)
                     {
-                        routeInstance.StartTime = statusData.Train.Origin.Departure;
+                        routeInstance.StartTime = statusData.Train.ManualDeparture?? statusData.Train.Origin.Departure;
                     }
 
                     if (statusData.Train?.Destination?.Arrival.HasValue == true)
                     {
-                        routeInstance.EndTime = statusData.Train.Destination.Arrival;
+                        routeInstance.EndTime = statusData.Train.ManualArrival ?? statusData.Train.Destination.Arrival;
                     }
 
                     if (routeInstance.StartTime.HasValue && routeInstance.EndTime.HasValue)
@@ -649,14 +637,14 @@ namespace OV_DB.Services
                 routeInstance.TrawellingStatusId = statusId;
                 await _dbContext.SaveChangesAsync();
 
-                _logger.LogInformation("Successfully linked Träwelling status {StatusId} to RouteInstance {RouteInstanceId}", 
+                _logger.LogInformation("Successfully linked Träwelling status {StatusId} to RouteInstance {RouteInstanceId}",
                     statusId, routeInstanceId);
 
                 return routeInstance;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error linking Träwelling status {StatusId} to RouteInstance {RouteInstanceId}", 
+                _logger.LogError(ex, "Error linking Träwelling status {StatusId} to RouteInstance {RouteInstanceId}",
                     statusId, routeInstanceId);
                 return null;
             }
@@ -666,37 +654,25 @@ namespace OV_DB.Services
         {
             try
             {
-                // Check cache first
-                lock (_cacheLock)
+               
+                if(_memoryCache.TryGetValue($"TraewellingStatus|{statusId}", out TrawellingStatus cachedStatus))
                 {
-                    if (_statusCache.TryGetValue(statusId, out var cachedData))
-                    {
-                        var age = DateTime.UtcNow - cachedData.CachedAt;
-                        if (age <= _cacheExpiry)
-                        {
-                            _logger.LogDebug("Using cached status data for status {StatusId}", statusId);
-                            return cachedData.Status;
-                        }
-                        else
-                        {
-                            // Remove expired entry
-                            _statusCache.Remove(statusId);
-                        }
-                    }
+                    return cachedStatus;
                 }
+
 
                 // Cache miss or expired - fetch from API
                 if (!await EnsureValidTokenAsync(user))
                     return null;
 
-                _httpClient.DefaultRequestHeaders.Authorization = 
+                _httpClient.DefaultRequestHeaders.Authorization =
                     new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", user.TrawellingAccessToken);
 
                 var response = await _httpClient.GetAsync($"{_baseUrl}/status/{statusId}");
-                
+
                 // Update rate limit tracking
                 UpdateRateLimitInfo(response);
-                
+
                 response.EnsureSuccessStatusCode();
 
                 var content = await response.Content.ReadAsStringAsync();
@@ -705,11 +681,7 @@ namespace OV_DB.Services
                 var status = statusResponse?.Data;
                 if (status != null)
                 {
-                    // Cache the fetched status
-                    lock (_cacheLock)
-                    {
-                        _statusCache[statusId] = (status, DateTime.UtcNow);
-                    }
+                    _memoryCache.Set("TraewellingStatus|" + status.Id, status, TimeSpan.FromMinutes(30));
                 }
 
                 return status;
@@ -745,12 +717,12 @@ namespace OV_DB.Services
 
                 if (_rateLimitLimit.HasValue && _rateLimitRemaining.HasValue)
                 {
-                    _logger.LogDebug("Träwelling API rate limit: {Remaining}/{Limit} remaining", 
+                    _logger.LogDebug("Träwelling API rate limit: {Remaining}/{Limit} remaining",
                         _rateLimitRemaining.Value, _rateLimitLimit.Value);
 
                     if (_rateLimitRemaining.Value < 10)
                     {
-                        _logger.LogWarning("Träwelling API rate limit is low: {Remaining}/{Limit} remaining", 
+                        _logger.LogWarning("Träwelling API rate limit is low: {Remaining}/{Limit} remaining",
                             _rateLimitRemaining.Value, _rateLimitLimit.Value);
                     }
                 }
