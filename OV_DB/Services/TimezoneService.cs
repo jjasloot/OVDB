@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using GeoTimeZone;
 using NetTopologySuite.Geometries;
 using TimeZoneConverter;
@@ -23,8 +24,35 @@ namespace OV_DB.Services
             //calculate duration in hours
 
             return (endUtc - startUtc).TotalHours;
+        }
 
+        public async Task<DateTime> ConvertUtcToLocalTimeAsync(DateTime utcDateTime, string coordinates)
+        {
+            try
+            {
+                // Parse coordinates "latitude,longitude"
+                var parts = coordinates.Split(',');
+                if (parts.Length != 2 ||
+                    !double.TryParse(parts[0], out var latitude) ||
+                    !double.TryParse(parts[1], out var longitude))
+                {
+                    return utcDateTime; // Return UTC if parsing fails
+                }
 
+                var timezoneId = GetTimezoneId(latitude, longitude);
+                var timeZoneInfo = GetTimeZoneInfo(timezoneId);
+                
+                // Ensure UTC datetime is properly marked
+                var utcTime = DateTime.SpecifyKind(utcDateTime, DateTimeKind.Utc);
+                
+                // Convert to local timezone
+                return TimeZoneInfo.ConvertTimeFromUtc(utcTime, timeZoneInfo);
+            }
+            catch
+            {
+                // Return UTC time if conversion fails
+                return utcDateTime;
+            }
         }
 
         private string GetTimezoneId(double latitude, double longitude)

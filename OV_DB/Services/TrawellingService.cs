@@ -260,52 +260,204 @@ namespace OV_DB.Services
                 _httpClient.DefaultRequestHeaders.Clear();
                 _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {user.TrawellingAccessToken}");
 
-                // Get user's statuses from Träwelling
-                var response = await _httpClient.GetAsync($"{_baseUrl}/user/jjasloot/statuses?page={page}");
-
-                // Update rate limit tracking
-                UpdateRateLimitInfo(response);
-
-                if (!response.IsSuccessStatusCode)
+                TrawellingStatusesResponse statusesResponse = null;
+                int currentPage = page;
+                
+                // Loop through pages until we find one with unimported trips or reach the end
+                do
                 {
-                    _logger.LogError("Failed to get statuses for user {UserId}. Status: {StatusCode}",
-                        user.Id, response.StatusCode);
-                    return null;
-                }
+                    var response = await _httpClient.GetAsync($"{_baseUrl}/user/jjasloot/statuses?page={currentPage}");
 
-                var responseContent = await response.Content.ReadAsStringAsync();
-                var statusesResponse = JsonConvert.DeserializeObject<TrawellingStatusesResponse>(responseContent);
+                    // Update rate limit tracking
+                    UpdateRateLimitInfo(response);
 
-                if (statusesResponse?.Data != null)
-                {
-
-                    foreach (var status in statusesResponse.Data)
+                    // Check for rate limiting and implement backoff
+                    if (response.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
                     {
-                        _memoryCache.Set("TraewellingStatus|" + status.Id, status, TimeSpan.FromMinutes(30)); 
+                        _logger.LogWarning("Rate limit hit for user {UserId}. Implementing backoff.", user.Id);
+                        await Task.Delay(TimeSpan.FromMinutes(1)); // Simple backoff - wait 1 minute
+                        response = await _httpClient.GetAsync($"{_baseUrl}/user/jjasloot/statuses?page={currentPage}");
+                        UpdateRateLimitInfo(response);
                     }
 
-                    // Filter out statuses that are already imported or ignored
-                    var existingTrawellingIds = await _dbContext.RouteInstances
-                        .Where(ri => ri.TrawellingStatusId.HasValue)
-                        .Select(ri => ri.TrawellingStatusId.Value)
-                        .ToListAsync();
+                    if (!response.IsSuccessStatusCode)
+                    {
+                        _logger.LogError("Failed to get statuses for user {UserId}. Status: {StatusCode}",
+                            user.Id, response.StatusCode);
+                        return null;
+                    }
 
-                    var ignoredTrawellingIds = await _dbContext.TrawellingIgnoredStatuses
-                        .Where(tis => tis.UserId == user.Id)
-                        .Select(tis => tis.TrawellingStatusId)
-                        .ToListAsync();
+                    var responseContent = await response.Content.ReadAsStringAsync();
+                    statusesResponse = JsonConvert.DeserializeObject<TrawellingStatusesResponse>(responseContent);
 
-                    statusesResponse.Data = statusesResponse.Data
-                        .Where(status => !existingTrawellingIds.Contains(status.Id) &&
-                                       !ignoredTrawellingIds.Contains(status.Id))
-                        .ToList();
-                }
+                    if (statusesResponse?.Data != null)
+                    {
+                        foreach (var status in statusesResponse.Data)
+                        {
+                            _memoryCache.Set("TraewellingStatus|" + status.Id, status, TimeSpan.FromMinutes(30)); 
+                        }
+
+                        // Filter out statuses that are already imported or ignored
+                        var existingTrawellingIds = await _dbContext.RouteInstances
+                            .Where(ri => ri.TrawellingStatusId.HasValue)
+                            .Select(ri => ri.TrawellingStatusId.Value)
+                            .ToListAsync();
+
+                        var ignoredTrawellingIds = await _dbContext.TrawellingIgnoredStatuses
+                            .Where(tis => tis.UserId == user.Id)
+                            .Select(tis => tis.TrawellingStatusId)
+                            .ToListAsync();
+
+                        var filteredData = statusesResponse.Data
+                            .Where(status => !existingTrawellingIds.Contains(status.Id) &&
+                                           !ignoredTrawellingIds.Contains(status.Id))
+                            .ToList();
+
+                        // If we found unimported trips or reached the original requested page, return
+                        if (filteredData.Any() || currentPage == page)
+                        {
+                            statusesResponse.Data = filteredData;
+                            return statusesResponse;
+                        }
+
+                        // If this page was empty but there are more pages, continue to next page
+                        if (statusesResponse.Meta?.CurrentPage < statusesResponse.Meta?.Total)
+                        {
+                            currentPage++;
+                            continue;
+                        }
+                        else
+                        {
+                            // No more pages, return empty result
+                            statusesResponse.Data = new List<TrawellingStatus>();
+                            return statusesResponse;
+                        }
+                    }
+
+                    break;
+                } while (statusesResponse?.Meta?.CurrentPage < statusesResponse?.Meta?.Total);
 
                 return statusesResponse;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting unimported statuses for user {UserId}", user.Id);
+                return null;
+            }
+        }
+
+        public async Task<TrawellingTripsResponse> GetOptimizedTripsAsync(User user, int page = 1)
+        {
+            try
+            {
+                var statusesResponse = await GetUnimportedStatusesAsync(user, page);
+                if (statusesResponse?.Data == null)
+                    return null;
+
+                var optimizedTrips = new List<TrawellingTripDto>();
+
+                foreach (var status in statusesResponse.Data)
+                {
+                    var trip = await MapStatusToTripDto(user, status);
+                    if (trip != null)
+                    {
+                        optimizedTrips.Add(trip);
+                    }
+                }
+
+                return new TrawellingTripsResponse
+                {
+                    Data = optimizedTrips,
+                    Links = statusesResponse.Links,
+                    Meta = statusesResponse.Meta,
+                    HasMorePages = statusesResponse.Links?.Next != null
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting optimized trips for user {UserId}", user.Id);
+                return null;
+            }
+        }
+
+        public async Task<TrawellingStationData> GetStationDataAsync(User user, int stationId)
+        {
+            try
+            {
+                // First check if we have the station data in our database
+                var cachedStation = await _dbContext.TrawellingStations
+                    .FirstOrDefaultAsync(ts => ts.Id == stationId);
+
+                if (cachedStation != null)
+                {
+                    return new TrawellingStationData
+                    {
+                        Id = cachedStation.Id,
+                        Name = cachedStation.Name,
+                        Latitude = cachedStation.Latitude,
+                        Longitude = cachedStation.Longitude,
+                        Ibnr = cachedStation.Ibnr,
+                        RilIdentifier = cachedStation.RilIdentifier
+                    };
+                }
+
+                // If not cached, fetch from API
+                if (!await EnsureValidTokenAsync(user))
+                    return null;
+
+                _httpClient.DefaultRequestHeaders.Clear();
+                _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {user.TrawellingAccessToken}");
+
+                var response = await _httpClient.GetAsync($"{_baseUrl}/stations/{stationId}");
+                
+                // Update rate limit tracking
+                UpdateRateLimitInfo(response);
+
+                // Check for rate limiting and implement backoff
+                if (response.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
+                {
+                    _logger.LogWarning("Rate limit hit when fetching station {StationId}. Implementing backoff.", stationId);
+                    await Task.Delay(TimeSpan.FromMinutes(1));
+                    response = await _httpClient.GetAsync($"{_baseUrl}/stations/{stationId}");
+                    UpdateRateLimitInfo(response);
+                }
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    _logger.LogError("Failed to get station {StationId}. Status: {StatusCode}", stationId, response.StatusCode);
+                    return null;
+                }
+
+                var responseContent = await response.Content.ReadAsStringAsync();
+                var stationResponse = JsonConvert.DeserializeObject<TrawellingStationResponse>(responseContent);
+
+                var stationData = stationResponse?.Data;
+                if (stationData != null)
+                {
+                    // Store in database for future use
+                    var dbStation = new OVDB_database.Models.TrawellingStation
+                    {
+                        Id = stationData.Id,
+                        Name = stationData.Name,
+                        Latitude = stationData.Latitude,
+                        Longitude = stationData.Longitude,
+                        Ibnr = stationData.Ibnr,
+                        RilIdentifier = stationData.RilIdentifier,
+                        CreatedAt = DateTime.UtcNow,
+                        UpdatedAt = DateTime.UtcNow
+                    };
+
+                    _dbContext.TrawellingStations.Add(dbStation);
+                    await _dbContext.SaveChangesAsync();
+
+                    _logger.LogInformation("Cached station data for station {StationId}: {StationName}", stationId, stationData.Name);
+                }
+
+                return stationData;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting station data for station {StationId}", stationId);
                 return null;
             }
         }
@@ -691,6 +843,178 @@ namespace OV_DB.Services
                 _logger.LogError(ex, "Error getting Träwelling status {StatusId}", statusId);
                 return null;
             }
+        }
+
+        private async Task<TrawellingTripDto> MapStatusToTripDto(User user, TrawellingStatus status)
+        {
+            try
+            {
+                if (status.Train?.Origin == null || status.Train?.Destination == null)
+                    return null;
+
+                var origin = await MapStopoverToDto(user, status.Train.Origin, status.Train.ManualDeparture);
+                var destination = await MapStopoverToDto(user, status.Train.Destination, status.Train.ManualArrival);
+
+                return new TrawellingTripDto
+                {
+                    Id = status.Id,
+                    Body = status.Body,
+                    Business = status.Business,
+                    Visibility = status.Visibility,
+                    CreatedAt = status.CreatedAt,
+                    Transport = new TrawellingTransportDto
+                    {
+                        Category = GetTransportCategoryDisplayName(status.Train.Category),
+                        Number = status.Train.Number,
+                        LineName = status.Train.LineName,
+                        JourneyNumber = status.Train.JourneyNumber,
+                        Distance = status.Train.Distance,
+                        Duration = status.Train.Duration,
+                        Origin = origin,
+                        Destination = destination,
+                        Operator = status.Train.Operator != null ? new TrawellingOperatorDto
+                        {
+                            Name = status.Train.Operator.Name,
+                            Identifier = status.Train.Operator.Identifier
+                        } : null
+                    },
+                    UserDetails = new TrawellingLightUserDto
+                    {
+                        Id = status.UserDetails.Id,
+                        DisplayName = status.UserDetails.DisplayName,
+                        Username = status.UserDetails.Username,
+                        ProfilePicture = status.UserDetails.ProfilePicture
+                    },
+                    Tags = status.Tags?.Select(t => new TrawellingStatusTagDto
+                    {
+                        Key = t.Key,
+                        Value = t.Value,
+                        Visibility = t.Visibility
+                    }).ToList() ?? new List<TrawellingStatusTagDto>()
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error mapping status {StatusId} to trip DTO", status.Id);
+                return null;
+            }
+        }
+
+        private async Task<TrawellingStopoverDto> MapStopoverToDto(User user, TrawellingStopover stopover, DateTime? manualTime)
+        {
+            try
+            {
+                // Get station data with coordinates for timezone conversion
+                var stationData = await GetStationDataAsync(user, stopover.Id);
+                
+                // Determine the best real times (manual times take precedence)
+                DateTime? realArrival = null;
+                DateTime? realDeparture = null;
+
+                if (stopover.Arrival.HasValue)
+                {
+                    realArrival = stopover.ArrivalReal ?? stopover.Arrival;
+                }
+                
+                if (stopover.Departure.HasValue)
+                {
+                    // Use manual departure time if this is the origin stop and manual time is provided
+                    realDeparture = (manualTime.HasValue && stopover.Departure.HasValue) ? manualTime : (stopover.DepartureReal ?? stopover.Departure);
+                }
+                
+                // For destination, use manual arrival time if provided
+                if (manualTime.HasValue && !stopover.Departure.HasValue && stopover.Arrival.HasValue)
+                {
+                    realArrival = manualTime;
+                }
+
+                // Convert UTC times to local timezone if we have coordinates
+                DateTime? localArrivalScheduled = null;
+                DateTime? localDepartureScheduled = null;
+                DateTime? localArrivalReal = null;
+                DateTime? localDepartureReal = null;
+
+                if (stationData?.Latitude.HasValue == true && stationData?.Longitude.HasValue == true)
+                {
+                    var coordinates = $"{stationData.Latitude},{stationData.Longitude}";
+                    
+                    if (stopover.ArrivalPlanned.HasValue)
+                        localArrivalScheduled = await _timezoneService.ConvertUtcToLocalTimeAsync(stopover.ArrivalPlanned.Value, coordinates);
+                    
+                    if (stopover.DeparturePlanned.HasValue)
+                        localDepartureScheduled = await _timezoneService.ConvertUtcToLocalTimeAsync(stopover.DeparturePlanned.Value, coordinates);
+                    
+                    if (realArrival.HasValue)
+                        localArrivalReal = await _timezoneService.ConvertUtcToLocalTimeAsync(realArrival.Value, coordinates);
+                    
+                    if (realDeparture.HasValue)
+                        localDepartureReal = await _timezoneService.ConvertUtcToLocalTimeAsync(realDeparture.Value, coordinates);
+                }
+                else
+                {
+                    // Fallback to UTC times if no coordinates available
+                    localArrivalScheduled = stopover.ArrivalPlanned;
+                    localDepartureScheduled = stopover.DeparturePlanned;
+                    localArrivalReal = realArrival;
+                    localDepartureReal = realDeparture;
+                    
+                    _logger.LogWarning("No coordinates available for station {StationId}, using UTC times", stopover.Id);
+                }
+
+                return new TrawellingStopoverDto
+                {
+                    Id = stopover.Id,
+                    Name = stopover.Name,
+                    ArrivalScheduled = localArrivalScheduled,
+                    DepartureScheduled = localDepartureScheduled,
+                    ArrivalPlatformPlanned = stopover.ArrivalPlatformPlanned,
+                    DeparturePlatformPlanned = stopover.DeparturePlatformPlanned,
+                    ArrivalReal = localArrivalReal,
+                    DepartureReal = localDepartureReal,
+                    ArrivalPlatformReal = stopover.ArrivalPlatformReal,
+                    DeparturePlatformReal = stopover.DeparturePlatformReal,
+                    IsArrivalDelayed = stopover.IsArrivalDelayed,
+                    IsDepartureDelayed = stopover.IsDepartureDelayed,
+                    Cancelled = stopover.Cancelled,
+                    Platform = stopover.Platform
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error mapping stopover {StopoverId} to DTO", stopover.Id);
+                // Return basic DTO without timezone conversion on error
+                return new TrawellingStopoverDto
+                {
+                    Id = stopover.Id,
+                    Name = stopover.Name,
+                    ArrivalScheduled = stopover.ArrivalPlanned,
+                    DepartureScheduled = stopover.DeparturePlanned,
+                    ArrivalReal = stopover.ArrivalReal ?? stopover.Arrival,
+                    DepartureReal = stopover.DepartureReal ?? stopover.Departure,
+                    IsArrivalDelayed = stopover.IsArrivalDelayed,
+                    IsDepartureDelayed = stopover.IsDepartureDelayed,
+                    Cancelled = stopover.Cancelled
+                };
+            }
+        }
+
+        private string GetTransportCategoryDisplayName(TrawellingHafasTravelType category)
+        {
+            return category switch
+            {
+                TrawellingHafasTravelType.NationalExpress => "High-Speed Train",
+                TrawellingHafasTravelType.National => "Intercity Train", 
+                TrawellingHafasTravelType.RegionalExp => "Regional Express",
+                TrawellingHafasTravelType.Regional => "Regional Train",
+                TrawellingHafasTravelType.Suburban => "Suburban Train",
+                TrawellingHafasTravelType.Bus => "Bus",
+                TrawellingHafasTravelType.Ferry => "Ferry",
+                TrawellingHafasTravelType.Subway => "Subway",
+                TrawellingHafasTravelType.Tram => "Tram",
+                TrawellingHafasTravelType.Taxi => "Taxi",
+                TrawellingHafasTravelType.Plane => "Plane",
+                _ => category.ToString()
+            };
         }
 
         private void UpdateRateLimitInfo(HttpResponseMessage response)

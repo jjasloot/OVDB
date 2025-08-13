@@ -485,6 +485,116 @@ namespace OV_DB.Models
         public string State { get; set; }
     }
 
+    // Optimized DTOs for frontend with local timing
+    public class TrawellingTripDto
+    {
+        public int Id { get; set; }
+        public string Body { get; set; }
+        public TrawellingBusiness Business { get; set; }
+        public TrawellingStatusVisibility Visibility { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public TrawellingTransportDto Transport { get; set; }
+        public TrawellingLightUserDto UserDetails { get; set; }
+        public List<TrawellingStatusTagDto> Tags { get; set; }
+    }
+
+    public class TrawellingTransportDto
+    {
+        public string Category { get; set; }
+        public string Number { get; set; }
+        public string LineName { get; set; }
+        public int? JourneyNumber { get; set; }
+        public int Distance { get; set; }
+        public int Duration { get; set; }
+        public TrawellingStopoverDto Origin { get; set; }
+        public TrawellingStopoverDto Destination { get; set; }
+        public TrawellingOperatorDto Operator { get; set; }
+    }
+
+    public class TrawellingStopoverDto
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
+        
+        // Scheduled times (local timezone)
+        public DateTime? ArrivalScheduled { get; set; }
+        public DateTime? DepartureScheduled { get; set; }
+        public string ArrivalPlatformPlanned { get; set; }
+        public string DeparturePlatformPlanned { get; set; }
+        
+        // Real/actual times (local timezone) - includes manual times if available
+        public DateTime? ArrivalReal { get; set; }
+        public DateTime? DepartureReal { get; set; }
+        public string ArrivalPlatformReal { get; set; }
+        public string DeparturePlatformReal { get; set; }
+        
+        // Status indicators
+        public bool IsArrivalDelayed { get; set; }
+        public bool IsDepartureDelayed { get; set; }
+        public bool Cancelled { get; set; }
+        
+        // Platform information
+        public string Platform { get; set; }
+    }
+
+    public class TrawellingOperatorDto
+    {
+        public string Name { get; set; }
+        public string Identifier { get; set; }
+    }
+
+    public class TrawellingLightUserDto
+    {
+        public int Id { get; set; }
+        public string DisplayName { get; set; }
+        public string Username { get; set; }
+        public string ProfilePicture { get; set; }
+    }
+
+    public class TrawellingStatusTagDto
+    {
+        public string Key { get; set; }
+        public string Value { get; set; }
+        public int Visibility { get; set; }
+    }
+
+    // Optimized response for frontend
+    public class TrawellingTripsResponse
+    {
+        public List<TrawellingTripDto> Data { get; set; }
+        public TrawellingPaginationLinks Links { get; set; }
+        public TrawellingPaginationMeta Meta { get; set; }
+        public bool HasMorePages { get; set; }
+    }
+
+    // Station response from Träwelling API
+    public class TrawellingStationResponse
+    {
+        [JsonProperty("data")]
+        public TrawellingStationData Data { get; set; }
+    }
+
+    public class TrawellingStationData
+    {
+        [JsonProperty("id")]
+        public int Id { get; set; }
+
+        [JsonProperty("name")]
+        public string Name { get; set; }
+
+        [JsonProperty("latitude")]
+        public double? Latitude { get; set; }
+
+        [JsonProperty("longitude")]
+        public double? Longitude { get; set; }
+
+        [JsonProperty("ibnr")]
+        public string Ibnr { get; set; }
+
+        [JsonProperty("rilIdentifier")]
+        public string RilIdentifier { get; set; }
+    }
+
     public class LinkToRouteInstanceRequest
     {
         public int StatusId { get; set; }

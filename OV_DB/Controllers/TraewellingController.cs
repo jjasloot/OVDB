@@ -213,12 +213,12 @@ namespace OV_DB.Controllers
                 if (!_trawellingService.HasValidTokens(user))
                     return BadRequest("Träwelling account not connected or tokens expired");
 
-                var statusesResponse = await _trawellingService.GetUnimportedStatusesAsync(user, page);
+                var tripsResponse = await _trawellingService.GetOptimizedTripsAsync(user, page);
                 
-                if (statusesResponse == null)
+                if (tripsResponse == null)
                     return StatusCode(500, "Failed to fetch trips from Träwelling");
 
-                return Ok(statusesResponse);
+                return Ok(tripsResponse);
             }
             catch (Exception ex)
             {

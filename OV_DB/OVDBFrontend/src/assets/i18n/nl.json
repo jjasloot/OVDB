@@ -358,6 +358,8 @@
     "PLATFORM": "Perron",
     "DELAYED": "Vertraagd",
     "ON_TIME": "Op Tijd",
-    "NO_UNIMPORTED_TRIPS_MESSAGE": "Al je recente Träwelling reizen zijn geïmporteerd of genegeerd. Kom later terug voor nieuwe reizen!"
+    "NO_UNIMPORTED_TRIPS_MESSAGE": "Al je recente Träwelling reizen zijn geïmporteerd of genegeerd. Kom later terug voor nieuwe reizen!",
+    "LOAD_MORE": "Meer Laden",
+    "LOADING_MORE_TRIPS": "Meer reizen laden..."
   }
 }

@@ -63,6 +63,22 @@ namespace OV_DB.Services
         Task<TrawellingStatusesResponse> GetUnimportedStatusesAsync(User user, int page = 1);
 
         /// <summary>
+        /// Get optimized trip data for frontend with local timezone conversion
+        /// </summary>
+        /// <param name="user">User with valid tokens</param>
+        /// <param name="page">Page number for pagination</param>
+        /// <returns>Optimized trip data with local timing</returns>
+        Task<TrawellingTripsResponse> GetOptimizedTripsAsync(User user, int page = 1);
+
+        /// <summary>
+        /// Fetch and cache station data from Träwelling API
+        /// </summary>
+        /// <param name="user">User with valid tokens</param>
+        /// <param name="stationId">Träwelling station ID</param>
+        /// <returns>Station data with coordinates</returns>
+        Task<TrawellingStationData> GetStationDataAsync(User user, int stationId);
+
+        /// <summary>
         /// Ignore a specific Träwelling status so it doesn't appear in unimported list
         /// </summary>
         /// <param name="user">User ignoring the status</param>

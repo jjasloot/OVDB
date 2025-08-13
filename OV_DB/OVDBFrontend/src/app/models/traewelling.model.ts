@@ -188,6 +188,80 @@ export interface TrawellingStatusesResponse {
   meta: TrawellingPaginationMeta;
 }
 
+// Optimized models for frontend with local timing
+export interface TrawellingTripsResponse {
+  data: TrawellingTrip[];
+  links: TrawellingPaginationLinks;
+  meta: TrawellingPaginationMeta;
+  hasMorePages: boolean;
+}
+
+export interface TrawellingTrip {
+  id: number;
+  body?: string;
+  business: TrawellingBusiness;
+  visibility: TrawellingStatusVisibility;
+  createdAt: string;
+  transport: TrawellingTransportOptimized;
+  userDetails: TrawellingLightUserOptimized;
+  tags: TrawellingStatusTagOptimized[];
+}
+
+export interface TrawellingTransportOptimized {
+  category: string; // Already translated display name
+  number: string;
+  lineName: string;
+  journeyNumber: number | null;
+  distance: number;
+  duration: number;
+  origin: TrawellingStopoverOptimized;
+  destination: TrawellingStopoverOptimized;
+  operator?: TrawellingOperatorOptimized;
+}
+
+export interface TrawellingStopoverOptimized {
+  id: number;
+  name: string;
+  
+  // Scheduled times (local timezone)
+  arrivalScheduled?: string;
+  departureScheduled?: string;
+  arrivalPlatformPlanned?: string;
+  departurePlatformPlanned?: string;
+  
+  // Real/actual times (local timezone) - includes manual times if available
+  arrivalReal?: string;
+  departureReal?: string;
+  arrivalPlatformReal?: string;
+  departurePlatformReal?: string;
+  
+  // Status indicators
+  isArrivalDelayed: boolean;
+  isDepartureDelayed: boolean;
+  cancelled: boolean;
+  
+  // Platform information
+  platform?: string;
+}
+
+export interface TrawellingOperatorOptimized {
+  name: string;
+  identifier?: string;
+}
+
+export interface TrawellingLightUserOptimized {
+  id: number;
+  displayName: string;
+  username: string;
+  profilePicture: string;
+}
+
+export interface TrawellingStatusTagOptimized {
+  key: string;
+  value: string;
+  visibility: number;
+}
+
 export interface TrawellingPaginationLinks {
   first?: string;
   last?: string;

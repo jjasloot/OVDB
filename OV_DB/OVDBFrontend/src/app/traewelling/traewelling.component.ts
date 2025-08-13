@@ -13,8 +13,8 @@ import { MatChipSet, MatChip } from '@angular/material/chips';
 import { ApiService } from '../services/api.service';
 import {
   TrawellingConnectionStatus,
-  TrawellingStatus,
-  TrawellingStatusesResponse,
+  TrawellingTripsResponse,
+  TrawellingTrip,
   TrawellingStats,
   RouteInstanceSearchResult,
   TrawellingHafasTravelType
@@ -42,19 +42,23 @@ import {
 })
 export class TrawellingComponent implements OnInit {
   connectionStatus: TrawellingConnectionStatus | null = null;
-  unimportedTrips: TrawellingStatus[] = [];
+  unimportedTrips: TrawellingTrip[] = [];
   loading = false;
   tripsLoading = false;
   statsLoading = false;
+  loadingMore = false;
 
   // Pagination
   currentPage = 1;
+  totalTrips = 0;
+  pageSize = 10;
+  hasMorePages = false;
 
   // Search and filters
   searchTerm = '';
   existingRouteInstances: RouteInstanceSearchResult[] = [];
   searchingRouteInstances = false;
-  searchTrip: TrawellingStatus | null = null;
+  searchTrip: TrawellingTrip | null = null;
 
   constructor(
     public apiService: ApiService,
@@ -85,19 +89,28 @@ export class TrawellingComponent implements OnInit {
     });
   }
 
-  loadUnimportedTrips(page: number = 1): void {
-    this.tripsLoading = true;
+  loadUnimportedTrips(page: number = 1, showLoadingMore: boolean = false): void {
+    if (showLoadingMore) {
+      this.loadingMore = true;
+    } else {
+      this.tripsLoading = true;
+    }
+    
     this.currentPage = page;
     this.apiService.getTrawellingUnimported(this.currentPage).subscribe({
-      next: (response: TrawellingStatusesResponse) => {
+      next: (response: TrawellingTripsResponse) => {
         this.unimportedTrips = response.data;
         this.currentPage = response.meta.current_page;
+        this.hasMorePages = response.hasMorePages;
+        this.totalTrips = response.meta.total || 0;
         this.tripsLoading = false;
+        this.loadingMore = false;
       },
       error: (error) => {
         console.error('Error loading unimported trips:', error);
         this.showMessage('TRAEWELLING.ERROR_LOADING_TRIPS');
         this.tripsLoading = false;
+        this.loadingMore = false;
       }
     });
 
@@ -105,18 +118,7 @@ export class TrawellingComponent implements OnInit {
 
   loadMoreTrips() {
     this.currentPage++;
-    this.apiService.getTrawellingUnimported(this.currentPage).subscribe({
-      next: (response: TrawellingStatusesResponse) => {
-        this.unimportedTrips = this.unimportedTrips.concat(response.data);
-        this.currentPage = response.meta.current_page;
-        this.tripsLoading = false;
-      },
-      error: (error) => {
-        console.error('Error loading unimported trips:', error);
-        this.showMessage('TRAEWELLING.ERROR_LOADING_TRIPS');
-        this.tripsLoading = false;
-      }
-    });
+    this.loadUnimportedTrips(this.currentPage, true);
   }
 
 
@@ -124,7 +126,7 @@ export class TrawellingComponent implements OnInit {
     this.loadUnimportedTrips(event.pageIndex + 1);
   }
 
-  ignoreTrip(trip: TrawellingStatus): void {
+  ignoreTrip(trip: TrawellingTrip): void {
     this.apiService.ignoreTrawellingStatus(trip.id).subscribe({
       next: (response) => {
         if (response.success) {
@@ -142,14 +144,14 @@ export class TrawellingComponent implements OnInit {
     });
   }
 
-  searchExistingRoutes(trip: TrawellingStatus): void {
+  searchExistingRoutes(trip: TrawellingTrip): void {
     this.searchTrip = trip;
     this.searchingRouteInstances = true;
     this.existingRouteInstances = [];
 
-    // Parse the trip departure date from createdAt or train origin departure
-    const tripDate = trip.train?.origin?.departure
-      ? new Date(trip.train.origin.departure)
+    // Parse the trip departure date from transport origin departure
+    const tripDate = trip.transport?.origin?.departureReal || trip.transport?.origin?.departureScheduled
+      ? new Date(trip.transport.origin.departureReal || trip.transport.origin.departureScheduled!)
       : new Date(trip.createdAt);
     const dateString = tripDate.toISOString().split('T')[0]; // YYYY-MM-DD format
 
@@ -175,7 +177,7 @@ export class TrawellingComponent implements OnInit {
     });
   }
 
-  linkToExistingRouteInstance(trip: TrawellingStatus, routeInstance: RouteInstanceSearchResult): void {
+  linkToExistingRouteInstance(trip: TrawellingTrip, routeInstance: RouteInstanceSearchResult): void {
     const linkRequest = {
       statusId: trip.id,
       routeInstanceId: routeInstance.id
@@ -216,24 +218,6 @@ export class TrawellingComponent implements OnInit {
   formatDistance(meters?: number): string {
     if (!meters) return '';
     return meters > 1000 ? `${(meters / 1000).toFixed(1)} km` : `${meters} m`;
-  }
-
-  getCategoryName(category: TrawellingHafasTravelType): string {
-    // Map API category values to translation keys
-    const categoryMap: Record<TrawellingHafasTravelType, string> = {
-      [TrawellingHafasTravelType.NATIONAL_EXPRESS]: 'TRAEWELLING.CATEGORY_NATIONALEXPRESS',
-      [TrawellingHafasTravelType.NATIONAL]: 'TRAEWELLING.CATEGORY_NATIONAL',
-      [TrawellingHafasTravelType.REGIONAL_EXP]: 'TRAEWELLING.CATEGORY_REGIONALEXP',
-      [TrawellingHafasTravelType.REGIONAL]: 'TRAEWELLING.CATEGORY_REGIONAL',
-      [TrawellingHafasTravelType.SUBURBAN]: 'TRAEWELLING.CATEGORY_SUBURBAN',
-      [TrawellingHafasTravelType.BUS]: 'TRAEWELLING.CATEGORY_BUS',
-      [TrawellingHafasTravelType.FERRY]: 'TRAEWELLING.CATEGORY_FERRY',
-      [TrawellingHafasTravelType.SUBWAY]: 'TRAEWELLING.CATEGORY_SUBWAY',
-      [TrawellingHafasTravelType.TRAM]: 'TRAEWELLING.CATEGORY_TRAM',
-      [TrawellingHafasTravelType.TAXI]: 'TRAEWELLING.CATEGORY_TAXI',
-      [TrawellingHafasTravelType.PLANE]: 'TRAEWELLING.CATEGORY_PLANE'
-    };
-    return categoryMap[category] || 'TRAEWELLING.CATEGORY_UNKNOWN';
   }
 
   isDelayed(planned: string | null | undefined, actual: string | null | undefined): boolean {

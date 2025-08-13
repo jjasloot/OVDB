@@ -358,6 +358,8 @@
     "PLATFORM": "Platform",
     "DELAYED": "Delayed",
     "ON_TIME": "On Time",
-    "NO_UNIMPORTED_TRIPS_MESSAGE": "All your recent Träwelling trips have been imported or ignored. Check back later for new trips!"
+    "NO_UNIMPORTED_TRIPS_MESSAGE": "All your recent Träwelling trips have been imported or ignored. Check back later for new trips!",
+    "LOAD_MORE": "Load More",
+    "LOADING_MORE_TRIPS": "Loading more trips..."
   }
 }
