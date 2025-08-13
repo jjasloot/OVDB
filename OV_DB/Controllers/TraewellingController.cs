@@ -65,25 +65,94 @@ namespace OV_DB.Controllers
             try
             {
                 if (string.IsNullOrEmpty(code) || string.IsNullOrEmpty(state))
-                    return BadRequest("Code and state are required");
+                {
+                    return Content(@"
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Träwelling Connection</title>
+</head>
+<body>
+    <script>
+        window.opener?.postMessage({type: 'oauth-error', message: 'Missing parameters'}, '*');
+        window.close();
+    </script>
+    <p>Invalid request. This window should close automatically.</p>
+</body>
+</html>", "text/html");
+                }
 
                 // Validate state parameter
                 if (!_trawellingService.ValidateAndConsumeState(state,out var userId))
-                    return BadRequest("Invalid or expired state parameter");
+                {
+                    return Content(@"
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Träwelling Connection</title>
+</head>
+<body>
+    <script>
+        window.opener?.postMessage({type: 'oauth-error', message: 'Invalid or expired state'}, '*');
+        window.close();
+    </script>
+    <p>Invalid or expired request. This window should close automatically.</p>
+</body>
+</html>", "text/html");
+                }
 
                 var success = await _trawellingService.ExchangeCodeForTokensAsync(code, state, userId.Value);
                 
                 if (success)
                 {
-                    return Ok(new { success = true, message = "Träwelling account connected successfully" });
+                    return Content(@"
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Träwelling Connection Successful</title>
+</head>
+<body>
+    <script>
+        window.opener?.postMessage({type: 'oauth-success', message: 'Träwelling account connected successfully'}, '*');
+        window.close();
+    </script>
+    <p>Träwelling account connected successfully! This window should close automatically.</p>
+</body>
+</html>", "text/html");
                 }
 
-                return BadRequest("Failed to connect Träwelling account");
+                return Content(@"
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Träwelling Connection</title>
+</head>
+<body>
+    <script>
+        window.opener?.postMessage({type: 'oauth-error', message: 'Failed to connect account'}, '*');
+        window.close();
+    </script>
+    <p>Failed to connect Träwelling account. This window should close automatically.</p>
+</body>
+</html>", "text/html");
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error handling Träwelling OAuth callback");
-                return StatusCode(500, "Error processing callback");
+                return Content(@"
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Träwelling Connection Error</title>
+</head>
+<body>
+    <script>
+        window.opener?.postMessage({type: 'oauth-error', message: 'Server error occurred'}, '*');
+        window.close();
+    </script>
+    <p>An error occurred. This window should close automatically.</p>
+</body>
+</html>", "text/html");
             }
         }
 
@@ -126,7 +195,7 @@ namespace OV_DB.Controllers
         }
 
         /// <summary>
-        /// Get unimported trips from Träwelling
+        /// Get unimported trips from Träwelling (excluding ignored ones)
         /// </summary>
         [HttpGet("unimported")]
         public async Task<IActionResult> GetUnimportedTrips([FromQuery] int page = 1)
@@ -159,10 +228,10 @@ namespace OV_DB.Controllers
         }
 
         /// <summary>
-        /// Import a specific trip from Träwelling
+        /// Ignore a Träwelling status so it doesn't show up in unimported list
         /// </summary>
-        [HttpPost("import")]
-        public async Task<IActionResult> ImportTrip([FromBody] TrawellingImportRequest request)
+        [HttpPost("ignore")]
+        public async Task<IActionResult> IgnoreStatus([FromBody] TrawellingIgnoreRequest request)
         {
             try
             {
@@ -177,59 +246,21 @@ namespace OV_DB.Controllers
                 if (!_trawellingService.HasValidTokens(user))
                     return BadRequest("Träwelling account not connected or tokens expired");
 
-                var importedTrip = await _trawellingService.ImportStatusAsync(
-                    user, request.StatusId, request.ImportMetadata, request.ImportTags);
+                var success = await _trawellingService.IgnoreStatusAsync(user, request.StatusId);
 
-                if (importedTrip == null)
-                    return BadRequest("Failed to import trip");
-
-                return Ok(new 
-                { 
-                    success = true, 
-                    routeInstanceId = importedTrip.RouteInstanceId,
-                    message = "Trip imported successfully" 
-                });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error importing trip {StatusId}", request.StatusId);
-                return StatusCode(500, "Error importing trip");
-            }
-        }
-
-        /// <summary>
-        /// Process backlog of trips from Träwelling
-        /// </summary>
-        [HttpPost("process-backlog")]
-        public async Task<IActionResult> ProcessBacklog([FromQuery] int maxPages = 5)
-        {
-            try
-            {
-                var userId = GetCurrentUserId();
-                if (!userId.HasValue)
-                    return Unauthorized();
-
-                var user = await _dbContext.Users.FindAsync(userId.Value);
-                if (user == null)
-                    return NotFound("User not found");
-
-                if (!_trawellingService.HasValidTokens(user))
-                    return BadRequest("Träwelling account not connected or tokens expired");
-
-                var processedCount = await _trawellingService.ProcessBacklogAsync(user, maxPages);
+                if (!success)
+                    return BadRequest("Failed to ignore status or status already ignored");
 
                 return Ok(new 
                 { 
                     success = true, 
-                    processedCount = processedCount,
-                    message = $"Processed {processedCount} trips from backlog" 
+                    message = "Status ignored successfully" 
                 });
             }
             catch (Exception ex)
             {
-                var userId = GetCurrentUserId();
-                _logger.LogError(ex, "Error processing backlog for user {UserId}", userId);
-                return StatusCode(500, "Error processing backlog");
+                _logger.LogError(ex, "Error ignoring status {StatusId}", request.StatusId);
+                return StatusCode(500, "Error ignoring status");
             }
         }
 

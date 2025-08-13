@@ -55,7 +55,7 @@ namespace OV_DB.Services
         Task<TrawellingUserData> GetUserInfoAsync(User user);
 
         /// <summary>
-        /// Get user's statuses/check-ins from Träwelling that haven't been imported to OVDB
+        /// Get user's statuses/check-ins from Träwelling that haven't been imported to OVDB or ignored
         /// </summary>
         /// <param name="user">User with valid tokens</param>
         /// <param name="page">Page number for pagination</param>
@@ -63,22 +63,12 @@ namespace OV_DB.Services
         Task<TrawellingStatusesResponse> GetUnimportedStatusesAsync(User user, int page = 1);
 
         /// <summary>
-        /// Import a specific Träwelling status as a RouteInstance in OVDB
+        /// Ignore a specific Träwelling status so it doesn't appear in unimported list
         /// </summary>
-        /// <param name="user">User importing the trip</param>
-        /// <param name="statusId">Träwelling status ID</param>
-        /// <param name="importMetadata">Whether to import metadata like body text</param>
-        /// <param name="importTags">Whether to import tags</param>
-        /// <returns>Created RouteInstance or null if failed</returns>
-        Task<RouteInstance> ImportStatusAsync(User user, int statusId, bool importMetadata = true, bool importTags = true);
-
-        /// <summary>
-        /// Process backlog of user's Träwelling trips to update trip times in OVDB
-        /// </summary>
-        /// <param name="user">User to process backlog for</param>
-        /// <param name="maxPages">Maximum pages to process</param>
-        /// <returns>Number of trips processed</returns>
-        Task<int> ProcessBacklogAsync(User user, int maxPages = 10);
+        /// <param name="user">User ignoring the status</param>
+        /// <param name="statusId">Träwelling status ID to ignore</param>
+        /// <returns>Success status</returns>
+        Task<bool> IgnoreStatusAsync(User user, int statusId);
 
         /// <summary>
         /// Check if user has valid Träwelling tokens

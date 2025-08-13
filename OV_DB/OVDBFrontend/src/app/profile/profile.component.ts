@@ -187,13 +187,36 @@ export class ProfileComponent implements OnInit {
         // Open the authorization URL in a new window
         const authWindow = window.open(response.authorizationUrl, '_blank', 'width=600,height=700');
         
-        // Poll for the window to be closed (user completed auth)
+        // Listen for messages from the popup
+        const messageListener = (event: MessageEvent) => {
+          if (event.origin !== window.location.origin) {
+            return; // Ignore messages from other origins
+          }
+          
+          if (event.data.type === 'oauth-success') {
+            window.removeEventListener('message', messageListener);
+            this.trawellingConnecting = false;
+            this.showMessage('PROFILE.TRAEWELLING_CONNECTED_SUCCESSFULLY');
+            this.loadTrawellingStatus();
+          } else if (event.data.type === 'oauth-error') {
+            window.removeEventListener('message', messageListener);
+            this.trawellingConnecting = false;
+            this.showMessage('PROFILE.TRAEWELLING_ERROR_CONNECTING');
+          }
+        };
+        
+        window.addEventListener('message', messageListener);
+        
+        // Fallback: Poll for the window to be closed (in case postMessage fails)
         const checkClosed = setInterval(() => {
           if (authWindow?.closed) {
             clearInterval(checkClosed);
-            this.trawellingConnecting = false;
-            // Reload status to check if connection was successful
-            this.loadTrawellingStatus();
+            window.removeEventListener('message', messageListener);
+            if (this.trawellingConnecting) {
+              // Only reload if we haven't already handled the message
+              this.trawellingConnecting = false;
+              this.loadTrawellingStatus();
+            }
           }
         }, 1000);
       },
