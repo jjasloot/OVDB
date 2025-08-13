@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Newtonsoft.Json;
 using System.ComponentModel;
+using Newtonsoft.Json.Converters;
 
 namespace OV_DB.Models
 {
@@ -211,6 +212,7 @@ namespace OV_DB.Models
         public string HafasId { get; set; }
 
         [JsonProperty("category")]
+        [JsonConverter(typeof(StringEnumConverter))]
         public TrawellingHafasTravelType Category { get; set; }
 
         [JsonProperty("number")]

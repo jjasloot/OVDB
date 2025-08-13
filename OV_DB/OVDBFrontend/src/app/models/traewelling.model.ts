@@ -92,17 +92,17 @@ export interface TrawellingTransport {
 }
 
 export enum TrawellingHafasTravelType {
-  NATIONAL_EXPRESS = 'nationalExpress',
-  NATIONAL = 'national',
-  REGIONAL_EXP = 'regionalExp',
-  REGIONAL = 'regional',
-  SUBURBAN = 'suburban',
-  BUS = 'bus',
-  FERRY = 'ferry',
-  SUBWAY = 'subway',
-  TRAM = 'tram',
-  TAXI = 'taxi',
-  PLANE = 'plane'
+  NATIONAL_EXPRESS = 'NationalExpress',
+  NATIONAL = 'National',
+  REGIONAL_EXP = 'RegionalExp',
+  REGIONAL = 'Regional',
+  SUBURBAN = 'Suburban',
+  BUS = 'Bus',
+  FERRY = 'Ferry',
+  SUBWAY = 'Subway',
+  TRAM = 'Tram',
+  TAXI = 'Taxi',
+  PLANE = 'Plane'
 }
 
 export interface TrawellingStopover {
@@ -207,9 +207,9 @@ export interface TrawellingPaginationMeta {
 // OVDB specific models for integration
 export interface TrawellingStats {
   totalTrips: number;
-  importedTrips: number;
-  unimportedTrips: number;
-  enhancedInstances: number;
+  importedTripsCount: number;
+  unimportedTripsCount: number;
+  enhancedInstancesCount: number;
   connectedSince?: string;
 }
 

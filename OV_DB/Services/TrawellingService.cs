@@ -1,10 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net.Http;
-using System.Text;
-using System.Threading.Tasks;
-using System.Web;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -12,6 +5,13 @@ using Newtonsoft.Json;
 using OV_DB.Models;
 using OVDB_database.Database;
 using OVDB_database.Models;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net.Http;
+using System.Text;
+using System.Threading.Tasks;
+using System.Web;
 
 namespace OV_DB.Services
 {
@@ -19,6 +19,7 @@ namespace OV_DB.Services
     {
         private readonly HttpClient _httpClient;
         private readonly IConfiguration _configuration;
+        private readonly ITimezoneService _timezoneService;
         private readonly OVDBDatabaseContext _dbContext;
         private readonly ILogger<TrawellingService> _logger;
         private readonly string _baseUrl;
@@ -32,11 +33,12 @@ namespace OV_DB.Services
         private static readonly Dictionary<string, (int UserId, DateTime Expiry)> _oauthStates = new();
         private static readonly object _statelock = new object();
 
-        public TrawellingService(HttpClient httpClient, IConfiguration configuration, 
+        public TrawellingService(HttpClient httpClient, IConfiguration configuration, ITimezoneService timezoneService,
             OVDBDatabaseContext dbContext, ILogger<TrawellingService> logger)
         {
             _httpClient = httpClient;
             _configuration = configuration;
+            _timezoneService = timezoneService;
             _dbContext = dbContext;
             _logger = logger;
             
@@ -530,22 +532,22 @@ namespace OV_DB.Services
             {
                 var query = _dbContext.RouteInstances
                     .Include(ri => ri.Route)
+                    .Where(ri=>ri.Route.RouteMaps.Any(rm=>rm.Map.UserId==user.Id))
                     .Where(ri => ri.Date.Date == date.Date);
 
-                // Filter by user - assuming there's a relationship or we need to add one
-                // For now, we'll search all RouteInstances since there's no user relationship in the model
-                // In a real implementation, you might want to add a UserId to RouteInstance or filter differently
 
-                if (!string.IsNullOrWhiteSpace(searchQuery))
-                {
-                    query = query.Where(ri => ri.Route.Name.Contains(searchQuery) ||
-                                            ri.Route.From.Contains(searchQuery) ||
-                                            ri.Route.To.Contains(searchQuery));
-                }
+
+                //if (!string.IsNullOrWhiteSpace(searchQuery))
+                //{
+                //    query = query.Where(ri => ri.Route.Name.Contains(searchQuery) ||
+                //                            ri.Route.From.Contains(searchQuery) ||
+                //                            ri.Route.To.Contains(searchQuery));
+                //}
 
                 var routeInstances = await query
-                    .OrderByDescending(ri => ri.StartTime ?? ri.Date)
-                    .Take(20) // Limit to 20 results
+                    .OrderBy(ri=>ri.TrawellingStatusId.HasValue)
+                    .ThenByDescending(ri => ri.StartTime ?? ri.Date)
+                    .ThenByDescending(ri=>ri.RouteInstanceId)
                     .ToListAsync();
 
                 _logger.LogInformation("Found {Count} RouteInstances for date {Date} with query '{Query}'", 
@@ -603,7 +605,10 @@ namespace OV_DB.Services
 
                     if (routeInstance.StartTime.HasValue && routeInstance.EndTime.HasValue)
                     {
-                        routeInstance.DurationHours = (routeInstance.EndTime.Value - routeInstance.StartTime.Value).TotalHours;
+                        routeInstance.DurationHours = _timezoneService.CalculateDurationInHours(
+                            routeInstance.StartTime.Value,
+                            routeInstance.EndTime.Value,
+                            routeInstance.Route.LineString);
                     }
                 }
 
@@ -634,7 +639,7 @@ namespace OV_DB.Services
                 _httpClient.DefaultRequestHeaders.Authorization = 
                     new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", user.TrawellingAccessToken);
 
-                var response = await _httpClient.GetAsync($"{_baseUrl}/statuses/{statusId}");
+                var response = await _httpClient.GetAsync($"{_baseUrl}/status/{statusId}");
                 response.EnsureSuccessStatusCode();
 
                 var content = await response.Content.ReadAsStringAsync();

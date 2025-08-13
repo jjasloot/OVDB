@@ -11,12 +11,13 @@ import { MatPaginator, PageEvent } from '@angular/material/paginator';
 import { MatChipSet, MatChip } from '@angular/material/chips';
 
 import { ApiService } from '../services/api.service';
-import { 
-  TrawellingConnectionStatus, 
-  TrawellingStatus, 
+import {
+  TrawellingConnectionStatus,
+  TrawellingStatus,
   TrawellingStatusesResponse,
   TrawellingStats,
-  RouteInstanceSearchResult
+  RouteInstanceSearchResult,
+  TrawellingHafasTravelType
 } from '../models/traewelling.model';
 
 @Component({
@@ -35,7 +36,6 @@ import {
     MatButton,
     MatIcon,
     MatProgressSpinner,
-    MatPaginator,
     MatChipSet,
     MatChip
   ]
@@ -43,17 +43,13 @@ import {
 export class TrawellingComponent implements OnInit {
   connectionStatus: TrawellingConnectionStatus | null = null;
   unimportedTrips: TrawellingStatus[] = [];
-  stats: TrawellingStats | null = null;
   loading = false;
   tripsLoading = false;
   statsLoading = false;
-  
+
   // Pagination
   currentPage = 1;
-  totalPages = 1;
-  totalTrips = 0;
-  tripsPerPage = 15;
-  
+
   // Search and filters
   searchTerm = '';
   existingRouteInstances: RouteInstanceSearchResult[] = [];
@@ -65,7 +61,7 @@ export class TrawellingComponent implements OnInit {
     public router: Router,
     private snackBar: MatSnackBar,
     private translateService: TranslateService
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.checkConnection();
@@ -78,7 +74,6 @@ export class TrawellingComponent implements OnInit {
         this.connectionStatus = status;
         if (status.connected) {
           this.loadUnimportedTrips();
-          this.loadStats();
         }
         this.loading = false;
       },
@@ -93,15 +88,27 @@ export class TrawellingComponent implements OnInit {
   loadUnimportedTrips(page: number = 1): void {
     this.tripsLoading = true;
     this.currentPage = page;
-    
-    this.apiService.getTrawellingUnimported(page).subscribe({
+    this.apiService.getTrawellingUnimported(this.currentPage).subscribe({
       next: (response: TrawellingStatusesResponse) => {
         this.unimportedTrips = response.data;
         this.currentPage = response.meta.current_page;
-        this.tripsPerPage = response.meta.per_page;
-        this.totalTrips = response.meta.total || 0;
-        // Calculate total pages if not provided
-        this.totalPages = response.meta.total ? Math.ceil(response.meta.total / response.meta.per_page) : page;
+        this.tripsLoading = false;
+      },
+      error: (error) => {
+        console.error('Error loading unimported trips:', error);
+        this.showMessage('TRAEWELLING.ERROR_LOADING_TRIPS');
+        this.tripsLoading = false;
+      }
+    });
+
+  }
+
+  loadMoreTrips() {
+    this.currentPage++;
+    this.apiService.getTrawellingUnimported(this.currentPage).subscribe({
+      next: (response: TrawellingStatusesResponse) => {
+        this.unimportedTrips = this.unimportedTrips.concat(response.data);
+        this.currentPage = response.meta.current_page;
         this.tripsLoading = false;
       },
       error: (error) => {
@@ -112,19 +119,6 @@ export class TrawellingComponent implements OnInit {
     });
   }
 
-  loadStats(): void {
-    this.statsLoading = true;
-    this.apiService.getTrawellingStats().subscribe({
-      next: (stats) => {
-        this.stats = stats;
-        this.statsLoading = false;
-      },
-      error: (error) => {
-        console.error('Error loading Träwelling stats:', error);
-        this.statsLoading = false;
-      }
-    });
-  }
 
   onPageChange(event: PageEvent): void {
     this.loadUnimportedTrips(event.pageIndex + 1);
@@ -137,7 +131,6 @@ export class TrawellingComponent implements OnInit {
           this.showMessage('TRAEWELLING.TRIP_IGNORED');
           // Remove the ignored trip from the list
           this.unimportedTrips = this.unimportedTrips.filter(t => t.id !== trip.id);
-          this.loadStats(); // Refresh stats
         } else {
           this.showMessage('TRAEWELLING.ERROR_IGNORING_TRIP');
         }
@@ -153,23 +146,23 @@ export class TrawellingComponent implements OnInit {
     this.searchTrip = trip;
     this.searchingRouteInstances = true;
     this.existingRouteInstances = [];
-    
+
     // Parse the trip departure date from createdAt or train origin departure
-    const tripDate = trip.train?.origin?.departure 
-      ? new Date(trip.train.origin.departure) 
+    const tripDate = trip.train?.origin?.departure
+      ? new Date(trip.train.origin.departure)
       : new Date(trip.createdAt);
     const dateString = tripDate.toISOString().split('T')[0]; // YYYY-MM-DD format
-    
+
     // Create search query from origin and destination
-    const searchQuery = trip.train?.origin?.name && trip.train?.destination?.name 
+    const searchQuery = trip.train?.origin?.name && trip.train?.destination?.name
       ? `${trip.train.origin.name} ${trip.train.destination.name}`
       : '';
-    
+
     this.apiService.searchRouteInstances(dateString, searchQuery).subscribe({
       next: (routeInstances) => {
         this.existingRouteInstances = routeInstances;
         this.searchingRouteInstances = false;
-        
+
         if (routeInstances.length === 0) {
           this.showMessage('TRAEWELLING.NO_ROUTE_INSTANCES_FOUND');
         }
@@ -197,7 +190,6 @@ export class TrawellingComponent implements OnInit {
           // Clear the search results
           this.existingRouteInstances = [];
           this.searchTrip = null;
-          this.loadStats(); // Refresh stats
         } else {
           this.showMessage('TRAEWELLING.ERROR_LINKING_TRIP');
         }
@@ -210,14 +202,14 @@ export class TrawellingComponent implements OnInit {
   }
 
   refreshTrips(): void {
+    this.currentPage = 1;
     this.loadUnimportedTrips(this.currentPage);
-    this.loadStats();
   }
 
   formatDuration(minutes?: number): string {
     if (!minutes) return '';
     const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
+    const mins = Math.floor(minutes % 60);
     return hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
   }
 
@@ -226,37 +218,8 @@ export class TrawellingComponent implements OnInit {
     return meters > 1000 ? `${(meters / 1000).toFixed(1)} km` : `${meters} m`;
   }
 
-  getCategoryName(category: number): string {
-    const categories: { [key: number]: string } = {
-      1: 'TRAEWELLING.CATEGORY_1',
-      2: 'TRAEWELLING.CATEGORY_2', 
-      3: 'TRAEWELLING.CATEGORY_3',
-      4: 'TRAEWELLING.CATEGORY_4',
-      5: 'TRAEWELLING.CATEGORY_5',
-      6: 'TRAEWELLING.CATEGORY_6',
-      7: 'TRAEWELLING.CATEGORY_7',
-      8: 'TRAEWELLING.CATEGORY_8'
-    };
-    return categories[category] || '';
-  }
-
-  formatTime(dateString: string | null | undefined): string {
-    if (!dateString) return '';
-    return new Date(dateString).toLocaleTimeString('en-GB', { 
-      hour: '2-digit', 
-      minute: '2-digit' 
-    });
-  }
-
-  formatDateTime(dateString: string | null | undefined): string {
-    if (!dateString) return '';
-    return new Date(dateString).toLocaleString('en-GB', { 
-      day: '2-digit',
-      month: '2-digit', 
-      year: 'numeric',
-      hour: '2-digit', 
-      minute: '2-digit' 
-    });
+  getCategoryName(category: TrawellingHafasTravelType): string {
+    return 'TRAEWELLING.CATEGORY_' + category.toUpperCase();
   }
 
   isDelayed(planned: string | null | undefined, actual: string | null | undefined): boolean {
