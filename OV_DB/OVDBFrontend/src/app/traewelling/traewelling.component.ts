@@ -156,8 +156,8 @@ export class TrawellingComponent implements OnInit {
     const dateString = tripDate.toISOString().split('T')[0]; // YYYY-MM-DD format
 
     // Create search query from origin and destination
-    const searchQuery = trip.train?.origin?.name && trip.train?.destination?.name
-      ? `${trip.train.origin.name} ${trip.train.destination.name}`
+    const searchQuery = trip.transport?.origin?.name && trip.transport?.destination?.name
+      ? `${trip.transport.origin.name} ${trip.transport.destination.name}`
       : '';
 
     this.apiService.searchRouteInstances(dateString, searchQuery).subscribe({

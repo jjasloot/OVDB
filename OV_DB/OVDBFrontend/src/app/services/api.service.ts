@@ -25,6 +25,7 @@ import {
   TrawellingConnectionStatus, 
   TrawellingConnectResponse, 
   TrawellingStatusesResponse,
+  TrawellingTripsResponse,
   TrawellingStats,
   RouteInstanceSearchResult,
   LinkToRouteInstanceRequest,
@@ -553,9 +554,9 @@ export class ApiService {
     );
   }
 
-  getTrawellingUnimported(page: number = 1): Observable<TrawellingStatusesResponse> {
+  getTrawellingUnimported(page: number = 1): Observable<TrawellingTripsResponse> {
     const params = new HttpParams().set('page', page.toString());
-    return this.httpClient.get<TrawellingStatusesResponse>(
+    return this.httpClient.get<TrawellingTripsResponse>(
       environment.backend + "api/traewelling/unimported",
       { params }
     );

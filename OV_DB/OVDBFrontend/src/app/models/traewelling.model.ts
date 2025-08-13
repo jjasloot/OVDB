@@ -322,6 +322,5 @@ export interface TrawellingIgnoreResponse {
 }
 
 // Legacy aliases for backward compatibility (will be removed)
-export type TrawellingTrip = TrawellingStatus;
 export type TrawellingTrain = TrawellingTransport;
 export type TrawellingUnimportedResponse = TrawellingStatusesResponse;
