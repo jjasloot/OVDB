@@ -321,7 +321,7 @@ namespace OV_DB.Services
                         }
 
                         // If this page was empty but there are more pages, continue to next page
-                        if (statusesResponse.Meta?.CurrentPage < statusesResponse.Meta?.Total)
+                        if (!string.IsNullOrEmpty(statusesResponse.Links?.Next))
                         {
                             currentPage++;
                             continue;
@@ -358,9 +358,19 @@ namespace OV_DB.Services
 
                 foreach (var status in statusesResponse.Data)
                 {
+                    // Check if we have timezone-corrected trip cached
+                    var cacheKey = $"TrawellingTrip|{status.Id}";
+                    if (_memoryCache.TryGetValue(cacheKey, out TrawellingTripDto cachedTrip))
+                    {
+                        optimizedTrips.Add(cachedTrip);
+                        continue;
+                    }
+
                     var trip = await MapStatusToTripDto(user, status);
                     if (trip != null)
                     {
+                        // Cache the timezone-corrected trip
+                        _memoryCache.Set(cacheKey, trip, TimeSpan.FromMinutes(30));
                         optimizedTrips.Add(trip);
                     }
                 }
@@ -386,13 +396,13 @@ namespace OV_DB.Services
             {
                 // First check if we have the station data in our database
                 var cachedStation = await _dbContext.TrawellingStations
-                    .FirstOrDefaultAsync(ts => ts.Id == stationId);
+                    .FirstOrDefaultAsync(ts => ts.TrawellingId == stationId);
 
                 if (cachedStation != null)
                 {
                     return new TrawellingStationData
                     {
-                        Id = cachedStation.Id,
+                        Id = cachedStation.TrawellingId,
                         Name = cachedStation.Name,
                         Latitude = cachedStation.Latitude,
                         Longitude = cachedStation.Longitude,
@@ -437,7 +447,7 @@ namespace OV_DB.Services
                     // Store in database for future use
                     var dbStation = new OVDB_database.Models.TrawellingStation
                     {
-                        Id = stationData.Id,
+                        TrawellingId = stationData.Id,
                         Name = stationData.Name,
                         Latitude = stationData.Latitude,
                         Longitude = stationData.Longitude,
@@ -864,7 +874,7 @@ namespace OV_DB.Services
                     CreatedAt = status.CreatedAt,
                     Transport = new TrawellingTransportDto
                     {
-                        Category = GetTransportCategoryDisplayName(status.Train.Category),
+                        Category = status.Train.Category,
                         Number = status.Train.Number,
                         LineName = status.Train.LineName,
                         JourneyNumber = status.Train.JourneyNumber,
@@ -936,19 +946,17 @@ namespace OV_DB.Services
 
                 if (stationData?.Latitude.HasValue == true && stationData?.Longitude.HasValue == true)
                 {
-                    var coordinates = $"{stationData.Latitude},{stationData.Longitude}";
-                    
                     if (stopover.ArrivalPlanned.HasValue)
-                        localArrivalScheduled = await _timezoneService.ConvertUtcToLocalTimeAsync(stopover.ArrivalPlanned.Value, coordinates);
+                        localArrivalScheduled = await _timezoneService.ConvertUtcToLocalTimeAsync(stopover.ArrivalPlanned.Value, stationData.Latitude.Value, stationData.Longitude.Value);
                     
                     if (stopover.DeparturePlanned.HasValue)
-                        localDepartureScheduled = await _timezoneService.ConvertUtcToLocalTimeAsync(stopover.DeparturePlanned.Value, coordinates);
+                        localDepartureScheduled = await _timezoneService.ConvertUtcToLocalTimeAsync(stopover.DeparturePlanned.Value, stationData.Latitude.Value, stationData.Longitude.Value);
                     
                     if (realArrival.HasValue)
-                        localArrivalReal = await _timezoneService.ConvertUtcToLocalTimeAsync(realArrival.Value, coordinates);
+                        localArrivalReal = await _timezoneService.ConvertUtcToLocalTimeAsync(realArrival.Value, stationData.Latitude.Value, stationData.Longitude.Value);
                     
                     if (realDeparture.HasValue)
-                        localDepartureReal = await _timezoneService.ConvertUtcToLocalTimeAsync(realDeparture.Value, coordinates);
+                        localDepartureReal = await _timezoneService.ConvertUtcToLocalTimeAsync(realDeparture.Value, stationData.Latitude.Value, stationData.Longitude.Value);
                 }
                 else
                 {
@@ -996,25 +1004,6 @@ namespace OV_DB.Services
                     Cancelled = stopover.Cancelled
                 };
             }
-        }
-
-        private string GetTransportCategoryDisplayName(TrawellingHafasTravelType category)
-        {
-            return category switch
-            {
-                TrawellingHafasTravelType.NationalExpress => "High-Speed Train",
-                TrawellingHafasTravelType.National => "Intercity Train", 
-                TrawellingHafasTravelType.RegionalExp => "Regional Express",
-                TrawellingHafasTravelType.Regional => "Regional Train",
-                TrawellingHafasTravelType.Suburban => "Suburban Train",
-                TrawellingHafasTravelType.Bus => "Bus",
-                TrawellingHafasTravelType.Ferry => "Ferry",
-                TrawellingHafasTravelType.Subway => "Subway",
-                TrawellingHafasTravelType.Tram => "Tram",
-                TrawellingHafasTravelType.Taxi => "Taxi",
-                TrawellingHafasTravelType.Plane => "Plane",
-                _ => category.ToString()
-            };
         }
 
         private void UpdateRateLimitInfo(HttpResponseMessage response)

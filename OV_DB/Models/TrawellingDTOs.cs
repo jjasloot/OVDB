@@ -500,7 +500,7 @@ namespace OV_DB.Models
 
     public class TrawellingTransportDto
     {
-        public string Category { get; set; }
+        public TrawellingHafasTravelType Category { get; set; }
         public string Number { get; set; }
         public string LineName { get; set; }
         public int? JourneyNumber { get; set; }

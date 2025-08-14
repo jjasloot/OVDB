@@ -26,19 +26,10 @@ namespace OV_DB.Services
             return (endUtc - startUtc).TotalHours;
         }
 
-        public async Task<DateTime> ConvertUtcToLocalTimeAsync(DateTime utcDateTime, string coordinates)
+        public async Task<DateTime> ConvertUtcToLocalTimeAsync(DateTime utcDateTime, double latitude, double longitude)
         {
             try
             {
-                // Parse coordinates "latitude,longitude"
-                var parts = coordinates.Split(',');
-                if (parts.Length != 2 ||
-                    !double.TryParse(parts[0], out var latitude) ||
-                    !double.TryParse(parts[1], out var longitude))
-                {
-                    return utcDateTime; // Return UTC if parsing fails
-                }
-
                 var timezoneId = GetTimezoneId(latitude, longitude);
                 var timeZoneInfo = GetTimeZoneInfo(timezoneId);
                 

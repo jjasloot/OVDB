@@ -11,6 +11,10 @@ namespace OVDB_database.Models
         [Column("id")]
         public int Id { get; set; }
 
+        [Column("traewelling_id")]
+        [Required]
+        public int TrawellingId { get; set; }
+
         [Column("name")]
         [Required]
         [MaxLength(255)]

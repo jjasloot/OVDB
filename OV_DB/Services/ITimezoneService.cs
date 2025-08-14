@@ -19,8 +19,9 @@ namespace OV_DB.Services
         /// Convert UTC datetime to local time based on coordinates
         /// </summary>
         /// <param name="utcDateTime">UTC datetime</param>
-        /// <param name="coordinates">Coordinates in "latitude,longitude" format</param>
+        /// <param name="latitude">Latitude coordinate</param>
+        /// <param name="longitude">Longitude coordinate</param>
         /// <returns>Local datetime</returns>
-        Task<DateTime> ConvertUtcToLocalTimeAsync(DateTime utcDateTime, string coordinates);
+        Task<DateTime> ConvertUtcToLocalTimeAsync(DateTime utcDateTime, double latitude, double longitude);
     }
 }
