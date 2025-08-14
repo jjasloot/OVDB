@@ -160,6 +160,18 @@ namespace OV_DB.Services
                 user.TrawellingRefreshToken = tokenResponse.RefreshToken;
                 user.TrawellingTokenExpiresAt = DateTime.UtcNow.AddSeconds(tokenResponse.ExpiresIn);
 
+                // Fetch and store user information including username
+                var userInfo = await GetUserInfoAsync(user);
+                if (userInfo != null)
+                {
+                    user.TrawellingUsername = userInfo.Username;
+                    _logger.LogInformation("Stored Träwelling username {Username} for user {UserId}", userInfo.Username, userId);
+                }
+                else
+                {
+                    _logger.LogWarning("Failed to fetch Träwelling user info for user {UserId}", userId);
+                }
+
                 await _dbContext.SaveChangesAsync();
                 _logger.LogInformation("Successfully stored Träwelling tokens for user {UserId}", userId);
                 return true;
@@ -204,6 +216,17 @@ namespace OV_DB.Services
                 user.TrawellingAccessToken = tokenResponse.AccessToken;
                 user.TrawellingRefreshToken = tokenResponse.RefreshToken;
                 user.TrawellingTokenExpiresAt = DateTime.UtcNow.AddSeconds(tokenResponse.ExpiresIn);
+
+                // Fetch and store user information including username if not already stored
+                if (string.IsNullOrEmpty(user.TrawellingUsername))
+                {
+                    var userInfo = await GetUserInfoAsync(user);
+                    if (userInfo != null)
+                    {
+                        user.TrawellingUsername = userInfo.Username;
+                        _logger.LogInformation("Stored Träwelling username {Username} for user {UserId}", userInfo.Username, user.Id);
+                    }
+                }
 
                 await _dbContext.SaveChangesAsync();
                 _logger.LogInformation("Successfully refreshed tokens for user {UserId}", user.Id);
@@ -257,6 +280,23 @@ namespace OV_DB.Services
                 if (!await EnsureValidTokenAsync(user))
                     return null;
 
+                // Ensure we have the username for this user
+                if (string.IsNullOrEmpty(user.TrawellingUsername))
+                {
+                    var userInfo = await GetUserInfoAsync(user);
+                    if (userInfo != null)
+                    {
+                        user.TrawellingUsername = userInfo.Username;
+                        await _dbContext.SaveChangesAsync();
+                        _logger.LogInformation("Fetched and stored Träwelling username {Username} for user {UserId}", userInfo.Username, user.Id);
+                    }
+                    else
+                    {
+                        _logger.LogError("Could not fetch Träwelling username for user {UserId}", user.Id);
+                        return null;
+                    }
+                }
+
                 _httpClient.DefaultRequestHeaders.Clear();
                 _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {user.TrawellingAccessToken}");
 
@@ -266,7 +306,7 @@ namespace OV_DB.Services
                 // Loop through pages until we find one with unimported trips or reach the end
                 do
                 {
-                    var response = await _httpClient.GetAsync($"{_baseUrl}/user/jjasloot/statuses?page={currentPage}");
+                    var response = await _httpClient.GetAsync($"{_baseUrl}/user/{user.TrawellingUsername}/statuses?page={currentPage}");
 
                     // Update rate limit tracking
                     UpdateRateLimitInfo(response);
@@ -276,7 +316,7 @@ namespace OV_DB.Services
                     {
                         _logger.LogWarning("Rate limit hit for user {UserId}. Implementing backoff.", user.Id);
                         await Task.Delay(TimeSpan.FromMinutes(1)); // Simple backoff - wait 1 minute
-                        response = await _httpClient.GetAsync($"{_baseUrl}/user/jjasloot/statuses?page={currentPage}");
+                        response = await _httpClient.GetAsync($"{_baseUrl}/user/{user.TrawellingUsername}/statuses?page={currentPage}");
                         UpdateRateLimitInfo(response);
                     }
 
@@ -564,7 +604,7 @@ namespace OV_DB.Services
                     Description = $"Imported from Träwelling - {lineName}",
                     LineNumber = lineName,
                     OperatingCompany = "Imported from Träwelling",
-                    FirstDateTime = status.CreatedAt,
+                    FirstDateTime = status.CreatedAt.DateTime,
                     Share = Guid.NewGuid(),
                     CalculatedDistance = status.Train.Distance > 0 ? status.Train.Distance / 1000.0 : 0 // Convert meters to km
                 };
@@ -640,13 +680,13 @@ namespace OV_DB.Services
 
                 if (!bestMatch.StartTime.HasValue && status.Train.Origin.Departure.HasValue)
                 {
-                    bestMatch.StartTime = status.Train.Origin.Departure.Value;
+                    bestMatch.StartTime = status.Train.Origin.Departure.Value.DateTime;
                     updated = true;
                 }
 
                 if (!bestMatch.EndTime.HasValue && status.Train.Destination.Arrival.HasValue)
                 {
-                    bestMatch.EndTime = status.Train.Destination.Arrival.Value;
+                    bestMatch.EndTime = status.Train.Destination.Arrival.Value.DateTime;
                     updated = true;
                 }
 
@@ -778,12 +818,12 @@ namespace OV_DB.Services
                     // Update timing data if the RouteInstance doesn't have it
                     if (statusData.Train?.Origin?.Departure.HasValue == true)
                     {
-                        routeInstance.StartTime = statusData.Train.ManualDeparture?? statusData.Train.Origin.Departure;
+                        routeInstance.StartTime = (statusData.Train.ManualDeparture ?? statusData.Train.Origin.Departure)?.DateTime;
                     }
 
                     if (statusData.Train?.Destination?.Arrival.HasValue == true)
                     {
-                        routeInstance.EndTime = statusData.Train.ManualArrival ?? statusData.Train.Destination.Arrival;
+                        routeInstance.EndTime = (statusData.Train.ManualArrival ?? statusData.Train.Destination.Arrival)?.DateTime;
                     }
 
                     if (routeInstance.StartTime.HasValue && routeInstance.EndTime.HasValue)
@@ -862,8 +902,8 @@ namespace OV_DB.Services
                 if (status.Train?.Origin == null || status.Train?.Destination == null)
                     return null;
 
-                var origin = await MapStopoverToDto(user, status.Train.Origin, status.Train.ManualDeparture);
-                var destination = await MapStopoverToDto(user, status.Train.Destination, status.Train.ManualArrival);
+                var origin = await MapStopoverToDto(user, status.Train.Origin, status.Train.ManualDeparture?.DateTime);
+                var destination = await MapStopoverToDto(user, status.Train.Destination, status.Train.ManualArrival?.DateTime);
 
                 return new TrawellingTripDto
                 {
@@ -923,13 +963,13 @@ namespace OV_DB.Services
 
                 if (stopover.Arrival.HasValue)
                 {
-                    realArrival = stopover.ArrivalReal ?? stopover.Arrival;
+                    realArrival = (stopover.ArrivalReal ?? stopover.Arrival)?.DateTime;
                 }
                 
                 if (stopover.Departure.HasValue)
                 {
                     // Use manual departure time if this is the origin stop and manual time is provided
-                    realDeparture = (manualTime.HasValue && stopover.Departure.HasValue) ? manualTime : (stopover.DepartureReal ?? stopover.Departure);
+                    realDeparture = (manualTime.HasValue && stopover.Departure.HasValue) ? manualTime : (stopover.DepartureReal ?? stopover.Departure)?.DateTime;
                 }
                 
                 // For destination, use manual arrival time if provided
@@ -947,10 +987,10 @@ namespace OV_DB.Services
                 if (stationData?.Latitude.HasValue == true && stationData?.Longitude.HasValue == true)
                 {
                     if (stopover.ArrivalPlanned.HasValue)
-                        localArrivalScheduled = await _timezoneService.ConvertUtcToLocalTimeAsync(stopover.ArrivalPlanned.Value, stationData.Latitude.Value, stationData.Longitude.Value);
+                        localArrivalScheduled = await _timezoneService.ConvertUtcToLocalTimeAsync(stopover.ArrivalPlanned.Value.DateTime, stationData.Latitude.Value, stationData.Longitude.Value);
                     
                     if (stopover.DeparturePlanned.HasValue)
-                        localDepartureScheduled = await _timezoneService.ConvertUtcToLocalTimeAsync(stopover.DeparturePlanned.Value, stationData.Latitude.Value, stationData.Longitude.Value);
+                        localDepartureScheduled = await _timezoneService.ConvertUtcToLocalTimeAsync(stopover.DeparturePlanned.Value.DateTime, stationData.Latitude.Value, stationData.Longitude.Value);
                     
                     if (realArrival.HasValue)
                         localArrivalReal = await _timezoneService.ConvertUtcToLocalTimeAsync(realArrival.Value, stationData.Latitude.Value, stationData.Longitude.Value);
@@ -961,8 +1001,8 @@ namespace OV_DB.Services
                 else
                 {
                     // Fallback to UTC times if no coordinates available
-                    localArrivalScheduled = stopover.ArrivalPlanned;
-                    localDepartureScheduled = stopover.DeparturePlanned;
+                    localArrivalScheduled = stopover.ArrivalPlanned?.DateTime;
+                    localDepartureScheduled = stopover.DeparturePlanned?.DateTime;
                     localArrivalReal = realArrival;
                     localDepartureReal = realDeparture;
                     
@@ -995,10 +1035,10 @@ namespace OV_DB.Services
                 {
                     Id = stopover.Id,
                     Name = stopover.Name,
-                    ArrivalScheduled = stopover.ArrivalPlanned,
-                    DepartureScheduled = stopover.DeparturePlanned,
-                    ArrivalReal = stopover.ArrivalReal ?? stopover.Arrival,
-                    DepartureReal = stopover.DepartureReal ?? stopover.Departure,
+                    ArrivalScheduled = stopover.ArrivalPlanned?.DateTime,
+                    DepartureScheduled = stopover.DeparturePlanned?.DateTime,
+                    ArrivalReal = (stopover.ArrivalReal ?? stopover.Arrival)?.DateTime,
+                    DepartureReal = (stopover.DepartureReal ?? stopover.Departure)?.DateTime,
                     IsArrivalDelayed = stopover.IsArrivalDelayed,
                     IsDepartureDelayed = stopover.IsDepartureDelayed,
                     Cancelled = stopover.Cancelled

@@ -26,5 +26,6 @@ namespace OVDB_database.Models
         public string TrawellingAccessToken { get; set; }
         public string TrawellingRefreshToken { get; set; }
         public DateTime? TrawellingTokenExpiresAt { get; set; }
+        public string TrawellingUsername { get; set; }
     }
 }

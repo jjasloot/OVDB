@@ -167,7 +167,7 @@ namespace OV_DB.Models
         public TrawellingClient Client { get; set; }
 
         [JsonProperty("createdAt")]
-        public DateTime CreatedAt { get; set; }
+        public DateTimeOffset CreatedAt { get; set; }
 
         [JsonProperty("train")]
         public TrawellingTransport Train { get; set; }
@@ -237,10 +237,10 @@ namespace OV_DB.Models
         public int Duration { get; set; }
 
         [JsonProperty("manualDeparture")]
-        public DateTime? ManualDeparture { get; set; }
+        public DateTimeOffset? ManualDeparture { get; set; }
 
         [JsonProperty("manualArrival")]
-        public DateTime? ManualArrival { get; set; }
+        public DateTimeOffset? ManualArrival { get; set; }
 
         [JsonProperty("origin")]
         public TrawellingStopover Origin { get; set; }
@@ -270,13 +270,13 @@ namespace OV_DB.Models
         public string EvaIdentifier { get; set; }
 
         [JsonProperty("arrival")]
-        public DateTime? Arrival { get; set; }
+        public DateTimeOffset? Arrival { get; set; }
 
         [JsonProperty("arrivalPlanned")]
-        public DateTime? ArrivalPlanned { get; set; }
+        public DateTimeOffset? ArrivalPlanned { get; set; }
 
         [JsonProperty("arrivalReal")]
-        public DateTime? ArrivalReal { get; set; }
+        public DateTimeOffset? ArrivalReal { get; set; }
 
         [JsonProperty("arrivalPlatformPlanned")]
         public string ArrivalPlatformPlanned { get; set; }
@@ -285,13 +285,13 @@ namespace OV_DB.Models
         public string ArrivalPlatformReal { get; set; }
 
         [JsonProperty("departure")]
-        public DateTime? Departure { get; set; }
+        public DateTimeOffset? Departure { get; set; }
 
         [JsonProperty("departurePlanned")]
-        public DateTime? DeparturePlanned { get; set; }
+        public DateTimeOffset? DeparturePlanned { get; set; }
 
         [JsonProperty("departureReal")]
-        public DateTime? DepartureReal { get; set; }
+        public DateTimeOffset? DepartureReal { get; set; }
 
         [JsonProperty("departurePlatformPlanned")]
         public string DeparturePlatformPlanned { get; set; }
@@ -354,10 +354,10 @@ namespace OV_DB.Models
         public string Url { get; set; }
 
         [JsonProperty("begin")]
-        public DateTime Begin { get; set; }
+        public DateTimeOffset Begin { get; set; }
 
         [JsonProperty("end")]
-        public DateTime End { get; set; }
+        public DateTimeOffset End { get; set; }
 
         [JsonProperty("station")]
         public TrawellingStation Station { get; set; }
@@ -492,7 +492,7 @@ namespace OV_DB.Models
         public string Body { get; set; }
         public TrawellingBusiness Business { get; set; }
         public TrawellingStatusVisibility Visibility { get; set; }
-        public DateTime CreatedAt { get; set; }
+        public DateTimeOffset CreatedAt { get; set; }
         public TrawellingTransportDto Transport { get; set; }
         public TrawellingLightUserDto UserDetails { get; set; }
         public List<TrawellingStatusTagDto> Tags { get; set; }
