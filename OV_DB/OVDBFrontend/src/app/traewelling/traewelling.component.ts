@@ -95,11 +95,15 @@ export class TrawellingComponent implements OnInit {
     } else {
       this.tripsLoading = true;
     }
-    
+
     this.currentPage = page;
     this.apiService.getTrawellingUnimported(this.currentPage).subscribe({
       next: (response: TrawellingTripsResponse) => {
-        this.unimportedTrips = response.data;
+        if (showLoadingMore) {
+          this.unimportedTrips = this.unimportedTrips.concat(response.data);
+        } else {
+          this.unimportedTrips = response.data;
+        }
         this.currentPage = response.meta.current_page;
         this.hasMorePages = response.hasMorePages;
         this.totalTrips = response.meta.total || 0;
