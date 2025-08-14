@@ -225,6 +225,10 @@ export class TrawellingComponent implements OnInit {
     return new Date(actual).getTime() > new Date(planned).getTime();
   }
 
+  getTransportCategoryTranslationKey(category: TrawellingHafasTravelType): string {
+    return `TRAEWELLING.CATEGORY_${category.toString().toUpperCase()}`;
+  }
+
   private showMessage(messageKey: string): void {
     this.translateService.get(messageKey).subscribe(message => {
       this.snackBar.open(message, '', { duration: 3000 });

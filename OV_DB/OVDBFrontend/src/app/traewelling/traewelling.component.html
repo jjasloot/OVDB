@@ -77,7 +77,7 @@
                 <mat-chip>
                   <div style="display: flex; align-items: center;">
                     <mat-icon style="margin-right: .5rem;">directions_transit</mat-icon>
-                    {{ trip.transport.category | translate }}
+                    {{ getTransportCategoryTranslationKey(trip.transport.category) | translate }}
                   </div>
                 </mat-chip>
                 }

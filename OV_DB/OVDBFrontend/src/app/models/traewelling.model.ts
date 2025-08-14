@@ -208,7 +208,7 @@ export interface TrawellingTrip {
 }
 
 export interface TrawellingTransportOptimized {
-  category: string; // Already translated display name
+  category: TrawellingHafasTravelType; // Now an enum instead of translated string
   number: string;
   lineName: string;
   journeyNumber: number | null;
