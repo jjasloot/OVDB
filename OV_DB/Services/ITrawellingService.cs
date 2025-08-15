@@ -54,13 +54,6 @@ namespace OV_DB.Services
         /// <returns>Träwelling user data</returns>
         Task<TrawellingUserAuthData> GetUserInfoAsync(User user);
 
-        /// <summary>
-        /// Get user's statuses/check-ins from Träwelling that haven't been imported to OVDB or ignored
-        /// </summary>
-        /// <param name="user">User with valid tokens</param>
-        /// <param name="page">Page number for pagination</param>
-        /// <returns>List of Träwelling statuses</returns>
-        Task<TrawellingStatusesResponse> GetUnimportedStatusesAsync(User user, int page = 1);
 
         /// <summary>
         /// Get optimized trip data for frontend with local timezone conversion
@@ -68,15 +61,7 @@ namespace OV_DB.Services
         /// <param name="user">User with valid tokens</param>
         /// <param name="page">Page number for pagination</param>
         /// <returns>Optimized trip data with local timing</returns>
-        Task<TrawellingTripsResponse> GetOptimizedTripsAsync(User user, int page = 1);
-
-        /// <summary>
-        /// Fetch and cache station data from Träwelling API
-        /// </summary>
-        /// <param name="user">User with valid tokens</param>
-        /// <param name="stationId">Träwelling station ID</param>
-        /// <returns>Station data with coordinates</returns>
-        Task<TrawellingStationData> GetStationDataAsync(User user, int stationId);
+        Task<TrawellingTripsResponse> GetOptimizedTripsAsync(User user, int page = 1, int layer = 1);
 
         /// <summary>
         /// Ignore a specific Träwelling status so it doesn't appear in unimported list

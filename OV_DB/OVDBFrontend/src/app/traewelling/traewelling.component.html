@@ -54,12 +54,32 @@
         <p>{{ 'TRAEWELLING.NO_TRIPS' | translate }}</p>
         <p class="no-trips-message">{{ 'TRAEWELLING.NO_UNIMPORTED_TRIPS_MESSAGE' | translate }}</p>
       </div>
+      @if (hasMorePages) {
+      <div class="load-more-container">
+        @if (loadingMore) {
+        <div class="loading-container">
+          <mat-spinner diameter="30"></mat-spinner>
+          <span>{{ 'TRAEWELLING.LOADING_MORE_TRIPS' | translate }}</span>
+        </div>
+        } @else {
+        <button mat-button class="load-more" (click)="loadMoreTrips()" [disabled]="tripsLoading">
+          <mat-icon>more_horiz</mat-icon>
+          {{ 'TRAEWELLING.LOAD_MORE' | translate }}
+        </button>
+        }
+      </div>
+      }
       } @else {
       <div class="trips-list">
         @for (trip of unimportedTrips; track trip.id) {
         <mat-card class="trip-card">
           <mat-card-header>
             <mat-card-title class="title-bar">
+              @if (trip.transport?.category) {
+              <span [title]=" getTransportCategoryTranslationKey(trip.transport.category) | translate">
+                <mat-icon>{{ getCategoryIcon(trip.transport.category) }}</mat-icon>
+              </span>
+              }
               {{ trip.transport?.lineName }}
               @if(trip.transport?.lineName!==trip.transport?.number) {
               {{ trip.transport?.number }}
@@ -70,14 +90,6 @@
                   <div style="display: flex; align-items: center;">
                     <mat-icon style="margin-right: .5rem;">event</mat-icon>
                     {{ trip.createdAt | date:'mediumDate' }}
-                  </div>
-                </mat-chip>
-                }
-                @if (trip.transport?.category) {
-                <mat-chip>
-                  <div style="display: flex; align-items: center;">
-                    <mat-icon style="margin-right: .5rem;">directions_transit</mat-icon>
-                    {{ getTransportCategoryTranslationKey(trip.transport.category) | translate }}
                   </div>
                 </mat-chip>
                 }
@@ -120,7 +132,8 @@
                     @if (trip.transport?.origin?.departureReal) {
                     <mat-chip
                       [color]="isDelayed(trip.transport.origin.departureScheduled, trip.transport.origin.departureReal) ? 'warn' : 'primary'">
-                      <mat-icon>{{ isDelayed(trip.transport.origin.departureScheduled, trip.transport.origin.departureReal) ?
+                      <mat-icon>{{ isDelayed(trip.transport.origin.departureScheduled,
+                        trip.transport.origin.departureReal) ?
                         'warning' : 'check' }}</mat-icon>
                       {{ trip.transport.origin.departureReal | date:'shortTime' }}
                     </mat-chip>
@@ -131,7 +144,8 @@
                       {{ 'TRAEWELLING.PLATFORM' | translate }} {{ trip.transport.origin.departurePlatformPlanned }}
                     </mat-chip>
                     }
-                    @if (trip.transport?.origin?.departurePlatformReal && trip.transport?.origin?.departurePlatformReal !==
+                    @if (trip.transport?.origin?.departurePlatformReal && trip.transport?.origin?.departurePlatformReal
+                    !==
                     trip.transport?.origin?.departurePlatformPlanned) {
                     <mat-chip color="warn">
                       <mat-icon>warning</mat-icon>
@@ -153,7 +167,8 @@
                   @if (trip.transport?.destination?.arrivalReal) {
                   <mat-chip
                     [color]="isDelayed(trip.transport.destination.arrivalScheduled, trip.transport.destination.arrivalReal) ? 'warn' : 'primary'">
-                    <mat-icon>{{ isDelayed(trip.transport.destination.arrivalScheduled, trip.transport.destination.arrivalReal) ?
+                    <mat-icon>{{ isDelayed(trip.transport.destination.arrivalScheduled,
+                      trip.transport.destination.arrivalReal) ?
                       'warning' : 'check' }}</mat-icon>
                     {{ trip.transport.destination.arrivalReal | date:'shortTime' }}
                   </mat-chip>}
@@ -163,7 +178,8 @@
                     {{ 'TRAEWELLING.PLATFORM' | translate }} {{ trip.transport.destination.arrivalPlatformPlanned }}
                   </mat-chip>
                   }
-                  @if (trip.transport?.destination?.arrivalPlatformReal && trip.transport?.destination?.arrivalPlatformReal !==
+                  @if (trip.transport?.destination?.arrivalPlatformReal &&
+                  trip.transport?.destination?.arrivalPlatformReal !==
                   trip.transport?.destination?.arrivalPlatformPlanned) {
                   <mat-chip color="warn">
                     <mat-icon>warning</mat-icon>

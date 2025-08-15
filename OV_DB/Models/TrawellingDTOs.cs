@@ -500,6 +500,7 @@ namespace OV_DB.Models
 
     public class TrawellingTransportDto
     {
+        [JsonConverter(typeof(StringEnumConverter))]
         public TrawellingHafasTravelType Category { get; set; }
         public string Number { get; set; }
         public string LineName { get; set; }

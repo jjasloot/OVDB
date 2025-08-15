@@ -50,9 +50,7 @@ export class TrawellingComponent implements OnInit {
 
   // Pagination
   currentPage = 1;
-  totalTrips = 0;
-  pageSize = 10;
-  hasMorePages = false;
+  hasMorePages = true;
 
   // Search and filters
   searchTerm = '';
@@ -77,7 +75,7 @@ export class TrawellingComponent implements OnInit {
       next: (status) => {
         this.connectionStatus = status;
         if (status.connected) {
-          this.loadUnimportedTrips();
+          this.loadUnimportedTrips(this.currentPage);
         }
         this.loading = false;
       },
@@ -89,7 +87,7 @@ export class TrawellingComponent implements OnInit {
     });
   }
 
-  loadUnimportedTrips(page: number = 1, showLoadingMore: boolean = false): void {
+  loadUnimportedTrips(page: number, showLoadingMore: boolean = false): void {
     if (showLoadingMore) {
       this.loadingMore = true;
     } else {
@@ -106,7 +104,6 @@ export class TrawellingComponent implements OnInit {
         }
         this.currentPage = response.meta.current_page;
         this.hasMorePages = response.hasMorePages;
-        this.totalTrips = response.meta.total || 0;
         this.tripsLoading = false;
         this.loadingMore = false;
       },
@@ -231,6 +228,22 @@ export class TrawellingComponent implements OnInit {
 
   getTransportCategoryTranslationKey(category: TrawellingHafasTravelType): string {
     return `TRAEWELLING.CATEGORY_${category.toString().toUpperCase()}`;
+  }
+
+  getCategoryIcon(category: TrawellingHafasTravelType): string {
+    switch (category) {
+      case TrawellingHafasTravelType.BUS: return 'directions_bus';
+      case TrawellingHafasTravelType.NATIONAL:
+      case TrawellingHafasTravelType.NATIONAL_EXPRESS:
+      case TrawellingHafasTravelType.REGIONAL:
+      case TrawellingHafasTravelType.REGIONAL_EXP:
+        return 'train';
+      case TrawellingHafasTravelType.SUBWAY: return 'subway';
+      case TrawellingHafasTravelType.TRAM: return 'tram';
+      case TrawellingHafasTravelType.FERRY: return 'directions_boat';
+      case TrawellingHafasTravelType.TAXI: return 'local_taxi';
+      default: return 'directions_transit';
+    }
   }
 
   private showMessage(messageKey: string): void {
