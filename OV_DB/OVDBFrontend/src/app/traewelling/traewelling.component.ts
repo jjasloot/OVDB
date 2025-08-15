@@ -53,7 +53,7 @@ export class TrawellingComponent implements OnInit {
   loadingMore = false;
 
   // Pagination
-  currentPage = 80;
+  currentPage = 1;
   hasMorePages = true;
 
   // Search and filters
