@@ -70,7 +70,7 @@ function translateLanguage(lang: string) {
   console.log(lang);
   switch (lang) {
     case "nl":
-      return "nl";
+      return "nl-NL";
     default:
       return "en-GB";
   }

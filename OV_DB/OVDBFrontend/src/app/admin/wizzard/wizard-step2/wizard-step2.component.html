@@ -2,6 +2,44 @@
 <button mat-icon-button (click)="goback()">
   <mat-icon>arrow_back</mat-icon>
 </button>
+
+<!-- Show Träwelling Trip Information if available -->
+@if (fromTraewelling && trawellingTripData) {
+<mat-card class="traewelling-info">
+  <mat-card-header>
+    <mat-card-title style="display: flex; align-items: center; gap: 8px;">
+      <mat-icon>train</mat-icon>
+      {{ 'TRAEWELLING.IMPORTED_TRIP' | translate }}
+    </mat-card-title>
+  </mat-card-header>
+  <mat-card-content>
+    <div class="trip-summary">
+      <strong>{{ trawellingTripData.origin }} → {{ trawellingTripData.destination }}</strong>
+      @if (trawellingTripData.line) {
+      <div>{{ 'TRAEWELLING.LINE' | translate }}: {{ trawellingTripData.line }} {{ trawellingTripData.number }}</div>
+      }
+      @if (trawellingTripData.startTime) {
+      <div>{{ 'TRAEWELLING.START_TIME' | translate }}: {{ trawellingTripData.startTime | date:'short' }}</div>
+      }
+      @if (trawellingTripData.endTime) {
+      <div>{{ 'TRAEWELLING.END_TIME' | translate }}: {{ trawellingTripData.endTime | date:'short' }}</div>
+      }
+      @if (trawellingTripData.body) {
+      <div class="trip-description">{{ trawellingTripData.body }}</div>
+      }
+      @if (trawellingTripData.tags && trawellingTripData.tags.length > 0) {
+      <div class="trip-tags">
+        <strong>{{ 'TRAEWELLING.TAGS' | translate }}:</strong>
+        @for (tag of trawellingTripData.tags; track tag.key) {
+        <span class="tag">{{ tag.key }}: {{ tag.value }}</span>
+        }
+      </div>
+      }
+    </div>
+  </mat-card-content>
+</mat-card>
+}
+
 } @if (loading) {
 <div class="loading">
   <mat-card appearance="outlined">

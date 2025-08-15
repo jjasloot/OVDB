@@ -18,6 +18,7 @@ import saveAs from "file-saver";
 import { AuthenticationService } from "src/app/services/authentication.service";
 import { OperatorService } from "src/app/services/operator.service";
 import { MatButton } from "@angular/material/button";
+import { MatIcon } from "@angular/material/icon";
 import { MatFormField, MatLabel, MatSuffix } from "@angular/material/form-field";
 import { MatInput } from "@angular/material/input";
 import { RouteDetailOperatorSelectionComponent } from "./route-detail-operator-selection/route-detail-operator-selection.component";
@@ -26,7 +27,7 @@ import { MatSelect } from "@angular/material/select";
 import { MatCard, MatCardHeader, MatCardSubtitle, MatCardContent } from "@angular/material/card";
 import { MatChip } from "@angular/material/chips";
 import { MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle, MatExpansionPanelDescription } from "@angular/material/expansion";
-import { DecimalPipe } from "@angular/common";
+import { DecimalPipe, DatePipe } from "@angular/common";
 
 @Component({
     selector: "app-route-detail",
@@ -34,6 +35,7 @@ import { DecimalPipe } from "@angular/common";
     styleUrls: ["./route-detail.component.scss"],
     imports: [
         MatButton,
+        MatIcon,
         FormsModule,
         ReactiveFormsModule,
         MatFormField,
@@ -58,6 +60,7 @@ import { DecimalPipe } from "@angular/common";
         MatSelectionList,
         MatListOption,
         DecimalPipe,
+        DatePipe,
         TranslateModule,
     ]
 })
@@ -71,6 +74,8 @@ export class RouteDetailComponent implements OnInit {
   activeOperators = signal<number[]>([]);
   logo = signal<string | null>(null);
   colour: string;
+  fromTraewelling = false;
+  trawellingTripData: any = null;
 
   readonly countriesSelection = viewChild<MatSelectionList>("countriesSelection");
   readonly mapsSelection = viewChild<MatSelectionList>("mapsSelection");
@@ -122,6 +127,19 @@ export class RouteDetailComponent implements OnInit {
     this.activatedRoute.paramMap.subscribe((p) => {
       this.routeId = +p.get("routeId");
       this.loadData();
+    });
+    
+    // Check if coming from Träwelling
+    this.activatedRoute.queryParams.subscribe(params => {
+      if (params['fromTraewelling']) {
+        this.fromTraewelling = true;
+        const tripDataStr = sessionStorage.getItem('trawellingTripDataForInstance');
+        if (tripDataStr) {
+          this.trawellingTripData = JSON.parse(tripDataStr);
+          // Clear the session storage to prevent reuse
+          sessionStorage.removeItem('trawellingTripDataForInstance');
+        }
+      }
     });
   }
   private loadData() {

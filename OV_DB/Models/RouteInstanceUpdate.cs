@@ -15,5 +15,6 @@ namespace OV_DB.Models
         public DateTime? EndTime { get; set; }
         public List<RouteInstancePropertyUpdate> RouteInstanceProperties { get; set; }
         public List<RouteInstanceMap> RouteInstanceMaps { get; set; }
+        public int? TraewellingStatusId { get; set; }
     }
 }

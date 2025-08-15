@@ -23,6 +23,7 @@ import { AsyncPipe } from '@angular/common';
 import { TranslateModule } from '@ngx-translate/core';
 import { MatCard, MatCardContent } from '@angular/material/card';
 import { MatSlideToggle } from '@angular/material/slide-toggle';
+import moment, { Moment } from 'moment';
 
 @Component({
   selector: 'app-route-instances-edit',
@@ -178,6 +179,10 @@ export class RouteInstancesEditComponent implements OnInit {
         this.instance.routeInstanceProperties.slice(0, this.instance.routeInstanceProperties.length - 1);
     }
     this.instance.routeInstanceMaps = this.selectedMaps.map(s => { return { mapId: s } });
+    if (this.instance.date['_isAMomentObject']) {
+      this.instance.date = (this.instance.date as unknown as Moment).format('YYYY-MM-DD');
+    }
+    console.log(this.instance.date);
     this.dialogRef.close(this.instance);
   }
 

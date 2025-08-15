@@ -13,12 +13,12 @@ import { Moment } from "moment";
 import moment from "moment";
 import { MatIconButton, MatButton } from "@angular/material/button";
 import { MatIcon } from "@angular/material/icon";
-import { MatCard } from "@angular/material/card";
+import { MatCard, MatCardHeader, MatCardTitle, MatCardContent } from "@angular/material/card";
 import { MatProgressSpinner } from "@angular/material/progress-spinner";
 import { LeafletModule } from "@bluehalo/ngx-leaflet";
 import { MatList, MatListItem } from "@angular/material/list";
 import { MatChipListbox, MatChipOption } from "@angular/material/chips";
-import { NgClass } from "@angular/common";
+import { NgClass, DatePipe } from "@angular/common";
 import { CdkCopyToClipboard } from "@angular/cdk/clipboard";
 
 @Component({
@@ -29,6 +29,9 @@ import { CdkCopyToClipboard } from "@angular/cdk/clipboard";
         MatIconButton,
         MatIcon,
         MatCard,
+        MatCardHeader,
+        MatCardTitle,
+        MatCardContent,
         MatProgressSpinner,
         LeafletModule,
         MatList,
@@ -37,6 +40,7 @@ import { CdkCopyToClipboard } from "@angular/cdk/clipboard";
         MatChipOption,
         MatButton,
         NgClass,
+        DatePipe,
         TranslateModule,
         CdkCopyToClipboard,
     ]
@@ -64,6 +68,8 @@ export class WizzardStep2Component implements OnInit {
   from: number;
   to: number;
   dateTime: Moment;
+  fromTraewelling = false;
+  trawellingTripData: any = null;
   constructor(
     private activatedRoute: ActivatedRoute,
     private apiService: ApiService,
@@ -77,6 +83,15 @@ export class WizzardStep2Component implements OnInit {
         this.dateTime = moment.unix(+p.get("date"));
       } else {
         this.dateTime = null;
+      }
+      
+      // Check if coming from Träwelling
+      if (p.has("fromTraewelling")) {
+        this.fromTraewelling = true;
+        const tripDataStr = sessionStorage.getItem('trawellingTripData');
+        if (tripDataStr) {
+          this.trawellingTripData = JSON.parse(tripDataStr);
+        }
       }
     });
   }
@@ -119,7 +134,16 @@ export class WizzardStep2Component implements OnInit {
 
         this.apiService.importerAddRoute(this.data).subscribe(
           (route) => {
-            this.router.navigate(["/", "admin", "routes", route.routeId]);
+            // If this comes from Träwelling, navigate to route edit with trip data pre-populated
+            if (this.fromTraewelling && this.trawellingTripData) {
+              // Store trip data for route instance creation
+              sessionStorage.setItem('trawellingTripDataForInstance', JSON.stringify(this.trawellingTripData));
+              this.router.navigate(["/", "admin", "routes", route.routeId], {
+                queryParams: { fromTraewelling: 'true' }
+              });
+            } else {
+              this.router.navigate(["/", "admin", "routes", route.routeId]);
+            }
           },
           () => {
             this.error = true;
