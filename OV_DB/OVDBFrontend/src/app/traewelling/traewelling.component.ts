@@ -53,7 +53,7 @@ export class TrawellingComponent implements OnInit {
   loadingMore = false;
 
   // Pagination
-  currentPage = 1;
+  currentPage = 80;
   hasMorePages = true;
 
   // Search and filters
@@ -260,7 +260,7 @@ export class TrawellingComponent implements OnInit {
       endTime: trip.transport?.destination?.arrivalReal || trip.transport?.destination?.arrivalScheduled,
       routeInstanceProperties: [],
       routeInstanceMaps: [],
-      trawellingStatusId: trip.id // Link to Träwelling trip
+      traewellingStatusId: trip.id // Link to Träwelling trip
     };
 
     // Add tags as properties
@@ -273,33 +273,6 @@ export class TrawellingComponent implements OnInit {
         });
       });
     }
-
-    // Add trip description as property if available
-    if (trip.body) {
-      newInstance.routeInstanceProperties.push({
-        key: 'description',
-        value: trip.body,
-        bool: null
-      });
-    }
-
-    // Add transport information
-    if (trip.transport?.lineName) {
-      newInstance.routeInstanceProperties.push({
-        key: 'line',
-        value: trip.transport.lineName,
-        bool: null
-      });
-    }
-
-    if (trip.transport?.number) {
-      newInstance.routeInstanceProperties.push({
-        key: 'number',
-        value: trip.transport.number,
-        bool: null
-      });
-    }
-
     // Open the route instance edit dialog
     const editDialogRef = this.dialog.open(RouteInstancesEditComponent, {
       data: { 

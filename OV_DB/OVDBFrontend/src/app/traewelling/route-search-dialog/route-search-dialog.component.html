@@ -46,25 +46,20 @@
   @if (!loading && routes.length > 0) {
   <div class="routes-list">
     @for (route of routes; track route.routeId) {
-    <mat-card 
-      class="route-card" 
-      [class.selected]="selectedRoute?.routeId === route.routeId"
+    <mat-card class="route-card" [class.selected]="selectedRoute?.routeId === route.routeId"
       (click)="selectRoute(route)">
       <mat-card-content>
         <div class="route-info">
-          <div class="route-name">{{ route.name }}</div>
+          <div class="route-name">
+            @if (route.routeType?.name) {
+            <mat-chip [style.background-color]="route.routeType.colour">{{ name(route.routeType) }}</mat-chip>
+            }
+            {{ route.name }}
+          </div>
           <div class="route-description">{{ route.from }} → {{ route.to }}</div>
           @if (route.operatingCompany) {
           <div class="route-operator">{{ route.operatingCompany }}</div>
           }
-          <mat-chip-set>
-            @if (route.routeType?.name) {
-            <mat-chip>{{ route.routeType.name }}</mat-chip>
-            }
-            @if (route.lineNumber) {
-            <mat-chip>Line: {{ route.lineNumber }}</mat-chip>
-            }
-          </mat-chip-set>
         </div>
       </mat-card-content>
     </mat-card>
@@ -85,11 +80,7 @@
   <button mat-button (click)="cancel()">
     {{ 'CANCEL' | translate }}
   </button>
-  <button 
-    mat-raised-button 
-    color="primary" 
-    (click)="confirm()" 
-    [disabled]="!selectedRoute">
+  <button mat-raised-button color="primary" (click)="confirm()" [disabled]="!selectedRoute">
     {{ 'TRAEWELLING.SELECT_ROUTE' | translate }}
   </button>
 </mat-dialog-actions>

@@ -17,6 +17,7 @@ import { TrawellingTrip, TrawellingHafasTravelType } from '../../models/traewell
 
 import { debounceTime, distinctUntilChanged, switchMap, takeUntil } from 'rxjs/operators';
 import { of, Subject } from 'rxjs';
+import { TranslationService } from 'src/app/services/translation.service';
 
 @Component({
   selector: 'app-route-search-dialog',
@@ -50,12 +51,13 @@ export class RouteSearchDialogComponent implements OnInit, OnDestroy {
   constructor(
     public dialogRef: MatDialogRef<RouteSearchDialogComponent>,
     @Inject(MAT_DIALOG_DATA) public data: { trip: TrawellingTrip },
-    private apiService: ApiService
-  ) {}
+    private apiService: ApiService,
+    private translationService: TranslationService
+  ) { }
 
   ngOnInit(): void {
-    // Initialize search with origin -> destination from trip
-    const initialSearch = `${this.data.trip.transport?.origin?.name} ${this.data.trip.transport?.destination?.name}`;
+    // Initialize search with origin from trip
+    const initialSearch = `${this.data.trip.transport?.origin?.name} => ${this.data.trip.transport?.destination?.name}`;
     this.searchControl.setValue(initialSearch);
 
     // Set up search subscription
@@ -67,7 +69,7 @@ export class RouteSearchDialogComponent implements OnInit, OnDestroy {
           return of([]);
         }
         this.loading = true;
-        return this.apiService.getAllRoutes(0, 20, undefined, undefined, searchTerm);
+        return this.apiService.getAllRoutes(0, 20, 'date', true, searchTerm);
       }),
       takeUntil(this.destroy$)
     ).subscribe({
@@ -129,5 +131,8 @@ export class RouteSearchDialogComponent implements OnInit, OnDestroy {
       default:
         return 'directions_transit';
     }
+  }
+  name(item: any) {
+    return this.translationService.getNameForItem(item);
   }
 }

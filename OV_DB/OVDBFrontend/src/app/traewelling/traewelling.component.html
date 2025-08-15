@@ -27,6 +27,7 @@
   <!-- Actions Card -->
   <mat-card class="actions-card">
     <mat-card-content>
+      <mat-card-title>{{ 'TRAEWELLING.UNIMPORTED_TRIPS' | translate }}</mat-card-title>
       <div class="actions-row">
         <button mat-raised-button color="primary" (click)="refreshTrips()" [disabled]="tripsLoading">
           <mat-icon>refresh</mat-icon>
@@ -36,308 +37,309 @@
       </div>
     </mat-card-content>
   </mat-card>
-
-  <!-- Trips List Card -->
-  <mat-card class="trips-card">
-    <mat-card-header>
-      <mat-card-title>{{ 'TRAEWELLING.UNIMPORTED_TRIPS' | translate }}</mat-card-title>
-    </mat-card-header>
-    <mat-card-content>
-      @if (tripsLoading) {
-      <div class="loading-container">
-        <mat-spinner></mat-spinner>
-        <span>{{ 'TRAEWELLING.LOADING_TRIPS' | translate }}</span>
-      </div>
-      } @else if (unimportedTrips.length === 0) {
-      <div class="no-trips">
-        <mat-icon>check_circle</mat-icon>
-        <p>{{ 'TRAEWELLING.NO_TRIPS' | translate }}</p>
-        <p class="no-trips-message">{{ 'TRAEWELLING.NO_UNIMPORTED_TRIPS_MESSAGE' | translate }}</p>
-      </div>
-      @if (hasMorePages) {
-      <div class="load-more-container">
-        @if (loadingMore) {
-        <div class="loading-container">
-          <mat-spinner diameter="30"></mat-spinner>
-          <span>{{ 'TRAEWELLING.LOADING_MORE_TRIPS' | translate }}</span>
+  @if (tripsLoading) {
+  <div class="loading-container">
+    <mat-spinner></mat-spinner>
+    <span>{{ 'TRAEWELLING.LOADING_TRIPS' | translate }}</span>
+  </div>
+  } @else if (unimportedTrips.length === 0) {
+  <div class="no-trips">
+    <mat-card>
+      <mat-card-title>
+        <div style="display: flex; align-items: center; gap: 0.5rem; margin-inline: 1rem;">
+          <mat-icon>check_circle</mat-icon>
+          <p>{{ 'TRAEWELLING.NO_TRIPS' | translate }}</p>
         </div>
-        } @else {
-        <button mat-button class="load-more" (click)="loadMoreTrips()" [disabled]="tripsLoading">
-          <mat-icon>more_horiz</mat-icon>
-          {{ 'TRAEWELLING.LOAD_MORE' | translate }}
-        </button>
-        }
-      </div>
-      }
-      } @else {
-      <div class="trips-list">
-        @for (trip of unimportedTrips; track trip.id) {
-        <mat-card class="trip-card">
-          <mat-card-header>
-            <mat-card-title class="title-bar">
-              @if (trip.transport?.category) {
-              <span [title]=" getTransportCategoryTranslationKey(trip.transport.category) | translate">
-                <mat-icon>{{ getCategoryIcon(trip.transport.category) }}</mat-icon>
-              </span>
-              }
-              {{ trip.transport?.lineName }}
-              @if(trip.transport?.lineName!==trip.transport?.number) {
-              {{ trip.transport?.number }}
-              }
-              <mat-chip-set class="trip-details">
-                @if (trip.createdAt) {
+      </mat-card-title>
+      <mat-card-content>
+        <p class="no-trips-message">{{ 'TRAEWELLING.NO_UNIMPORTED_TRIPS_MESSAGE' | translate }}</p>
+      </mat-card-content>
+    </mat-card>
+  </div>
+  @if (hasMorePages) {
+  <div class="load-more-container">
+    @if (loadingMore) {
+    <div class="loading-container">
+      <mat-spinner diameter="30"></mat-spinner>
+      <span>{{ 'TRAEWELLING.LOADING_MORE_TRIPS' | translate }}</span>
+    </div>
+    } @else {
+    <button mat-button class="load-more" (click)="loadMoreTrips()" [disabled]="tripsLoading">
+      <mat-icon>more_horiz</mat-icon>
+      {{ 'TRAEWELLING.LOAD_MORE' | translate }}
+    </button>
+    }
+  </div>
+  }
+  } @else {
+  <div class="trips-list">
+    @for (trip of unimportedTrips; track trip.id) {
+    <mat-card class="trip-card">
+      <mat-card-header>
+        <mat-card-title class="title-bar">
+          @if (trip.transport?.category) {
+          <span [title]=" getTransportCategoryTranslationKey(trip.transport.category) | translate">
+            <mat-icon>{{ getCategoryIcon(trip.transport.category) }}</mat-icon>
+          </span>
+          }
+          {{ trip.transport?.lineName }}
+          @if(trip.transport?.lineName!==trip.transport?.number) {
+          {{ trip.transport?.number }}
+          }
+          <mat-chip-set class="trip-details">
+            @if (trip.createdAt) {
+            <mat-chip>
+              <div style="display: flex; align-items: center;">
+                <mat-icon style="margin-right: .5rem;">event</mat-icon>
+                {{ trip.createdAt | date:'mediumDate' }}
+              </div>
+            </mat-chip>
+            }
+            @if (trip.transport?.duration) {
+            <mat-chip>
+              <div style="display: flex; align-items: center;">
+                <mat-icon style="margin-right: .5rem;">timer</mat-icon>
+                {{ formatDuration(trip.transport.duration) }}
+              </div>
+            </mat-chip>
+            }
+            @if (trip.transport?.distance) {
+            <mat-chip>
+              <div style="display: flex; align-items: center;">
+                <mat-icon style="margin-right: .5rem;">straighten</mat-icon>
+                {{ formatDistance(trip.transport.distance) }}
+              </div>
+            </mat-chip>
+            }
+          </mat-chip-set>
+        </mat-card-title>
+        <mat-card-subtitle>
+          {{ trip.transport?.origin?.name }} → {{ trip.transport?.destination?.name }}
+        </mat-card-subtitle>
+      </mat-card-header>
+
+      <mat-card-content style="display: flex;">
+        <div style="flex: 1;">
+          <!-- Trip Timing Details -->
+          <div class="timing-section">
+            <h4>{{ 'TRAEWELLING.DEPARTURE' | translate }}</h4>
+            <div class="time-details">
+              <mat-chip-set>
+                @if (trip.transport?.origin?.departureScheduled) {
                 <mat-chip>
-                  <div style="display: flex; align-items: center;">
-                    <mat-icon style="margin-right: .5rem;">event</mat-icon>
-                    {{ trip.createdAt | date:'mediumDate' }}
-                  </div>
+                  <mat-icon>schedule</mat-icon>
+                  {{ trip.transport.origin.departureScheduled | date:'shortTime' }}
                 </mat-chip>
                 }
-                @if (trip.transport?.duration) {
-                <mat-chip>
-                  <div style="display: flex; align-items: center;">
-                    <mat-icon style="margin-right: .5rem;">timer</mat-icon>
-                    {{ formatDuration(trip.transport.duration) }}
-                  </div>
+                @if (trip.transport?.origin?.departureReal) {
+                <mat-chip
+                  [color]="isDelayed(trip.transport.origin.departureScheduled, trip.transport.origin.departureReal) ? 'warn' : 'primary'">
+                  <mat-icon>{{ isDelayed(trip.transport.origin.departureScheduled,
+                    trip.transport.origin.departureReal) ?
+                    'warning' : 'check' }}</mat-icon>
+                  {{ trip.transport.origin.departureReal | date:'shortTime' }}
                 </mat-chip>
                 }
-                @if (trip.transport?.distance) {
+                @if (trip.transport?.origin?.departurePlatformPlanned) {
                 <mat-chip>
-                  <div style="display: flex; align-items: center;">
-                    <mat-icon style="margin-right: .5rem;">straighten</mat-icon>
-                    {{ formatDistance(trip.transport.distance) }}
-                  </div>
+                  <mat-icon>train</mat-icon>
+                  {{ 'TRAEWELLING.PLATFORM' | translate }} {{ trip.transport.origin.departurePlatformPlanned }}
+                </mat-chip>
+                }
+                @if (trip.transport?.origin?.departurePlatformReal && trip.transport?.origin?.departurePlatformReal
+                !==
+                trip.transport?.origin?.departurePlatformPlanned) {
+                <mat-chip color="warn">
+                  <mat-icon>warning</mat-icon>
+                  {{ 'TRAEWELLING.PLATFORM' | translate }} {{ trip.transport.origin.departurePlatformReal }}
                 </mat-chip>
                 }
               </mat-chip-set>
-            </mat-card-title>
-            <mat-card-subtitle>
-              {{ trip.transport?.origin?.name }} → {{ trip.transport?.destination?.name }}
-            </mat-card-subtitle>
-          </mat-card-header>
+            </div>
 
-          <mat-card-content style="display: flex;">
-            <div style="flex: 1;">
-              <!-- Trip Timing Details -->
-              <div class="timing-section">
-                <h4>{{ 'TRAEWELLING.DEPARTURE' | translate }}</h4>
-                <div class="time-details">
-                  <mat-chip-set>
-                    @if (trip.transport?.origin?.departureScheduled) {
-                    <mat-chip>
-                      <mat-icon>schedule</mat-icon>
-                      {{ trip.transport.origin.departureScheduled | date:'shortTime' }}
-                    </mat-chip>
-                    }
-                    @if (trip.transport?.origin?.departureReal) {
-                    <mat-chip
-                      [color]="isDelayed(trip.transport.origin.departureScheduled, trip.transport.origin.departureReal) ? 'warn' : 'primary'">
-                      <mat-icon>{{ isDelayed(trip.transport.origin.departureScheduled,
-                        trip.transport.origin.departureReal) ?
-                        'warning' : 'check' }}</mat-icon>
-                      {{ trip.transport.origin.departureReal | date:'shortTime' }}
-                    </mat-chip>
-                    }
-                    @if (trip.transport?.origin?.departurePlatformPlanned) {
-                    <mat-chip>
-                      <mat-icon>train</mat-icon>
-                      {{ 'TRAEWELLING.PLATFORM' | translate }} {{ trip.transport.origin.departurePlatformPlanned }}
-                    </mat-chip>
-                    }
-                    @if (trip.transport?.origin?.departurePlatformReal && trip.transport?.origin?.departurePlatformReal
-                    !==
-                    trip.transport?.origin?.departurePlatformPlanned) {
-                    <mat-chip color="warn">
-                      <mat-icon>warning</mat-icon>
-                      {{ 'TRAEWELLING.PLATFORM' | translate }} {{ trip.transport.origin.departurePlatformReal }}
-                    </mat-chip>
-                    }
-                  </mat-chip-set>
+            @if (trip.transport?.destination?.arrivalScheduled || trip.transport?.destination?.arrivalReal) {
+            <h4>{{ 'TRAEWELLING.ARRIVAL' | translate }}</h4>
+            <mat-chip-set>
+              @if (trip.transport?.destination?.arrivalScheduled) {
+              <mat-chip>
+                <mat-icon>schedule</mat-icon>
+                {{ trip.transport.destination.arrivalScheduled | date:'shortTime' }}
+              </mat-chip>
+              }
+              @if (trip.transport?.destination?.arrivalReal) {
+              <mat-chip
+                [color]="isDelayed(trip.transport.destination.arrivalScheduled, trip.transport.destination.arrivalReal) ? 'warn' : 'primary'">
+                <mat-icon>{{ isDelayed(trip.transport.destination.arrivalScheduled,
+                  trip.transport.destination.arrivalReal) ?
+                  'warning' : 'check' }}</mat-icon>
+                {{ trip.transport.destination.arrivalReal | date:'shortTime' }}
+              </mat-chip>}
+              @if (trip.transport?.destination?.arrivalPlatformPlanned) {
+              <mat-chip>
+                <mat-icon>train</mat-icon>
+                {{ 'TRAEWELLING.PLATFORM' | translate }} {{ trip.transport.destination.arrivalPlatformPlanned }}
+              </mat-chip>
+              }
+              @if (trip.transport?.destination?.arrivalPlatformReal &&
+              trip.transport?.destination?.arrivalPlatformReal !==
+              trip.transport?.destination?.arrivalPlatformPlanned) {
+              <mat-chip color="warn">
+                <mat-icon>warning</mat-icon>
+                {{ 'TRAEWELLING.PLATFORM' | translate }} {{ trip.transport.destination.arrivalPlatformReal }}
+              </mat-chip>
+              }
+            </mat-chip-set>
+            }
+          </div>
+        </div>
+        <div style="flex:1">
+          @if (trip.body) {
+          <div class="trip-description" style="flex: 1;">
+            <mat-icon>description</mat-icon>
+            <span>{{ trip.body }}</span>
+          </div>
+          }
+
+          @if (trip.tags && trip.tags.length > 0) {
+          <div class="trip-tags" style="flex: 1;">
+            <h4>{{ 'TRAEWELLING.TAGS' | translate }}</h4>
+            <div class="tags-container">
+              @for (tag of trip.tags; track tag.key) {
+              <mat-chip class="tag-chip">
+                <span class="tag-key">{{ tag.key }}</span>
+                <span class="tag-value">{{ tag.value }}</span>
+              </mat-chip>
+              }
+            </div>
+          </div>
+          }
+        </div>
+      </mat-card-content>
+
+      <mat-card-actions class="actions-row">
+        <button mat-raised-button color="accent" (click)="addToExistingRoute(trip)">
+          <mat-icon>add_location_alt</mat-icon>
+          {{ 'TRAEWELLING.ADD_TO_EXISTING_ROUTE' | translate }}
+        </button>
+
+        <button mat-raised-button (click)="createNewRoute(trip)">
+          <mat-icon>create</mat-icon>
+          {{ 'TRAEWELLING.CREATE_NEW_ROUTE' | translate }}
+        </button>
+
+        <button mat-raised-button color="primary" (click)="searchExistingRoutes(trip)">
+          <mat-icon>search</mat-icon>
+          {{ 'TRAEWELLING.SEARCH_ROUTE_INSTANCES' | translate }}
+        </button>
+
+        <button mat-raised-button color="warn" (click)="ignoreTrip(trip)">
+          <mat-icon>visibility_off</mat-icon>
+          {{ 'TRAEWELLING.IGNORE_TRIP' | translate }}
+        </button>
+
+
+
+      </mat-card-actions>
+
+      <!-- RouteInstance Search Results -->
+      @if (searchTrip?.id === trip.id && searchingRouteInstances) {
+      <mat-card-content>
+        <div class="route-search-loading">
+          <mat-progress-spinner diameter="20"></mat-progress-spinner>
+          <span>{{ 'TRAEWELLING.SEARCHING_ROUTE_INSTANCES' | translate }}</span>
+        </div>
+      </mat-card-content>
+      }
+
+      @if (searchTrip?.id === trip.id && existingRouteInstances.length > 0) {
+      <mat-card-content>
+        <h4>{{ 'TRAEWELLING.SELECT_ROUTE_INSTANCE' | translate }}</h4>
+        <div class="routes-list">
+          @for (routeInstance of existingRouteInstances; track routeInstance.id) {
+          <mat-card class="route-option" [class.already-linked]="routeInstance.hasTraewellingLink">
+            <mat-card-content>
+              <div class="route-info">
+                <strong>{{ routeInstance.routeName || (routeInstance.from + ' - ' + routeInstance.to) }}</strong>
+                <div class="route-description">
+                  {{ routeInstance.from }} → {{ routeInstance.to }}
                 </div>
-
-                @if (trip.transport?.destination?.arrivalScheduled || trip.transport?.destination?.arrivalReal) {
-                <h4>{{ 'TRAEWELLING.ARRIVAL' | translate }}</h4>
-                <mat-chip-set>
-                  @if (trip.transport?.destination?.arrivalScheduled) {
+                <mat-chip-set class="route-details">
+                  @if (routeInstance.startTime) {
                   <mat-chip>
-                    <mat-icon>schedule</mat-icon>
-                    {{ trip.transport.destination.arrivalScheduled | date:'shortTime' }}
+                    <div style="display: flex; align-items: center;">
+                      <mat-icon style="margin-right: .5rem;">schedule</mat-icon>
+                      {{ routeInstance.startTime | date:'short' }}
+                    </div>
                   </mat-chip>
                   }
-                  @if (trip.transport?.destination?.arrivalReal) {
-                  <mat-chip
-                    [color]="isDelayed(trip.transport.destination.arrivalScheduled, trip.transport.destination.arrivalReal) ? 'warn' : 'primary'">
-                    <mat-icon>{{ isDelayed(trip.transport.destination.arrivalScheduled,
-                      trip.transport.destination.arrivalReal) ?
-                      'warning' : 'check' }}</mat-icon>
-                    {{ trip.transport.destination.arrivalReal | date:'shortTime' }}
-                  </mat-chip>}
-                  @if (trip.transport?.destination?.arrivalPlatformPlanned) {
+                  @if (routeInstance.endTime) {
                   <mat-chip>
-                    <mat-icon>train</mat-icon>
-                    {{ 'TRAEWELLING.PLATFORM' | translate }} {{ trip.transport.destination.arrivalPlatformPlanned }}
+                    <div style="display: flex; align-items: center;">
+                      <mat-icon style="margin-right: .5rem;">schedule</mat-icon>
+                      {{ routeInstance.endTime | date:'short' }}
+                    </div>
                   </mat-chip>
                   }
-                  @if (trip.transport?.destination?.arrivalPlatformReal &&
-                  trip.transport?.destination?.arrivalPlatformReal !==
-                  trip.transport?.destination?.arrivalPlatformPlanned) {
-                  <mat-chip color="warn">
-                    <mat-icon>warning</mat-icon>
-                    {{ 'TRAEWELLING.PLATFORM' | translate }} {{ trip.transport.destination.arrivalPlatformReal }}
+                  @if (routeInstance.durationHours) {
+                  <mat-chip>
+                    <div style="display: flex; align-items: center;">
+                      <mat-icon>timer</mat-icon>
+                      {{ formatDuration(routeInstance.durationHours * 60) }}
+                    </div>
+                  </mat-chip>
+                  }
+                  @if (routeInstance.hasTraewellingLink) {
+                  <mat-chip color="accent">
+                    <mat-icon>link</mat-icon>
+                    {{ 'TRAEWELLING.ALREADY_LINKED' | translate }}
                   </mat-chip>
                   }
                 </mat-chip-set>
-                }
               </div>
-            </div>
-            @if (trip.body) {
-            <div class="trip-description" style="flex: 1;">
-              <mat-icon>description</mat-icon>
-              <span>{{ trip.body }}</span>
-            </div>
-            }
-            
-            @if (trip.tags && trip.tags.length > 0) {
-            <div class="trip-tags" style="flex: 1;">
-              <h4>{{ 'TRAEWELLING.TAGS' | translate }}</h4>
-              <div class="tags-container">
-                @for (tag of trip.tags; track tag.key) {
-                <mat-chip class="tag-chip">
-                  <mat-icon>tag</mat-icon>
-                  <div class="tag-content">
-                    <span class="tag-key">{{ tag.key }}</span>
-                    <span class="tag-value">{{ tag.value }}</span>
-                  </div>
-                </mat-chip>
+            </mat-card-content>
+            <mat-card-actions>
+              <button mat-raised-button color="primary" (click)="linkToExistingRouteInstance(trip, routeInstance)"
+                [disabled]="routeInstance.hasTraewellingLink">
+                <mat-icon>link</mat-icon>
+                @if (routeInstance.hasTraewellingLink) {
+                {{ 'TRAEWELLING.ALREADY_LINKED' | translate }}
+                } @else {
+                {{ 'TRAEWELLING.LINK_TO_EXISTING' | translate }}
                 }
-              </div>
-            </div>
-            }
-          </mat-card-content>
-
-          <mat-card-actions>
-            <button mat-raised-button color="warn" (click)="ignoreTrip(trip)">
-              <mat-icon>visibility_off</mat-icon>
-              {{ 'TRAEWELLING.IGNORE_TRIP' | translate }}
-            </button>
-
-            <button mat-raised-button color="primary" (click)="searchExistingRoutes(trip)">
-              <mat-icon>search</mat-icon>
-              {{ 'TRAEWELLING.SEARCH_ROUTE_INSTANCES' | translate }}
-            </button>
-
-            <button mat-raised-button color="accent" (click)="addToExistingRoute(trip)">
-              <mat-icon>add_location_alt</mat-icon>
-              {{ 'TRAEWELLING.ADD_TO_EXISTING_ROUTE' | translate }}
-            </button>
-
-            <button mat-stroked-button (click)="createNewRoute(trip)">
-              <mat-icon>create</mat-icon>
-              {{ 'TRAEWELLING.CREATE_NEW_ROUTE' | translate }}
-            </button>
-          </mat-card-actions>
-
-          <!-- RouteInstance Search Results -->
-          @if (searchTrip?.id === trip.id && searchingRouteInstances) {
-          <mat-card-content>
-            <div class="route-search-loading">
-              <mat-progress-spinner diameter="20"></mat-progress-spinner>
-              <span>{{ 'TRAEWELLING.SEARCHING_ROUTE_INSTANCES' | translate }}</span>
-            </div>
-          </mat-card-content>
+              </button>
+            </mat-card-actions>
+          </mat-card>
           }
-
-          @if (searchTrip?.id === trip.id && existingRouteInstances.length > 0) {
-          <mat-card-content>
-            <h4>{{ 'TRAEWELLING.SELECT_ROUTE_INSTANCE' | translate }}</h4>
-            <div class="routes-list">
-              @for (routeInstance of existingRouteInstances; track routeInstance.id) {
-              <mat-card class="route-option" [class.already-linked]="routeInstance.hasTraewellingLink">
-                <mat-card-content>
-                  <div class="route-info">
-                    <strong>{{ routeInstance.routeName || (routeInstance.from + ' - ' + routeInstance.to) }}</strong>
-                    <div class="route-description">
-                      {{ routeInstance.from }} → {{ routeInstance.to }}
-                    </div>
-                    <mat-chip-set class="route-details">
-                      @if (routeInstance.startTime) {
-                      <mat-chip>
-                        <div style="display: flex; align-items: center;">
-                          <mat-icon style="margin-right: .5rem;">schedule</mat-icon>
-                          {{ routeInstance.startTime | date:'short' }}
-                        </div>
-                      </mat-chip>
-                      }
-                      @if (routeInstance.endTime) {
-                      <mat-chip>
-                        <div style="display: flex; align-items: center;">
-                          <mat-icon style="margin-right: .5rem;">schedule</mat-icon>
-                          {{ routeInstance.endTime | date:'short' }}
-                        </div>
-                      </mat-chip>
-                      }
-                      @if (routeInstance.durationHours) {
-                      <mat-chip>
-                        <div style="display: flex; align-items: center;">
-                          <mat-icon>timer</mat-icon>
-                          {{ formatDuration(routeInstance.durationHours * 60) }}
-                        </div>
-                      </mat-chip>
-                      }
-                      @if (routeInstance.hasTraewellingLink) {
-                      <mat-chip color="accent">
-                        <mat-icon>link</mat-icon>
-                        {{ 'TRAEWELLING.ALREADY_LINKED' | translate }}
-                      </mat-chip>
-                      }
-                    </mat-chip-set>
-                  </div>
-                </mat-card-content>
-                <mat-card-actions>
-                  <button mat-raised-button color="primary" (click)="linkToExistingRouteInstance(trip, routeInstance)"
-                    [disabled]="routeInstance.hasTraewellingLink">
-                    <mat-icon>link</mat-icon>
-                    @if (routeInstance.hasTraewellingLink) {
-                    {{ 'TRAEWELLING.ALREADY_LINKED' | translate }}
-                    } @else {
-                    {{ 'TRAEWELLING.LINK_TO_EXISTING' | translate }}
-                    }
-                  </button>
-                </mat-card-actions>
-              </mat-card>
-              }
-            </div>
-          </mat-card-content>
-          } @else if (searchTrip?.id === trip.id && existingRouteInstances.length === 0 && !searchingRouteInstances) {
-          <mat-card-content>
-            <div class="no-routes-found">
-              <mat-icon>search_off</mat-icon>
-              <span>{{ 'TRAEWELLING.NO_ROUTE_INSTANCES_FOUND' | translate }}</span>
-            </div>
-          </mat-card-content>
-          }
-        </mat-card>
-        }
-      </div>
-
-      <!-- Pagination -->
-      @if (hasMorePages) {
-      <div class="load-more-container">
-        @if (loadingMore) {
-        <div class="loading-container">
-          <mat-spinner diameter="30"></mat-spinner>
-          <span>{{ 'TRAEWELLING.LOADING_MORE_TRIPS' | translate }}</span>
         </div>
-        } @else {
-        <button mat-button class="load-more" (click)="loadMoreTrips()" [disabled]="tripsLoading">
-          <mat-icon>more_horiz</mat-icon>
-          {{ 'TRAEWELLING.LOAD_MORE' | translate }}
-        </button>
-        }
-      </div>
+      </mat-card-content>
+      } @else if (searchTrip?.id === trip.id && existingRouteInstances.length === 0 && !searchingRouteInstances) {
+      <mat-card-content>
+        <div class="no-routes-found">
+          <mat-icon>no_transfer</mat-icon>
+          <span>{{ 'TRAEWELLING.NO_ROUTE_INSTANCES_FOUND' | translate }}</span>
+        </div>
+      </mat-card-content>
       }
-      }
-    </mat-card-content>
-  </mat-card>
+    </mat-card>
+    }
+  </div>
+
+  <!-- Pagination -->
+  @if (hasMorePages) {
+  <div class="load-more-container">
+    @if (loadingMore) {
+    <div class="loading-container">
+      <mat-spinner diameter="30"></mat-spinner>
+      <span>{{ 'TRAEWELLING.LOADING_MORE_TRIPS' | translate }}</span>
+    </div>
+    } @else {
+    <button mat-button class="load-more" (click)="loadMoreTrips()" [disabled]="tripsLoading">
+      <mat-icon>more_horiz</mat-icon>
+      {{ 'TRAEWELLING.LOAD_MORE' | translate }}
+    </button>
+    }
+  </div>
+  }
+  }
   }
 </div>

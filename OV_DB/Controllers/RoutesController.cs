@@ -1012,6 +1012,11 @@ namespace OV_DB.Controllers
                     var toAdd = update.RouteInstanceMaps.Where(ri => !current.RouteInstanceMaps.Any(uri => uri.MapId == ri.MapId)).ToList();
                     toAdd.ForEach(mapToAdd => current.RouteInstanceMaps.Add(new RouteInstanceMap { MapId = mapToAdd.MapId }));
 
+                    if (update.TraewellingStatusId.HasValue)
+                    {
+                        current.TrawellingStatusId = update.TraewellingStatusId.Value;
+                    }
+
                 }
             }
             else
@@ -1020,7 +1025,8 @@ namespace OV_DB.Controllers
                 {
                     Date = update.Date,
                     StartTime = update.StartTime,
-                    EndTime = update.EndTime
+                    EndTime = update.EndTime,
+                    TrawellingStatusId=update.TraewellingStatusId
                 };
                 
                 // Calculate and store duration if both start and end times are provided
