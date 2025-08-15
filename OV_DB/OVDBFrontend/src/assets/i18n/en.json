@@ -112,6 +112,8 @@
   "MAPLIST.SORTTITLE": "Sort maps",
   "ADDROUTE.FILESUPLOADED": "files uploaded",
   "ADDROUTE.ERRORS": "error(s)",
+  "ADDROUTE.TRAEWELLING_INFO": "Upload a GPX or KML file with your route data. The timing and metadata from your Träwelling trip will be applied to the route after creation.",
+  "ADDROUTE.USE_WIZARD_INSTEAD": "Use Wizard Instead",
   "ROUTE.DELETEFRONT": "delete the route",
   "ROUTE.DELETEBACK": "from the database",
   "ROUTEDETAILS.COUNTRIESINSTRING": "countries",
@@ -130,6 +132,9 @@
   "ADMINPAGES.WIZARD": "Wizard",
   "ADMINPAGES.STATIONMAPS": "Station maps",
   "IMPORTER.ADD": "save this route",
+  "IMPORTER.TRAEWELLING_INFO": "Creating a new route from your Träwelling trip. You can search for OSM data or upload a GPX file.",
+  "IMPORTER.SEARCH_OSM_DATA": "Search OSM Data",
+  "IMPORTER.USE_GPX_UPLOAD": "Use GPX Upload",
   "FILTER.SELECTED": "selected",
   "FILTER.UNKNOWNYEAR": "Unknown",
   "MAPOPTIONS.THISMONTH": "This month",
@@ -360,6 +365,14 @@
     "ON_TIME": "On Time",
     "NO_UNIMPORTED_TRIPS_MESSAGE": "All your recent Träwelling trips have been imported or ignored. Check back later for new trips!",
     "LOAD_MORE": "Load More",
-    "LOADING_MORE_TRIPS": "Loading more trips..."
+    "LOADING_MORE_TRIPS": "Loading more trips...",
+    "ADD_TO_EXISTING_ROUTE": "Add to Existing Route",
+    "CREATE_NEW_ROUTE": "Create New Route",
+    "TAGS": "Tags",
+    "SEARCHING_ROUTES": "Searching routes...",
+    "SELECT_ROUTE": "Select Route",
+    "NO_ROUTES_FOUND": "No matching routes found",
+    "ROUTE_SELECTED": "Route selected successfully",
+    "ERROR_SELECTING_ROUTE": "Error selecting route"
   }
 }

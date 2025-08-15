@@ -1,0 +1,102 @@
+.dialog-content {
+  max-width: 600px;
+  min-width: 500px;
+  min-height: 400px;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.trip-info {
+  margin-bottom: 1rem;
+
+  .trip-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+
+    .trip-title {
+      font-weight: 500;
+      font-size: 1.1rem;
+    }
+  }
+
+  .trip-route {
+    color: rgba(0, 0, 0, 0.6);
+    margin-bottom: 0.5rem;
+  }
+
+  .trip-tags {
+    margin-top: 0.5rem;
+  }
+}
+
+.search-field {
+  width: 100%;
+  margin-bottom: 1rem;
+}
+
+.loading-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 2rem;
+}
+
+.routes-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.route-card {
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 2px solid transparent;
+
+  &:hover {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    background-color: rgba(0, 0, 0, 0.02);
+  }
+
+  &.selected {
+    border-color: #1976d2;
+    background-color: rgba(25, 118, 210, 0.05);
+  }
+}
+
+.route-info {
+  .route-name {
+    font-weight: 500;
+    font-size: 1.1rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .route-description {
+    color: rgba(0, 0, 0, 0.6);
+    margin-bottom: 0.25rem;
+  }
+
+  .route-operator {
+    font-size: 0.9rem;
+    color: rgba(0, 0, 0, 0.6);
+    margin-bottom: 0.5rem;
+  }
+}
+
+.no-results {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  color: rgba(0, 0, 0, 0.6);
+
+  mat-icon {
+    margin-bottom: 1rem;
+    font-size: 3rem;
+    width: 3rem;
+    height: 3rem;
+  }
+}

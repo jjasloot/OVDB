@@ -112,6 +112,8 @@
   "MAPLIST.SORTTITLE": "Kaarten sorteren",
   "ADDROUTE.FILESUPLOADED": "bestanden geüpload",
   "ADDROUTE.ERRORS": "fout(en)",
+  "ADDROUTE.TRAEWELLING_INFO": "Upload een GPX of KML bestand met je route data. De timing en metadata van je Träwelling reis worden toegepast op de route na aanmaak.",
+  "ADDROUTE.USE_WIZARD_INSTEAD": "Wizard Gebruiken",
   "ROUTE.DELETEFRONT": "de route",
   "ROUTE.DELETEBACK": "uit de database wilt verwijderen",
   "ROUTEDETAILS.COUNTRIESINSTRING": "landen",
@@ -130,6 +132,9 @@
   "ADMINPAGES.WIZARD": "Wizard",
   "ADMINPAGES.STATIONMAPS": "Stationskaarten",
   "IMPORTER.ADD": "deze route wilt opslaan",
+  "IMPORTER.TRAEWELLING_INFO": "Een nieuwe route aanmaken van je Träwelling reis. Je kunt zoeken naar OSM data of een GPX bestand uploaden.",
+  "IMPORTER.SEARCH_OSM_DATA": "OSM Data Zoeken",
+  "IMPORTER.USE_GPX_UPLOAD": "GPX Upload Gebruiken",
   "FILTER.SELECTED": "geselecteerd",
   "FILTER.UNKNOWNYEAR": "Onbekend",
   "MAPOPTIONS.THISMONTH": "Deze maand",
@@ -360,6 +365,14 @@
     "ON_TIME": "Op Tijd",
     "NO_UNIMPORTED_TRIPS_MESSAGE": "Al je recente Träwelling reizen zijn geïmporteerd of genegeerd. Kom later terug voor nieuwe reizen!",
     "LOAD_MORE": "Meer Laden",
-    "LOADING_MORE_TRIPS": "Meer reizen laden..."
+    "LOADING_MORE_TRIPS": "Meer reizen laden...",
+    "ADD_TO_EXISTING_ROUTE": "Toevoegen aan Bestaande Route",
+    "CREATE_NEW_ROUTE": "Nieuwe Route Aanmaken",
+    "TAGS": "Tags",
+    "SEARCHING_ROUTES": "Routes zoeken...",
+    "SELECT_ROUTE": "Route Selecteren",
+    "NO_ROUTES_FOUND": "Geen passende routes gevonden",
+    "ROUTE_SELECTED": "Route succesvol geselecteerd",
+    "ERROR_SELECTING_ROUTE": "Fout bij selecteren route"
   }
 }

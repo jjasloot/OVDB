@@ -1,0 +1,95 @@
+<mat-dialog-content class="dialog-content">
+  <h2>{{ 'TRAEWELLING.SELECT_ROUTE' | translate }}</h2>
+  <!-- Trip Info -->
+  <mat-card class="trip-info">
+    <mat-card-content>
+      <div class="trip-header">
+        <mat-icon>{{ getCategoryIcon(data.trip.transport?.category) }}</mat-icon>
+        <span class="trip-title">
+          {{ data.trip.transport?.lineName }}
+          @if(data.trip.transport?.lineName !== data.trip.transport?.number) {
+          {{ data.trip.transport?.number }}
+          }
+        </span>
+      </div>
+      <div class="trip-route">
+        {{ data.trip.transport?.origin?.name }} → {{ data.trip.transport?.destination?.name }}
+      </div>
+      @if (data.trip.tags && data.trip.tags.length > 0) {
+      <mat-chip-set class="trip-tags">
+        @for (tag of data.trip.tags; track tag.key) {
+        <mat-chip>
+          <strong>{{ tag.key }}:</strong> {{ tag.value }}
+        </mat-chip>
+        }
+      </mat-chip-set>
+      }
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Search Field -->
+  <mat-form-field appearance="outline" class="search-field">
+    <mat-label>{{ 'TRAEWELLING.SEARCH_EXISTING_ROUTE' | translate }}</mat-label>
+    <mat-icon matPrefix>search</mat-icon>
+    <input matInput [formControl]="searchControl" placeholder="Search routes...">
+  </mat-form-field>
+
+  <!-- Loading -->
+  @if (loading) {
+  <div class="loading-container">
+    <mat-spinner diameter="30"></mat-spinner>
+    <span>{{ 'TRAEWELLING.SEARCHING_ROUTES' | translate }}</span>
+  </div>
+  }
+
+  <!-- Routes List -->
+  @if (!loading && routes.length > 0) {
+  <div class="routes-list">
+    @for (route of routes; track route.routeId) {
+    <mat-card 
+      class="route-card" 
+      [class.selected]="selectedRoute?.routeId === route.routeId"
+      (click)="selectRoute(route)">
+      <mat-card-content>
+        <div class="route-info">
+          <div class="route-name">{{ route.name }}</div>
+          <div class="route-description">{{ route.from }} → {{ route.to }}</div>
+          @if (route.operatingCompany) {
+          <div class="route-operator">{{ route.operatingCompany }}</div>
+          }
+          <mat-chip-set>
+            @if (route.routeType?.name) {
+            <mat-chip>{{ route.routeType.name }}</mat-chip>
+            }
+            @if (route.lineNumber) {
+            <mat-chip>Line: {{ route.lineNumber }}</mat-chip>
+            }
+          </mat-chip-set>
+        </div>
+      </mat-card-content>
+    </mat-card>
+    }
+  </div>
+  }
+
+  <!-- No Results -->
+  @if (!loading && routes.length === 0 && searchControl.value && searchControl.value.length >= 2) {
+  <div class="no-results">
+    <mat-icon>search_off</mat-icon>
+    <span>{{ 'TRAEWELLING.NO_ROUTES_FOUND' | translate }}</span>
+  </div>
+  }
+</mat-dialog-content>
+
+<mat-dialog-actions>
+  <button mat-button (click)="cancel()">
+    {{ 'CANCEL' | translate }}
+  </button>
+  <button 
+    mat-raised-button 
+    color="primary" 
+    (click)="confirm()" 
+    [disabled]="!selectedRoute">
+    {{ 'TRAEWELLING.SELECT_ROUTE' | translate }}
+  </button>
+</mat-dialog-actions>

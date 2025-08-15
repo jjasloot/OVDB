@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { MatDialog } from '@angular/material/dialog';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { MatCard, MatCardContent, MatCardHeader, MatCardTitle, MatCardSubtitle, MatCardActions } from '@angular/material/card';
 import { MatButton } from '@angular/material/button';
@@ -19,6 +20,9 @@ import {
   RouteInstanceSearchResult,
   TrawellingHafasTravelType
 } from '../models/traewelling.model';
+import { Route } from '../models/route.model';
+import { RouteSearchDialogComponent } from './route-search-dialog/route-search-dialog.component';
+import { RouteInstancesEditComponent } from '../admin/route-instances-edit/route-instances-edit.component';
 
 @Component({
   selector: 'app-traewelling',
@@ -62,7 +66,8 @@ export class TrawellingComponent implements OnInit {
     public apiService: ApiService,
     public router: Router,
     private snackBar: MatSnackBar,
-    private translateService: TranslateService
+    private translateService: TranslateService,
+    private dialog: MatDialog
   ) { }
 
   ngOnInit(): void {
@@ -228,6 +233,126 @@ export class TrawellingComponent implements OnInit {
 
   getTransportCategoryTranslationKey(category: TrawellingHafasTravelType): string {
     return `TRAEWELLING.CATEGORY_${category.toString().toUpperCase()}`;
+  }
+
+  // New functionality for route creation and management
+  addToExistingRoute(trip: TrawellingTrip): void {
+    const dialogRef = this.dialog.open(RouteSearchDialogComponent, {
+      data: { trip },
+      width: '600px',
+      maxHeight: '80vh'
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        // User selected a route, now open route instance editor with pre-populated data
+        this.openRouteInstanceEditor(result.route, result.trip);
+      }
+    });
+  }
+
+  private openRouteInstanceEditor(route: Route, trip: TrawellingTrip): void {
+    // Create new RouteInstance with data from Träwelling trip
+    const newInstance = {
+      routeId: route.routeId,
+      date: new Date(trip.createdAt).toISOString().split('T')[0], // Format as YYYY-MM-DD
+      startTime: trip.transport?.origin?.departureReal || trip.transport?.origin?.departureScheduled,
+      endTime: trip.transport?.destination?.arrivalReal || trip.transport?.destination?.arrivalScheduled,
+      routeInstanceProperties: [],
+      routeInstanceMaps: [],
+      trawellingStatusId: trip.id // Link to Träwelling trip
+    };
+
+    // Add tags as properties
+    if (trip.tags && trip.tags.length > 0) {
+      trip.tags.forEach(tag => {
+        newInstance.routeInstanceProperties.push({
+          key: tag.key,
+          value: tag.value,
+          bool: null
+        });
+      });
+    }
+
+    // Add trip description as property if available
+    if (trip.body) {
+      newInstance.routeInstanceProperties.push({
+        key: 'description',
+        value: trip.body,
+        bool: null
+      });
+    }
+
+    // Add transport information
+    if (trip.transport?.lineName) {
+      newInstance.routeInstanceProperties.push({
+        key: 'line',
+        value: trip.transport.lineName,
+        bool: null
+      });
+    }
+
+    if (trip.transport?.number) {
+      newInstance.routeInstanceProperties.push({
+        key: 'number',
+        value: trip.transport.number,
+        bool: null
+      });
+    }
+
+    // Open the route instance edit dialog
+    const editDialogRef = this.dialog.open(RouteInstancesEditComponent, {
+      data: { 
+        instance: newInstance,
+        new: true 
+      },
+      width: '80%',
+      maxHeight: '80vh'
+    });
+
+    editDialogRef.afterClosed().subscribe(editedInstance => {
+      if (editedInstance) {
+        // Save the route instance
+        this.apiService.updateRouteInstance(editedInstance).subscribe({
+          next: () => {
+            this.showMessage('TRAEWELLING.INSTANCE_CREATED');
+            // Remove trip from unimported list
+            this.unimportedTrips = this.unimportedTrips.filter(t => t.id !== trip.id);
+          },
+          error: (error) => {
+            console.error('Error creating route instance:', error);
+            this.showMessage('TRAEWELLING.ERROR_CREATING_INSTANCE');
+          }
+        });
+      }
+    });
+  }
+
+  createNewRoute(trip: TrawellingTrip): void {
+    // Redirect to wizard with pre-populated data from Träwelling trip
+    const tripData = {
+      origin: trip.transport?.origin?.name,
+      destination: trip.transport?.destination?.name,
+      date: trip.createdAt,
+      startTime: trip.transport?.origin?.departureReal || trip.transport?.origin?.departureScheduled,
+      endTime: trip.transport?.destination?.arrivalReal || trip.transport?.destination?.arrivalScheduled,
+      line: trip.transport?.lineName,
+      number: trip.transport?.number,
+      category: trip.transport?.category,
+      tags: trip.tags,
+      body: trip.body
+    };
+    
+    // Store trip data in sessionStorage to pass to wizard
+    sessionStorage.setItem('trawellingTripData', JSON.stringify(tripData));
+    
+    // Navigate to wizard - user can choose between wizard or GPX upload
+    this.router.navigate(['/admin/wizard'], {
+      queryParams: {
+        fromTraewelling: 'true',
+        tripId: trip.id
+      }
+    });
   }
 
   getCategoryIcon(category: TrawellingHafasTravelType): string {
