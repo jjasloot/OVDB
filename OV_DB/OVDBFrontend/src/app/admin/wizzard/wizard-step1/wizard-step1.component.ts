@@ -157,11 +157,17 @@ export class WizzardStep1Component implements OnInit {
     }, err => { this.error = true; });
   }
   select(line: OSMDataLine) {
+    const queryParams: any = {};
+    
     if (this.dateTime) {
-      this.router.navigate(['/', 'admin', 'wizard', line.id], { queryParams: { date: this.dateTime.unix() } });
-    } else {
-      this.router.navigate(['/', 'admin', 'wizard', line.id]);
+      queryParams.date = this.dateTime.unix();
     }
+    
+    if (this.fromTraewelling) {
+      queryParams.fromTraewelling = 'true';
+    }
+    
+    this.router.navigate(['/', 'admin', 'wizard', line.id], { queryParams });
   }
 
   gotoStep1() {
@@ -210,7 +216,7 @@ export class WizzardStep1Component implements OnInit {
     if (this.trawellingTripData) {
       sessionStorage.setItem('trawellingTripDataForGpx', JSON.stringify(this.trawellingTripData));
     }
-    this.router.navigate(['/admin/route-add'], {
+    this.router.navigate(['/admin/addRoute'], {
       queryParams: { fromTraewelling: 'true' }
     });
   }

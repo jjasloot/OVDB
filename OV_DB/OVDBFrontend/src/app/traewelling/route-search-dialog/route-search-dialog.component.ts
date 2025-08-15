@@ -67,7 +67,7 @@ export class RouteSearchDialogComponent implements OnInit, OnDestroy {
           return of([]);
         }
         this.loading = true;
-        return this.apiService.getRoutes(searchTerm, '', 'en', false, false);
+        return this.apiService.getAllRoutes(0, 20, undefined, undefined, searchTerm);
       }),
       takeUntil(this.destroy$)
     ).subscribe({

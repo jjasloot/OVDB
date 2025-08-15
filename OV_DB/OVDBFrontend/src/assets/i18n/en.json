@@ -373,6 +373,11 @@
     "SELECT_ROUTE": "Select Route",
     "NO_ROUTES_FOUND": "No matching routes found",
     "ROUTE_SELECTED": "Route selected successfully",
-    "ERROR_SELECTING_ROUTE": "Error selecting route"
+    "ERROR_SELECTING_ROUTE": "Error selecting route",
+    "IMPORTED_TRIP": "Imported from Träwelling",
+    "LINE": "Line",
+    "START_TIME": "Departure",
+    "END_TIME": "Arrival",
+    "DESCRIPTION": "Description"
   }
 }

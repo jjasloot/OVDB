@@ -200,14 +200,17 @@
             @if (trip.tags && trip.tags.length > 0) {
             <div class="trip-tags" style="flex: 1;">
               <h4>{{ 'TRAEWELLING.TAGS' | translate }}</h4>
-              <mat-chip-set>
+              <div class="tags-container">
                 @for (tag of trip.tags; track tag.key) {
-                <mat-chip>
+                <mat-chip class="tag-chip">
                   <mat-icon>tag</mat-icon>
-                  <strong>{{ tag.key }}:</strong> {{ tag.value }}
+                  <div class="tag-content">
+                    <span class="tag-key">{{ tag.key }}</span>
+                    <span class="tag-value">{{ tag.value }}</span>
+                  </div>
                 </mat-chip>
                 }
-              </mat-chip-set>
+              </div>
             </div>
             }
           </mat-card-content>

@@ -1,6 +1,45 @@
 <button class="back" mat-button (click)="goBack()">
   {{ "BACK" | translate }}
 </button>
+
+<!-- Show Träwelling Trip Information if available -->
+@if (fromTraewelling && trawellingTripData) {
+<mat-card class="traewelling-info">
+  <mat-card-header>
+    <mat-card-subtitle>
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <mat-icon>train</mat-icon>
+        {{ 'TRAEWELLING.IMPORTED_TRIP' | translate }}
+      </div>
+    </mat-card-subtitle>
+  </mat-card-header>
+  <mat-card-content>
+    <div class="trip-summary">
+      <strong>{{ trawellingTripData.origin }} → {{ trawellingTripData.destination }}</strong>
+      @if (trawellingTripData.line) {
+      <div><strong>{{ 'TRAEWELLING.LINE' | translate }}:</strong> {{ trawellingTripData.line }} {{ trawellingTripData.number }}</div>
+      }
+      @if (trawellingTripData.startTime) {
+      <div><strong>{{ 'TRAEWELLING.START_TIME' | translate }}:</strong> {{ trawellingTripData.startTime | date:'short' }}</div>
+      }
+      @if (trawellingTripData.endTime) {
+      <div><strong>{{ 'TRAEWELLING.END_TIME' | translate }}:</strong> {{ trawellingTripData.endTime | date:'short' }}</div>
+      }
+      @if (trawellingTripData.body) {
+      <div class="trip-description"><strong>{{ 'TRAEWELLING.DESCRIPTION' | translate }}:</strong> {{ trawellingTripData.body }}</div>
+      }
+      @if (trawellingTripData.tags && trawellingTripData.tags.length > 0) {
+      <div class="trip-tags">
+        <strong>{{ 'TRAEWELLING.TAGS' | translate }}:</strong>
+        @for (tag of trawellingTripData.tags; track tag.key) {
+        <mat-chip>{{ tag.key }}: {{ tag.value }}</mat-chip>
+        }
+      </div>
+      }
+    </div>
+  </mat-card-content>
+</mat-card>
+}
 <div class="form">
   @if(!!route){
   <form [formGroup]="form" (ngSubmit)="onSubmit(form.value, false)">

@@ -16,6 +16,42 @@ form {
   margin: 0 0 8px 8px;
 }
 
+.traewelling-info {
+  margin: 0 auto 1rem auto;
+  width: 90%;
+  border-left: 4px solid #1976d2;
+
+  .trip-summary {
+    strong {
+      font-size: 1.1rem;
+      color: #1976d2;
+    }
+
+    .trip-description {
+      font-style: italic;
+      color: rgba(0, 0, 0, 0.6);
+      margin-top: 0.5rem;
+    }
+
+    .trip-tags {
+      margin-top: 0.5rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      align-items: center;
+
+      strong {
+        font-size: 1rem;
+        margin-right: 8px;
+      }
+
+      mat-chip {
+        font-size: 0.875rem;
+      }
+    }
+  }
+}
+
 .buttons {
   display: flex;
   flex-direction: row;

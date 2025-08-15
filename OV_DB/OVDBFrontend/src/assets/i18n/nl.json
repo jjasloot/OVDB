@@ -373,6 +373,11 @@
     "SELECT_ROUTE": "Route Selecteren",
     "NO_ROUTES_FOUND": "Geen passende routes gevonden",
     "ROUTE_SELECTED": "Route succesvol geselecteerd",
-    "ERROR_SELECTING_ROUTE": "Fout bij selecteren route"
+    "ERROR_SELECTING_ROUTE": "Fout bij selecteren route",
+    "IMPORTED_TRIP": "Geïmporteerd van Träwelling",
+    "LINE": "Lijn",
+    "START_TIME": "Vertrek",
+    "END_TIME": "Aankomst",
+    "DESCRIPTION": "Beschrijving"
   }
 }
