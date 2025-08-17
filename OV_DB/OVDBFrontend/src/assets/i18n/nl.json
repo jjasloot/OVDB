@@ -369,6 +369,7 @@
     "ADD_TO_EXISTING_ROUTE": "Toevoegen aan Bestaande Route",
     "CREATE_NEW_ROUTE": "Nieuwe Route Aanmaken",
     "TAGS": "Tags",
+    "TRIP_CONTEXT": "Reisinformatie",
     "SEARCHING_ROUTES": "Routes zoeken...",
     "SELECT_ROUTE": "Route Selecteren",
     "NO_ROUTES_FOUND": "Geen passende routes gevonden",

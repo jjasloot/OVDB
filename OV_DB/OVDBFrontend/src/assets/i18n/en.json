@@ -369,6 +369,7 @@
     "ADD_TO_EXISTING_ROUTE": "Add to Existing Route",
     "CREATE_NEW_ROUTE": "Create New Route",
     "TAGS": "Tags",
+    "TRIP_CONTEXT": "Trip Information",
     "SEARCHING_ROUTES": "Searching routes...",
     "SELECT_ROUTE": "Select Route",
     "NO_ROUTES_FOUND": "No matching routes found",

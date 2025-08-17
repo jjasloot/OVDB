@@ -178,13 +178,18 @@ export class RouteDetailComponent implements OnInit {
       if (!goToInstances) {
         this.goBack();
       } else {
-        this.router.navigate([
-          "/",
-          "admin",
-          "routes",
-          "instances",
-          this.route.routeId,
-        ]);
+        const navigationParams: any = {
+          route: ["/", "admin", "routes", "instances", this.route.routeId]
+        };
+
+        // If we have Träwelling trip data, pass it through query params and session storage
+        if (this.fromTraewelling && this.trawellingTripData) {
+          navigationParams.queryParams = { fromTraewelling: 'true' };
+          // Keep the trip data in sessionStorage for the route instances component
+          sessionStorage.setItem('trawellingTripDataForNewInstance', JSON.stringify(this.trawellingTripData));
+        }
+
+        this.router.navigate(navigationParams.route, navigationParams.queryParams ? { queryParams: navigationParams.queryParams } : {});
       }
     });
   }

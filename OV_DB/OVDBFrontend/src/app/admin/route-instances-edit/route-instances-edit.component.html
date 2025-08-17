@@ -7,6 +7,75 @@
   }
 </h3>
 <div mat-dialog-content>
+  <!-- Träwelling Trip Context -->
+  @if (trawellingTripData) {
+    <mat-card class="traewelling-context">
+      <mat-card-header>
+        <mat-card-title>
+          <div class="context-header">
+            <mat-icon>train</mat-icon>
+            <span>{{ 'TRAEWELLING.TRIP_CONTEXT' | translate }}</span>
+          </div>
+        </mat-card-title>
+        <mat-card-subtitle>
+          {{ trawellingTripData.origin }} → {{ trawellingTripData.destination }}
+        </mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="trip-info">
+          @if (trawellingTripData.line) {
+            <div class="info-row">
+              <mat-icon>directions_transit</mat-icon>
+              <span><strong>{{ trawellingTripData.line }}</strong>
+                @if (trawellingTripData.number) {
+                  {{ trawellingTripData.number }}
+                }
+              </span>
+            </div>
+          }
+          
+          @if (trawellingTripData.startTime || trawellingTripData.endTime) {
+            <div class="timing-info">
+              @if (trawellingTripData.startTime) {
+                <mat-chip>
+                  <mat-icon>schedule</mat-icon>
+                  {{ 'TRAEWELLING.DEPARTURE' | translate }}: {{ trawellingTripData.startTime | date:'short' }}
+                </mat-chip>
+              }
+              @if (trawellingTripData.endTime) {
+                <mat-chip>
+                  <mat-icon>schedule</mat-icon>
+                  {{ 'TRAEWELLING.ARRIVAL' | translate }}: {{ trawellingTripData.endTime | date:'short' }}
+                </mat-chip>
+              }
+            </div>
+          }
+
+          @if (trawellingTripData.body) {
+            <div class="trip-description">
+              <mat-icon>description</mat-icon>
+              <span>{{ trawellingTripData.body }}</span>
+            </div>
+          }
+
+          @if (trawellingTripData.tags && trawellingTripData.tags.length > 0) {
+            <div class="trip-tags">
+              <h4>{{ 'TRAEWELLING.TAGS' | translate }}:</h4>
+              <mat-chip-set>
+                @for (tag of trawellingTripData.tags; track tag.key) {
+                  <mat-chip class="tag-chip">
+                    <span class="tag-key">{{ tag.key }}:</span>
+                    <span class="tag-value">{{ tag.value }}</span>
+                  </mat-chip>
+                }
+              </mat-chip-set>
+            </div>
+          }
+        </div>
+      </mat-card-content>
+    </mat-card>
+  }
+
   <!-- Date and Time Section -->
   <mat-card class="time-section">
     <mat-card-content>

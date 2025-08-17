@@ -308,6 +308,163 @@
 
       button {
         width: 100%;
+        margin-bottom: 8px;
+        
+        &:last-child {
+          margin-bottom: 0;
+        }
+      }
+    }
+
+    .trips-list {
+      .trip-card {
+        margin-bottom: 16px;
+        
+        .title-bar {
+          flex-wrap: wrap;
+          gap: 8px;
+        }
+
+        mat-card-content {
+          flex-direction: column !important;
+          
+          > div {
+            flex: none !important;
+            width: 100% !important;
+            margin-bottom: 16px;
+            
+            &:last-child {
+              margin-bottom: 0;
+            }
+          }
+        }
+
+        .timing-section {
+          .time-details mat-chip-set {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            align-items: flex-start;
+            
+            mat-chip {
+              width: 100%;
+              justify-content: flex-start;
+            }
+          }
+        }
+
+        .trip-tags {
+          .tags-container {
+            flex-direction: column;
+            gap: 4px;
+            
+            .tag-chip {
+              width: 100%;
+              justify-content: flex-start;
+            }
+          }
+        }
+
+        mat-card-actions {
+          .actions-row {
+            flex-direction: column;
+            gap: 8px;
+            
+            button {
+              width: 100%;
+              font-size: 14px;
+              
+              mat-icon {
+                margin-right: 6px;
+              }
+            }
+          }
+        }
+
+        .routes-list {
+          .route-option {
+            margin-bottom: 12px;
+            
+            .route-info {
+              .route-details {
+                mat-chip-set {
+                  display: flex;
+                  flex-direction: column;
+                  gap: 4px;
+                  align-items: flex-start;
+                  
+                  mat-chip {
+                    width: 100%;
+                    justify-content: flex-start;
+                  }
+                }
+              }
+            }
+
+            mat-card-actions {
+              button {
+                width: 100%;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // Extra small screens (iPhone SE, etc)
+  @media (max-width: 480px) {
+    .traewelling-container {
+      padding: 8px;
+    }
+
+    h1 {
+      font-size: 1.5rem !important;
+      margin-bottom: 20px !important;
+    }
+
+    .trips-list .trip-card {
+      .trip-details mat-chip {
+        font-size: 12px;
+        min-height: 28px;
+        
+        mat-icon {
+          font-size: 16px !important;
+          width: 16px !important;
+          height: 16px !important;
+        }
+      }
+
+      .timing-section h4 {
+        font-size: 12px;
+      }
+
+      .trip-description {
+        padding: 8px;
+        font-size: 14px;
+      }
+
+      .trip-tags h4 {
+        font-size: 12px;
+      }
+
+      mat-card-actions button {
+        font-size: 12px;
+        min-height: 36px;
+        
+        mat-icon {
+          font-size: 18px;
+          width: 18px;
+          height: 18px;
+        }
+      }
+    }
+
+    .load-more-container {
+      padding: 16px 8px;
+      
+      button {
+        width: 100%;
       }
     }
   }

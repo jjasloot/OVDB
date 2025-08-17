@@ -41,3 +41,127 @@ mat-form-field {
 .mdc-data-table__header-cell{
   padding:0 !important
 }
+
+// Träwelling context styling
+.traewelling-context {
+    margin-bottom: 20px;
+    border-left: 4px solid #1976d2;
+    
+    .context-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        
+        mat-icon {
+            color: #1976d2;
+        }
+    }
+    
+    .trip-info {
+        .info-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+            
+            mat-icon {
+                color: rgba(0, 0, 0, 0.6);
+            }
+        }
+        
+        .timing-info {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+            
+            mat-chip {
+                display: flex;
+                align-items: center;
+                gap: 4px;
+                
+                mat-icon {
+                    font-size: 16px;
+                    width: 16px;
+                    height: 16px;
+                }
+            }
+        }
+        
+        .trip-description {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            margin-bottom: 16px;
+            padding: 12px;
+            border-radius: 8px;
+            background-color: rgba(255, 152, 0, 0.1);
+            border-left: 3px solid #ff9800;
+            
+            mat-icon {
+                color: #ff9800;
+                margin-top: 2px;
+                flex-shrink: 0;
+                font-size: 20px;
+                width: 20px;
+                height: 20px;
+            }
+            
+            span {
+                line-height: 1.4;
+                font-style: italic;
+            }
+        }
+        
+        .trip-tags {
+            h4 {
+                margin: 0 0 8px 0;
+                font-size: 14px;
+                font-weight: 500;
+                opacity: 0.7;
+                text-transform: uppercase;
+            }
+            
+            .tag-chip {
+                display: flex;
+                align-items: center;
+                gap: 4px;
+                
+                .tag-key {
+                    font-weight: 500;
+                    color: rgba(var(--mat-primary-palette-500), 1);
+                }
+                
+                .tag-value {
+                    opacity: 0.8;
+                }
+            }
+        }
+    }
+}
+
+// Mobile responsiveness
+@media (max-width: 768px) {
+    .time-inputs-row {
+        flex-direction: column;
+    }
+    
+    .date-field,
+    .time-field {
+        min-width: unset;
+        width: 100%;
+    }
+    
+    .timing-info {
+        flex-direction: column;
+        
+        mat-chip {
+            width: 100%;
+            justify-content: flex-start;
+        }
+    }
+    
+    mat-form-field {
+        width: 100%;
+    }
+}

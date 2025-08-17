@@ -21,15 +21,17 @@ import { MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle } fr
 import { MatSelectionList, MatListOption } from '@angular/material/list';
 import { AsyncPipe } from '@angular/common';
 import { TranslateModule } from '@ngx-translate/core';
-import { MatCard, MatCardContent } from '@angular/material/card';
+import { MatCard, MatCardContent, MatCardHeader, MatCardTitle, MatCardSubtitle } from '@angular/material/card';
 import { MatSlideToggle } from '@angular/material/slide-toggle';
+import { MatChipSet, MatChip } from '@angular/material/chips';
 import moment, { Moment } from 'moment';
+import { DatePipe } from '@angular/common';
 
 @Component({
   selector: 'app-route-instances-edit',
   templateUrl: './route-instances-edit.component.html',
   styleUrls: ['./route-instances-edit.component.scss'],
-  imports: [MatDialogTitle, CdkScrollable, MatDialogContent, MatCard, MatCardContent, MatSlideToggle, MatFormField, MatLabel, MatInput, MatDatepickerInput, FormsModule, MatDatepickerToggle, MatSuffix, MatDatepicker, MatIcon, MatTable, MatColumnDef, MatHeaderCellDef, MatHeaderCell, MatCellDef, MatCell, MatAutocompleteTrigger, MatAutocomplete, MatOption, MatFooterCellDef, MatFooterCell, MatIconButton, MatCheckbox, MatHeaderRowDef, MatHeaderRow, MatRowDef, MatRow, MatFooterRowDef, MatFooterRow, MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle, MatSelectionList, MatListOption, MatDialogActions, MatButton, AsyncPipe, TranslateModule]
+  imports: [MatDialogTitle, CdkScrollable, MatDialogContent, MatCard, MatCardContent, MatCardHeader, MatCardTitle, MatCardSubtitle, MatSlideToggle, MatFormField, MatLabel, MatInput, MatDatepickerInput, FormsModule, MatDatepickerToggle, MatSuffix, MatDatepicker, MatIcon, MatTable, MatColumnDef, MatHeaderCellDef, MatHeaderCell, MatCellDef, MatCell, MatAutocompleteTrigger, MatAutocomplete, MatOption, MatFooterCellDef, MatFooterCell, MatIconButton, MatCheckbox, MatHeaderRowDef, MatHeaderRow, MatRowDef, MatRow, MatFooterRowDef, MatFooterRow, MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle, MatSelectionList, MatListOption, MatDialogActions, MatButton, AsyncPipe, TranslateModule, MatChipSet, MatChip, DatePipe]
 })
 export class RouteInstancesEditComponent implements OnInit {
   readonly table = viewChild<MatTable<RouteInstanceProperty>>('table');
@@ -40,6 +42,7 @@ export class RouteInstancesEditComponent implements OnInit {
   maps: Map[];
   selectedMaps: number[] = [];
   useDetailedTime = false;
+  trawellingTripData: any = null; // Träwelling trip context data
 
   // Getter and setter for datetime-local inputs (legacy - keeping for compatibility)
   get startTimeLocal(): string {
@@ -135,6 +138,11 @@ export class RouteInstancesEditComponent implements OnInit {
         this.new = true;
       }
       this.selectedMaps = this.instance.routeInstanceMaps.map(rim => rim.mapId);
+      
+      // Accept Träwelling trip data for context display
+      if (data.trawellingTripData) {
+        this.trawellingTripData = data.trawellingTripData;
+      }
     }
   }
 

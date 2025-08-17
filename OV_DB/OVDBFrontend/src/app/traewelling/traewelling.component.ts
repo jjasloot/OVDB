@@ -21,6 +21,7 @@ import {
   TrawellingHafasTravelType
 } from '../models/traewelling.model';
 import { Route } from '../models/route.model';
+import { RouteInstanceProperty } from '../models/routeInstanceProperty.model';
 import { RouteSearchDialogComponent } from './route-search-dialog/route-search-dialog.component';
 import { RouteInstancesEditComponent } from '../admin/route-instances-edit/route-instances-edit.component';
 
@@ -267,17 +268,34 @@ export class TrawellingComponent implements OnInit {
     if (trip.tags && trip.tags.length > 0) {
       trip.tags.forEach(tag => {
         newInstance.routeInstanceProperties.push({
+          routeInstancePropertyId: 0, // Will be set by backend
+          routeInstanceId: 0, // Will be set by backend
           key: tag.key,
           value: tag.value,
           bool: null
-        });
+        } as RouteInstanceProperty);
       });
     }
+
+    // Prepare Träwelling trip data for context display
+    const tripData = {
+      origin: trip.transport?.origin?.name,
+      destination: trip.transport?.destination?.name,
+      line: trip.transport?.lineName,
+      number: trip.transport?.number,
+      startTime: trip.transport?.origin?.departureReal || trip.transport?.origin?.departureScheduled,
+      endTime: trip.transport?.destination?.arrivalReal || trip.transport?.destination?.arrivalScheduled,
+      body: trip.body, // Comments
+      tags: trip.tags,
+      category: trip.transport?.category
+    };
+
     // Open the route instance edit dialog
     const editDialogRef = this.dialog.open(RouteInstancesEditComponent, {
       data: { 
         instance: newInstance,
-        new: true 
+        new: true,
+        trawellingTripData: tripData // Pass trip context for display
       },
       width: '80%',
       maxHeight: '80vh'

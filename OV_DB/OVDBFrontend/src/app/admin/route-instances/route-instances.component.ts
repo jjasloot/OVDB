@@ -40,6 +40,8 @@ export class RouteInstancesComponent implements OnInit {
   routeId: number;
   route: Route;
   loading = false;
+  fromTraewelling = false;
+  trawellingTripData: any = null;
   get instances() {
     if (!this.route) {
       return [];
@@ -60,9 +62,23 @@ export class RouteInstancesComponent implements OnInit {
     this.translationService.languageChanged.subscribe(() => {
       this.dateAdapter.setLocale(this.translationService.dateLocale);
     });
+    
     this.activatedRoute.paramMap.subscribe((p) => {
       this.routeId = +p.get("routeId");
       this.getData();
+    });
+
+    // Check if coming from Träwelling
+    this.activatedRoute.queryParams.subscribe(params => {
+      if (params['fromTraewelling']) {
+        this.fromTraewelling = true;
+        const tripDataStr = sessionStorage.getItem('trawellingTripDataForNewInstance');
+        if (tripDataStr) {
+          this.trawellingTripData = JSON.parse(tripDataStr);
+          // Clear the session storage after use
+          sessionStorage.removeItem('trawellingTripDataForNewInstance');
+        }
+      }
     });
   }
 
@@ -145,22 +161,49 @@ export class RouteInstancesComponent implements OnInit {
     return this.translationService.getNameForItem(this.route.routeType);
   }
   add() {
+    // Create new RouteInstance
+    const newInstance = {
+      routeId: this.routeId,
+      routeInstanceMaps: [],
+      routeInstanceProperties: [],
+    } as RouteInstance;
+
+    // Pre-populate with Träwelling data if available
+    if (this.fromTraewelling && this.trawellingTripData) {
+      newInstance.date = this.trawellingTripData.date ? new Date(this.trawellingTripData.date).toISOString().split('T')[0] : undefined;
+      newInstance.startTime = this.trawellingTripData.startTime;
+      newInstance.endTime = this.trawellingTripData.endTime;
+
+      // Add tags as properties
+      if (this.trawellingTripData.tags && this.trawellingTripData.tags.length > 0) {
+        this.trawellingTripData.tags.forEach(tag => {
+          newInstance.routeInstanceProperties.push({
+            routeInstancePropertyId: 0, // Will be set by backend
+            routeInstanceId: 0, // Will be set by backend
+            key: tag.key,
+            value: tag.value,
+            bool: null
+          } as RouteInstanceProperty);
+        });
+      }
+    }
+
     const dialogRef = this.dialog.open(RouteInstancesEditComponent, {
       width: "100%",
       data: {
-        instance: {
-          routeId: this.routeId,
-          routeInstanceMaps: [],
-          routeInstanceProperties: [],
-        } as RouteInstance,
+        instance: newInstance,
         new: true,
         route: this.route,
+        trawellingTripData: this.fromTraewelling ? this.trawellingTripData : null // Pass trip context for display
       },
     });
     dialogRef.afterClosed().subscribe((result: RouteInstance) => {
       if (result) {
         this.apiService.updateRouteInstance(result).subscribe(() => {
           this.getData();
+          // Clear the fromTraewelling flag after successful creation
+          this.fromTraewelling = false;
+          this.trawellingTripData = null;
         });
       }
     });
