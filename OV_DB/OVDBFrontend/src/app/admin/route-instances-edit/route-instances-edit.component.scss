@@ -1,167 +1,155 @@
+// RouteInstancesEdit Component Styles
+
 mat-form-field {
-    width: 80%;
+  width: 80%;
 }
 
 .full-width {
-    width: 100% !important;
-}
-
-.time-section {
-    margin-bottom: 20px;
-}
-
-.time-mode-toggle {
-    margin-bottom: 16px;
-    display: flex;
-    align-items: center;
-}
-
-.time-inputs-row {
-    display: flex;
-    gap: 16px;
-    flex-wrap: wrap;
-}
-
-.date-field {
-    flex: 2;
-    min-width: 200px;
-}
-
-.time-field {
-    flex: 1;
-    min-width: 140px;
+  width: 100% !important;
 }
 
 .mat-column-buttons,
 .mat-column-bool {
-    max-width: 36px;
+  max-width: 36px;
 }
 
 .mdc-data-table__cell,
-.mdc-data-table__header-cell{
-  padding:0 !important
+.mdc-data-table__header-cell {
+  padding: 0 !important;
 }
 
-// Träwelling context styling
-.traewelling-context {
-    margin-bottom: 20px;
-    border-left: 4px solid #1976d2;
-    
-    .context-header {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        
-        mat-icon {
-            color: #1976d2;
-        }
-    }
-    
-    .trip-info {
-        .info-row {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-bottom: 12px;
-            
-            mat-icon {
-                color: rgba(0, 0, 0, 0.6);
-            }
-        }
-        
-        .timing-info {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-            margin-bottom: 16px;
-            
-            mat-chip {
-                display: flex;
-                align-items: center;
-                gap: 4px;
-                
-                mat-icon {
-                    font-size: 16px;
-                    width: 16px;
-                    height: 16px;
-                }
-            }
-        }
-        
-        .trip-description {
-            display: flex;
-            align-items: flex-start;
-            gap: 8px;
-            margin-bottom: 16px;
-            padding: 12px;
-            border-radius: 8px;
-            background-color: rgba(255, 152, 0, 0.1);
-            border-left: 3px solid #ff9800;
-            
-            mat-icon {
-                color: #ff9800;
-                margin-top: 2px;
-                flex-shrink: 0;
-                font-size: 20px;
-                width: 20px;
-                height: 20px;
-            }
-            
-            span {
-                line-height: 1.4;
-                font-style: italic;
-            }
-        }
-        
-        .trip-tags {
-            h4 {
-                margin: 0 0 8px 0;
-                font-size: 14px;
-                font-weight: 500;
-                opacity: 0.7;
-                text-transform: uppercase;
-            }
-            
-            .tag-chip {
-                display: flex;
-                align-items: center;
-                gap: 4px;
-                
-                .tag-key {
-                    font-weight: 500;
-                    color: rgba(var(--mat-primary-palette-500), 1);
-                }
-                
-                .tag-value {
-                    opacity: 0.8;
-                }
-            }
-        }
-    }
+.dialog-content {
+  padding: 20px;
+  min-width: 500px;
+  max-width: 800px;
+}
+
+.time-section {
+  margin-bottom: 20px;
+}
+
+.time-toggle {
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+}
+
+.time-inputs {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 16px;
+  align-items: end;
+}
+
+.date-field {
+  grid-column: 1;
+}
+
+.time-field {
+  grid-column: span 1;
+}
+
+.properties-section {
+  margin-bottom: 20px;
+}
+
+.properties-list {
+  margin-top: 16px;
+}
+
+.property-row {
+  display: grid;
+  grid-template-columns: 2fr 2fr 1fr;
+  gap: 16px;
+  align-items: end;
+  padding: 16px;
+  margin-bottom: 12px;
+  background-color: rgba(0, 0, 0, 0.02);
+  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.property-key,
+.property-value {
+  flex: 1;
+}
+
+.property-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-direction: column;
+}
+
+.add-property {
+  display: flex;
+  justify-content: center;
+  margin-top: 16px;
+
+  button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+}
+
+.maps-section {
+  margin-bottom: 20px;
+}
+
+.dialog-actions {
+  padding: 16px 24px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
 }
 
 // Mobile responsiveness
 @media (max-width: 768px) {
-    .time-inputs-row {
-        flex-direction: column;
+  .dialog-content {
+    min-width: unset;
+    padding: 16px;
+  }
+
+  .time-inputs {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .date-field,
+  .time-field {
+    grid-column: 1;
+  }
+
+  .property-row {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    padding: 12px;
+  }
+
+  .property-actions {
+    flex-direction: row;
+    justify-content: space-between;
+  }
+
+  mat-form-field {
+    width: 100%;
+  }
+
+  .dialog-actions {
+    flex-direction: column;
+    gap: 8px;
+
+    button {
+      width: 100%;
     }
-    
-    .date-field,
-    .time-field {
-        min-width: unset;
-        width: 100%;
-    }
-    
-    .timing-info {
-        flex-direction: column;
-        
-        mat-chip {
-            width: 100%;
-            justify-content: flex-start;
-        }
-    }
-    
-    mat-form-field {
-        width: 100%;
-    }
+  }
+}
+
+// Dark mode support
+@media (prefers-color-scheme: dark) {
+  .property-row {
+    background-color: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
+  }
 }

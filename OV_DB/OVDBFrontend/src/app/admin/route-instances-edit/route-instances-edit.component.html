@@ -6,80 +6,14 @@
     <span>{{'ROUTEINSTANCESEDIT.TITLE'|translate}}</span>
   }
 </h3>
-<div mat-dialog-content>
+<div mat-dialog-content class="dialog-content">
   <!-- Träwelling Trip Context -->
-  @if (trawellingTripData) {
-    <mat-card class="traewelling-context">
-      <mat-card-header>
-        <mat-card-title>
-          <div class="context-header">
-            <mat-icon>train</mat-icon>
-            <span>{{ 'TRAEWELLING.TRIP_CONTEXT' | translate }}</span>
-          </div>
-        </mat-card-title>
-        <mat-card-subtitle>
-          {{ trawellingTripData.origin }} → {{ trawellingTripData.destination }}
-        </mat-card-subtitle>
-      </mat-card-header>
-      <mat-card-content>
-        <div class="trip-info">
-          @if (trawellingTripData.line) {
-            <div class="info-row">
-              <mat-icon>directions_transit</mat-icon>
-              <span><strong>{{ trawellingTripData.line }}</strong>
-                @if (trawellingTripData.number) {
-                  {{ trawellingTripData.number }}
-                }
-              </span>
-            </div>
-          }
-          
-          @if (trawellingTripData.startTime || trawellingTripData.endTime) {
-            <div class="timing-info">
-              @if (trawellingTripData.startTime) {
-                <mat-chip>
-                  <mat-icon>schedule</mat-icon>
-                  {{ 'TRAEWELLING.DEPARTURE' | translate }}: {{ trawellingTripData.startTime | date:'short' }}
-                </mat-chip>
-              }
-              @if (trawellingTripData.endTime) {
-                <mat-chip>
-                  <mat-icon>schedule</mat-icon>
-                  {{ 'TRAEWELLING.ARRIVAL' | translate }}: {{ trawellingTripData.endTime | date:'short' }}
-                </mat-chip>
-              }
-            </div>
-          }
-
-          @if (trawellingTripData.body) {
-            <div class="trip-description">
-              <mat-icon>description</mat-icon>
-              <span>{{ trawellingTripData.body }}</span>
-            </div>
-          }
-
-          @if (trawellingTripData.tags && trawellingTripData.tags.length > 0) {
-            <div class="trip-tags">
-              <h4>{{ 'TRAEWELLING.TAGS' | translate }}:</h4>
-              <mat-chip-set>
-                @for (tag of trawellingTripData.tags; track tag.key) {
-                  <mat-chip class="tag-chip">
-                    <span class="tag-key">{{ tag.key }}:</span>
-                    <span class="tag-value">{{ tag.value }}</span>
-                  </mat-chip>
-                }
-              </mat-chip-set>
-            </div>
-          }
-        </div>
-      </mat-card-content>
-    </mat-card>
-  }
+  <app-traewelling-context-card [trawellingTripData]="trawellingTripData"></app-traewelling-context-card>
 
   <!-- Date and Time Section -->
   <mat-card class="time-section">
     <mat-card-content>
-      <div class="time-mode-toggle">
+      <div class="time-toggle">
         <mat-slide-toggle [(ngModel)]="useDetailedTime" (change)="onTimeModeChange()">
           {{'ROUTEINSTANCESEDIT.ADDTIMES'|translate}}
         </mat-slide-toggle>
@@ -95,7 +29,7 @@
         </mat-form-field>
       } @else {
         <!-- Date and time mode -->
-        <div class="time-inputs-row">
+        <div class="time-inputs">
           <mat-form-field appearance="outline" class="date-field">
             <mat-label>{{'ROUTEINSTANCESEDIT.DATE'|translate}}</mat-label>
             <input matInput [matDatepicker]="pickerDateDetailed" [(ngModel)]="instance.date">
@@ -119,60 +53,57 @@
     </mat-card-content>
   </mat-card>
 
-  <mat-table [dataSource]="instance.routeInstanceProperties" #table>
-    <ng-container matColumnDef="key">
-      <mat-header-cell *matHeaderCellDef> {{'ROUTEINSTANCESEDIT.PROPERTYKEY'|translate}} </mat-header-cell>
-      <mat-cell *matCellDef="let row">
-        <mat-form-field appearance="outline">
-          <input matInput [(ngModel)]="row.key" [matAutocomplete]="auto" (focus)="updateSuggestions($event.target.value)" (input)="updateSuggestions($event.target.value)">
-          <mat-autocomplete autoActiveFirstOption #auto="matAutocomplete">
-            @for (option of filteredOptions|async; track option) {
-              <mat-option [value]="option">
-                {{option}}
-              </mat-option>
-            }
-          </mat-autocomplete>
-        </mat-form-field>
-      </mat-cell>
-      <mat-footer-cell *matFooterCellDef>
-        <button mat-icon-button (click)="addRow() " [disabled]="canAddNewRow">
-          <mat-icon>add</mat-icon>
-        </button>
-      </mat-footer-cell>
-    </ng-container>
+  <!-- Properties Section -->
+  <mat-card class="properties-section">
+    <mat-card-header>
+      <mat-card-title>{{'ROUTEINSTANCESEDIT.PROPERTIES'|translate}}</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <div class="properties-list">
+        @for (property of instance.routeInstanceProperties; track property; let i = $index) {
+          <div class="property-row">
+            <mat-form-field appearance="outline" class="property-key">
+              <mat-label>{{'ROUTEINSTANCESEDIT.PROPERTYKEY'|translate}}</mat-label>
+              <input matInput [(ngModel)]="property.key" [matAutocomplete]="auto" (focus)="updateSuggestions($event.target.value)" (input)="updateSuggestions($event.target.value)">
+              <mat-autocomplete autoActiveFirstOption #auto="matAutocomplete">
+                @for (option of filteredOptions|async; track option) {
+                  <mat-option [value]="option">
+                    {{option}}
+                  </mat-option>
+                }
+              </mat-autocomplete>
+            </mat-form-field>
 
-    <ng-container matColumnDef="string">
-      <mat-header-cell *matHeaderCellDef> {{'ROUTEINSTANCESEDIT.PROPERTYVALUE'|translate}} </mat-header-cell>
-      <mat-cell *matCellDef="let row">
-        <mat-form-field appearance="outline">
-          <input matInput [(ngModel)]="row.value" [disabled]="disableValue(row)">
-        </mat-form-field>
-      </mat-cell>
+            <mat-form-field appearance="outline" class="property-value">
+              <mat-label>{{'ROUTEINSTANCESEDIT.PROPERTYVALUE'|translate}}</mat-label>
+              <input matInput [(ngModel)]="property.value" [disabled]="disableValue(property)">
+            </mat-form-field>
 
-    </ng-container>
-    <ng-container matColumnDef="bool">
-      <mat-header-cell *matHeaderCellDef> {{'ROUTEINSTANCESEDIT.PROPERTYBOOL'|translate}} </mat-header-cell>
-      <mat-cell *matCellDef="let row">
-        <mat-checkbox [(ngModel)]="row.bool" [disabled]="disableBool(row)" [indeterminate]="row.bool===undefined||row.bool===null"></mat-checkbox>
-      </mat-cell>
-
-    </ng-container>
-    <ng-container matColumnDef="buttons">
-      <mat-header-cell *matHeaderCellDef></mat-header-cell>
-      <mat-cell *matCellDef="let row;let i=index">
-        @if (!rowIsEmpty(row)) {
-          <button mat-icon-button (click)="removeRow(i)">
-            <mat-icon>delete</mat-icon>
-          </button>
+            <div class="property-actions">
+              <mat-checkbox [(ngModel)]="property.bool" [disabled]="disableBool(property)" [indeterminate]="property.bool===undefined||property.bool===null">
+                {{'ROUTEINSTANCESEDIT.PROPERTYBOOL'|translate}}
+              </mat-checkbox>
+              @if (!rowIsEmpty(property)) {
+                <button mat-icon-button color="warn" (click)="removeRow(i)">
+                  <mat-icon>delete</mat-icon>
+                </button>
+              }
+            </div>
+          </div>
         }
-      </mat-cell>
+        
+        <div class="add-property">
+          <button mat-raised-button color="primary" (click)="addRow()" [disabled]="canAddNewRow">
+            <mat-icon>add</mat-icon>
+            Add Property
+          </button>
+        </div>
+      </div>
+    </mat-card-content>
+  </mat-card>
 
-    </ng-container>
-    <mat-header-row *matHeaderRowDef="['key', 'string', 'bool','buttons']"></mat-header-row>
-    <mat-row *matRowDef="let row; columns: ['key', 'string',  'bool','buttons']"></mat-row>
-    <mat-footer-row *matFooterRowDef="['key']"></mat-footer-row>
-  </mat-table>
-  <mat-expansion-panel>
+  <!-- Additional Maps Section -->
+  <mat-expansion-panel class="maps-section">
     <mat-expansion-panel-header>
       <mat-panel-title>
         {{'ROUTEINSTANCESEDIT.SELECTADDITIONALMAPS'|translate}}
@@ -187,7 +118,10 @@
     </mat-selection-list>
   </mat-expansion-panel>
 </div>
-<div mat-dialog-actions>
+
+<div mat-dialog-actions class="dialog-actions">
   <button mat-button (click)="cancel()">{{'CANCEL'|translate}}</button>
-  <button mat-button color="primary" (click)="return()" [disabled]="incomplete">{{'SAVE'|translate}}</button>
+  <button mat-raised-button color="primary" (click)="return()" [disabled]="incomplete">
+    {{'SAVE'|translate}}
+  </button>
 </div>

@@ -4,12 +4,11 @@ import { Router } from '@angular/router';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatDialog } from '@angular/material/dialog';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
-import { MatCard, MatCardContent, MatCardHeader, MatCardTitle, MatCardSubtitle, MatCardActions } from '@angular/material/card';
+import { MatCard, MatCardContent, MatCardHeader, MatCardTitle } from '@angular/material/card';
 import { MatButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
 import { MatProgressSpinner } from '@angular/material/progress-spinner';
 import { MatPaginator, PageEvent } from '@angular/material/paginator';
-import { MatChipSet, MatChip } from '@angular/material/chips';
 
 import { ApiService } from '../services/api.service';
 import {
@@ -24,6 +23,7 @@ import { Route } from '../models/route.model';
 import { RouteInstanceProperty } from '../models/routeInstanceProperty.model';
 import { RouteSearchDialogComponent } from './route-search-dialog/route-search-dialog.component';
 import { RouteInstancesEditComponent } from '../admin/route-instances-edit/route-instances-edit.component';
+import { TripCardComponent } from './trip-card/trip-card.component';
 
 @Component({
   selector: 'app-traewelling',
@@ -36,13 +36,10 @@ import { RouteInstancesEditComponent } from '../admin/route-instances-edit/route
     MatCardContent,
     MatCardHeader,
     MatCardTitle,
-    MatCardSubtitle,
-    MatCardActions,
     MatButton,
     MatIcon,
     MatProgressSpinner,
-    MatChipSet,
-    MatChip
+    TripCardComponent
   ]
 })
 export class TrawellingComponent implements OnInit {
@@ -215,23 +212,6 @@ export class TrawellingComponent implements OnInit {
     this.loadUnimportedTrips(this.currentPage);
   }
 
-  formatDuration(minutes?: number): string {
-    if (!minutes) return '';
-    const hours = Math.floor(minutes / 60);
-    const mins = Math.floor(minutes % 60);
-    return hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
-  }
-
-  formatDistance(meters?: number): string {
-    if (!meters) return '';
-    return meters > 1000 ? `${(meters / 1000).toFixed(1)} km` : `${meters} m`;
-  }
-
-  isDelayed(planned: string | null | undefined, actual: string | null | undefined): boolean {
-    if (!planned || !actual) return false;
-    return new Date(actual).getTime() > new Date(planned).getTime();
-  }
-
   getTransportCategoryTranslationKey(category: TrawellingHafasTravelType): string {
     return `TRAEWELLING.CATEGORY_${category.toString().toUpperCase()}`;
   }
@@ -346,22 +326,7 @@ export class TrawellingComponent implements OnInit {
     });
   }
 
-  getCategoryIcon(category: TrawellingHafasTravelType): string {
-    switch (category) {
-      case TrawellingHafasTravelType.BUS: return 'directions_bus';
-      case TrawellingHafasTravelType.NATIONAL:
-      case TrawellingHafasTravelType.NATIONAL_EXPRESS:
-      case TrawellingHafasTravelType.REGIONAL:
-      case TrawellingHafasTravelType.REGIONAL_EXP:
-        return 'train';
-      case TrawellingHafasTravelType.SUBWAY: return 'subway';
-      case TrawellingHafasTravelType.TRAM: return 'tram';
-      case TrawellingHafasTravelType.FERRY: return 'directions_boat';
-      case TrawellingHafasTravelType.TAXI: return 'local_taxi';
-      default: return 'directions_transit';
-    }
-  }
-
+  // Remove all remaining method duplicates and unnecessary getCategoryIcon method
   private showMessage(messageKey: string): void {
     this.translateService.get(messageKey).subscribe(message => {
       this.snackBar.open(message, '', { duration: 3000 });
