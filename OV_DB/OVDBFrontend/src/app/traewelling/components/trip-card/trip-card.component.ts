@@ -253,13 +253,13 @@ export class TripCardComponent {
     const tripContext = this.trawellingService.getTripContextForRouteCreation(this.trip);
     // Store context in session storage for the wizard to pick up
     sessionStorage.setItem('trawellingTripContext', JSON.stringify(tripContext));
-    this.router.navigate(['/wizard']);
+    this.router.navigate(['/admin/wizard']);
   }
 
   createRouteViaGPX() {
     const tripContext = this.trawellingService.getTripContextForRouteCreation(this.trip);
     // Store context in session storage for the GPX upload to pick up
     sessionStorage.setItem('trawellingTripContext', JSON.stringify(tripContext));
-    this.router.navigate(['/addRoute']);
+    this.router.navigate(['/admin/addRoute']);
   }
 }

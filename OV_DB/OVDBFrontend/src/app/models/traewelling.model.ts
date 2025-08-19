@@ -138,12 +138,15 @@ export interface TrawellingIgnoreResponse {
 
 // Route search for "Add to Existing Route" functionality
 export interface RouteSearchResult {
-  id: number;
+  routeId: number;
   name: string;
   from: string;
   to: string;
-  country: string;
-  type: string;
+  lineNumber?: string;
+  operatingCompany?: string;
+  routeType?: {
+    name: string;
+  };
 }
 
 // Connection responses

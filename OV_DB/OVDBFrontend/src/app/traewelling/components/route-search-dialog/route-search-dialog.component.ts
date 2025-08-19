@@ -94,14 +94,18 @@ import { TrawellingTrip, RouteSearchResult } from '../../../models/traewelling.m
             <div class="route-info">
               <div class="route-header">
                 <strong>{{ route.name }}</strong>
-                <span class="route-type">{{ route.type }}</span>
+                <span *ngIf="route.routeType" class="route-type">{{ route.routeType.name }}</span>
               </div>
               <div class="route-path">
                 {{ route.from }} → {{ route.to }}
               </div>
-              <div class="route-country">
-                <mat-icon>place</mat-icon>
-                {{ route.country }}
+              <div *ngIf="route.lineNumber" class="route-line">
+                <mat-icon>route</mat-icon>
+                {{ route.lineNumber }}
+              </div>
+              <div *ngIf="route.operatingCompany" class="route-operator">
+                <mat-icon>business</mat-icon>
+                {{ route.operatingCompany }}
               </div>
             </div>
           </mat-list-option>
@@ -196,9 +200,8 @@ export class RouteSearchDialogComponent implements OnInit {
       
       // Close dialog and navigate
       this.dialogRef.close({ routeCreated: true });
-      this.router.navigate(['/route-instances'], { 
+      this.router.navigate(['/admin/routes/instances', this.selectedRoute.routeId], { 
         queryParams: { 
-          routeId: this.selectedRoute.id,
           fromTraewelling: 'true'
         }
       });
