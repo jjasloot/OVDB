@@ -1,0 +1,101 @@
+.context-card {
+  margin-bottom: 16px;
+  background-color: rgba(33, 150, 243, 0.05);
+  border-left: 4px solid #2196f3;
+  
+  .context-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #1976d2;
+    font-size: 16px;
+    
+    mat-icon {
+      color: #1976d2;
+    }
+  }
+  
+  .trip-route {
+    margin-bottom: 12px;
+    
+    .line-info {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 4px;
+      color: #1976d2;
+    }
+    
+    .stations {
+      font-size: 14px;
+      color: rgba(0, 0, 0, 0.7);
+    }
+  }
+  
+  .trip-timing {
+    margin-bottom: 12px;
+    
+    .timing-item,
+    .duration {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 14px;
+      color: rgba(0, 0, 0, 0.6);
+      margin-bottom: 4px;
+      
+      mat-icon {
+        font-size: 16px;
+        width: 16px;
+        height: 16px;
+      }
+    }
+  }
+  
+  .trip-description {
+    margin-bottom: 12px;
+    
+    p {
+      margin: 0;
+      font-style: italic;
+      color: rgba(0, 0, 0, 0.7);
+      background-color: rgba(0, 0, 0, 0.02);
+      padding: 8px 12px;
+      border-radius: 4px;
+    }
+  }
+  
+  .trip-tags {
+    mat-chip-listbox {
+      mat-chip-option {
+        font-size: 12px;
+        
+        strong {
+          color: rgba(0, 0, 0, 0.8);
+        }
+      }
+    }
+  }
+}
+
+// Dark mode support
+@media (prefers-color-scheme: dark) {
+  .context-card {
+    background-color: rgba(33, 150, 243, 0.1);
+    
+    .trip-route .stations {
+      color: rgba(255, 255, 255, 0.7);
+    }
+    
+    .trip-timing {
+      .timing-item,
+      .duration {
+        color: rgba(255, 255, 255, 0.6);
+      }
+    }
+    
+    .trip-description p {
+      color: rgba(255, 255, 255, 0.7);
+      background-color: rgba(255, 255, 255, 0.05);
+    }
+  }
+}
