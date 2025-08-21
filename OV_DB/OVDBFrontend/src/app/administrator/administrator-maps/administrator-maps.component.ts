@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { ApiService } from 'src/app/services/api.service';
 import { AdminMap } from 'src/app/models/adminMap.model';
 import { Router } from '@angular/router';
@@ -13,9 +13,11 @@ import { MatIcon } from '@angular/material/icon';
     imports: [MatTable, MatColumnDef, MatHeaderCellDef, MatHeaderCell, MatCellDef, MatCell, MatIconButton, MatIcon, MatHeaderRowDef, MatHeaderRow, MatRowDef, MatRow]
 })
 export class AdministratorMapsComponent implements OnInit {
+  private apiService = inject(ApiService);
+  private router = inject(Router);
+
   data: AdminMap[];
   displayedColumns: string[] = ['id', 'name', 'user', 'link', 'routes', 'buttons'];
-  constructor(private apiService: ApiService, private router: Router) { }
 
   ngOnInit(): void {
     this.apiService.administratorGetMaps().subscribe(data => {

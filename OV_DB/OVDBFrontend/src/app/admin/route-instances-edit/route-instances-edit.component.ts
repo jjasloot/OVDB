@@ -1,4 +1,4 @@
-import { Component, OnInit, Inject } from '@angular/core';
+import { Component, Inject, OnInit, inject, viewChild } from '@angular/core';
 import { MatDialogRef, MAT_DIALOG_DATA, MatDialogTitle, MatDialogContent, MatDialogActions } from '@angular/material/dialog';
 import { ApiService } from 'src/app/services/api.service';
 import { RouteInstance } from 'src/app/models/routeInstance.model';
@@ -24,14 +24,17 @@ import { MatCard, MatCardContent, MatCardHeader, MatCardTitle } from '@angular/m
 import { MatSlideToggle } from '@angular/material/slide-toggle';
 import moment, { Moment } from 'moment';
 import { TrawellingContextCardComponent } from '../../traewelling/context-card/traewelling-context-card.component';
+import { MatCell, MatCellDef, MatColumnDef, MatFooterCell, MatFooterCellDef, MatFooterRow, MatFooterRowDef, MatHeaderCell, MatHeaderCellDef, MatHeaderRow, MatHeaderRowDef, MatRow, MatRowDef, MatTable } from '@angular/material/table';
+import { TrawellingTripContext } from 'src/app/models/traewelling.model';
 
 @Component({
   selector: 'app-route-instances-edit',
   templateUrl: './route-instances-edit.component.html',
   styleUrls: ['./route-instances-edit.component.scss'],
-  imports: [MatDialogTitle, CdkScrollable, MatDialogContent, MatCard, MatCardContent, MatCardHeader, MatCardTitle, MatSlideToggle, MatFormField, MatLabel, MatInput, MatDatepickerInput, FormsModule, MatDatepickerToggle, MatSuffix, MatDatepicker, MatIcon, MatAutocompleteTrigger, MatAutocomplete, MatOption, MatIconButton, MatCheckbox, MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle, MatSelectionList, MatListOption, MatDialogActions, MatButton, AsyncPipe, TranslateModule, TrawellingContextCardComponent]
+  imports: [TrawellingContextCardComponent, MatDialogTitle, CdkScrollable, MatDialogContent, MatCard, MatCardContent, MatSlideToggle, MatFormField, MatLabel, MatInput, MatDatepickerInput, FormsModule, MatDatepickerToggle, MatSuffix, MatDatepicker, MatIcon, MatTable, MatColumnDef, MatHeaderCellDef, MatHeaderCell, MatCellDef, MatCell, MatAutocompleteTrigger, MatAutocomplete, MatOption, MatFooterCellDef, MatFooterCell, MatIconButton, MatCheckbox, MatHeaderRowDef, MatHeaderRow, MatRowDef, MatRow, MatFooterRowDef, MatFooterRow, MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle, MatSelectionList, MatListOption, MatDialogActions, MatButton, AsyncPipe, TranslateModule]
 })
 export class RouteInstancesEditComponent implements OnInit {
+  readonly table = viewChild<MatTable<RouteInstanceProperty>>('table');
   instance: RouteInstance;
   new = false;
   options = [];
@@ -39,7 +42,7 @@ export class RouteInstancesEditComponent implements OnInit {
   maps: Map[];
   selectedMaps: number[] = [];
   useDetailedTime = false;
-  trawellingTripData: any = null; // Träwelling trip context data
+  traewellingTripData: TrawellingTripContext | null = null;
 
   // Getter and setter for datetime-local inputs (legacy - keeping for compatibility)
   get startTimeLocal(): string {
@@ -135,11 +138,9 @@ export class RouteInstancesEditComponent implements OnInit {
         this.new = true;
       }
       this.selectedMaps = this.instance.routeInstanceMaps.map(rim => rim.mapId);
-      
-      // Accept Träwelling trip data for context display
-      if (data.trawellingTripData) {
-        this.trawellingTripData = data.trawellingTripData;
-      }
+    }
+    if (!!data.traewellingTripData) {
+      this.traewellingTripData = data.traewellingTripData;
     }
   }
 
@@ -187,7 +188,6 @@ export class RouteInstancesEditComponent implements OnInit {
     if (this.instance.date['_isAMomentObject']) {
       this.instance.date = (this.instance.date as unknown as Moment).format('YYYY-MM-DD');
     }
-    console.log(this.instance.date);
     this.dialogRef.close(this.instance);
   }
 
@@ -199,6 +199,7 @@ export class RouteInstancesEditComponent implements OnInit {
   }
   addRow() {
     this.instance.routeInstanceProperties.push({} as RouteInstanceProperty);
+    this.table().renderRows();
   }
 
   get canAddNewRow() {
@@ -207,6 +208,7 @@ export class RouteInstancesEditComponent implements OnInit {
 
   removeRow(index: number) {
     this.instance.routeInstanceProperties.splice(index, 1);
+    this.table().renderRows();
   }
 
   rowIsEmpty(prop: RouteInstanceProperty) {

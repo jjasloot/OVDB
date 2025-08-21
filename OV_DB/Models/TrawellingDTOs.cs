@@ -504,7 +504,7 @@ namespace OV_DB.Models
         public TrawellingHafasTravelType Category { get; set; }
         public string Number { get; set; }
         public string LineName { get; set; }
-        public int? JourneyNumber { get; set; }
+        public string? JourneyNumber { get; set; }
         public int Distance { get; set; }
         public int Duration { get; set; }
         public TrawellingStopoverDto Origin { get; set; }

@@ -1,15 +1,4 @@
-import {
-  Component,
-  OnInit,
-  AfterViewInit,
-  ChangeDetectorRef,
-  NgZone,
-  EventEmitter,
-  OnDestroy,
-  input,
-  viewChild,
-  signal,
-} from "@angular/core";
+import { Component, OnInit, AfterViewInit, ChangeDetectorRef, NgZone, EventEmitter, OnDestroy, input, viewChild, signal, inject } from "@angular/core";
 import moment from "moment";
 import { tileLayer } from "leaflet";
 import { ApiService } from "../services/api.service";
@@ -63,6 +52,15 @@ import { MatIcon } from "@angular/material/icon";
   ],
 })
 export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
+  private translateService = inject(TranslateService);
+  private translationService = inject(TranslationService);
+  private apiService = inject(ApiService);
+  private dialog = inject(MatDialog);
+  private router = inject(Router);
+  private activatedRoute = inject(ActivatedRoute);
+  private signalRService = inject(SignalRService);
+  private cd = inject(ChangeDetectorRef);
+
   readonly guid = input<string>(undefined);
   readonly mapContainer = viewChild<HTMLElement>("mapContainer");
   loading: boolean | number = false;
@@ -192,17 +190,9 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
 
   getRoutes$ = new EventEmitter<string>();
 
-  constructor(
-    private translateService: TranslateService,
-    private translationService: TranslationService,
-    private apiService: ApiService,
-    private dialog: MatDialog,
-    private router: Router,
-    private activatedRoute: ActivatedRoute,
-    private signalRService: SignalRService,
-    private cd: ChangeDetectorRef,
-    ngZone: NgZone
-  ) {
+  constructor() {
+       const ngZone = inject(NgZone);
+
        window["angularComponentRef"] = { component: this, zone: ngZone };
   }
   ngAfterViewInit(): void {

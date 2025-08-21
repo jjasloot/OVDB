@@ -1,4 +1,4 @@
-import { Component, OnInit, Inject } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { MatDialogRef, MAT_DIALOG_DATA, MatDialogTitle, MatDialogContent, MatDialogActions } from '@angular/material/dialog';
 import { CountryAddComponent } from '../country-add/country-add.component';
 import { ApiService } from 'src/app/services/api.service';
@@ -19,6 +19,10 @@ import { MatButton } from '@angular/material/button';
     imports: [MatDialogTitle, CdkScrollable, MatDialogContent, MatFormField, MatLabel, MatInput, FormsModule, MatCheckbox, MatDialogActions, MatButton, TranslateModule]
 })
 export class MapsAddComponent implements OnInit {
+  dialogRef = inject<MatDialogRef<MapsAddComponent>>(MatDialogRef);
+  private translateService = inject(TranslateService);
+  private apiService = inject(ApiService);
+
   mapName: string;
   mapSharingLink: string;
   mapDefault: boolean;
@@ -28,11 +32,9 @@ export class MapsAddComponent implements OnInit {
   id: number;
   loading: boolean;
   error: string;
-  constructor(
-    public dialogRef: MatDialogRef<MapsAddComponent>,
-    private translateService: TranslateService,
-    private apiService: ApiService,
-    @Inject(MAT_DIALOG_DATA) data) {
+  constructor() {
+    const data = inject(MAT_DIALOG_DATA);
+
     if (!!data && data.map) {
       const map = data.map as Map;
       this.mapName = map.name;

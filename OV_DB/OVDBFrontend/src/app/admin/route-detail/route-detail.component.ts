@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, viewChild } from "@angular/core";
+import { Component, OnInit, signal, viewChild, inject } from "@angular/core";
 import { ActivatedRoute, Router } from "@angular/router";
 import { Route } from "src/app/models/route.model";
 import { ApiService } from "src/app/services/api.service";
@@ -28,43 +28,56 @@ import { MatCard, MatCardHeader, MatCardSubtitle, MatCardContent } from "@angula
 import { MatChip } from "@angular/material/chips";
 import { MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle, MatExpansionPanelDescription } from "@angular/material/expansion";
 import { DecimalPipe, DatePipe } from "@angular/common";
+import { TrawellingTripContext } from "src/app/models/traewelling.model";
+import { TrawellingContextCardComponent } from "src/app/traewelling/context-card/traewelling-context-card.component";
 
 @Component({
-    selector: "app-route-detail",
-    templateUrl: "./route-detail.component.html",
-    styleUrls: ["./route-detail.component.scss"],
-    imports: [
-        MatButton,
-        MatIcon,
-        FormsModule,
-        ReactiveFormsModule,
-        MatFormField,
-        MatLabel,
-        MatInput,
-        RouteDetailOperatorSelectionComponent,
-        MatDatepickerInput,
-        MatDatepickerToggle,
-        MatSuffix,
-        MatDatepicker,
-        MatSelect,
-        MatOption,
-        MatCard,
-        MatCardHeader,
-        MatCardSubtitle,
-        MatCardContent,
-        MatChip,
-        MatExpansionPanel,
-        MatExpansionPanelHeader,
-        MatExpansionPanelTitle,
-        MatExpansionPanelDescription,
-        MatSelectionList,
-        MatListOption,
-        DecimalPipe,
-        DatePipe,
-        TranslateModule,
-    ]
+  selector: "app-route-detail",
+  templateUrl: "./route-detail.component.html",
+  styleUrls: ["./route-detail.component.scss"],
+  imports: [
+    MatButton,
+    MatIcon,
+    FormsModule,
+    ReactiveFormsModule,
+    MatFormField,
+    MatLabel,
+    MatInput,
+    RouteDetailOperatorSelectionComponent,
+    MatDatepickerInput,
+    MatDatepickerToggle,
+    MatSuffix,
+    MatDatepicker,
+    MatSelect,
+    MatOption,
+    MatCard,
+    MatCardHeader,
+    MatCardSubtitle,
+    MatCardContent,
+    MatChip,
+    MatExpansionPanel,
+    MatExpansionPanelHeader,
+    MatExpansionPanelTitle,
+    MatExpansionPanelDescription,
+    MatSelectionList,
+    MatListOption,
+    DecimalPipe,
+    DatePipe,
+    TranslateModule,
+    TrawellingContextCardComponent
+]
 })
 export class RouteDetailComponent implements OnInit {
+  private activatedRoute = inject(ActivatedRoute);
+  private apiService = inject(ApiService);
+  private translateService = inject(TranslateService);
+  private translationService = inject(TranslationService);
+  private formBuilder = inject(UntypedFormBuilder);
+  private authService = inject(AuthenticationService);
+  private dateAdapter = inject<DateAdapter<any>>(DateAdapter);
+  private dialog = inject(MatDialog);
+  private router = inject(Router);
+
   routeId: number;
   route: Route;
   form: UntypedFormGroup;
@@ -75,7 +88,7 @@ export class RouteDetailComponent implements OnInit {
   logo = signal<string | null>(null);
   colour: string;
   fromTraewelling = false;
-  trawellingTripData: any = null;
+  trawellingTripData: TrawellingTripContext | null = null;
 
   readonly countriesSelection = viewChild<MatSelectionList>("countriesSelection");
   readonly mapsSelection = viewChild<MatSelectionList>("mapsSelection");
@@ -83,17 +96,7 @@ export class RouteDetailComponent implements OnInit {
   selectedOptions: number[];
   selectedMaps: number[];
 
-  constructor(
-    private activatedRoute: ActivatedRoute,
-    private apiService: ApiService,
-    private translateService: TranslateService,
-    private translationService: TranslationService,
-    private formBuilder: UntypedFormBuilder,
-    private authService: AuthenticationService,
-    private dateAdapter: DateAdapter<any>,
-    private dialog: MatDialog,
-    private router: Router,
-  ) {
+  constructor() {
     this.dateAdapter.setLocale(this.translationService.dateLocale);
 
     this.form = this.formBuilder.group({
@@ -128,16 +131,18 @@ export class RouteDetailComponent implements OnInit {
       this.routeId = +p.get("routeId");
       this.loadData();
     });
-    
+
     // Check if coming from Träwelling
     this.activatedRoute.queryParams.subscribe(params => {
-      if (params['fromTraewelling']) {
+      if (params['traewellingTripId']) {
         this.fromTraewelling = true;
-        const tripDataStr = sessionStorage.getItem('trawellingTripDataForInstance');
+        const tripDataStr = sessionStorage.getItem('traewellingTripContext');
         if (tripDataStr) {
-          this.trawellingTripData = JSON.parse(tripDataStr);
-          // Clear the session storage to prevent reuse
-          sessionStorage.removeItem('trawellingTripDataForInstance');
+          const trawellingTripData = JSON.parse(tripDataStr) as TrawellingTripContext;
+          if (trawellingTripData.tripId === +params['traewellingTripId']) {
+            // If the IDs match, use the data
+            this.trawellingTripData = trawellingTripData;
+          }
         }
       }
     });
@@ -184,9 +189,7 @@ export class RouteDetailComponent implements OnInit {
 
         // If we have Träwelling trip data, pass it through query params and session storage
         if (this.fromTraewelling && this.trawellingTripData) {
-          navigationParams.queryParams = { fromTraewelling: 'true' };
-          // Keep the trip data in sessionStorage for the route instances component
-          sessionStorage.setItem('trawellingTripDataForNewInstance', JSON.stringify(this.trawellingTripData));
+          navigationParams.queryParams = { traewellingTripId: this.trawellingTripData.tripId, newRoute:true };
         }
 
         this.router.navigate(navigationParams.route, navigationParams.queryParams ? { queryParams: navigationParams.queryParams } : {});

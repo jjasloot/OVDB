@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { ApiService } from 'src/app/services/api.service';
 import { Router } from '@angular/router';
 import { Country } from 'src/app/models/country.model';
@@ -20,16 +20,15 @@ import { MatIcon } from '@angular/material/icon';
     imports: [MatProgressSpinner, MatList, MatListItem, MatButton, MatIconButton, MatIcon, MatFabButton, TranslateModule]
 })
 export class CountriesComponent implements OnInit {
+  private apiService = inject(ApiService);
+  private router = inject(Router);
+  private dialog = inject(MatDialog);
+  private translateService = inject(TranslateService);
+  private translationService = inject(TranslationService);
+  private dataUpdateService = inject(DataUpdateService);
+
   data: Country[];
   loading = false;
-
-  constructor(
-    private apiService: ApiService,
-    private router: Router,
-    private dialog: MatDialog,
-    private translateService: TranslateService,
-    private translationService: TranslationService,
-    private dataUpdateService: DataUpdateService) { }
 
   ngOnInit() {
     this.loadData();

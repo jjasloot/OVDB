@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, OnInit } from "@angular/core";
+import { ChangeDetectorRef, Component, OnInit, inject } from "@angular/core";
 import { environment } from "src/environments/environment";
 import { ApiService } from "../services/api.service";
 import { Map } from "../models/map.model";
@@ -23,6 +23,11 @@ import { FormsModule } from "@angular/forms";
   ]
 })
 export class ImageCreatorComponent implements OnInit {
+  private apiService = inject(ApiService);
+  private translationService = inject(TranslationService);
+  translateService = inject(TranslateService);
+  private cd = inject(ChangeDetectorRef);
+
   maps: Map[];
   baseUrl = environment.backend + "api/images/";
   selectedGuids: string[] = [];
@@ -31,12 +36,6 @@ export class ImageCreatorComponent implements OnInit {
   width = 300;
   height = 100;
   includeTotals = false;
-  constructor(
-    private apiService: ApiService,
-    private translationService: TranslationService,
-    public translateService: TranslateService,
-    private cd: ChangeDetectorRef
-  ) { }
 
   ngOnInit(): void {
     this.apiService.getMaps().subscribe((maps) => {

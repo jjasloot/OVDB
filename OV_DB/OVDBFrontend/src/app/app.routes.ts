@@ -58,11 +58,7 @@ export const routes: Routes = [
         component: ProfileComponent,
         canActivate: [LoginGuard],
       },
-      {
-        path: "traewelling",
-        component: TrawellingComponent,
-        canActivate: [LoginGuard],
-      },
+
       {
         path: "images",
         component: ImageCreatorComponent,
@@ -88,6 +84,10 @@ export const routes: Routes = [
           { path: "wizard/:id", component: WizzardStep2Component },
           { path: "wizard", component: WizzardStep1Component },
           { path: "stationmaps", component: StationMapsComponent },
+          {
+            path: "traewelling",
+            component: TrawellingComponent,
+          },
         ],
       },
       {

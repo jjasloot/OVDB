@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { MatBottomSheetRef } from '@angular/material/bottom-sheet';
 import {RoutesListActions} from 'src/app/models/routes-list-actions.enum';
 import { MatActionList, MatListItem } from '@angular/material/list';
@@ -11,10 +11,8 @@ import { TranslateModule } from '@ngx-translate/core';
     imports: [MatActionList, MatListItem, MatIcon, TranslateModule]
 })
 export class RoutesListBottomsheetComponent implements OnInit {
+  dialogRef = inject<MatBottomSheetRef<RoutesListBottomsheetComponent>>(MatBottomSheetRef);
 
-  constructor(
-    public dialogRef: MatBottomSheetRef<RoutesListBottomsheetComponent>,
-  ) {  }
 
   ngOnInit(): void {
   }

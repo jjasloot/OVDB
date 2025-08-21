@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
@@ -14,17 +14,18 @@ import {
   RouteInstanceSearchResult,
   RouteSearchResult,
   TrawellingTripContext,
-  TrawellingTransportCategory
+  TrawellingTransportCategory,
+  RoutesListResponse
 } from '../../models/traewelling.model';
 
 @Injectable({
   providedIn: 'root'
 })
 export class TrawellingService {
+  private http = inject(HttpClient);
+
   private readonly baseUrl = `${environment.backend}api/Traewelling`;
   private readonly routesUrl = `${environment.backend}api/routes`;
-
-  constructor(private http: HttpClient) {}
 
   // Connection management
   async getConnectionStatus(): Promise<TrawellingConnectionStatus> {
@@ -48,10 +49,8 @@ export class TrawellingService {
   // Route Instance linking (existing functionality)
   async searchRouteInstances(trip: TrawellingTrip): Promise<RouteInstanceSearchResult[]> {
     const params = new HttpParams()
-      .set('startTime', trip.transport.origin.departureScheduled || '')
-      .set('endTime', trip.transport.destination.arrivalScheduled || '')
-      .set('originName', trip.transport.origin.name)
-      .set('destinationName', trip.transport.destination.name);
+      .set('date', trip.transport.origin.departureScheduled.split('T')[0])
+      .set('query', trip.transport.origin.name);
     
     const response = this.http.get<RouteInstanceSearchResult[]>(`${this.baseUrl}/route-instances`, { params });
     return response.toPromise();
@@ -68,10 +67,12 @@ export class TrawellingService {
     const params = new HttpParams()
       .set('start', '0')
       .set('count', '20')
-      .set('filter', filter);
+      .set('filter', filter)
+      .set('sortColumn','date')
+      .set('descending',true);
     
-    const response = this.http.get<RouteSearchResult[]>(this.routesUrl, { params });
-    return response.toPromise();
+    const response = this.http.get<RoutesListResponse>(this.routesUrl, { params });
+    return response.pipe(map((routes) => routes.routes || [])).toPromise();
   }
 
   // Trip context extraction for route creation workflows
@@ -84,7 +85,7 @@ export class TrawellingService {
       arrivalTime: trip.transport.destination.arrivalReal || trip.transport.destination.arrivalScheduled,
       transportCategory: trip.transport.category,
       lineNumber: trip.transport.lineName,
-      journeyNumber: trip.transport.manualJourneyNumber || trip.transport.journeyNumber?.toString(),
+      journeyNumber: trip.transport.journeyNumber,
       distance: trip.transport.distance,
       duration: trip.transport.duration,
       description: trip.body,
@@ -123,7 +124,6 @@ export class TrawellingService {
         return '#2196F3'; // Blue
       case TrawellingTransportCategory.NATIONAL:
       case TrawellingTransportCategory.NATIONAL_EXPRESS:
-        return '#F44336'; // Red  
       case TrawellingTransportCategory.REGIONAL:
       case TrawellingTransportCategory.REGIONAL_EXP:
         return '#FF9800'; // Orange
@@ -143,7 +143,15 @@ export class TrawellingService {
   // Format duration from minutes to readable format
   formatDuration(minutes: number): string {
     const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
+    const mins = Math.floor(minutes % 60);
+    if (hours > 0) {
+      return `${hours}h ${mins}m`;
+    }
+    return `${mins}m`;
+  }
+  formatDurationHours(hoursInput: number): string {
+    const hours = Math.floor(hoursInput);
+    const mins = Math.floor((hoursInput % 1) * 60);
     if (hours > 0) {
       return `${hours}h ${mins}m`;
     }

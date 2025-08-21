@@ -1,4 +1,4 @@
-import { Component, OnInit } from "@angular/core";
+import { Component, OnInit, inject } from "@angular/core";
 import { Router, RouterLink, RouterOutlet } from "@angular/router";
 import { AuthenticationService } from "../services/authentication.service";
 import { TranslationService } from "../services/translation.service";
@@ -30,16 +30,14 @@ import { TranslateModule } from "@ngx-translate/core";
   ]
 })
 export class LayoutComponent implements OnInit {
+  private router = inject(Router);
+  private authService = inject(AuthenticationService);
+  private requestsService = inject(RequestsService);
+  private translationService = inject(TranslationService);
+  themeService = inject(ThemeService);
+
   hasUnreadRequests = false;
   hasUnreadRequestsAdmin = false;
-  
-  constructor(
-    private router: Router,
-    private authService: AuthenticationService,
-    private requestsService: RequestsService,
-    private translationService: TranslationService,
-    public themeService: ThemeService
-  ) { }
 
   ngOnInit() {
     if (this.isLoggedIn) {

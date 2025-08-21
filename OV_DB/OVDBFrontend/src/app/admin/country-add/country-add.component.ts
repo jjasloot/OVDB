@@ -1,4 +1,4 @@
-import { Component, OnInit, Inject } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { MatDialog, MatDialogRef, MAT_DIALOG_DATA, MatDialogTitle, MatDialogContent, MatDialogActions } from '@angular/material/dialog';
 import { ApiService } from 'src/app/services/api.service';
 import { Country } from 'src/app/models/country.model';
@@ -16,17 +16,19 @@ import { MatButton } from '@angular/material/button';
     imports: [MatDialogTitle, CdkScrollable, MatDialogContent, MatFormField, MatLabel, MatInput, FormsModule, MatDialogActions, MatButton, TranslateModule]
 })
 export class CountryAddComponent implements OnInit {
+  dialogRef = inject<MatDialogRef<CountryAddComponent>>(MatDialogRef);
+  private translateService = inject(TranslateService);
+  private apiService = inject(ApiService);
+
   countryName: string;
   countryNameNL: string;
 
   id: number;
   loading: boolean;
   error: string;
-  constructor(
-    public dialogRef: MatDialogRef<CountryAddComponent>,
-    private translateService: TranslateService,
-    private apiService: ApiService,
-    @Inject(MAT_DIALOG_DATA) data) {
+  constructor() {
+    const data = inject(MAT_DIALOG_DATA);
+
     if (!!data && data.country) {
       this.countryName = data.country.name;
       this.countryNameNL = data.country.nameNL;

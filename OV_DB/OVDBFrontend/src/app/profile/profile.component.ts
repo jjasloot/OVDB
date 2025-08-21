@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { UntypedFormBuilder, UntypedFormGroup, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { ApiService } from '../services/api.service';
 import { UserProfile, UpdateProfile, ChangePassword } from '../models/user-profile.model';
@@ -40,6 +40,14 @@ import { Router } from '@angular/router';
   ]
 })
 export class ProfileComponent implements OnInit {
+  private formBuilder = inject(UntypedFormBuilder);
+  private apiService = inject(ApiService);
+  private snackBar = inject(MatSnackBar);
+  private translateService = inject(TranslateService);
+  private translationService = inject(TranslationService);
+  private userPreferenceService = inject(UserPreferenceService);
+  private router = inject(Router);
+
   profileForm: UntypedFormGroup;
   passwordForm: UntypedFormGroup;
   userProfile: UserProfile | null = null;
@@ -56,15 +64,7 @@ export class ProfileComponent implements OnInit {
     { value: 'nl', label: 'Nederlands' }
   ];
 
-  constructor(
-    private formBuilder: UntypedFormBuilder,
-    private apiService: ApiService,
-    private snackBar: MatSnackBar,
-    private translateService: TranslateService,
-    private translationService: TranslationService,
-    private userPreferenceService: UserPreferenceService,
-    private router: Router
-  ) {
+  constructor() {
     this.profileForm = this.formBuilder.group({
       preferredLanguage: ['', Validators.required],
       telegramUserId: [null]
@@ -245,6 +245,6 @@ export class ProfileComponent implements OnInit {
   }
 
   viewTrawellingTrips(): void {
-    this.router.navigate(['/traewelling']);
+    this.router.navigate(['/admin/traewelling']);
   }
 }

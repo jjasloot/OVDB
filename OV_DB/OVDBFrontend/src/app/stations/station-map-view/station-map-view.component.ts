@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { ActivatedRoute, ParamMap } from '@angular/router';
 import { ApiService } from 'src/app/services/api.service';
 import { StationMapComponent } from '../station-map/station-map.component';
@@ -10,12 +10,10 @@ import { StationMapComponent } from '../station-map/station-map.component';
     imports: [StationMapComponent]
 })
 export class StationMapViewComponent implements OnInit {
-  guid: string;
+  private activatedRoute = inject(ActivatedRoute);
+  private apiService = inject(ApiService);
 
-  constructor(
-    private activatedRoute: ActivatedRoute,
-    private apiService: ApiService
-  ) { }
+  guid: string;
 
   ngOnInit() {
     this.activatedRoute.paramMap.subscribe((paramMap: ParamMap) => {

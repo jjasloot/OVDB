@@ -1,4 +1,4 @@
-import { Injectable } from "@angular/core";
+import { Injectable, inject } from "@angular/core";
 import { Observable } from "rxjs";
 import { Country } from "../models/country.model";
 import { HttpClient, HttpParams } from "@angular/common/http";
@@ -37,14 +37,14 @@ import {
   providedIn: "root",
 })
 export class ApiService {
+  private httpClient = inject(HttpClient);
+
 
   getRoutesWithMissingSettings(): Observable<Route[]> {
     return this.httpClient.get<Route[]>(
       environment.backend + "api/routes/missingInfo"
     );
   }
-
-  constructor(private httpClient: HttpClient) { }
 
   getCountries(guid?: string): Observable<Country[]> {
     if (!guid) {

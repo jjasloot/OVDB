@@ -1,4 +1,4 @@
-import { Component, OnInit } from "@angular/core";
+import { Component, OnInit, inject } from "@angular/core";
 import { Map } from "src/app/models/map.model";
 import { ApiService } from "src/app/services/api.service";
 import { Router } from "@angular/router";
@@ -37,17 +37,15 @@ import { LowerCasePipe } from "@angular/common";
   ],
 })
 export class MapsListComponent implements OnInit {
+  private apiService = inject(ApiService);
+  private router = inject(Router);
+  private dialog = inject(MatDialog);
+  private translateService = inject(TranslateService);
+  private dataUpdateService = inject(DataUpdateService);
+  private bottomSheet = inject(MatBottomSheet);
+
   data: Map[];
   loading = false;
-
-  constructor(
-    private apiService: ApiService,
-    private router: Router,
-    private dialog: MatDialog,
-    private translateService: TranslateService,
-    private dataUpdateService: DataUpdateService,
-    private bottomSheet: MatBottomSheet
-  ) {}
 
   ngOnInit() {
     this.loadData();

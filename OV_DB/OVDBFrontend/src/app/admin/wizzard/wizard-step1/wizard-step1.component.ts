@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { UntypedFormBuilder, UntypedFormGroup, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { ApiService } from 'src/app/services/api.service';
 import { OSMDataLine } from 'src/app/models/osmDataLine.model';
@@ -18,14 +18,23 @@ import { MatIcon } from '@angular/material/icon';
 import { MatChipListbox, MatChipOption } from '@angular/material/chips';
 import { TranslateModule } from '@ngx-translate/core';
 import { MatCard, MatCardContent, MatCardHeader, MatCardTitle, MatCardActions } from '@angular/material/card';
+import { TrawellingTransportCategory, TrawellingTripContext } from 'src/app/models/traewelling.model';
+import { TrawellingContextCardComponent } from 'src/app/traewelling/context-card/traewelling-context-card.component';
 
 @Component({
-    selector: 'app-wizard-step1',
-    templateUrl: './wizard-step1.component.html',
-    styleUrls: ['./wizard-step1.component.scss'],
-    imports: [MatProgressSpinner, FormsModule, ReactiveFormsModule, MatFormField, MatLabel, MatInput, MatSelect, MatOption, MatCheckbox, NgClass, MatDatepickerInput, MatDatepickerToggle, MatSuffix, MatDatepicker, MatButton, MatIconButton, MatIcon, MatChipListbox, MatChipOption, TranslateModule, MatCard, MatCardContent, MatCardHeader, MatCardTitle, MatCardActions]
+  selector: 'app-wizard-step1',
+  templateUrl: './wizard-step1.component.html',
+  styleUrls: ['./wizard-step1.component.scss'],
+  imports: [TrawellingContextCardComponent, MatProgressSpinner, FormsModule, ReactiveFormsModule, MatFormField, MatLabel, MatInput, MatSelect, MatOption, MatCheckbox, NgClass, MatDatepickerInput, MatDatepickerToggle, MatSuffix, MatDatepicker, MatButton, MatIconButton, MatIcon, MatChipListbox, MatChipOption, TranslateModule, MatCard, MatCardContent, MatCardHeader, MatCardTitle, MatCardActions]
 })
 export class WizzardStep1Component implements OnInit {
+  private formBuilder = inject(UntypedFormBuilder);
+  private apiService = inject(ApiService);
+  private router = inject(Router);
+  private route = inject(ActivatedRoute);
+  private dateAdapter = inject<DateAdapter<any>>(DateAdapter);
+  private translationService = inject(TranslationService);
+
   form: UntypedFormGroup;
   lines: OSMDataLine[];
   step = 1;
@@ -35,14 +44,8 @@ export class WizzardStep1Component implements OnInit {
   dateTime: moment.Moment = null;
   error: boolean;
   fromTraewelling = false;
-  trawellingTripData: any = null;
-  constructor(
-    private formBuilder: UntypedFormBuilder,
-    private apiService: ApiService,
-    private router: Router,
-    private route: ActivatedRoute,
-    private dateAdapter: DateAdapter<any>,
-    private translationService: TranslationService) {
+  trawellingTripData: TrawellingTripContext | null = null;
+  constructor() {
     this.dateAdapter.setLocale(this.translationService.dateLocale);
 
     this.form = this.formBuilder.group({
@@ -120,12 +123,16 @@ export class WizzardStep1Component implements OnInit {
 
     // Check if coming from Träwelling
     this.route.queryParams.subscribe(params => {
-      if (params['fromTraewelling']) {
+      if (params['traewellingTripId']) {
         this.fromTraewelling = true;
-        const tripDataStr = sessionStorage.getItem('trawellingTripData');
+        const tripDataStr = sessionStorage.getItem('traewellingTripContext');
         if (tripDataStr) {
-          this.trawellingTripData = JSON.parse(tripDataStr);
-          this.prePopulateFromTraewelling();
+          const trawellingTripData = JSON.parse(tripDataStr) as TrawellingTripContext;
+          if (trawellingTripData.tripId === +params['traewellingTripId']) {
+            // If the IDs match, use the data
+            this.trawellingTripData = trawellingTripData;
+            this.prePopulateFromTraewelling();
+          }
         }
       }
     });
@@ -158,15 +165,15 @@ export class WizzardStep1Component implements OnInit {
   }
   select(line: OSMDataLine) {
     const queryParams: any = {};
-    
+
     if (this.dateTime) {
       queryParams.date = this.dateTime.unix();
     }
-    
+
     if (this.fromTraewelling) {
-      queryParams.fromTraewelling = 'true';
+      queryParams.traewellingTripId = this.trawellingTripData.tripId;
     }
-    
+
     this.router.navigate(['/', 'admin', 'wizard', line.id], { queryParams });
   }
 
@@ -178,17 +185,16 @@ export class WizzardStep1Component implements OnInit {
     if (!this.trawellingTripData) return;
 
     // Pre-populate form with Träwelling data
-    const reference = `${this.trawellingTripData.origin} ${this.trawellingTripData.destination}`;
-    const transportType = this.mapTrawellingCategoryToOSMType(this.trawellingTripData.category);
-    
+    const reference = `${this.trawellingTripData.lineNumber}`;
+    const transportType = this.mapTrawellingCategoryToOSMType(this.trawellingTripData.transportCategory);
+
     this.form.patchValue({
       reference: reference,
       type: transportType,
-      dateTime: this.trawellingTripData.date ? moment(this.trawellingTripData.date) : null
     });
   }
 
-  private mapTrawellingCategoryToOSMType(category: string): string {
+  private mapTrawellingCategoryToOSMType(category: TrawellingTransportCategory): string {
     // Map Träwelling transport categories to OSM types
     switch (category) {
       case 'NationalExpress':
@@ -217,7 +223,7 @@ export class WizzardStep1Component implements OnInit {
       sessionStorage.setItem('trawellingTripDataForGpx', JSON.stringify(this.trawellingTripData));
     }
     this.router.navigate(['/admin/addRoute'], {
-      queryParams: { fromTraewelling: 'true' }
+      queryParams: { traewellingTripId: this.trawellingTripData.tripId }
     });
   }
 

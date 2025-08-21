@@ -1,12 +1,4 @@
-import {
-  Component,
-  computed,
-  effect,
-  inject,
-  Inject,
-  OnInit,
-  signal,
-} from "@angular/core";
+import { Component, computed, effect, inject, OnInit, signal } from "@angular/core";
 import { FormGroup, FormControl, FormBuilder, Validators, FormsModule, ReactiveFormsModule } from "@angular/forms";
 import { MatDialogRef, MAT_DIALOG_DATA, MatDialogTitle, MatDialogContent, MatDialogActions } from "@angular/material/dialog";
 import { Operator } from "src/app/models/operator.model";
@@ -46,6 +38,10 @@ import { MatButton } from "@angular/material/button";
     ]
 })
 export class AdministratorOperatorEditDialogComponent {
+  dialogRef = inject<MatDialogRef<AdministratorOperatorEditDialogComponent>>(MatDialogRef);
+  data = inject<Operator>(MAT_DIALOG_DATA);
+  private fb = inject(FormBuilder);
+
   nameCtrl = new FormControl("");
   regionService = inject(RegionsService);
   regions = signal<Region[]>([]);
@@ -78,12 +74,6 @@ export class AdministratorOperatorEditDialogComponent {
     }
     return regions;
   });
-
-  constructor(
-    public dialogRef: MatDialogRef<AdministratorOperatorEditDialogComponent>,
-    @Inject(MAT_DIALOG_DATA) public data: Operator,
-    private fb: FormBuilder
-  ) {}
 
   addName(event: any): void {
     const input = event.input;

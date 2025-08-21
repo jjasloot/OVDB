@@ -1,28 +1,6 @@
 <div class="container">
   <!-- Träwelling Trip Info -->
-  @if (fromTraewelling && trawellingTripData) {
-  <mat-card class="traewelling-info">
-    <mat-card-header>
-      <mat-card-title>{{ 'TRAEWELLING.CREATE_NEW_ROUTE' | translate }}</mat-card-title>
-    </mat-card-header>
-    <mat-card-content>
-      <div class="trip-summary">
-        <strong>{{ trawellingTripData.line }} {{ trawellingTripData.number }}</strong>
-        <div>{{ trawellingTripData.origin }} → {{ trawellingTripData.destination }}</div>
-        @if (trawellingTripData.body) {
-        <div class="trip-description">{{ trawellingTripData.body }}</div>
-        }
-      </div>
-      <p>{{ 'ADDROUTE.TRAEWELLING_INFO' | translate }}</p>
-    </mat-card-content>
-    <mat-card-actions>
-      <button mat-stroked-button type="button" (click)="navigateToWizard()">
-        <mat-icon>auto_fix_high</mat-icon>
-        {{ 'ADDROUTE.USE_WIZARD_INSTEAD' | translate }}
-      </button>
-    </mat-card-actions>
-  </mat-card>
-  }
+<app-traewelling-context-card [tripContext]="trawellingTripData"/>
 
   <div class="buttons">
     <input type="file" multiple (change)="handleFileInput($event.target.files)">

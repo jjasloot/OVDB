@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { ActivatedRoute, ParamMap } from '@angular/router';
 import { MapComponent } from '../map/map.component';
 
@@ -9,9 +9,9 @@ import { MapComponent } from '../map/map.component';
     imports: [MapComponent]
 })
 export class MapViewComponent implements OnInit {
-  guid: string;
+  private activatedRoute = inject(ActivatedRoute);
 
-  constructor(private activatedRoute: ActivatedRoute) { }
+  guid: string;
 
   ngOnInit() {
     this.activatedRoute.paramMap.subscribe((paramMap: ParamMap) => {

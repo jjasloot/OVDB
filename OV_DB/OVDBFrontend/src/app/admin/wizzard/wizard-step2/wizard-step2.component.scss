@@ -19,6 +19,7 @@
 
     .trip-tags {
         margin-top: 0.5rem;
+
         .tag {
             display: inline-block;
             margin-right: 0.5rem;
@@ -47,6 +48,7 @@
     padding: 4px;
     color: gray;
     font-style: italic;
+
     &.active {
         font-style: normal;
         color: unset;
@@ -73,6 +75,7 @@
     top: 0;
     left: 0;
     z-index: 1000;
+
     /* TODO(mdc-migration): The following rule targets internal classes of card that may no longer apply for the MDC version. */
     mat-card {
         align-items: center;
@@ -86,6 +89,7 @@
     width: 80px;
     display: flex;
     font-weight: lighter;
+
     button {
         font-style: italic;
         font-weight: lighter;
@@ -101,10 +105,12 @@
 
 .buttons {
     margin: 12px;
+
     button {
         margin-right: 12px;
         margin-bottom: 8px;
     }
+
     button:last-child {
         margin-right: 0;
     }
@@ -122,13 +128,20 @@
     .desktop {
         display: unset;
     }
+
     .mobile {
         display: none;
     }
+
     .content {
         flex-direction: row;
     }
+
     .stops {
         max-height: calc(100vh - 250px);
+
+        &.reduced-height {
+            max-height: calc(100vh - 500px);
+        }
     }
 }

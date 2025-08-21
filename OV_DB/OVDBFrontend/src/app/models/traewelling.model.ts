@@ -37,8 +37,7 @@ export interface TrawellingTransport {
   category: TrawellingTransportCategory;
   number: string;
   lineName: string;
-  journeyNumber?: number;
-  manualJourneyNumber?: string;
+  journeyNumber?: string;
   distance: number;
   duration: number;
   origin: TrawellingStopover;
@@ -47,17 +46,17 @@ export interface TrawellingTransport {
 }
 
 export enum TrawellingTransportCategory {
-  BUS = 'BUS',
-  NATIONAL = 'NATIONAL',
-  NATIONAL_EXPRESS = 'NATIONAL_EXPRESS',
-  REGIONAL = 'REGIONAL',
-  REGIONAL_EXP = 'REGIONAL_EXP',
-  SUBURBAN = 'SUBURBAN',
-  SUBWAY = 'SUBWAY',
-  TRAM = 'TRAM',
-  FERRY = 'FERRY',
-  TAXI = 'TAXI',
-  PLANE = 'PLANE'
+  BUS = 'Bus',
+  NATIONAL = 'National',
+  NATIONAL_EXPRESS = 'NationalExpress',
+  REGIONAL = 'Regional',
+  REGIONAL_EXP = 'RegionalExp',
+  SUBURBAN = 'Suburban',
+  SUBWAY = 'Subway',
+  TRAM = 'Tram',
+  FERRY = 'Ferry',
+  TAXI = 'Taxi',
+  PLANE = 'Plane'
 }
 
 export interface TrawellingStopover {
@@ -136,6 +135,11 @@ export interface TrawellingIgnoreResponse {
   message?: string;
 }
 
+export interface RoutesListResponse{
+  count: number;
+  routes: RouteSearchResult[];
+}
+
 // Route search for "Add to Existing Route" functionality
 export interface RouteSearchResult {
   routeId: number;
@@ -146,6 +150,8 @@ export interface RouteSearchResult {
   operatingCompany?: string;
   routeType?: {
     name: string;
+    nameNL: string;
+    colour?: string;
   };
 }
 

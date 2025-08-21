@@ -3,42 +3,7 @@
   <mat-icon>arrow_back</mat-icon>
 </button>
 
-<!-- Show Träwelling Trip Information if available -->
-@if (fromTraewelling && trawellingTripData) {
-<mat-card class="traewelling-info">
-  <mat-card-header>
-    <mat-card-title style="display: flex; align-items: center; gap: 8px;">
-      <mat-icon>train</mat-icon>
-      {{ 'TRAEWELLING.IMPORTED_TRIP' | translate }}
-    </mat-card-title>
-  </mat-card-header>
-  <mat-card-content>
-    <div class="trip-summary">
-      <strong>{{ trawellingTripData.origin }} → {{ trawellingTripData.destination }}</strong>
-      @if (trawellingTripData.line) {
-      <div>{{ 'TRAEWELLING.LINE' | translate }}: {{ trawellingTripData.line }} {{ trawellingTripData.number }}</div>
-      }
-      @if (trawellingTripData.startTime) {
-      <div>{{ 'TRAEWELLING.START_TIME' | translate }}: {{ trawellingTripData.startTime | date:'short' }}</div>
-      }
-      @if (trawellingTripData.endTime) {
-      <div>{{ 'TRAEWELLING.END_TIME' | translate }}: {{ trawellingTripData.endTime | date:'short' }}</div>
-      }
-      @if (trawellingTripData.body) {
-      <div class="trip-description">{{ trawellingTripData.body }}</div>
-      }
-      @if (trawellingTripData.tags && trawellingTripData.tags.length > 0) {
-      <div class="trip-tags">
-        <strong>{{ 'TRAEWELLING.TAGS' | translate }}:</strong>
-        @for (tag of trawellingTripData.tags; track tag.key) {
-        <span class="tag">{{ tag.key }}: {{ tag.value }}</span>
-        }
-      </div>
-      }
-    </div>
-  </mat-card-content>
-</mat-card>
-}
+<app-traewelling-context-card [tripContext]="trawellingTripData"/>
 
 } @if (loading) {
 <div class="loading">
@@ -56,14 +21,8 @@
 } @if (data) {
 <div class="content">
   <div style="flex: 3">
-    <div
-      class="map"
-      leaflet
-      style="height: 350px"
-      [leafletOptions]="options"
-      [leafletLayers]="layers"
-      [leafletFitBounds]="bounds"
-    ></div>
+    <div class="map" leaflet style="height: 350px" [leafletOptions]="options" [leafletLayers]="layers"
+      [leafletFitBounds]="bounds"></div>
     <div>
       <mat-list>
         <mat-list-item>
@@ -79,13 +38,8 @@
         <mat-list-item>
           {{ "IMPORTER.COLOUR" | translate }}:&nbsp;
           <mat-chip-listbox>
-            <mat-chip-option
-              [color]="data.colour"
-              [style.background]="data.colour"
-              [selectable]="false"
-              [cdkCopyToClipboard]="data.colour"
-              >{{ data.colour }}</mat-chip-option
-            >
+            <mat-chip-option [color]="data.colour" [style.background]="data.colour" [selectable]="false"
+              [cdkCopyToClipboard]="data.colour">{{ data.colour }}</mat-chip-option>
           </mat-chip-listbox>
         </mat-list-item>
         }
@@ -107,7 +61,7 @@
         {{ "IMPORTER.EXPORT" | translate }}
       </button>
     </div>
-    <div class="stops">
+    <div class="stops" [class.reduced-height]="fromTraewelling">
       @for (stop of stops; track stop;let index = $index) {
       <div class="row">
         <div class="from">

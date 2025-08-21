@@ -1,79 +1,95 @@
-import { Component, Input } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, inject, Input } from '@angular/core';
+
 import { MatCardModule } from '@angular/material/card';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatIconModule } from '@angular/material/icon';
-import { TrawellingTripContext } from '../../models/traewelling.model';
+import { TrawellingTransportCategory, TrawellingTripContext } from '../../models/traewelling.model';
+import { TrawellingService } from '../services/traewelling.service';
+import { MatButtonModule } from '@angular/material/button';
+import { TranslateModule } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-traewelling-context-card',
   standalone: true,
   imports: [
-    CommonModule,
     MatCardModule,
     MatChipsModule,
-    MatIconModule
+    MatIconModule,
+    MatButtonModule,
+    TranslateModule
   ],
   template: `
-    <mat-card *ngIf="tripContext" class="context-card">
-      <mat-card-header>
-        <mat-card-title class="context-title">
-          <mat-icon>train</mat-icon>
-          Träwelling Trip Context
-        </mat-card-title>
-      </mat-card-header>
-      
-      <mat-card-content>
-        <!-- Trip Route -->
-        <div class="trip-route">
-          <div class="line-info">
-            <strong>{{ tripContext.lineNumber }}</strong>
-            <span *ngIf="tripContext.journeyNumber"> • {{ tripContext.journeyNumber }}</span>
+    @if (tripContext) {
+      <mat-card class="context-card">
+        <mat-card-header>
+          <mat-card-title class="context-title">
+            <div class="transport-icon" [style.background-color]="transportColor()">
+              <mat-icon>{{ transportIcon() }}</mat-icon>
+            </div>
+            Träwelling
+          </mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <!-- Trip Route -->
+          <div class="trip-route">
+            <div class="line-info">
+              <strong>{{ tripContext.lineNumber }}</strong>
+              @if (tripContext.journeyNumber) {
+                <span> • {{ tripContext.journeyNumber }}</span>
+              }
+            </div>
+            <div class="stations">
+              {{ tripContext.originName }} → {{ tripContext.destinationName }}
+            </div>
           </div>
-          <div class="stations">
-            {{ tripContext.originName }} → {{ tripContext.destinationName }}
-          </div>
-        </div>
-
-        <!-- Timing -->
-        <div class="trip-timing" *ngIf="tripContext.departureTime || tripContext.arrivalTime">
-          <div class="timing-item">
-            <mat-icon>schedule</mat-icon>
-            <span>{{ formatTime(tripContext.departureTime) }} - {{ formatTime(tripContext.arrivalTime) }}</span>
-          </div>
-          <div class="duration">
-            <mat-icon>access_time</mat-icon>
-            <span>{{ formatDuration(tripContext.duration) }} • {{ formatDistance(tripContext.distance) }}</span>
-          </div>
-        </div>
-
-        <!-- Description -->
-        <div class="trip-description" *ngIf="tripContext.description">
-          <p>{{ tripContext.description }}</p>
-        </div>
-
-        <!-- Tags -->
-        <div class="trip-tags" *ngIf="tripContext.tags.length > 0">
-          <mat-chip-listbox>
-            <mat-chip-option *ngFor="let tag of tripContext.tags" disabled>
-              <strong>{{ tag.key }}:</strong> {{ tag.value }}
-            </mat-chip-option>
-          </mat-chip-listbox>
-        </div>
-      </mat-card-content>
-    </mat-card>
-  `,
+          <!-- Timing -->
+          @if (tripContext.departureTime || tripContext.arrivalTime) {
+            <div class="trip-timing">
+              <div class="timing-item">
+                <mat-icon>schedule</mat-icon>
+                <span>{{ formatTime(tripContext.departureTime) }} - {{ formatTime(tripContext.arrivalTime) }}</span>
+              </div>
+              <div class="duration">
+                <mat-icon>access_time</mat-icon>
+                <span>{{ formatDuration(tripContext.duration) }} • {{ formatDistance(tripContext.distance) }}</span>
+              </div>
+            </div>
+          }
+          <!-- Description -->
+          @if (tripContext.description) {
+            <div class="trip-description">
+              <p>{{ tripContext.description }}</p>
+            </div>
+          }
+          <!-- Tags -->
+          @if (tripContext.tags.length > 0) {
+            <div class="trip-tags">
+                @for (tag of tripContext.tags; track tag) {
+                  <mat-chip>
+                    <strong>{{ tag.key }}:</strong> {{ tag.value }}
+                  </mat-chip>
+                }
+            </div>
+          }
+        </mat-card-content>
+        <mat-card-actions align="end">
+          <button mat-button (click)="closeCard()">{{'CLOSE'|translate}}</button>
+        </mat-card-actions>
+      </mat-card>
+    }
+    `,
   styleUrls: ['./traewelling-context-card.component.scss']
 })
 export class TrawellingContextCardComponent {
+  traewellingService = inject(TrawellingService);
   @Input() tripContext: TrawellingTripContext | null = null;
 
   formatTime(isoString?: string): string {
     if (!isoString) return '';
     const date = new Date(isoString);
-    return date.toLocaleTimeString('nl-NL', { 
-      hour: '2-digit', 
-      minute: '2-digit' 
+    return date.toLocaleTimeString('nl-NL', {
+      hour: '2-digit',
+      minute: '2-digit'
     });
   }
 
@@ -91,5 +107,18 @@ export class TrawellingContextCardComponent {
       return `${(meters / 1000).toFixed(1)} km`;
     }
     return `${meters} m`;
+  }
+
+  transportIcon() {
+    return this.traewellingService.getTransportIcon(this.tripContext.transportCategory);
+  }
+
+  transportColor() {
+    return this.traewellingService.getTransportColor(this.tripContext.transportCategory);
+  }
+
+  closeCard() {
+    sessionStorage.removeItem('traewellingTripContext');
+    this.tripContext = null;
   }
 }

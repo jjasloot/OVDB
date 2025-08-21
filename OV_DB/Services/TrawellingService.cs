@@ -919,7 +919,7 @@ namespace OV_DB.Services
                         Category = status.Train.Category,
                         Number = status.Train.Number,
                         LineName = status.Train.LineName,
-                        JourneyNumber = status.Train.JourneyNumber,
+                        JourneyNumber = !string.IsNullOrWhiteSpace(status.Train.ManualJourneyNumber) ? status.Train.ManualJourneyNumber : status.Train.JourneyNumber.ToString(),
                         Distance = status.Train.Distance,
                         Duration = status.Train.Duration,
                         Origin = origin,

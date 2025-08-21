@@ -1,4 +1,4 @@
-import { Component, OnInit } from "@angular/core";
+import { Component, OnInit, inject } from "@angular/core";
 import { ActivatedRoute, Router } from "@angular/router";
 import { ApiService } from "src/app/services/api.service";
 import { OSMDataLine } from "src/app/models/osmDataLine.model";
@@ -20,32 +20,41 @@ import { MatList, MatListItem } from "@angular/material/list";
 import { MatChipListbox, MatChipOption } from "@angular/material/chips";
 import { NgClass, DatePipe } from "@angular/common";
 import { CdkCopyToClipboard } from "@angular/cdk/clipboard";
+import { TrawellingTripContext } from "src/app/models/traewelling.model";
+import { TrawellingContextCardComponent } from "src/app/traewelling/context-card/traewelling-context-card.component";
 
 @Component({
-    selector: "app-wizard-step2",
-    templateUrl: "./wizard-step2.component.html",
-    styleUrls: ["./wizard-step2.component.scss"],
-    imports: [
-        MatIconButton,
-        MatIcon,
-        MatCard,
-        MatCardHeader,
-        MatCardTitle,
-        MatCardContent,
-        MatProgressSpinner,
-        LeafletModule,
-        MatList,
-        MatListItem,
-        MatChipListbox,
-        MatChipOption,
-        MatButton,
-        NgClass,
-        DatePipe,
-        TranslateModule,
-        CdkCopyToClipboard,
-    ]
+  selector: "app-wizard-step2",
+  templateUrl: "./wizard-step2.component.html",
+  styleUrls: ["./wizard-step2.component.scss"],
+  imports: [
+    MatIconButton,
+    MatIcon,
+    MatCard,
+    MatCardHeader,
+    MatCardTitle,
+    MatCardContent,
+    MatProgressSpinner,
+    LeafletModule,
+    MatList,
+    MatListItem,
+    MatChipListbox,
+    MatChipOption,
+    MatButton,
+    NgClass,
+    DatePipe,
+    TranslateModule,
+    CdkCopyToClipboard,
+    TrawellingContextCardComponent
+  ]
 })
 export class WizzardStep2Component implements OnInit {
+  private activatedRoute = inject(ActivatedRoute);
+  private apiService = inject(ApiService);
+  private translateService = inject(TranslateService);
+  private dialog = inject(MatDialog);
+  private router = inject(Router);
+
   id: string;
   data: OSMDataLine;
 
@@ -69,14 +78,8 @@ export class WizzardStep2Component implements OnInit {
   to: number;
   dateTime: Moment;
   fromTraewelling = false;
-  trawellingTripData: any = null;
-  constructor(
-    private activatedRoute: ActivatedRoute,
-    private apiService: ApiService,
-    private translateService: TranslateService,
-    private dialog: MatDialog,
-    private router: Router
-  ) {
+  trawellingTripData: TrawellingTripContext | null = null;
+  constructor() {
     this.activatedRoute.params.subscribe((p) => (this.id = p.id));
     this.activatedRoute.queryParamMap.subscribe((p) => {
       if (p.has("date")) {
@@ -84,13 +87,17 @@ export class WizzardStep2Component implements OnInit {
       } else {
         this.dateTime = null;
       }
-      
+
       // Check if coming from Träwelling
-      if (p.has("fromTraewelling")) {
+      if (p.has('traewellingTripId')) {
         this.fromTraewelling = true;
-        const tripDataStr = sessionStorage.getItem('trawellingTripData');
+        const tripDataStr = sessionStorage.getItem('traewellingTripContext');
         if (tripDataStr) {
-          this.trawellingTripData = JSON.parse(tripDataStr);
+          const trawellingTripData = JSON.parse(tripDataStr) as TrawellingTripContext;
+          if (trawellingTripData.tripId === +p.get('traewellingTripId')) {
+            // If the IDs match, use the data
+            this.trawellingTripData = trawellingTripData;
+          }
         }
       }
     });
@@ -136,10 +143,8 @@ export class WizzardStep2Component implements OnInit {
           (route) => {
             // If this comes from Träwelling, navigate to route edit with trip data pre-populated
             if (this.fromTraewelling && this.trawellingTripData) {
-              // Store trip data for route instance creation
-              sessionStorage.setItem('trawellingTripDataForInstance', JSON.stringify(this.trawellingTripData));
               this.router.navigate(["/", "admin", "routes", route.routeId], {
-                queryParams: { fromTraewelling: 'true' }
+                queryParams: { traewellingTripId: this.trawellingTripData.tripId }
               });
             } else {
               this.router.navigate(["/", "admin", "routes", route.routeId]);

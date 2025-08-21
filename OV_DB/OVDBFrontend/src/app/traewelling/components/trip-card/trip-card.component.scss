@@ -1,7 +1,7 @@
 .trip-card {
   margin-bottom: 8px;
   overflow: hidden;
-  
+
   @media (max-width: 768px) {
     margin-bottom: 6px;
   }
@@ -12,12 +12,12 @@
   justify-content: space-between;
   align-items: center;
   padding: 12px 16px;
-  
+
   .transport-info {
     display: flex;
     align-items: center;
     gap: 12px;
-    
+
     .transport-icon {
       width: 32px;
       height: 32px;
@@ -26,21 +26,21 @@
       align-items: center;
       justify-content: center;
       color: white;
-      
+
       mat-icon {
         font-size: 18px;
         width: 18px;
         height: 18px;
       }
     }
-    
+
     .line-info {
       .line-number {
         font-weight: 600;
         font-size: 16px;
         line-height: 1.2;
       }
-      
+
       .journey-number {
         font-size: 12px;
         color: var(--text-secondary);
@@ -48,25 +48,25 @@
       }
     }
   }
-  
+
   .trip-meta {
     display: flex;
     flex-direction: column;
     align-items: flex-end;
     gap: 4px;
-    font-size: 12px;
-    
+
     @media (max-width: 480px) {
       flex-direction: row;
       gap: 8px;
     }
-    
-    .trip-date, .trip-duration {
+
+    .trip-date,
+    .trip-duration {
       display: flex;
       align-items: center;
       gap: 4px;
       color: var(--text-secondary);
-      
+
       mat-icon {
         font-size: 14px;
         width: 14px;
@@ -78,30 +78,32 @@
 
 .route-info {
   padding: 8px 16px;
-  
+  display: flex;
+  justify-content: space-between;
+
   .station-row {
     display: flex;
     align-items: center;
     padding: 4px 0;
-    
+
     .station-content {
       flex: 1;
-      
+
       .station-name {
         font-weight: 500;
         font-size: 14px;
         display: block;
         margin-bottom: 2px;
       }
-      
+
       .timing {
         font-size: 12px;
         color: var(--text-secondary);
-        
+
         &.delayed {
           color: var(--warn-color);
         }
-        
+
         .actual-time {
           color: var(--warn-color);
           font-weight: 500;
@@ -110,29 +112,30 @@
       }
     }
   }
-  
+
   .route-connector {
     display: flex;
     flex-direction: column;
     align-items: center;
     padding: 4px 0;
-    
+
     mat-icon {
       color: var(--text-secondary);
-      font-size: 16px;
+      font-size: 24px;
     }
-    
-    .distance {
+
+    .distance-time {
       font-size: 10px;
       color: var(--text-secondary);
       margin-top: 2px;
+      white-space: nowrap;
     }
   }
 }
 
 .trip-description {
   padding: 0 16px 8px;
-  
+
   p {
     margin: 0;
     font-size: 13px;
@@ -144,64 +147,64 @@
 
 .trip-tags {
   padding: 0 16px 8px;
-  
-  .tag-chips {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 4px;
-    
-    .tag-chip {
-      font-size: 11px;
-      min-height: 24px;
-      border-radius: 12px;
-      
-      .tag-key {
-        font-weight: 500;
-        color: var(--text-primary);
-      }
-      
-      .tag-value {
-        color: var(--text-secondary);
-        margin-left: 4px;
-      }
-      
-      &::before {
-        content: '';
-        margin-right: 4px;
-      }
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+
+
+  .tag-chip {
+    font-size: 11px;
+    min-height: 24px;
+    border-radius: 12px;
+
+    .tag-key {
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+
+    .tag-value {
+      color: var(--text-secondary);
+      margin-left: 4px;
+    }
+
+    &::before {
+      content: '';
+      margin-right: 4px;
     }
   }
+
 }
 
 .trip-actions {
   padding: 8px 16px 12px;
-  
+
   .actions-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    
+
     .primary-actions {
       display: flex;
       gap: 8px;
-      
-      button {
-        width: 36px;
-        height: 36px;
-        
-        mat-icon {
-          font-size: 16px;
-          width: 16px;
-          height: 16px;
-        }
-      }
+      flex-wrap: wrap;
+
+      // button {
+      //   width: 36px;
+      //   height: 36px;
+
+      //   mat-icon {
+      //     font-size: 16px;
+      //     width: 16px;
+      //     height: 16px;
+      //   }
+      // }
     }
-    
+
     .secondary-actions {
       button {
         width: 32px;
         height: 32px;
-        
+
         mat-icon {
           font-size: 14px;
           width: 14px;
@@ -210,7 +213,7 @@
       }
     }
   }
-  
+
   .processing-indicator {
     display: flex;
     align-items: center;

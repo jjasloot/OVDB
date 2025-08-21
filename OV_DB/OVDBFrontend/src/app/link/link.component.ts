@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { ActivatedRoute, ParamMap } from '@angular/router';
 import { ApiService } from '../services/api.service';
 import { MapComponent } from '../map/map.component';
@@ -12,14 +12,12 @@ import { TranslateModule } from '@ngx-translate/core';
     imports: [MapComponent, MatProgressSpinner, TranslateModule]
 })
 export class LinkComponent implements OnInit {
+  private activatedRoute = inject(ActivatedRoute);
+  private apiService = inject(ApiService);
+
   guid: string;
   error = false;
   loading = true;
-
-  constructor(
-    private activatedRoute: ActivatedRoute,
-    private apiService: ApiService
-  ) { }
 
   ngOnInit() {
     this.activatedRoute.paramMap.subscribe((paramMap: ParamMap) => {
