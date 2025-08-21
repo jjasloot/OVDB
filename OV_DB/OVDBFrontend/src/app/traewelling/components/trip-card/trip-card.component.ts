@@ -6,6 +6,8 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatDividerModule } from '@angular/material/divider';
+import { TranslateModule } from '@ngx-translate/core';
 import { Router } from '@angular/router';
 import { TrawellingTrip } from '../../../models/traewelling.model';
 import { TrawellingService } from '../../services/traewelling.service';
@@ -23,43 +25,47 @@ import { MatDialog } from '@angular/material/dialog';
     MatIconModule,
     MatChipsModule,
     MatMenuModule,
-    MatProgressSpinnerModule
+    MatProgressSpinnerModule,
+    MatDividerModule,
+    TranslateModule
   ],
   template: `
     <mat-card class="trip-card">
-      <!-- Trip Header -->
-      <mat-card-header class="trip-header">
+      <!-- Compact Trip Header -->
+      <div class="trip-header">
+        <!-- Transport Icon and Line Info -->
         <div class="transport-info">
-          <!-- Transport Icon -->
           <div class="transport-icon" [style.background-color]="getTransportColor()">
             <mat-icon>{{ getTransportIcon() }}</mat-icon>
           </div>
-          
-          <!-- Line and Journey Numbers -->
           <div class="line-info">
             <div class="line-number">{{ trip.transport.lineName }}</div>
-            <div *ngIf="getJourneyNumber()" class="journey-number">
-              {{ getJourneyNumber() }}
-            </div>
+            <div *ngIf="getJourneyNumber()" class="journey-number">{{ getJourneyNumber() }}</div>
           </div>
         </div>
 
-        <!-- Date -->
-        <div class="trip-date">
-          <mat-icon>calendar_today</mat-icon>
-          {{ trawellingService.formatDate(trip.createdAt) }}
+        <!-- Date and Duration -->
+        <div class="trip-meta">
+          <div class="trip-date">
+            <mat-icon>event</mat-icon>
+            {{ trawellingService.formatDate(trip.createdAt) }}
+          </div>
+          <div class="trip-duration">
+            <mat-icon>schedule</mat-icon>
+            {{ trawellingService.formatDuration(trip.transport.duration) }}
+          </div>
         </div>
-      </mat-card-header>
+      </div>
 
-      <!-- Route Information -->
-      <mat-card-content class="route-info">
-        <!-- Origin -->
-        <div class="station-info origin">
-          <div class="station-name">{{ trip.transport.origin.name }}</div>
-          <div class="timing-info">
-            <div class="departure-time" [class.delayed]="trip.transport.origin.isDepartureDelayed">
-              <mat-icon>schedule</mat-icon>
-              <span>{{ trawellingService.formatTime(trip.transport.origin.departureScheduled) }}</span>
+      <mat-divider></mat-divider>
+
+      <!-- Route Information (Compact) -->
+      <div class="route-info">
+        <div class="station-row origin">
+          <div class="station-content">
+            <span class="station-name">{{ trip.transport.origin.name }}</span>
+            <div class="timing" [class.delayed]="trip.transport.origin.isDepartureDelayed">
+              <span class="scheduled-time">{{ trawellingService.formatTime(trip.transport.origin.departureScheduled) }}</span>
               <span *ngIf="trip.transport.origin.departureReal && 
                           trip.transport.origin.departureReal !== trip.transport.origin.departureScheduled"
                     class="actual-time">
@@ -69,18 +75,16 @@ import { MatDialog } from '@angular/material/dialog';
           </div>
         </div>
 
-        <!-- Arrow -->
-        <div class="route-arrow">
-          <mat-icon>arrow_forward</mat-icon>
+        <div class="route-connector">
+          <mat-icon>arrow_downward</mat-icon>
+          <div class="distance">{{ trawellingService.formatDistance(trip.transport.distance) }}</div>
         </div>
 
-        <!-- Destination -->
-        <div class="station-info destination">
-          <div class="station-name">{{ trip.transport.destination.name }}</div>
-          <div class="timing-info">
-            <div class="arrival-time" [class.delayed]="trip.transport.destination.isArrivalDelayed">
-              <mat-icon>schedule</mat-icon>
-              <span>{{ trawellingService.formatTime(trip.transport.destination.arrivalScheduled) }}</span>
+        <div class="station-row destination">
+          <div class="station-content">
+            <span class="station-name">{{ trip.transport.destination.name }}</span>
+            <div class="timing" [class.delayed]="trip.transport.destination.isArrivalDelayed">
+              <span class="scheduled-time">{{ trawellingService.formatTime(trip.transport.destination.arrivalScheduled) }}</span>
               <span *ngIf="trip.transport.destination.arrivalReal && 
                           trip.transport.destination.arrivalReal !== trip.transport.destination.arrivalScheduled"
                     class="actual-time">
@@ -89,89 +93,81 @@ import { MatDialog } from '@angular/material/dialog';
             </div>
           </div>
         </div>
-      </mat-card-content>
-
-      <!-- Trip Metadata -->
-      <div class="trip-metadata">
-        <div class="metadata-item">
-          <mat-icon>access_time</mat-icon>
-          <span>{{ trawellingService.formatDuration(trip.transport.duration) }}</span>
-        </div>
-        <div class="metadata-item">
-          <mat-icon>straighten</mat-icon>
-          <span>{{ trawellingService.formatDistance(trip.transport.distance) }}</span>
-        </div>
       </div>
 
-      <!-- Trip Description -->
+      <!-- Trip Description (Compact) -->
       <div *ngIf="trip.body" class="trip-description">
         <p>{{ trip.body }}</p>
       </div>
 
-      <!-- Tags -->
+      <!-- Tags (Improved) -->
       <div *ngIf="trip.tags.length > 0" class="trip-tags">
-        <mat-chip-listbox>
-          <mat-chip-option *ngFor="let tag of trip.tags" disabled>
-            <strong>{{ tag.key }}:</strong> {{ tag.value }}
+        <mat-chip-listbox class="tag-chips">
+          <mat-chip-option *ngFor="let tag of trip.tags" disabled class="tag-chip">
+            <span class="tag-key">{{ tag.key }}</span>
+            <span class="tag-value">{{ tag.value }}</span>
           </mat-chip-option>
         </mat-chip-listbox>
       </div>
 
-      <!-- Actions -->
+      <mat-divider></mat-divider>
+
+      <!-- Compact Actions -->
       <mat-card-actions class="trip-actions">
-        <div class="actions-grid">
-          <!-- Connect to Existing RouteInstance -->
-          <button 
-            mat-raised-button 
-            color="primary" 
-            (click)="openRouteInstanceSearch()"
-            [disabled]="isProcessing">
-            <mat-icon>link</mat-icon>
-            Connect to RouteInstance
-          </button>
+        <div class="actions-row">
+          <!-- Primary Actions -->
+          <div class="primary-actions">
+            <button 
+              mat-mini-fab 
+              color="primary" 
+              (click)="openRouteInstanceSearch()"
+              [disabled]="isProcessing"
+              [title]="'TRAEWELLING.CONNECT_TO_INSTANCE' | translate">
+              <mat-icon>link</mat-icon>
+            </button>
 
-          <!-- Connect to Existing Route -->
-          <button 
-            mat-raised-button 
-            color="accent" 
-            (click)="openRouteSearch()"
-            [disabled]="isProcessing">
-            <mat-icon>add_road</mat-icon>
-            Add to Existing Route
-          </button>
+            <button 
+              mat-mini-fab 
+              color="accent" 
+              (click)="openRouteSearch()"
+              [disabled]="isProcessing"
+              [title]="'TRAEWELLING.ADD_TO_ROUTE' | translate">
+              <mat-icon>add_road</mat-icon>
+            </button>
 
-          <!-- Create New Route (Wizard) -->
-          <button 
-            mat-raised-button 
-            (click)="createRouteViaWizard()"
-            [disabled]="isProcessing">
-            <mat-icon>assistant</mat-icon>
-            Create Route (Wizard)
-          </button>
+            <button 
+              mat-mini-fab 
+              (click)="createRouteViaWizard()"
+              [disabled]="isProcessing"
+              [title]="'TRAEWELLING.CREATE_WIZARD' | translate">
+              <mat-icon>assistant</mat-icon>
+            </button>
 
-          <!-- Create New Route (GPX Upload) -->
-          <button 
-            mat-raised-button 
-            (click)="createRouteViaGPX()"
-            [disabled]="isProcessing">
-            <mat-icon>upload_file</mat-icon>
-            Create Route (GPX)
-          </button>
+            <button 
+              mat-mini-fab 
+              (click)="createRouteViaGPX()"
+              [disabled]="isProcessing"
+              [title]="'TRAEWELLING.CREATE_GPX' | translate">
+              <mat-icon>upload_file</mat-icon>
+            </button>
+          </div>
 
-          <!-- Ignore Trip -->
-          <button 
-            mat-button 
-            color="warn" 
-            (click)="ignoreTrip()"
-            [disabled]="isProcessing">
-            <mat-icon>visibility_off</mat-icon>
-            Ignore
-          </button>
+          <!-- Secondary Actions -->
+          <div class="secondary-actions">
+            <button 
+              mat-icon-button 
+              color="warn" 
+              (click)="ignoreTrip()"
+              [disabled]="isProcessing"
+              [title]="'TRAEWELLING.IGNORE_TRIP' | translate">
+              <mat-icon>visibility_off</mat-icon>
+            </button>
+          </div>
         </div>
 
         <!-- Processing Indicator -->
         <div *ngIf="isProcessing" class="processing-indicator">
-          <mat-spinner diameter="20"></mat-spinner>
+          <mat-spinner diameter="16"></mat-spinner>
           <span>{{ processingMessage }}</span>
         </div>
       </mat-card-actions>

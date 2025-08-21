@@ -1,9 +1,9 @@
 .trip-card {
-  margin-bottom: 16px;
+  margin-bottom: 8px;
   overflow: hidden;
   
   @media (max-width: 768px) {
-    margin-bottom: 12px;
+    margin-bottom: 6px;
   }
 }
 
@@ -11,13 +11,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding-bottom: 16px;
-  
-  @media (max-width: 480px) {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
-  }
+  padding: 12px 16px;
   
   .transport-info {
     display: flex;
@@ -25,8 +19,8 @@
     gap: 12px;
     
     .transport-icon {
-      width: 40px;
-      height: 40px;
+      width: 32px;
+      height: 32px;
       border-radius: 50%;
       display: flex;
       align-items: center;
@@ -34,201 +28,185 @@
       color: white;
       
       mat-icon {
-        font-size: 20px;
+        font-size: 18px;
+        width: 18px;
+        height: 18px;
       }
     }
     
     .line-info {
       .line-number {
         font-weight: 600;
-        font-size: 18px;
+        font-size: 16px;
+        line-height: 1.2;
       }
       
       .journey-number {
-        font-size: 14px;
-        color: rgba(0, 0, 0, 0.6);
+        font-size: 12px;
+        color: var(--text-secondary);
+        line-height: 1.2;
       }
     }
   }
   
-  .trip-date {
+  .trip-meta {
     display: flex;
-    align-items: center;
+    flex-direction: column;
+    align-items: flex-end;
     gap: 4px;
-    color: rgba(0, 0, 0, 0.6);
-    font-size: 14px;
+    font-size: 12px;
     
-    mat-icon {
-      font-size: 16px;
-      width: 16px;
-      height: 16px;
+    @media (max-width: 480px) {
+      flex-direction: row;
+      gap: 8px;
+    }
+    
+    .trip-date, .trip-duration {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      color: var(--text-secondary);
+      
+      mat-icon {
+        font-size: 14px;
+        width: 14px;
+        height: 14px;
+      }
     }
   }
 }
 
 .route-info {
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
-  gap: 16px;
-  align-items: center;
-  margin: 16px 0;
+  padding: 8px 16px;
   
-  @media (max-width: 480px) {
-    grid-template-columns: 1fr;
-    gap: 12px;
-  }
-  
-  .station-info {
-    &.origin {
-      text-align: left;
-    }
+  .station-row {
+    display: flex;
+    align-items: center;
+    padding: 4px 0;
     
-    &.destination {
-      text-align: right;
+    .station-content {
+      flex: 1;
       
-      @media (max-width: 480px) {
-        text-align: left;
-      }
-    }
-    
-    .station-name {
-      font-weight: 500;
-      font-size: 16px;
-      margin-bottom: 4px;
-    }
-    
-    .timing-info {
-      .departure-time,
-      .arrival-time {
-        display: flex;
-        align-items: center;
-        gap: 4px;
+      .station-name {
+        font-weight: 500;
         font-size: 14px;
-        color: rgba(0, 0, 0, 0.7);
-        
-        @media (max-width: 480px) {
-          justify-content: flex-start;
-        }
+        display: block;
+        margin-bottom: 2px;
+      }
+      
+      .timing {
+        font-size: 12px;
+        color: var(--text-secondary);
         
         &.delayed {
-          color: #f44336;
-        }
-        
-        mat-icon {
-          font-size: 14px;
-          width: 14px;
-          height: 14px;
+          color: var(--warn-color);
         }
         
         .actual-time {
-          color: #f44336;
+          color: var(--warn-color);
           font-weight: 500;
-        }
-      }
-      
-      .arrival-time {
-        @media (min-width: 481px) {
-          justify-content: flex-end;
+          margin-left: 4px;
         }
       }
     }
   }
   
-  .route-arrow {
-    text-align: center;
-    color: rgba(0, 0, 0, 0.5);
-    
-    @media (max-width: 480px) {
-      display: none;
-    }
-  }
-}
-
-.trip-metadata {
-  display: flex;
-  gap: 16px;
-  margin: 12px 0;
-  
-  @media (max-width: 480px) {
-    flex-wrap: wrap;
-    gap: 12px;
-  }
-  
-  .metadata-item {
+  .route-connector {
     display: flex;
+    flex-direction: column;
     align-items: center;
-    gap: 4px;
-    font-size: 14px;
-    color: rgba(0, 0, 0, 0.6);
+    padding: 4px 0;
     
     mat-icon {
+      color: var(--text-secondary);
       font-size: 16px;
-      width: 16px;
-      height: 16px;
+    }
+    
+    .distance {
+      font-size: 10px;
+      color: var(--text-secondary);
+      margin-top: 2px;
     }
   }
 }
 
 .trip-description {
-  margin: 12px 0;
+  padding: 0 16px 8px;
   
   p {
     margin: 0;
+    font-size: 13px;
     font-style: italic;
-    color: rgba(0, 0, 0, 0.7);
-    line-height: 1.4;
+    color: var(--text-secondary);
+    line-height: 1.3;
   }
 }
 
 .trip-tags {
-  margin: 12px 0;
+  padding: 0 16px 8px;
   
-  mat-chip-listbox {
-    mat-chip-option {
-      font-size: 12px;
+  .tag-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    
+    .tag-chip {
+      font-size: 11px;
+      min-height: 24px;
+      border-radius: 12px;
       
-      strong {
-        color: rgba(0, 0, 0, 0.8);
+      .tag-key {
+        font-weight: 500;
+        color: var(--text-primary);
+      }
+      
+      .tag-value {
+        color: var(--text-secondary);
+        margin-left: 4px;
+      }
+      
+      &::before {
+        content: '';
+        margin-right: 4px;
       }
     }
   }
 }
 
 .trip-actions {
-  padding-top: 16px;
+  padding: 8px 16px 12px;
   
-  .actions-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
+  .actions-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     
-    @media (max-width: 768px) {
-      grid-template-columns: 1fr;
+    .primary-actions {
+      display: flex;
+      gap: 8px;
       
       button {
-        width: 100%;
-      }
-    }
-    
-    button {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      min-height: 40px;
-      font-size: 13px;
-      
-      @media (max-width: 480px) {
-        font-size: 12px;
-        min-height: 36px;
+        width: 36px;
+        height: 36px;
         
         mat-icon {
           font-size: 16px;
+          width: 16px;
+          height: 16px;
         }
       }
-      
-      mat-icon {
-        font-size: 18px;
+    }
+    
+    .secondary-actions {
+      button {
+        width: 32px;
+        height: 32px;
+        
+        mat-icon {
+          font-size: 14px;
+          width: 14px;
+          height: 14px;
+        }
       }
     }
   }
@@ -237,47 +215,25 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
-    margin-top: 12px;
-    color: rgba(0, 0, 0, 0.6);
-    font-size: 14px;
+    gap: 6px;
+    margin-top: 8px;
+    color: var(--text-secondary);
+    font-size: 12px;
   }
 }
 
-// Dark mode support
+// Light theme colors
+:root {
+  --text-primary: rgba(0, 0, 0, 0.87);
+  --text-secondary: rgba(0, 0, 0, 0.6);
+  --warn-color: #f44336;
+}
+
+// Dark theme colors
 @media (prefers-color-scheme: dark) {
-  .trip-header {
-    .line-info .journey-number {
-      color: rgba(255, 255, 255, 0.6);
-    }
-    
-    .trip-date {
-      color: rgba(255, 255, 255, 0.6);
-    }
-  }
-  
-  .route-info {
-    .station-info .timing-info {
-      .departure-time,
-      .arrival-time {
-        color: rgba(255, 255, 255, 0.7);
-      }
-    }
-    
-    .route-arrow {
-      color: rgba(255, 255, 255, 0.5);
-    }
-  }
-  
-  .trip-metadata .metadata-item {
-    color: rgba(255, 255, 255, 0.6);
-  }
-  
-  .trip-description p {
-    color: rgba(255, 255, 255, 0.7);
-  }
-  
-  .trip-actions .processing-indicator {
-    color: rgba(255, 255, 255, 0.6);
+  :root {
+    --text-primary: rgba(255, 255, 255, 0.87);
+    --text-secondary: rgba(255, 255, 255, 0.6);
+    --warn-color: #ff5252;
   }
 }

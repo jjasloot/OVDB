@@ -5,6 +5,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { TranslateModule } from '@ngx-translate/core';
 import { TrawellingService } from './services/traewelling.service';
 import { 
   TrawellingConnectionStatus, 
@@ -22,6 +23,7 @@ import { TripCardComponent } from './components/trip-card/trip-card.component';
     MatButtonModule,
     MatIconModule,
     MatProgressSpinnerModule,
+    TranslateModule,
     TripCardComponent
   ],
   template: `
@@ -33,10 +35,10 @@ import { TripCardComponent } from './components/trip-card/trip-card.component';
             <mat-icon [class]="connectionStatus?.connected ? 'connected-icon' : 'disconnected-icon'">
               {{ connectionStatus?.connected ? 'link' : 'link_off' }}
             </mat-icon>
-            Träwelling Integration
+            {{ 'TRAEWELLING.TITLE' | translate }}
           </mat-card-title>
           <mat-card-subtitle *ngIf="connectionStatus?.user">
-            Connected as {{ connectionStatus.user.displayName }}
+            {{ 'TRAEWELLING_CONNECTED' | translate }} {{ connectionStatus.user.displayName }}
           </mat-card-subtitle>
         </mat-card-header>
       </mat-card>
@@ -51,8 +53,8 @@ import { TripCardComponent } from './components/trip-card/trip-card.component';
       <mat-card *ngIf="!isLoading && trips.length === 0" class="empty-card">
         <mat-card-content class="empty-content">
           <mat-icon class="empty-icon">train</mat-icon>
-          <h3>No Unimported Trips Found</h3>
-          <p>All your recent Träwelling trips have been imported or ignored. Check back later for new trips!</p>
+          <h3>{{ 'TRAEWELLING.NO_UNIMPORTED_TRIPS_TITLE' | translate }}</h3>
+          <p>{{ 'TRAEWELLING.NO_UNIMPORTED_TRIPS_MESSAGE' | translate }}</p>
         </mat-card-content>
       </mat-card>
 
@@ -74,7 +76,7 @@ import { TripCardComponent } from './components/trip-card/trip-card.component';
             (click)="loadMoreTrips()"
             [disabled]="isLoadingMore">
             <mat-icon *ngIf="isLoadingMore">hourglass_empty</mat-icon>
-            {{ isLoadingMore ? 'Loading more trips...' : 'Load More Trips' }}
+            {{ isLoadingMore ? ('TRAEWELLING.LOADING_MORE' | translate) : ('TRAEWELLING.LOAD_MORE' | translate) }}
           </button>
         </div>
       </div>

@@ -9,7 +9,7 @@
 }
 
 .connection-card {
-  margin-bottom: 24px;
+  margin-bottom: 16px;
   
   &.connected {
     border-left: 4px solid #4CAF50;
@@ -44,33 +44,36 @@
   
   p {
     margin-top: 16px;
-    color: rgba(0, 0, 0, 0.6);
+    color: var(--text-secondary);
   }
 }
 
 .empty-card {
-  margin: 24px 0;
+  margin: 16px 0;
   
   .empty-content {
     text-align: center;
-    padding: 48px 24px;
+    padding: 32px 24px;
     
     .empty-icon {
-      font-size: 64px;
-      width: 64px;
-      height: 64px;
-      color: rgba(0, 0, 0, 0.3);
+      font-size: 48px;
+      width: 48px;
+      height: 48px;
+      color: var(--text-secondary);
+      opacity: 0.5;
       margin-bottom: 16px;
     }
     
     h3 {
       margin: 0 0 8px 0;
-      color: rgba(0, 0, 0, 0.6);
+      color: var(--text-secondary);
+      font-size: 18px;
     }
     
     p {
       margin: 0;
-      color: rgba(0, 0, 0, 0.5);
+      color: var(--text-secondary);
+      font-size: 14px;
       max-width: 400px;
       margin: 0 auto;
     }
@@ -80,13 +83,13 @@
 .trips-container {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 8px;
 }
 
 .load-more-container {
   display: flex;
   justify-content: center;
-  margin: 24px 0;
+  margin: 16px 0;
   
   button {
     min-width: 200px;
@@ -97,23 +100,18 @@
   }
 }
 
-// Dark mode support
+// Light theme colors
+:root {
+  --text-primary: rgba(0, 0, 0, 0.87);
+  --text-secondary: rgba(0, 0, 0, 0.6);
+  --warn-color: #f44336;
+}
+
+// Dark theme colors  
 @media (prefers-color-scheme: dark) {
-  .loading-container p {
-    color: rgba(255, 255, 255, 0.6);
-  }
-  
-  .empty-content {
-    .empty-icon {
-      color: rgba(255, 255, 255, 0.3);
-    }
-    
-    h3 {
-      color: rgba(255, 255, 255, 0.6);
-    }
-    
-    p {
-      color: rgba(255, 255, 255, 0.5);
-    }
+  :root {
+    --text-primary: rgba(255, 255, 255, 0.87);
+    --text-secondary: rgba(255, 255, 255, 0.6);
+    --warn-color: #ff5252;
   }
 }
