@@ -1,4 +1,4 @@
-import { Component, OnInit } from "@angular/core";
+import { Component, OnInit, inject } from "@angular/core";
 import { RequestForUser } from "src/app/models/requests.model";
 import { RequestsService } from "src/app/services/requests.service";
 import { TranslationService } from "src/app/services/translation.service";
@@ -24,12 +24,11 @@ import { TranslateModule } from "@ngx-translate/core";
     ]
 })
 export class RequestsListComponent implements OnInit {
+  private requestsService = inject(RequestsService);
+  private translationService = inject(TranslationService);
+
   requests: RequestForUser[];
   newRequest?: string;
-  constructor(
-    private requestsService: RequestsService,
-    private translationService: TranslationService
-  ) {}
 
   ngOnInit(): void {
     this.requestsService.getUserRequests().subscribe((requests) => {

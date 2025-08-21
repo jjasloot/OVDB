@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
 import { AuthenticationService } from './authentication.service';
 import { ApiService } from './api.service';
 import { TranslationService } from './translation.service';
@@ -7,12 +7,10 @@ import { TranslationService } from './translation.service';
   providedIn: 'root'
 })
 export class UserPreferenceService {
-
-  constructor(
-    private authService: AuthenticationService,
-    private apiService: ApiService,
-    private translationService: TranslationService
-  ) { }
+  private authService = inject(AuthenticationService);
+  private apiService = inject(ApiService);
+  private translationService = inject(TranslationService);
+  hasTraewelling = signal(false);
 
   applyUserLanguagePreference(): void {
     // Only fetch profile if we have a valid token
@@ -23,6 +21,7 @@ export class UserPreferenceService {
           if (profile.preferredLanguage && profile.preferredLanguage !== this.translationService.language) {
             this.translationService.language = profile.preferredLanguage as 'nl' | 'en';
           }
+          this.hasTraewelling.set(profile.hasTraewelling ?? false);
         },
         error: (error) => {
           // Silently fail - if profile can't be fetched, just use browser language

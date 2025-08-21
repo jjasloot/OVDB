@@ -1,5 +1,5 @@
 import { NgClass } from '@angular/common';
-import { Component, Signal, viewChild, OnInit } from '@angular/core';
+import { Component, Signal, viewChild, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButton } from '@angular/material/button';
 import { MatCard, MatCardContent, MatCardTitle } from '@angular/material/card';
@@ -25,6 +25,10 @@ import { MatTabsModule } from '@angular/material/tabs';
   styleUrl: './time-stats.component.scss'
 })
 export class TimeStatsComponent implements OnInit {
+  private apiService = inject(ApiService);
+  private translationService = inject(TranslationService);
+  translateService = inject(TranslateService);
+
   data: ChartConfiguration['data'];
   singleData: any;
 
@@ -96,13 +100,6 @@ export class TimeStatsComponent implements OnInit {
     // overlays: this.layers
   };
   maps: Map[];
-
-
-  constructor(
-    private apiService: ApiService,
-    private translationService: TranslationService,
-    public translateService: TranslateService,
-  ) { }
 
   ngOnInit(): void {
     this.apiService.getMaps().subscribe(maps => {

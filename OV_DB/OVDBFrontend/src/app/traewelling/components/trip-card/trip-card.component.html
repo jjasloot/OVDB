@@ -1,0 +1,129 @@
+<mat-card class="trip-card">
+  <!-- Compact Trip Header -->
+  <div class="trip-header">
+    <!-- Transport Icon and Line Info -->
+    <div class="transport-info">
+      <div class="transport-icon" [style.background-color]="getTransportColor()">
+        <mat-icon>{{ getTransportIcon() }}</mat-icon>
+      </div>
+      <div class="line-info">
+        <div class="line-number">{{ trip.transport.lineName }}</div>
+        @if(getJourneyNumber()){
+        <div class="journey-number">{{ getJourneyNumber() }}</div>
+        }
+      </div>
+    </div>
+    <!-- Date and Duration -->
+    <div class="trip-meta">
+      <div class="trip-date">
+        <mat-icon>event</mat-icon>
+        {{ trawellingService.formatDate(trip.createdAt) }}
+      </div>
+    </div>
+  </div>
+
+  <mat-divider></mat-divider>
+
+  <!-- Route Information (Compact) -->
+  <div class="route-info">
+    <div class="station-row origin" style="flex: 1 1 50%;">
+      <div class="station-content">
+        <span class="station-name">{{ trip.transport.origin.name }}</span>
+        <div class="timing" [class.delayed]="trip.transport.origin.isDepartureDelayed">
+          <span class="scheduled-time">{{ trawellingService.formatTime(trip.transport.origin.departureScheduled)
+            }}</span>
+          @if(trip.transport.origin.departureReal && trip.transport.origin.departureReal !==
+          trip.transport.origin.departureScheduled){
+          <span class="actual-time">
+            ({{ trawellingService.formatTime(trip.transport.origin.departureReal) }})
+          </span>
+          }
+        </div>
+      </div>
+    </div>
+
+    <div class="route-connector">
+      <mat-icon>arrow_forward</mat-icon>
+      <div class="distance-time">{{ trawellingService.formatDistance(trip.transport.distance) }} | {{
+        trawellingService.formatDuration(trip.transport.duration) }}</div>
+    </div>
+    <div class="station-row destination" style="flex: 1 1 50%; text-align: right;">
+      <div class="station-content">
+        <span class="station-name">{{ trip.transport.destination.name }}</span>
+        <div class="timing" [class.delayed]="trip.transport.destination.isArrivalDelayed">
+          <span class="scheduled-time">{{ trawellingService.formatTime(trip.transport.destination.arrivalScheduled)
+            }}</span>
+          @if(trip.transport.destination.arrivalReal && trip.transport.destination.arrivalReal !==
+          trip.transport.destination.arrivalScheduled){
+          <span class="actual-time">
+            ({{ trawellingService.formatTime(trip.transport.destination.arrivalReal) }})
+          </span>
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+
+  @if(trip.body || trip.tags.length > 0){
+  <div class="trip-description">
+    <p>{{ trip.body }}</p>
+  </div>
+  }
+
+  @if(trip.tags?.length>0){ <div class="trip-tags">
+    @for(tag of trip.tags; track tag.key) {
+    <mat-chip class="tag-chip">
+      <span class="tag-key">{{ tag.key }}</span>
+      <span class="tag-value">{{ tag.value }}</span>
+    </mat-chip>
+    }
+  </div>
+  }
+
+  <mat-divider></mat-divider>
+
+  <!-- Compact Actions -->
+  <mat-card-actions class="trip-actions">
+    <div class="actions-row">
+      <!-- Primary Actions -->
+      <div class="primary-actions">
+        <button mat-raised-button color="accent" (click)="openRouteSearch()" [disabled]="isProcessing"
+          [title]="'TRAEWELLING.ADD_TO_ROUTE' | translate">
+          <mat-icon>add_road</mat-icon>
+          {{ 'TRAEWELLING.ADD_TO_ROUTE' | translate }}
+        </button>
+
+        <button mat-raised-button (click)="createRouteViaWizard()" [disabled]="isProcessing"
+          [title]="'TRAEWELLING.CREATE_WIZARD' | translate">
+          <mat-icon>assistant</mat-icon>
+          {{ 'TRAEWELLING.CREATE_WIZARD' | translate }}
+        </button>
+
+        <button mat-raised-button (click)="createRouteViaGPX()" [disabled]="isProcessing"
+          [title]="'TRAEWELLING.CREATE_GPX' | translate">
+          <mat-icon>upload_file</mat-icon>
+          {{ 'TRAEWELLING.CREATE_GPX' | translate }}
+        </button>
+        <button mat-raised-button color="primary" (click)="openRouteInstanceSearch()" [disabled]="isProcessing"
+          [title]="'TRAEWELLING.CONNECT_TO_INSTANCE' | translate">
+          <mat-icon>link</mat-icon>
+          {{ 'TRAEWELLING.CONNECT_TO_INSTANCE' | translate }}
+        </button>
+
+        <button mat-raised-button (click)="ignoreTrip()" [disabled]="isProcessing"
+          [title]="'TRAEWELLING.IGNORE_TRIP' | translate">
+          <mat-icon>visibility_off</mat-icon>
+          {{ 'TRAEWELLING.IGNORE_TRIP' | translate }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Processing Indicator -->
+    @if(isProcessing){
+    <div class="processing-indicator">
+      <mat-spinner diameter="16"></mat-spinner>
+      <span>{{ processingMessage }}</span>
+    </div>
+    }
+  </mat-card-actions>
+</mat-card>

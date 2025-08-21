@@ -1,4 +1,4 @@
-import { Component, OnInit, Inject } from "@angular/core";
+import { Component, OnInit, inject } from "@angular/core";
 import { MatCheckboxChange, MatCheckbox } from "@angular/material/checkbox";
 import { MatDialogRef, MAT_DIALOG_DATA, MatDialogTitle, MatDialogContent, MatDialogActions } from "@angular/material/dialog";
 import { FilterSettings } from "../models/filterSettings";
@@ -50,6 +50,14 @@ import { MatButton } from "@angular/material/button";
   ]
 })
 export class MapFilterComponent implements OnInit {
+  private apiService = inject(ApiService);
+  private translateService = inject(TranslateService);
+  private translationService = inject(TranslationService);
+  private dateAdapter = inject<DateAdapter<any>>(DateAdapter);
+  dialogRef = inject<MatDialogRef<MapFilterComponent>>(MatDialogRef);
+  private regionsService = inject(RegionsService);
+  data = inject(MAT_DIALOG_DATA);
+
   settings: FilterSettings;
   regions: Region[] = [];
   selectedCountries: number[] = [];
@@ -63,15 +71,9 @@ export class MapFilterComponent implements OnInit {
   guid: string;
   includeLineColours = true;
   limitToSelectedAreas = false;
-  constructor(
-    private apiService: ApiService,
-    private translateService: TranslateService,
-    private translationService: TranslationService,
-    private dateAdapter: DateAdapter<any>,
-    public dialogRef: MatDialogRef<MapFilterComponent>,
-    private regionsService: RegionsService,
-    @Inject(MAT_DIALOG_DATA) public data
-  ) {
+  constructor() {
+    const data = this.data;
+
     this.settings = data.settings;
     this.ownMap = data.ownMap;
     this.guid = data.guid;

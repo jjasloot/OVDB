@@ -1,7 +1,9 @@
 <button class="back" mat-button (click)="goBack()">
   {{ "BACK" | translate }}
 </button>
+
 <div class="form">
+  <app-traewelling-context-card [tripContext]="trawellingTripData" />
   @if(!!route){
   <form [formGroup]="form" (ngSubmit)="onSubmit(form.value, false)">
     <mat-form-field>

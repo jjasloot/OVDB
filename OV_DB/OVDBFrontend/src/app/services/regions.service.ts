@@ -1,5 +1,5 @@
 import { HttpClient } from "@angular/common/http";
-import { Injectable } from "@angular/core";
+import { Injectable, inject } from "@angular/core";
 import { environment } from "src/environments/environment";
 import { NewRegion, Region } from "../models/region.model";
 
@@ -7,7 +7,8 @@ import { NewRegion, Region } from "../models/region.model";
   providedIn: "root",
 })
 export class RegionsService {
-  constructor(private httpClient: HttpClient) {}
+  private httpClient = inject(HttpClient);
+
 
   getRegions() {
     return this.httpClient.get<Region[]>(environment.backend + "api/regions");

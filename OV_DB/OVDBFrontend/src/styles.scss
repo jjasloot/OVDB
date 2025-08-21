@@ -144,3 +144,7 @@ body {
 .mdc-fab {
   z-index: 500;
 }
+
+.mat-mdc-text-field-wrapper{
+  background:var(--mat-card-filled-container-color);
+}

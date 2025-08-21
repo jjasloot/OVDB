@@ -1,4 +1,4 @@
-import { Component, OnInit, Inject, viewChild } from '@angular/core';
+import { Component, OnInit, viewChild, inject } from '@angular/core';
 import { MatDialogRef, MAT_DIALOG_DATA, MatDialogTitle, MatDialogContent, MatDialogActions } from '@angular/material/dialog';
 import { ApiService } from 'src/app/services/api.service';
 import { TranslateService, TranslateModule } from '@ngx-translate/core';
@@ -28,6 +28,12 @@ import { JsonPipe } from '@angular/common';
     imports: [MatDialogTitle, CdkScrollable, MatDialogContent, MatCheckbox, FormsModule, MatFormField, MatLabel, MatInput, MatDatepickerInput, MatDatepickerToggle, MatSuffix, MatDatepicker, MatSelect, MatOption, MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle, MatExpansionPanelDescription, MatSelectionList, MatListOption, MatDialogActions, MatButton, JsonPipe, TranslateModule]
 })
 export class EditMultipleComponent implements OnInit {
+  dialogRef = inject<MatDialogRef<EditMultipleComponent>>(MatDialogRef);
+  private translationService = inject(TranslationService);
+  private translateService = inject(TranslateService);
+  private dateAdapter = inject<DateAdapter<any>>(DateAdapter);
+  private apiService = inject(ApiService);
+
   selectedRoutes: number[];
   types: RouteType[];
   countries: Country[];
@@ -42,12 +48,9 @@ export class EditMultipleComponent implements OnInit {
   updateMaps = false;
   error: any;
 
-  constructor(public dialogRef: MatDialogRef<EditMultipleComponent>,
-              private translationService: TranslationService,
-              private translateService: TranslateService,
-              private dateAdapter: DateAdapter<any>,
-              private apiService: ApiService,
-              @Inject(MAT_DIALOG_DATA) data) {
+  constructor() {
+    const data = inject(MAT_DIALOG_DATA);
+
     if (!!data && data.selectedRoutes) {
       this.selectedRoutes = data.selectedRoutes;
     }

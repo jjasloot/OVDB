@@ -1,4 +1,4 @@
-import { Component, OnInit, Inject } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { TranslateService, TranslateModule } from '@ngx-translate/core';
 import { DataUpdateService } from 'src/app/services/data-update.service';
@@ -18,11 +18,13 @@ import { CdkCopyToClipboard } from '@angular/cdk/clipboard';
     imports: [MatActionList, MatListItem, MatIcon, CdkCopyToClipboard, TranslateModule]
 })
 export class MapsListBottomsheetComponent implements OnInit {
+  dialogRef = inject<MatBottomSheetRef<MapsListBottomsheetComponent>>(MatBottomSheetRef);
+  data = inject(MAT_BOTTOM_SHEET_DATA);
+
   map: Map;
-  constructor(
-    public dialogRef: MatBottomSheetRef<MapsListBottomsheetComponent>,
-    @Inject(MAT_BOTTOM_SHEET_DATA) public data: any
-  ) {
+  constructor() {
+    const data = this.data;
+
     this.map = data.map;
   }
 

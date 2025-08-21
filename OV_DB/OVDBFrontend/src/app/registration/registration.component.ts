@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { UntypedFormBuilder, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { AuthenticationService } from '../services/authentication.service';
 import { RegistrationRequest } from '../models/registrationRequest.model';
@@ -14,6 +14,9 @@ import { TranslateModule } from '@ngx-translate/core';
     imports: [FormsModule, ReactiveFormsModule, MatFormField, MatLabel, MatInput, MatButton, TranslateModule]
 })
 export class RegistrationComponent implements OnInit {
+  private formBuilder = inject(UntypedFormBuilder);
+  private authService = inject(AuthenticationService);
+
   form = this.formBuilder.group({
     email: ['', [Validators.required, Validators.email]],
     password: ['', Validators.required],
@@ -21,7 +24,6 @@ export class RegistrationComponent implements OnInit {
   });
   failed = false;
   error = '';
-  constructor(private formBuilder: UntypedFormBuilder, private authService: AuthenticationService) { }
 
   ngOnInit(): void {
   }

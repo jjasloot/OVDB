@@ -48,7 +48,8 @@ namespace OV_DB.Controllers
             {
                 Email = user.Email,
                 PreferredLanguage = user.PreferredLanguage?.ToLanguageCode(),
-                TelegramUserId = user.TelegramUserId
+                TelegramUserId = user.TelegramUserId,
+                HasTraewelling = !string.IsNullOrWhiteSpace(user.TrawellingAccessToken)
             });
         }
 

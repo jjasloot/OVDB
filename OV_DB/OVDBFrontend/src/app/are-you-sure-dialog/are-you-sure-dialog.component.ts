@@ -1,4 +1,4 @@
-import { Component, OnInit, Inject } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { MatDialogRef, MAT_DIALOG_DATA, MatDialogTitle, MatDialogContent, MatDialogActions } from '@angular/material/dialog';
 import { CdkScrollable } from '@angular/cdk/scrolling';
 import { MatButton } from '@angular/material/button';
@@ -11,11 +11,14 @@ import { TranslateModule } from '@ngx-translate/core';
     imports: [MatDialogTitle, CdkScrollable, MatDialogContent, MatDialogActions, MatButton, TranslateModule]
 })
 export class AreYouSureDialogComponent implements OnInit {
+  dialogRef = inject<MatDialogRef<AreYouSureDialogComponent>>(MatDialogRef);
+  data = inject(MAT_DIALOG_DATA);
+
   item: any;
 
-  constructor(
-    public dialogRef: MatDialogRef<AreYouSureDialogComponent>,
-    @Inject(MAT_DIALOG_DATA) public data) {
+  constructor() {
+    const data = this.data;
+
     this.item = data.item;
   }
 

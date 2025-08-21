@@ -1,4 +1,7 @@
 <div class="container">
+  <!-- Träwelling Trip Info -->
+<app-traewelling-context-card [tripContext]="trawellingTripData"/>
+
   <div class="buttons">
     <input type="file" multiple (change)="handleFileInput($event.target.files)">
     <button mat-raised-button (click)="saveFiles()">{{'ADDROUTE.SAVEFILES'|translate}}</button>

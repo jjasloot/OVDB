@@ -18,7 +18,8 @@
 }
 
 .profile-card,
-.password-card {
+.password-card,
+.traewelling-card {
   margin-bottom: 30px;
 
   mat-card-header {
@@ -86,6 +87,84 @@
   }
 }
 
+.traewelling-info {
+  display: flex;
+  align-items: flex-start;
+  background-color: #e8f5e8;
+  padding: 16px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  border-left: 4px solid #4caf50;
+
+  mat-icon {
+    color: #4caf50;
+    margin-right: 12px;
+    margin-top: 2px;
+  }
+
+  .traewelling-text {
+    flex: 1;
+
+    p {
+      margin: 0 0 8px 0;
+      line-height: 1.5;
+      color: #333;
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+    }
+
+    .traewelling-connected {
+      background-color: #c8e6c9;
+      padding: 8px 12px;
+      border-radius: 4px;
+      margin-top: 8px;
+      
+      p {
+        margin: 0;
+        font-size: 14px;
+      }
+    }
+
+    .traewelling-not-connected {
+      color: #666;
+      font-style: italic;
+    }
+  }
+}
+
+.traewelling-actions {
+  display: flex;
+  gap: 16px;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+
+  button {
+    min-width: 180px;
+
+    mat-spinner {
+      margin-right: 8px;
+    }
+
+    mat-icon {
+      margin-right: 8px;
+    }
+  }
+}
+
+.loading-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 20px;
+  
+  span {
+    color: #666;
+  }
+}
+
 // Responsive design
 @media (max-width: 600px) {
   .profile-container {
@@ -94,6 +173,14 @@
 
   .form-actions {
     justify-content: center;
+
+    button {
+      width: 100%;
+    }
+  }
+
+  .traewelling-actions {
+    flex-direction: column;
 
     button {
       width: 100%;

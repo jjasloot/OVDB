@@ -10,6 +10,7 @@ export interface RouteInstance {
   averageSpeedKmh?: number;
   routeInstanceProperties: RouteInstanceProperty[];
   routeId: number;
+  traewellingStatusId?: number;
 }
 
 export interface RouteInstanceMaps {

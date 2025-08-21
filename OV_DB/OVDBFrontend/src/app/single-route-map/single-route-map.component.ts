@@ -1,4 +1,4 @@
-import { Component, OnInit, viewChild } from '@angular/core';
+import { Component, OnInit, viewChild, inject } from '@angular/core';
 import { LatLngBounds, LatLng, geoJSON } from 'leaflet';
 import { tileLayer } from 'leaflet';
 import { TranslateService, TranslateModule } from '@ngx-translate/core';
@@ -16,6 +16,11 @@ import { MatProgressSpinner } from '@angular/material/progress-spinner';
     imports: [LeafletModule, NgClass, MatProgressSpinner, TranslateModule]
 })
 export class SingleRouteMapComponent implements OnInit {
+  private translateService = inject(TranslateService);
+  private translationService = inject(TranslationService);
+  private activatedRoute = inject(ActivatedRoute);
+  private apiService = inject(ApiService);
+
   readonly mapContainer = viewChild<HTMLElement>('mapContainer');
   loading = false;
   layers = [];
@@ -66,14 +71,6 @@ export class SingleRouteMapComponent implements OnInit {
     baseLayers: this.baseLayers,
     // overlays: this.layers
   };
-
-
-
-  constructor(
-    private translateService: TranslateService,
-    private translationService: TranslationService,
-    private activatedRoute: ActivatedRoute,
-    private apiService: ApiService) { }
 
 
 

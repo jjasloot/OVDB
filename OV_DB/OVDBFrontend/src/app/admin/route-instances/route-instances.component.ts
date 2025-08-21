@@ -1,5 +1,5 @@
-import { Component, OnDestroy, OnInit } from "@angular/core";
-import { ActivatedRoute } from "@angular/router";
+import { Component, OnDestroy, OnInit, inject } from "@angular/core";
+import { ActivatedRoute, Router } from "@angular/router";
 import { ApiService } from "src/app/services/api.service";
 import { RouteInstance } from "src/app/models/routeInstance.model";
 import { TranslationService } from "src/app/services/translation.service";
@@ -17,6 +17,7 @@ import { MatList, MatListItem } from "@angular/material/list";
 import { MatButton, MatFabButton } from "@angular/material/button";
 import { MatProgressSpinner } from "@angular/material/progress-spinner";
 import { MatIcon } from "@angular/material/icon";
+import { TrawellingTripContext } from "src/app/models/traewelling.model";
 
 @Component({
   selector: "app-route-instances",
@@ -37,32 +38,55 @@ import { MatIcon } from "@angular/material/icon";
   ],
 })
 export class RouteInstancesComponent implements OnInit {
+  private activatedRoute = inject(ActivatedRoute);
+  private apiService = inject(ApiService);
+  private translationService = inject(TranslationService);
+  private translateService = inject(TranslateService);
+  private dateAdapter = inject<DateAdapter<any>>(DateAdapter);
+  private dialog = inject(MatDialog);
+  private router = inject(Router);
+
   routeId: number;
   route: Route;
   loading = false;
+  fromTraewelling = false;
+  trawellingTripData: TrawellingTripContext | null = null;
+  newRoute = false;
   get instances() {
     if (!this.route) {
       return [];
     }
     return this.route.routeInstances;
   }
-  constructor(
-    private activatedRoute: ActivatedRoute,
-    private apiService: ApiService,
-    private translationService: TranslationService,
-    private translateService: TranslateService,
-    private dateAdapter: DateAdapter<any>,
-    private dialog: MatDialog,
-  ) { }
 
   ngOnInit(): void {
     this.dateAdapter.setLocale(this.translationService.dateLocale);
     this.translationService.languageChanged.subscribe(() => {
       this.dateAdapter.setLocale(this.translationService.dateLocale);
     });
+
     this.activatedRoute.paramMap.subscribe((p) => {
       this.routeId = +p.get("routeId");
       this.getData();
+    });
+
+    // Check if coming from Träwelling
+    this.activatedRoute.queryParams.subscribe(params => {
+      this.newRoute = !!params['newRoute'];
+      if (params['traewellingTripId']) {
+        this.fromTraewelling = true;
+        const tripDataStr = sessionStorage.getItem('traewellingTripContext');
+        if (tripDataStr) {
+          const trawellingTripData = JSON.parse(tripDataStr) as TrawellingTripContext;
+          if (trawellingTripData.tripId === +params['traewellingTripId']) {
+            // If the IDs match, use the data
+            this.trawellingTripData = trawellingTripData;
+            if (!this.newRoute) {
+              this.add();
+            }
+          }
+        }
+      }
     });
   }
 
@@ -72,6 +96,10 @@ export class RouteInstancesComponent implements OnInit {
     this.apiService.getRouteInstances(this.routeId).subscribe((data) => {
       this.route = data;
       this.loading = false;
+      if (this.newRoute && this.trawellingTripData && this.route.routeInstances.length === 1) {
+        this.prefillWithTraewellingData(this.route.routeInstances[0]);
+        this.edit(this.route.routeInstances[0]);
+      }
     });
   }
 
@@ -119,11 +147,16 @@ export class RouteInstancesComponent implements OnInit {
 
   edit(instance: RouteInstance) {
     const dialogRef = this.dialog.open(RouteInstancesEditComponent, {
-      width: "100%",
-      data: { instance, route: this.route },
+      width: "80%",
+      maxWidth: "600px",
+      data: {
+        instance, route: this.route,
+        traewellingTripData: this.fromTraewelling ? this.trawellingTripData : null // Pass trip context for display
+      },
     });
     dialogRef.afterClosed().subscribe((result: RouteInstance) => {
       if (result) {
+        this.router.navigate(['/admin/routes/instances', this.routeId]);
         this.apiService.updateRouteInstance(result).subscribe(() => {
           this.getData();
         });
@@ -145,25 +178,56 @@ export class RouteInstancesComponent implements OnInit {
     return this.translationService.getNameForItem(this.route.routeType);
   }
   add() {
+    // Create new RouteInstance
+    const newInstance = {
+      routeId: this.routeId,
+      routeInstanceMaps: [],
+      routeInstanceProperties: [],
+    } as RouteInstance;
+
+    // Pre-populate with Träwelling data if available
+    this.prefillWithTraewellingData(newInstance);
+
     const dialogRef = this.dialog.open(RouteInstancesEditComponent, {
-      width: "100%",
+      width: "80%",
+      maxWidth: "600px",
       data: {
-        instance: {
-          routeId: this.routeId,
-          routeInstanceMaps: [],
-          routeInstanceProperties: [],
-        } as RouteInstance,
+        instance: newInstance,
         new: true,
         route: this.route,
+        traewellingTripData: this.fromTraewelling ? this.trawellingTripData : null // Pass trip context for display
       },
     });
     dialogRef.afterClosed().subscribe((result: RouteInstance) => {
       if (result) {
+        this.router.navigate(['/admin/routes/instances', this.routeId]);
         this.apiService.updateRouteInstance(result).subscribe(() => {
           this.getData();
+          // Clear the fromTraewelling flag after successful creation
+          this.fromTraewelling = false;
+          this.trawellingTripData = null;
         });
       }
     });
+  }
+
+  private prefillWithTraewellingData(newInstance: RouteInstance) {
+    if (this.fromTraewelling && this.trawellingTripData) {
+      newInstance.date = this.trawellingTripData.date ? new Date(this.trawellingTripData.date).toISOString().split('T')[0] : undefined;
+      newInstance.startTime = this.trawellingTripData.departureTime;
+      newInstance.endTime = this.trawellingTripData.arrivalTime;
+      newInstance.traewellingStatusId = this.trawellingTripData.tripId;
+      // Add tags as properties
+      if (this.trawellingTripData.tags && this.trawellingTripData.tags.length > 0) {
+        this.trawellingTripData.tags.forEach(tag => {
+          newInstance.routeInstanceProperties.push({
+            key: tag.key,
+            value: tag.value,
+            bool: null
+          } as RouteInstanceProperty);
+        });
+      }
+    }
   }
 
   delete(instance: RouteInstance) {

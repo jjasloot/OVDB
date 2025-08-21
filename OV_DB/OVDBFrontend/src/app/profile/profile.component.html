@@ -64,6 +64,66 @@
       </mat-card-content>
     </mat-card>
 
+    <!-- Träwelling Integration Card -->
+    <mat-card class="traewelling-card">
+      <mat-card-header>
+        <mat-card-title>{{ 'PROFILE.TRAEWELLING_INTEGRATION' | translate }}</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        @if (trawellingLoading) {
+          <div class="loading-container">
+            <mat-spinner diameter="24"></mat-spinner>
+            <span>{{ 'TRAEWELLING.LOADING_TRIPS' | translate }}</span>
+          </div>
+        } @else {
+          <div class="traewelling-info">
+            <mat-icon>train</mat-icon>
+            <div class="traewelling-text">
+              <p>{{ 'PROFILE.TRAEWELLING_EXPLANATION' | translate }}</p>
+              
+              @if (trawellingStatus?.connected) {
+                <div class="traewelling-connected">
+                  <p>
+                    <strong>{{ 'PROFILE.TRAEWELLING_CONNECTED' | translate }}:</strong> 
+                    {{ trawellingStatus.user?.displayName || trawellingStatus.user?.username }}
+                  </p>
+                </div>
+              } @else {
+                <p class="traewelling-not-connected">{{ 'PROFILE.TRAEWELLING_NOT_CONNECTED' | translate }}</p>
+              }
+            </div>
+          </div>
+
+          <div class="traewelling-actions">
+            @if (trawellingStatus?.connected) {
+              <button mat-raised-button color="primary" (click)="viewTrawellingTrips()">
+                <mat-icon>list</mat-icon>
+                {{ 'PROFILE.TRAEWELLING_VIEW_TRIPS' | translate }}
+              </button>
+              
+              <button mat-stroked-button color="warn" (click)="disconnectTraewelling()" [disabled]="trawellingDisconnecting">
+                @if (trawellingDisconnecting) {
+                  <mat-spinner diameter="20"></mat-spinner>
+                } @else {
+                  <mat-icon>link_off</mat-icon>
+                }
+                {{ 'PROFILE.TRAEWELLING_DISCONNECT' | translate }}
+              </button>
+            } @else {
+              <button mat-raised-button color="accent" (click)="connectTraewelling()" [disabled]="trawellingConnecting">
+                @if (trawellingConnecting) {
+                  <mat-spinner diameter="20"></mat-spinner>
+                } @else {
+                  <mat-icon>link</mat-icon>
+                }
+                {{ 'PROFILE.TRAEWELLING_CONNECT' | translate }}
+              </button>
+            }
+          </div>
+        }
+      </mat-card-content>
+    </mat-card>
+
     <!-- Password Change Card -->
     <mat-card class="password-card">
       <mat-card-header>

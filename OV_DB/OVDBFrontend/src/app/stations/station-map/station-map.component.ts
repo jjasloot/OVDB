@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, OnInit, input } from "@angular/core";
+import { ChangeDetectorRef, Component, OnInit, input, inject } from "@angular/core";
 import {
   LatLngBounds,
   LatLng,
@@ -28,6 +28,10 @@ import { LeafletMarkerClusterModule } from "@bluehalo/ngx-leaflet-markercluster"
     ]
 })
 export class StationMapComponent implements OnInit {
+  private apiService = inject(ApiService);
+  private translationService = inject(TranslationService);
+  private cd = inject(ChangeDetectorRef);
+
   baseLayers = {
     OpenStreetMap: tileLayer(
       "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
@@ -83,11 +87,6 @@ export class StationMapComponent implements OnInit {
   layers = [];
 
   loading = true;
-  constructor(
-    private apiService: ApiService,
-    private translationService: TranslationService,
-    private cd: ChangeDetectorRef
-  ) {}
   get percentage() {
     if (!this.total || this.visited == undefined) {
       return "?";

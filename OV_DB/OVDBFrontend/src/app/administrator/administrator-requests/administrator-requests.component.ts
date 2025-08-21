@@ -1,4 +1,4 @@
-import { Component, OnInit } from "@angular/core";
+import { Component, OnInit, inject } from "@angular/core";
 import { RequestForAdmin } from "src/app/models/requests.model";
 import { RequestsService } from "src/app/services/requests.service";
 import { MatCard } from "@angular/material/card";
@@ -20,9 +20,10 @@ import { DatePipe } from "@angular/common";
     ]
 })
 export class AdministratorRequestsComponent implements OnInit {
+  private requestsService = inject(RequestsService);
+
   requests: RequestForAdmin[] = [];
   requestsWithoutResponse = new Set<number>();
-  constructor(private requestsService: RequestsService) {}
 
   ngOnInit(): void {
     this.getData();

@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { UntypedFormBuilder, Validators, UntypedFormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { AuthenticationService } from '../services/authentication.service';
 import { ActivatedRoute, Data } from '@angular/router';
@@ -16,16 +16,15 @@ import { UserPreferenceService } from '../services/user-preference.service';
   imports: [FormsModule, ReactiveFormsModule, MatFormField, MatLabel, MatInput, MatButton, MatProgressSpinner, TranslateModule]
 })
 export class LoginComponent implements OnInit {
+  private authService = inject(AuthenticationService);
+  private formBuilder = inject(UntypedFormBuilder);
+  private userPreferenceService = inject(UserPreferenceService);
+  private activatedRoute = inject(ActivatedRoute);
+
   form: UntypedFormGroup;
   failed: boolean;
   loading: boolean;
   error: any;
-
-  constructor(
-    private authService: AuthenticationService,
-    private formBuilder: UntypedFormBuilder,
-    private userPreferenceService: UserPreferenceService,
-    private activatedRoute: ActivatedRoute) { }
 
   ngOnInit() {
     if (this.authService.isLoggedIn) {

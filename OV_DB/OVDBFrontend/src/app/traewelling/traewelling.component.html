@@ -1,0 +1,61 @@
+<div class="traewelling-container">
+  <!-- Connection Status Card -->
+  <mat-card class="connection-card" [ngClass]="{'connected': connectionStatus?.connected}">
+    <mat-card-header>
+      <mat-card-title class="connection-title">
+        <mat-icon [class]="connectionStatus?.connected ? 'connected-icon' : 'disconnected-icon'">
+          {{ connectionStatus?.connected ? 'link' : 'link_off' }}
+        </mat-icon>
+        {{ 'TRAEWELLING.TITLE' | translate }}
+      </mat-card-title>
+      @if (connectionStatus?.user) {
+      <mat-card-subtitle>
+        {{ 'PROFILE.TRAEWELLING_CONNECTED' | translate }} {{ connectionStatus.user.displayName }}
+      </mat-card-subtitle>
+      }
+    </mat-card-header>
+    <mat-card-content></mat-card-content>
+  </mat-card>
+
+  <!-- Loading State -->
+  @if(isLoading){
+  <div class="loading-container">
+    <mat-spinner diameter="40"></mat-spinner>
+    <p>{{ 'TRAEWELLING.LOADING_TRIPS' | translate }}</p>
+  </div>
+  }
+
+  @else{
+
+  @if(trips.length===0){
+  <!-- Empty State -->
+  <mat-card class="empty-card">
+    <mat-card-content class="empty-content">
+      <mat-icon class="empty-icon">train</mat-icon>
+      <h3>{{ 'TRAEWELLING.NO_UNIMPORTED_TRIPS_TITLE' | translate }}</h3>
+      <p>{{ 'TRAEWELLING.NO_UNIMPORTED_TRIPS_MESSAGE' | translate }}</p>
+    </mat-card-content>
+  </mat-card>
+  }
+  @if(trips.length>0){
+
+  <!-- Trip Cards -->
+  <div class="trips-container">
+    @for(trip of trips; track trip.id) {
+    <app-trip-card [trip]="trip" (removeTrip)="removeTrip(trip.id)" />
+    }
+    <!-- Load More Button -->
+    @if(hasMorePages){
+    <div class="load-more-container">
+      <button mat-raised-button color="primary" (click)="loadMoreTrips()" [disabled]="isLoadingMore">
+        @if (isLoadingMore) {
+        <mat-icon>hourglass_empty</mat-icon>
+        }
+        {{ isLoadingMore ? ('TRAEWELLING.LOADING_MORE' | translate) : ('TRAEWELLING.LOAD_MORE' | translate) }}
+      </button>
+    </div>
+    }
+  </div>
+  }
+  }
+</div>
