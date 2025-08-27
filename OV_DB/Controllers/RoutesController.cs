@@ -388,6 +388,7 @@ namespace OV_DB.Controllers
                 {
                     route.Description = placeMark.Description.Text;
                 }
+                if (string.IsNullOrWhiteSpace(route.Name)) route.Name = "Route";
 
                 var types = await _context.RouteTypes.Where(r => r.UserId == userId).ToListAsync();
 
@@ -543,6 +544,7 @@ namespace OV_DB.Controllers
             {
                 route.Description = gpxReader.Track.Description;
             }
+            if (string.IsNullOrWhiteSpace(route.Name)) route.Name = "Route";
 
 
             var maps = await _context.Maps.Where(m => m.UserId == userId).ToListAsync();

@@ -45,16 +45,16 @@
     <app-trip-card [trip]="trip" (removeTrip)="removeTrip(trip.id)" />
     }
     <!-- Load More Button -->
-    @if(hasMorePages){
-    <div class="load-more-container">
-      <button mat-raised-button color="primary" (click)="loadMoreTrips()" [disabled]="isLoadingMore">
-        @if (isLoadingMore) {
-        <mat-icon>hourglass_empty</mat-icon>
-        }
-        {{ isLoadingMore ? ('TRAEWELLING.LOADING_MORE' | translate) : ('TRAEWELLING.LOAD_MORE' | translate) }}
-      </button>
-    </div>
-    }
+  </div>
+  }
+  @if(hasMorePages){
+  <div class="load-more-container">
+    <button mat-raised-button color="primary" (click)="loadMoreTrips()" [disabled]="isLoadingMore">
+      @if (isLoadingMore) {
+      <mat-icon>hourglass_empty</mat-icon>
+      }
+      {{ isLoadingMore ? ('TRAEWELLING.LOADING_MORE' | translate) : ('TRAEWELLING.LOAD_MORE' | translate) }}
+    </button>
   </div>
   }
   }

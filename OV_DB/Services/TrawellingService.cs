@@ -306,6 +306,11 @@ namespace OV_DB.Services
                 // Loop through pages until we find one with unimported trips or reach the end
                 do
                 {
+                    if (_rateLimitRemaining.HasValue && _rateLimitRemaining.Value < 5)
+                    {
+                        await Task.Delay(1000);
+                    }
+
                     var response = await _httpClient.GetAsync($"{_baseUrl}/user/{user.TrawellingUsername}/statuses?page={currentPage}");
 
                     // Update rate limit tracking
@@ -375,7 +380,7 @@ namespace OV_DB.Services
                     }
 
                     break;
-                } while (statusesResponse?.Meta?.CurrentPage < statusesResponse?.Meta?.Total);
+                } while (statusesResponse?.Meta?.CurrentPage < statusesResponse?.Meta?.Total && !string.IsNullOrWhiteSpace(statusesResponse?.Links.Next));
 
                 return statusesResponse;
             }
@@ -415,7 +420,7 @@ namespace OV_DB.Services
                     }
                 }
 
-                if (!optimizedTrips.Any() && layer < 20)
+                if (!optimizedTrips.Any() && layer < 20 && !string.IsNullOrWhiteSpace(statusesResponse.Links.Next))
                 {
                     return await GetOptimizedTripsAsync(user, page + 1, layer + 1);
                 }

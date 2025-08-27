@@ -123,6 +123,7 @@ import { DatePipe } from '@angular/common';
                         {{ route.operatingCompany }}
                       </span>
                     }
+                    ({{route.firstDateTime|date:'shortDate'}})
                     </div>
                 </mat-list-option>
               }

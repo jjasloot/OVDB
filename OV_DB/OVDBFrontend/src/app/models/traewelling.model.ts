@@ -135,7 +135,7 @@ export interface TrawellingIgnoreResponse {
   message?: string;
 }
 
-export interface RoutesListResponse{
+export interface RoutesListResponse {
   count: number;
   routes: RouteSearchResult[];
 }
@@ -147,6 +147,7 @@ export interface RouteSearchResult {
   from: string;
   to: string;
   lineNumber?: string;
+  firstDateTime: Date | string | null;
   operatingCompany?: string;
   routeType?: {
     name: string;

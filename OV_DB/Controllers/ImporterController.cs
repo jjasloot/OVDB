@@ -623,7 +623,7 @@ namespace OV_DB.Controllers
                 RouteMaps = [],
                 Regions = []
             };
-            if (route.Name == null)
+            if (string.IsNullOrWhiteSpace(route.Name))
                 route.Name = "Name";
 
             if (!string.IsNullOrWhiteSpace(line.Description))
