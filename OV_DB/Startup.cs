@@ -23,6 +23,7 @@ using System.Threading.Tasks;
 using OV_DB.Services;
 using OV_DB.Hubs;
 using Microsoft.AspNetCore.Http;
+using Telegram.Bot.AspNetCore;
 
 namespace OV_DB
 {
@@ -138,7 +139,7 @@ namespace OV_DB
             {
                 options.EnableEndpointRouting = false;
             }).AddNewtonsoftJson(ops => ops.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore);
-
+            services.ConfigureTelegramBotMvc();
             services.AddSignalR();
             services.AddTransient<IRouteRegionsService, RouteRegionsService>();
             services.AddTransient<IStationRegionsService, StationRegionsService>();
