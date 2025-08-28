@@ -1,4 +1,4 @@
-import { Component, OnInit } from "@angular/core";
+import { Component, OnInit, inject } from "@angular/core";
 import { MatBottomSheet } from "@angular/material/bottom-sheet";
 import { MatDialog } from "@angular/material/dialog";
 import { Router } from "@angular/router";
@@ -36,18 +36,16 @@ import { CdkCopyToClipboard } from "@angular/cdk/clipboard";
   ],
 })
 export class StationMapsComponent implements OnInit {
+  private apiService = inject(ApiService);
+  private router = inject(Router);
+  private dialog = inject(MatDialog);
+  private translateService = inject(TranslateService);
+  private translationService = inject(TranslationService);
+  private dataUpdateService = inject(DataUpdateService);
+  private bottomSheet = inject(MatBottomSheet);
+
   data: StationMap[];
   loading = false;
-
-  constructor(
-    private apiService: ApiService,
-    private router: Router,
-    private dialog: MatDialog,
-    private translateService: TranslateService,
-    private translationService: TranslationService,
-    private dataUpdateService: DataUpdateService,
-    private bottomSheet: MatBottomSheet
-  ) {}
 
   ngOnInit() {
     this.loadData();

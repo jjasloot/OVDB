@@ -1,4 +1,4 @@
-import { Component, OnInit } from "@angular/core";
+import { Component, OnInit, inject } from "@angular/core";
 import { Router, RouterLinkActive, RouterLink, RouterOutlet } from "@angular/router";
 import { TranslateService } from "@ngx-translate/core";
 import { MatTabNav, MatTabLink } from "@angular/material/tabs";
@@ -17,14 +17,14 @@ import { SignalRService } from "src/app/services/signal-r.service";
     ]
 })
 export class AdministratorLayoutComponent implements OnInit {
+  private router = inject(Router);
+  private translateService = inject(TranslateService);
+  private signalRServicve = inject(SignalRService);
+
   navLinks: { label: string; link: string; index: number }[];
   activeLinkIndex: number;
 
-  constructor(
-    private router: Router,
-    private translateService: TranslateService,
-    private signalRServicve:SignalRService
-  ) {
+  constructor() {
     this.navLinks = [
       {
         label: "Users",

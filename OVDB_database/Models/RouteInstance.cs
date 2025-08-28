@@ -7,6 +7,8 @@ using System.Text;
 namespace OVDB_database.Models
 {
     [Index(nameof(Date))]
+    [Index(nameof(Date), nameof(RouteId), Name = "idx_routeinstances_date_routeid")]
+    [Index(nameof(RouteId), nameof(Date), Name = "idx_routeinstances_routeid_date")]
     public class RouteInstance
     {
         [Key]
@@ -22,6 +24,11 @@ namespace OVDB_database.Models
         public double? DurationHours { get; set; }
         public List<RouteInstanceProperty> RouteInstanceProperties { get; set; }
         public List<RouteInstanceMap> RouteInstanceMaps { get; set; }
+        
+        /// <summary>
+        /// Link to Träwelling status ID for imported trips
+        /// </summary>
+        public int? TrawellingStatusId { get; set; }
 
         /// <summary>
         /// Calculates the average speed in km/h based on stored duration

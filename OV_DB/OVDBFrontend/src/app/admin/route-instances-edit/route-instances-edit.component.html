@@ -7,6 +7,7 @@
   }
 </h3>
 <div mat-dialog-content>
+  <app-traewelling-context-card [tripContext]="traewellingTripData"></app-traewelling-context-card>
   <!-- Date and Time Section -->
   <mat-card class="time-section">
     <mat-card-content>
@@ -49,7 +50,6 @@
       }
     </mat-card-content>
   </mat-card>
-
   <mat-table [dataSource]="instance.routeInstanceProperties" #table>
     <ng-container matColumnDef="key">
       <mat-header-cell *matHeaderCellDef> {{'ROUTEINSTANCESEDIT.PROPERTYKEY'|translate}} </mat-header-cell>
@@ -117,6 +117,7 @@
       }
     </mat-selection-list>
   </mat-expansion-panel>
+  <div style="height: 24px;">&nbsp;</div>
 </div>
 <div mat-dialog-actions>
   <button mat-button (click)="cancel()">{{'CANCEL'|translate}}</button>

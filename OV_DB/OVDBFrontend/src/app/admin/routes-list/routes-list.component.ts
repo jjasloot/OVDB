@@ -1,11 +1,4 @@
-import {
-  Component,
-  OnInit,
-  AfterViewInit,
-  ElementRef,
-  HostListener,
-  viewChild
-} from "@angular/core";
+import { Component, OnInit, AfterViewInit, ElementRef, HostListener, viewChild, inject } from "@angular/core";
 import { ApiService } from "src/app/services/api.service";
 import { Route } from "src/app/models/route.model";
 import { Router } from "@angular/router";
@@ -76,6 +69,15 @@ import { AsyncPipe, DatePipe, DecimalPipe, formatNumber } from "@angular/common"
   ]
 })
 export class RoutesListComponent implements OnInit, AfterViewInit {
+  private apiService = inject(ApiService);
+  private router = inject(Router);
+  private translateService = inject(TranslateService);
+  private translationService = inject(TranslationService);
+  private dialog = inject(MatDialog);
+  private bottomSheet = inject(MatBottomSheet);
+  private operatorService = inject(OperatorService);
+  private tableStateService = inject(TableStateService);
+
   private readonly TABLE_ID = 'routes-list';
   
   routes: Route[];
@@ -102,17 +104,6 @@ export class RoutesListComponent implements OnInit, AfterViewInit {
     this.restrictColumnsOnWidth();
   }
   filter$ = new Subject<void>();
-
-  constructor(
-    private apiService: ApiService,
-    private router: Router,
-    private translateService: TranslateService,
-    private translationService: TranslationService,
-    private dialog: MatDialog,
-    private bottomSheet: MatBottomSheet,
-    private operatorService: OperatorService,
-    private tableStateService: TableStateService
-  ) {}
 
 
   ngOnInit() {

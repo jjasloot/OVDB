@@ -1,5 +1,5 @@
 import { HttpClient } from "@angular/common/http";
-import { Injectable } from "@angular/core";
+import { Injectable, inject } from "@angular/core";
 import { environment } from "src/environments/environment";
 import {
   CreateRequest,
@@ -12,7 +12,8 @@ import { Observable } from "rxjs";
   providedIn: "root",
 })
 export class RequestsService {
-  constructor(private httpClient: HttpClient) {}
+  private httpClient = inject(HttpClient);
+
   getUserRequests(): Observable<RequestForUser[]> {
     return this.httpClient.get<any[]>(environment.backend + "api/requests");
   }

@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { TranslationService } from '../services/translation.service';
 
@@ -11,9 +11,10 @@ import { TranslateModule } from '@ngx-translate/core';
     imports: [TranslateModule]
 })
 export class HelpComponent implements OnInit {
-  changelog: string;
+  private httpClient = inject(HttpClient);
+  private translationService = inject(TranslationService);
 
-  constructor(private httpClient: HttpClient, private translationService: TranslationService) { }
+  changelog: string;
 
   ngOnInit(): void {
     this.translationService.languageChanged.subscribe(() => {

@@ -145,6 +145,8 @@ namespace OV_DB
             services.AddTransient<ITimezoneService, TimezoneService>();
             services.AddSingleton<IFontLoader, FontLoader>();
             services.AddScoped<TelegramBotService>();
+            services.AddHttpClient<ITrawellingService, TrawellingService>();
+            services.AddScoped<ITrawellingService, TrawellingService>();
 
             services.AddHostedService<UpdateRegionService>();
             services.AddHostedService<RefreshRoutesService>();

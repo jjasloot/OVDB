@@ -2,12 +2,13 @@ import { HttpInterceptor, HttpRequest, HttpHandler, HttpEvent } from '@angular/c
 import { Observable } from 'rxjs';
 import { environment } from 'src/environments/environment';
 import { AuthenticationService } from '../services/authentication.service';
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 
 @Injectable()
 export class AuthInterceptor implements HttpInterceptor {
-    constructor(private authService: AuthenticationService) { }
+    private authService = inject(AuthenticationService);
+
 
 
     intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {

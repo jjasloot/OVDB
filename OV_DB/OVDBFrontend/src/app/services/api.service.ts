@@ -1,4 +1,4 @@
-import { Injectable } from "@angular/core";
+import { Injectable, inject } from "@angular/core";
 import { Observable } from "rxjs";
 import { Country } from "../models/country.model";
 import { HttpClient, HttpParams } from "@angular/common/http";
@@ -21,19 +21,30 @@ import { MapDataDTO } from "../models/map-data.model";
 import { RegionOperators } from "../models/region-operators.model";
 import { RegionStat } from "../models/region.model";
 import { UserProfile, UpdateProfile, ChangePassword } from "../models/user-profile.model";
+import { 
+  TrawellingConnectionStatus, 
+  TrawellingConnectResponse, 
+  TrawellingStatusesResponse,
+  TrawellingTripsResponse,
+  TrawellingStats,
+  RouteInstanceSearchResult,
+  LinkToRouteInstanceRequest,
+  LinkToRouteInstanceResponse,
+  TrawellingIgnoreResponse
+} from "../models/traewelling.model";
 
 @Injectable({
   providedIn: "root",
 })
 export class ApiService {
+  private httpClient = inject(HttpClient);
+
 
   getRoutesWithMissingSettings(): Observable<Route[]> {
     return this.httpClient.get<Route[]>(
       environment.backend + "api/routes/missingInfo"
     );
   }
-
-  constructor(private httpClient: HttpClient) { }
 
   getCountries(guid?: string): Observable<Country[]> {
     if (!guid) {
@@ -527,6 +538,64 @@ export class ApiService {
     return this.httpClient.post(
       environment.backend + "api/user/change-password",
       changePassword
+    );
+  }
+
+  // Träwelling API methods
+  getTrawellingConnectUrl(): Observable<TrawellingConnectResponse> {
+    return this.httpClient.get<TrawellingConnectResponse>(
+      environment.backend + "api/traewelling/connect"
+    );
+  }
+
+  getTrawellingStatus(): Observable<TrawellingConnectionStatus> {
+    return this.httpClient.get<TrawellingConnectionStatus>(
+      environment.backend + "api/traewelling/status"
+    );
+  }
+
+  getTrawellingUnimported(page: number = 1): Observable<TrawellingTripsResponse> {
+    const params = new HttpParams().set('page', page.toString());
+    return this.httpClient.get<TrawellingTripsResponse>(
+      environment.backend + "api/traewelling/unimported",
+      { params }
+    );
+  }
+
+  ignoreTrawellingStatus(statusId: number): Observable<TrawellingIgnoreResponse> {
+    return this.httpClient.post<TrawellingIgnoreResponse>(
+      environment.backend + "api/traewelling/ignore",
+      { statusId }
+    );
+  }
+
+  disconnectTraewelling(): Observable<any> {
+    return this.httpClient.delete(
+      environment.backend + "api/traewelling/disconnect"
+    );
+  }
+
+  getTrawellingStats(): Observable<TrawellingStats> {
+    return this.httpClient.get<TrawellingStats>(
+      environment.backend + "api/traewelling/stats"
+    );
+  }
+
+  searchRouteInstances(date: string, query?: string): Observable<RouteInstanceSearchResult[]> {
+    let params = new HttpParams().set('date', date);
+    if (query) {
+      params = params.set('query', query);
+    }
+    return this.httpClient.get<RouteInstanceSearchResult[]>(
+      environment.backend + "api/traewelling/route-instances",
+      { params }
+    );
+  }
+
+  linkToRouteInstance(request: LinkToRouteInstanceRequest): Observable<LinkToRouteInstanceResponse> {
+    return this.httpClient.post<LinkToRouteInstanceResponse>(
+      environment.backend + "api/traewelling/link",
+      request
     );
   }
 }

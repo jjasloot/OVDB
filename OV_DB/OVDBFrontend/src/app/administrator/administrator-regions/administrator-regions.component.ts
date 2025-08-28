@@ -1,4 +1,4 @@
-import { Component, OnInit } from "@angular/core";
+import { Component, OnInit, inject } from "@angular/core";
 import { MatDialog } from "@angular/material/dialog";
 import { NewRegion, Region } from "src/app/models/region.model";
 import { RegionsService } from "src/app/services/regions.service";
@@ -27,15 +27,15 @@ import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
   ]
 })
 export class AdministratorRegionsComponent implements OnInit {
+  private regionsService = inject(RegionsService);
+  private dialog = inject(MatDialog);
+  private signalRService = inject(SignalRService);
+
   regions: Region[];
   progressUpdates: Record<number, number> = {};
   updateResult: Record<number, number> = {};
 
-  constructor(
-    private regionsService: RegionsService,
-    private dialog: MatDialog,
-    private signalRService: SignalRService
-  ) {
+  constructor() {
     this.signalRService.regionUpdates$.pipe(takeUntilDestroyed()).subscribe((update) => {
       this.progressUpdates[update.regionId] = update.percentage;
       if (update.updatedRoutes != null) {

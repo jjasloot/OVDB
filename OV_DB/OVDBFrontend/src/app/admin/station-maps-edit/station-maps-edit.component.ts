@@ -1,4 +1,4 @@
-import { Component, Inject, OnInit, viewChild } from "@angular/core";
+import { Component, OnInit, viewChild, inject } from "@angular/core";
 import { UntypedFormBuilder, UntypedFormGroup, Validators, FormsModule, ReactiveFormsModule } from "@angular/forms";
 import { MatCheckboxChange, MatCheckbox } from "@angular/material/checkbox";
 import { DateAdapter } from "@angular/material/core";
@@ -41,20 +41,21 @@ import { TranslateModule } from "@ngx-translate/core";
     ]
 })
 export class StationMapsEditComponent implements OnInit {
+  private apiService = inject(ApiService);
+  private regionsService = inject(RegionsService);
+  private translationService = inject(TranslationService);
+  private formBuilder = inject(UntypedFormBuilder);
+  private dateAdapter = inject<DateAdapter<any>>(DateAdapter);
+  private dialogRef = inject<MatDialogRef<StationMapsEditComponent>>(MatDialogRef);
+
   form: UntypedFormGroup;
   regions: Region[];
   readonly regionsSelection = viewChild<MatSelectionList>("regionsSelection");
   selectedOptions: number[] = [];
   map: StationMap = {} as StationMap;
-  constructor(
-    private apiService: ApiService,
-    private regionsService: RegionsService,
-    private translationService: TranslationService,
-    private formBuilder: UntypedFormBuilder,
-    private dateAdapter: DateAdapter<any>,
-    private dialogRef: MatDialogRef<StationMapsEditComponent>,
-    @Inject(MAT_DIALOG_DATA) data
-  ) {
+  constructor() {
+    const data = inject(MAT_DIALOG_DATA);
+
     if (!!data && !!data.map) {
       this.map = data.map || ({} as StationMap);
       this.selectedOptions = this.map.regionIds || [];

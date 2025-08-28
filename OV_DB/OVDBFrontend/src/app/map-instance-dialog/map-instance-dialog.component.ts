@@ -1,4 +1,4 @@
-import { Component, OnInit, Inject, ChangeDetectorRef, AfterViewInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, AfterViewInit, inject } from '@angular/core';
 import { MatDialogRef, MAT_DIALOG_DATA, MatDialogTitle, MatDialogContent, MatDialogActions } from '@angular/material/dialog';
 import { merge } from 'rxjs';
 import { ApiService } from '../services/api.service';
@@ -20,19 +20,22 @@ import { MatButton } from '@angular/material/button';
     imports: [MatDialogTitle, CdkScrollable, MatDialogContent, MatProgressSpinner, MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle, MatExpansionPanelDescription, MatList, MatListItem, MatDialogActions, MatButton, LowerCasePipe, DatePipe, TranslateModule]
 })
 export class MapInstanceDialogComponent implements OnInit {
+  private apiService = inject(ApiService);
+  private translationService = inject(TranslationService);
+  private translateService = inject(TranslateService);
+  private datePipe = inject(DatePipe);
+  dialogRef = inject<MatDialogRef<MapInstanceDialogComponent>>(MatDialogRef);
+  data = inject(MAT_DIALOG_DATA);
+
   id: number;
   limits: any[];
   instances: RouteInstance[] = [];
   loading = true;
   loadAll = false;
   mapGuid = '';
-  constructor(
-    private apiService: ApiService,
-    private translationService: TranslationService,
-    private translateService: TranslateService,
-    private datePipe: DatePipe,
-    public dialogRef: MatDialogRef<MapInstanceDialogComponent>,
-    @Inject(MAT_DIALOG_DATA) public data) {
+  constructor() {
+    const data = this.data;
+
     this.id = data.id;
     this.limits = data.limits;
     this.mapGuid = data.mapGuid;

@@ -1,4 +1,4 @@
-import { Component, OnInit, Inject } from "@angular/core";
+import { Component, OnInit, inject } from "@angular/core";
 import { MatDialogRef, MAT_DIALOG_DATA, MatDialogTitle, MatDialogContent, MatDialogActions } from "@angular/material/dialog";
 import { ApiService } from "src/app/services/api.service";
 import { RouteType } from "src/app/models/routeType.model";
@@ -29,6 +29,10 @@ import { MatButton } from "@angular/material/button";
     ]
 })
 export class RouteTypesAddComponent implements OnInit {
+  dialogRef = inject<MatDialogRef<RouteTypesAddComponent>>(MatDialogRef);
+  private translateService = inject(TranslateService);
+  private apiService = inject(ApiService);
+
   routeTypeName: string;
   routeTypeNameNL: string;
   loading: boolean;
@@ -36,12 +40,9 @@ export class RouteTypesAddComponent implements OnInit {
   colour: string;
   id: number;
   isTrain = false;
-  constructor(
-    public dialogRef: MatDialogRef<RouteTypesAddComponent>,
-    private translateService: TranslateService,
-    private apiService: ApiService,
-    @Inject(MAT_DIALOG_DATA) data
-  ) {
+  constructor() {
+    const data = inject(MAT_DIALOG_DATA);
+
     if (!!data && data.routeType) {
       this.id = data.routeType.typeId;
       this.colour = data.routeType.colour;

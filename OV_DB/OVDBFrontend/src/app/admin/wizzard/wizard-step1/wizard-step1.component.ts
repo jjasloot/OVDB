@@ -1,8 +1,8 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { UntypedFormBuilder, UntypedFormGroup, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { ApiService } from 'src/app/services/api.service';
 import { OSMDataLine } from 'src/app/models/osmDataLine.model';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import moment from 'moment';
 import { DateAdapter, MatOption } from '@angular/material/core';
 import { TranslationService } from 'src/app/services/translation.service';
@@ -17,14 +17,24 @@ import { MatButton, MatIconButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
 import { MatChipListbox, MatChipOption } from '@angular/material/chips';
 import { TranslateModule } from '@ngx-translate/core';
+import { MatCard, MatCardContent, MatCardHeader, MatCardTitle, MatCardActions } from '@angular/material/card';
+import { TrawellingTransportCategory, TrawellingTripContext } from 'src/app/models/traewelling.model';
+import { TrawellingContextCardComponent } from 'src/app/traewelling/context-card/traewelling-context-card.component';
 
 @Component({
-    selector: 'app-wizard-step1',
-    templateUrl: './wizard-step1.component.html',
-    styleUrls: ['./wizard-step1.component.scss'],
-    imports: [MatProgressSpinner, FormsModule, ReactiveFormsModule, MatFormField, MatLabel, MatInput, MatSelect, MatOption, MatCheckbox, NgClass, MatDatepickerInput, MatDatepickerToggle, MatSuffix, MatDatepicker, MatButton, MatIconButton, MatIcon, MatChipListbox, MatChipOption, TranslateModule]
+  selector: 'app-wizard-step1',
+  templateUrl: './wizard-step1.component.html',
+  styleUrls: ['./wizard-step1.component.scss'],
+  imports: [TrawellingContextCardComponent, MatProgressSpinner, FormsModule, ReactiveFormsModule, MatFormField, MatLabel, MatInput, MatSelect, MatOption, MatCheckbox, NgClass, MatDatepickerInput, MatDatepickerToggle, MatSuffix, MatDatepicker, MatButton, MatIconButton, MatIcon, MatChipListbox, MatChipOption, TranslateModule, MatCard, MatCardContent, MatCardHeader, MatCardTitle, MatCardActions]
 })
 export class WizzardStep1Component implements OnInit {
+  private formBuilder = inject(UntypedFormBuilder);
+  private apiService = inject(ApiService);
+  private router = inject(Router);
+  private route = inject(ActivatedRoute);
+  private dateAdapter = inject<DateAdapter<any>>(DateAdapter);
+  private translationService = inject(TranslationService);
+
   form: UntypedFormGroup;
   lines: OSMDataLine[];
   step = 1;
@@ -33,12 +43,9 @@ export class WizzardStep1Component implements OnInit {
   differentTimeRight = false;
   dateTime: moment.Moment = null;
   error: boolean;
-  constructor(
-    private formBuilder: UntypedFormBuilder,
-    private apiService: ApiService,
-    private router: Router,
-    private dateAdapter: DateAdapter<any>,
-    private translationService: TranslationService) {
+  fromTraewelling = false;
+  trawellingTripData: TrawellingTripContext | null = null;
+  constructor() {
     this.dateAdapter.setLocale(this.translationService.dateLocale);
 
     this.form = this.formBuilder.group({
@@ -113,6 +120,22 @@ export class WizzardStep1Component implements OnInit {
     this.translationService.languageChanged.subscribe(() => {
       this.dateAdapter.setLocale(this.translationService.dateLocale);
     });
+
+    // Check if coming from Träwelling
+    this.route.queryParams.subscribe(params => {
+      if (params['traewellingTripId']) {
+        this.fromTraewelling = true;
+        const tripDataStr = sessionStorage.getItem('traewellingTripContext');
+        if (tripDataStr) {
+          const trawellingTripData = JSON.parse(tripDataStr) as TrawellingTripContext;
+          if (trawellingTripData.tripId === +params['traewellingTripId']) {
+            // If the IDs match, use the data
+            this.trawellingTripData = trawellingTripData;
+            this.prePopulateFromTraewelling();
+          }
+        }
+      }
+    });
   }
 
   getLines() {
@@ -141,15 +164,67 @@ export class WizzardStep1Component implements OnInit {
     }, err => { this.error = true; });
   }
   select(line: OSMDataLine) {
+    const queryParams: any = {};
+
     if (this.dateTime) {
-      this.router.navigate(['/', 'admin', 'wizard', line.id], { queryParams: { date: this.dateTime.unix() } });
-    } else {
-      this.router.navigate(['/', 'admin', 'wizard', line.id]);
+      queryParams.date = this.dateTime.unix();
     }
+
+    if (this.fromTraewelling) {
+      queryParams.traewellingTripId = this.trawellingTripData.tripId;
+    }
+
+    this.router.navigate(['/', 'admin', 'wizard', line.id], { queryParams });
   }
 
   gotoStep1() {
     this.step = 1;
+  }
+
+  private prePopulateFromTraewelling(): void {
+    if (!this.trawellingTripData) return;
+
+    // Pre-populate form with Träwelling data
+    const reference = `${this.trawellingTripData.lineNumber}`;
+    const transportType = this.mapTrawellingCategoryToOSMType(this.trawellingTripData.transportCategory);
+
+    this.form.patchValue({
+      reference: reference,
+      type: transportType,
+    });
+  }
+
+  private mapTrawellingCategoryToOSMType(category: TrawellingTransportCategory): string {
+    // Map Träwelling transport categories to OSM types
+    switch (category) {
+      case 'NationalExpress':
+      case 'National':
+      case 'RegionalExp':
+      case 'Regional':
+      case 'Suburban':
+        return 'train';
+      case 'Bus':
+        return 'bus';
+      case 'Subway':
+        return 'subway';
+      case 'Tram':
+        return 'tram';
+      case 'Ferry':
+        return 'ferry';
+      default:
+        return 'train';
+    }
+  }
+
+  // Method to continue with GPX upload instead
+  useGpxUpload(): void {
+    // Store trip data and navigate to GPX upload
+    if (this.trawellingTripData) {
+      sessionStorage.setItem('trawellingTripDataForGpx', JSON.stringify(this.trawellingTripData));
+    }
+    this.router.navigate(['/admin/addRoute'], {
+      queryParams: { traewellingTripId: this.trawellingTripData.tripId }
+    });
   }
 
 }

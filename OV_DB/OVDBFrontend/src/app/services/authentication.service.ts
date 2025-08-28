@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { environment } from 'src/environments/environment';
 import { Router } from '@angular/router';
@@ -10,6 +10,9 @@ import { tap } from 'rxjs/operators';
   providedIn: 'root'
 })
 export class AuthenticationService {
+  private httpClient = inject(HttpClient);
+  private router = inject(Router);
+
 
 
   public token: string;
@@ -17,7 +20,7 @@ export class AuthenticationService {
   helper = new JwtHelperService();
   refreshTrigger: any;
   returnUrl: string;
-  constructor(private httpClient: HttpClient, private router: Router) {
+  constructor() {
     this.token = localStorage.getItem('OVDBToken');
     setTimeout(() => {
       if (this.token) {

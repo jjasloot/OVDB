@@ -58,6 +58,9 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
   ]
 })
 export class AdminStationsMapComponent implements OnInit {
+  private apiService = inject(ApiService);
+  private cd = inject(ChangeDetectorRef);
+
   regionsService = inject(RegionsService);
   translationService = inject(TranslationService);
   signalRService = inject(SignalRService);
@@ -125,7 +128,7 @@ export class AdminStationsMapComponent implements OnInit {
   progressUpdates: Record<number, number> = {};
 
 
-  constructor(private apiService: ApiService, private cd: ChangeDetectorRef) {
+  constructor() {
     this.signalRService.stationUpdates$.pipe(takeUntilDestroyed()).subscribe(update => {
       this.progressUpdates[update.regionId] = update.percentage;
       if (update.percentage >= 100) {

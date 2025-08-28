@@ -1,4 +1,4 @@
-import { Component, OnInit } from "@angular/core";
+import { Component, OnInit, inject } from "@angular/core";
 import { AuthenticationService } from "../services/authentication.service";
 import { ApiService } from "../services/api.service";
 import { Map } from "../models/map.model";
@@ -40,15 +40,14 @@ import { TranslateModule } from "@ngx-translate/core";
   ],
 })
 export class HomeComponent implements OnInit {
+  private authService = inject(AuthenticationService);
+  private router = inject(Router);
+  private translationService = inject(TranslationService);
+  private apiService = inject(ApiService);
+
   maps: Map[];
   loading = 0;
   stationMaps: StationMap[];
-  constructor(
-    private authService: AuthenticationService,
-    private router: Router,
-    private translationService: TranslationService,
-    private apiService: ApiService
-  ) { }
 
   ngOnInit() {
     if (this.isLoggedIn) {

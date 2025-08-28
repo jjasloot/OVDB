@@ -1,9 +1,8 @@
-import { Component, OnInit, Inject, viewChild } from '@angular/core';
+import { Component, Inject, OnInit, inject, viewChild } from '@angular/core';
 import { MatDialogRef, MAT_DIALOG_DATA, MatDialogTitle, MatDialogContent, MatDialogActions } from '@angular/material/dialog';
 import { ApiService } from 'src/app/services/api.service';
 import { RouteInstance } from 'src/app/models/routeInstance.model';
 import { RouteInstanceProperty } from 'src/app/models/routeInstanceProperty.model';
-import { MatTable, MatColumnDef, MatHeaderCellDef, MatHeaderCell, MatCellDef, MatCell, MatFooterCellDef, MatFooterCell, MatHeaderRowDef, MatHeaderRow, MatRowDef, MatRow, MatFooterRowDef, MatFooterRow } from '@angular/material/table';
 import { BehaviorSubject } from 'rxjs';
 import { Map } from '../../models/map.model'
 import { TranslationService } from 'src/app/services/translation.service';
@@ -21,14 +20,18 @@ import { MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle } fr
 import { MatSelectionList, MatListOption } from '@angular/material/list';
 import { AsyncPipe } from '@angular/common';
 import { TranslateModule } from '@ngx-translate/core';
-import { MatCard, MatCardContent } from '@angular/material/card';
+import { MatCard, MatCardContent, MatCardHeader, MatCardTitle } from '@angular/material/card';
 import { MatSlideToggle } from '@angular/material/slide-toggle';
+import moment, { Moment } from 'moment';
+import { TrawellingContextCardComponent } from '../../traewelling/context-card/traewelling-context-card.component';
+import { MatCell, MatCellDef, MatColumnDef, MatFooterCell, MatFooterCellDef, MatFooterRow, MatFooterRowDef, MatHeaderCell, MatHeaderCellDef, MatHeaderRow, MatHeaderRowDef, MatRow, MatRowDef, MatTable } from '@angular/material/table';
+import { TrawellingTripContext } from 'src/app/models/traewelling.model';
 
 @Component({
   selector: 'app-route-instances-edit',
   templateUrl: './route-instances-edit.component.html',
   styleUrls: ['./route-instances-edit.component.scss'],
-  imports: [MatDialogTitle, CdkScrollable, MatDialogContent, MatCard, MatCardContent, MatSlideToggle, MatFormField, MatLabel, MatInput, MatDatepickerInput, FormsModule, MatDatepickerToggle, MatSuffix, MatDatepicker, MatIcon, MatTable, MatColumnDef, MatHeaderCellDef, MatHeaderCell, MatCellDef, MatCell, MatAutocompleteTrigger, MatAutocomplete, MatOption, MatFooterCellDef, MatFooterCell, MatIconButton, MatCheckbox, MatHeaderRowDef, MatHeaderRow, MatRowDef, MatRow, MatFooterRowDef, MatFooterRow, MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle, MatSelectionList, MatListOption, MatDialogActions, MatButton, AsyncPipe, TranslateModule]
+  imports: [TrawellingContextCardComponent, MatDialogTitle, CdkScrollable, MatDialogContent, MatCard, MatCardContent, MatSlideToggle, MatFormField, MatLabel, MatInput, MatDatepickerInput, FormsModule, MatDatepickerToggle, MatSuffix, MatDatepicker, MatIcon, MatTable, MatColumnDef, MatHeaderCellDef, MatHeaderCell, MatCellDef, MatCell, MatAutocompleteTrigger, MatAutocomplete, MatOption, MatFooterCellDef, MatFooterCell, MatIconButton, MatCheckbox, MatHeaderRowDef, MatHeaderRow, MatRowDef, MatRow, MatFooterRowDef, MatFooterRow, MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle, MatSelectionList, MatListOption, MatDialogActions, MatButton, AsyncPipe, TranslateModule]
 })
 export class RouteInstancesEditComponent implements OnInit {
   readonly table = viewChild<MatTable<RouteInstanceProperty>>('table');
@@ -39,6 +42,7 @@ export class RouteInstancesEditComponent implements OnInit {
   maps: Map[];
   selectedMaps: number[] = [];
   useDetailedTime = false;
+  traewellingTripData: TrawellingTripContext | null = null;
 
   // Getter and setter for datetime-local inputs (legacy - keeping for compatibility)
   get startTimeLocal(): string {
@@ -135,6 +139,9 @@ export class RouteInstancesEditComponent implements OnInit {
       }
       this.selectedMaps = this.instance.routeInstanceMaps.map(rim => rim.mapId);
     }
+    if (!!data.traewellingTripData) {
+      this.traewellingTripData = data.traewellingTripData;
+    }
   }
 
   ngOnInit() {
@@ -178,6 +185,9 @@ export class RouteInstancesEditComponent implements OnInit {
         this.instance.routeInstanceProperties.slice(0, this.instance.routeInstanceProperties.length - 1);
     }
     this.instance.routeInstanceMaps = this.selectedMaps.map(s => { return { mapId: s } });
+    if (this.instance.date['_isAMomentObject']) {
+      this.instance.date = (this.instance.date as unknown as Moment).format('YYYY-MM-DD');
+    }
     this.dialogRef.close(this.instance);
   }
 

@@ -1,4 +1,4 @@
-import { Injectable, EventEmitter } from '@angular/core';
+import { Injectable, EventEmitter, inject } from '@angular/core';
 import { TranslateService } from '@ngx-translate/core';
 
 type Language = 'nl' | 'en';
@@ -7,8 +7,10 @@ type Language = 'nl' | 'en';
   providedIn: 'root'
 })
 export class TranslationService {
+  private translateService = inject(TranslateService);
+
   languageChanged = new EventEmitter<Language>();
-  constructor(private translateService: TranslateService) {
+  constructor() {
     if (navigator.language.includes('nl')) {
       this.language = 'nl';
     } else {

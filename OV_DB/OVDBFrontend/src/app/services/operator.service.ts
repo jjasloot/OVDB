@@ -1,4 +1,4 @@
-import { Injectable, Signal } from "@angular/core";
+import { Injectable, Signal, inject } from "@angular/core";
 import { environment } from "src/environments/environment";
 import {
   Operator,
@@ -13,7 +13,8 @@ import { map, shareReplay, tap } from "rxjs/operators";
   providedIn: "root",
 })
 export class OperatorService {
-  constructor(private httpClient: HttpClient) {}
+  private httpClient = inject(HttpClient);
+
 
   logos = new Map<number, Observable<string>>();
 

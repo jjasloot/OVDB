@@ -1,4 +1,4 @@
-import { Component, computed, Inject, model, signal } from "@angular/core";
+import { Component, computed, model, signal, inject } from "@angular/core";
 import { MatDialogRef, MAT_DIALOG_DATA, MatDialogTitle, MatDialogContent, MatDialogActions } from "@angular/material/dialog";
 import { NewRegion, Region } from "src/app/models/region.model";
 import { CdkScrollable } from "@angular/cdk/scrolling";
@@ -30,15 +30,16 @@ import { TranslateModule } from "@ngx-translate/core";
   ]
 })
 export class AdministratorNewRegionComponent {
+  dialogRef = inject<MatDialogRef<AdministratorNewRegionComponent>>(MatDialogRef);
+
   region = {} as NewRegion;
   regions: Region[] = [];
   parentRegionId = model<number | null>(null);
   intermediateRegionId = model<number | null>(null);
   showAllRegionsForIntermediate = signal(false);
-  constructor(
-    public dialogRef: MatDialogRef<AdministratorNewRegionComponent>,
-    @Inject(MAT_DIALOG_DATA) data
-  ) {
+  constructor() {
+    const data = inject(MAT_DIALOG_DATA);
+
     if (!!data && data.regions) {
       this.regions = data.regions;
     }
