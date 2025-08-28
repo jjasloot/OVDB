@@ -38,7 +38,7 @@ export class TrawellingComponent implements OnInit {
   isLoading = true;
   isLoadingMore = false;
   hasMorePages = false;
-  currentPage = 120;
+  currentPage = 1;
 
   async ngOnInit() {
     await this.loadConnectionStatus();
@@ -62,7 +62,7 @@ export class TrawellingComponent implements OnInit {
 
   private async loadTrips() {
     try {
-      const response = await this.trawellingService.getUnimportedTrips(120);
+      const response = await this.trawellingService.getUnimportedTrips(1);
       this.trips = response.data;
       this.hasMorePages = response.hasMorePages;
       this.currentPage = response.meta.current_page;
