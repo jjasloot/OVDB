@@ -1,0 +1,304 @@
+<div class="enhanced-analytics-container">
+  <!-- Controls -->
+  <mat-card appearance="outlined" class="controls-card">
+    <mat-card-header>
+      <mat-card-title>{{ 'ENHANCED_ANALYTICS.TITLE' | translate }}</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <div class="controls-row">
+        <mat-form-field>
+          <mat-label>{{ 'CHOOSEMAP' | translate }}</mat-label>
+          <mat-select [(value)]="selectedMap" (selectionChange)="onMapChange()">
+            @for (map of maps; track map.mapGuid) {
+            <mat-option [value]="map.mapGuid">{{ map.name }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field>
+          <mat-label>{{ 'CHOOSEYEAR' | translate }}</mat-label>
+          <mat-select [(value)]="selectedYear" (selectionChange)="onYearChange()">
+            @for (year of years; track year) {
+            <mat-option [value]="year">{{ year }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  @if (loading) {
+  <div class="loading-container">
+    <mat-spinner></mat-spinner>
+    <p>{{ 'LOADING' | translate }}</p>
+  </div>
+  }
+
+  @if (!loading && selectedMap) {
+  <mat-tab-group>
+    <!-- Trip Frequency Tab -->
+    <mat-tab label="{{ 'ENHANCED_ANALYTICS.TRIP_FREQUENCY' | translate }}">
+      <div class="tab-content">
+        <mat-card appearance="outlined">
+          <mat-card-header>
+            <mat-card-title>{{ 'ENHANCED_ANALYTICS.TRIP_FREQUENCY_CHART' | translate }}</mat-card-title>
+            <mat-card-subtitle>{{ 'ENHANCED_ANALYTICS.TRIP_FREQUENCY_DESC' | translate }}</mat-card-subtitle>
+          </mat-card-header>
+          <mat-card-content>
+            @if (tripFrequencyData.length > 0) {
+            <div class="chart-container">
+              <canvas
+                baseChart
+                [data]="tripFrequencyChartData"
+                [options]="tripFrequencyChartOptions"
+                type="line">
+              </canvas>
+            </div>
+            <div class="export-actions">
+              <button mat-raised-button color="primary" (click)="exportTripFrequency()">
+                {{ 'ENHANCED_ANALYTICS.EXPORT_CSV' | translate }}
+              </button>
+            </div>
+            } @else {
+            <p>{{ 'ENHANCED_ANALYTICS.NO_DATA' | translate }}</p>
+            }
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </mat-tab>
+
+    <!-- Activity Heatmap Tab -->
+    <mat-tab label="{{ 'ENHANCED_ANALYTICS.ACTIVITY_HEATMAP' | translate }}">
+      <div class="tab-content">
+        <mat-card appearance="outlined">
+          <mat-card-header>
+            <mat-card-title>{{ 'ENHANCED_ANALYTICS.ACTIVITY_HEATMAP_CHART' | translate }}</mat-card-title>
+            <mat-card-subtitle>{{ 'ENHANCED_ANALYTICS.ACTIVITY_HEATMAP_DESC' | translate }}</mat-card-subtitle>
+          </mat-card-header>
+          <mat-card-content>
+            @if (activityHeatmapData && activityHeatmapData.data.length > 0) {
+            <div class="heatmap-container">
+              <div class="heatmap">
+                <div class="months-row">
+                  <div class="month-label">Jan</div>
+                  <div class="month-label">Feb</div>
+                  <div class="month-label">Mar</div>
+                  <div class="month-label">Apr</div>
+                  <div class="month-label">May</div>
+                  <div class="month-label">Jun</div>
+                  <div class="month-label">Jul</div>
+                  <div class="month-label">Aug</div>
+                  <div class="month-label">Sep</div>
+                  <div class="month-label">Oct</div>
+                  <div class="month-label">Nov</div>
+                  <div class="month-label">Dec</div>
+                </div>
+                <div class="heatmap-grid">
+                  <div class="days-labels">
+                    <div class="day-label">Mon</div>
+                    <div class="day-label">Wed</div>
+                    <div class="day-label">Fri</div>
+                  </div>
+                  <div class="weeks">
+                    @for (week of getWeeksInYear(); track week) {
+                    <div class="week">
+                      @for (day of week; track day) {
+                      @if (day) {
+                      <div 
+                        class="day-cell" 
+                        [class]="getActivityLevel(day)"
+                        [title]="day.date + ': ' + day.tripCount + ' trips'">
+                      </div>
+                      } @else {
+                      <div class="day-cell empty"></div>
+                      }
+                      }
+                    </div>
+                    }
+                  </div>
+                </div>
+                <div class="heatmap-legend">
+                  <span>Less</span>
+                  <div class="legend-scale">
+                    <div class="legend-cell level-0"></div>
+                    <div class="legend-cell level-1"></div>
+                    <div class="legend-cell level-2"></div>
+                    <div class="legend-cell level-3"></div>
+                    <div class="legend-cell level-4"></div>
+                  </div>
+                  <span>More</span>
+                </div>
+              </div>
+            </div>
+            } @else {
+            <p>{{ 'ENHANCED_ANALYTICS.NO_DATA' | translate }}</p>
+            }
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </mat-tab>
+
+    <!-- Route Rankings Tab -->
+    <mat-tab label="{{ 'ENHANCED_ANALYTICS.ROUTE_RANKINGS' | translate }}">
+      <div class="tab-content">
+        <mat-card appearance="outlined">
+          <mat-card-header>
+            <mat-card-title>{{ 'ENHANCED_ANALYTICS.MOST_USED_ROUTES' | translate }}</mat-card-title>
+            <mat-card-subtitle>{{ 'ENHANCED_ANALYTICS.ROUTE_RANKINGS_DESC' | translate }}</mat-card-subtitle>
+          </mat-card-header>
+          <mat-card-content>
+            @if (routeRankings.length > 0) {
+            <div class="table-container">
+              <table mat-table [dataSource]="routeRankings" class="rankings-table">
+                <ng-container matColumnDef="rank">
+                  <th mat-header-cell *matHeaderCellDef>{{ 'ENHANCED_ANALYTICS.RANK' | translate }}</th>
+                  <td mat-cell *matCellDef="let element; let i = index">{{ i + 1 }}</td>
+                </ng-container>
+
+                <ng-container matColumnDef="routeName">
+                  <th mat-header-cell *matHeaderCellDef>{{ 'NAME' | translate }}</th>
+                  <td mat-cell *matCellDef="let element">{{ element.routeName }}</td>
+                </ng-container>
+
+                <ng-container matColumnDef="routeType">
+                  <th mat-header-cell *matHeaderCellDef>{{ 'TYPE' | translate }}</th>
+                  <td mat-cell *matCellDef="let element">{{ element.routeTypeNameNL || element.routeType }}</td>
+                </ng-container>
+
+                <ng-container matColumnDef="tripCount">
+                  <th mat-header-cell *matHeaderCellDef>{{ 'ENHANCED_ANALYTICS.TRIP_COUNT' | translate }}</th>
+                  <td mat-cell *matCellDef="let element">{{ element.tripCount }}</td>
+                </ng-container>
+
+                <ng-container matColumnDef="totalDistance">
+                  <th mat-header-cell *matHeaderCellDef>{{ 'DISTANCE' | translate }} (km)</th>
+                  <td mat-cell *matCellDef="let element">{{ element.totalDistance | number:'1.1-2' }}</td>
+                </ng-container>
+
+                <ng-container matColumnDef="averageDistance">
+                  <th mat-header-cell *matHeaderCellDef>{{ 'ENHANCED_ANALYTICS.AVG_DISTANCE' | translate }} (km)</th>
+                  <td mat-cell *matCellDef="let element">{{ element.averageDistance | number:'1.1-2' }}</td>
+                </ng-container>
+
+                <tr mat-header-row *matHeaderRowDef="routeRankingsColumns"></tr>
+                <tr mat-row *matRowDef="let row; columns: routeRankingsColumns;"></tr>
+              </table>
+            </div>
+            <div class="export-actions">
+              <button mat-raised-button color="primary" (click)="exportRouteRankings()">
+                {{ 'ENHANCED_ANALYTICS.EXPORT_CSV' | translate }}
+              </button>
+            </div>
+            } @else {
+            <p>{{ 'ENHANCED_ANALYTICS.NO_DATA' | translate }}</p>
+            }
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </mat-tab>
+
+    <!-- Travel Time Trends Tab -->
+    <mat-tab label="{{ 'ENHANCED_ANALYTICS.TRAVEL_TRENDS' | translate }}">
+      <div class="tab-content">
+        <mat-card appearance="outlined">
+          <mat-card-header>
+            <mat-card-title>{{ 'ENHANCED_ANALYTICS.TRAVEL_TIME_TRENDS' | translate }}</mat-card-title>
+            <mat-card-subtitle>{{ 'ENHANCED_ANALYTICS.TRAVEL_TRENDS_DESC' | translate }}</mat-card-subtitle>
+          </mat-card-header>
+          <mat-card-content>
+            @if (travelTimeTrends && travelTimeTrends.averageDurationByHour.length > 0) {
+            <div class="chart-container">
+              <canvas
+                baseChart
+                [data]="travelTimeTrendsChartData"
+                [options]="travelTimeTrendsChartOptions"
+                type="bar">
+              </canvas>
+            </div>
+            } @else {
+            <p>{{ 'ENHANCED_ANALYTICS.NO_TIMING_DATA' | translate }}</p>
+            }
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </mat-tab>
+
+    <!-- Integration Statistics Tab -->
+    <mat-tab label="{{ 'ENHANCED_ANALYTICS.INTEGRATION_STATS' | translate }}">
+      <div class="tab-content">
+        <mat-card appearance="outlined">
+          <mat-card-header>
+            <mat-card-title>{{ 'ENHANCED_ANALYTICS.INTEGRATION_STATISTICS' | translate }}</mat-card-title>
+            <mat-card-subtitle>{{ 'ENHANCED_ANALYTICS.INTEGRATION_DESC' | translate }}</mat-card-subtitle>
+          </mat-card-header>
+          <mat-card-content>
+            @if (integrationStats) {
+            <div class="stats-grid">
+              <div class="stat-card">
+                <div class="stat-value">{{ integrationStats.totalTrips }}</div>
+                <div class="stat-label">{{ 'ENHANCED_ANALYTICS.TOTAL_TRIPS' | translate }}</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-value">{{ integrationStats.tripsWithTiming }}</div>
+                <div class="stat-label">{{ 'ENHANCED_ANALYTICS.TRIPS_WITH_TIMING' | translate }}</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-value">{{ integrationStats.traewellingImported }}</div>
+                <div class="stat-label">{{ 'ENHANCED_ANALYTICS.TRAEWELLING_IMPORTED' | translate }}</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-value">{{ integrationStats.timingCompleteness }}%</div>
+                <div class="stat-label">{{ 'ENHANCED_ANALYTICS.TIMING_COMPLETENESS' | translate }}</div>
+              </div>
+            </div>
+            <div class="export-actions">
+              <button mat-raised-button color="primary" (click)="exportIntegrationStats()">
+                {{ 'ENHANCED_ANALYTICS.EXPORT_CSV' | translate }}
+              </button>
+            </div>
+            } @else {
+            <p>{{ 'ENHANCED_ANALYTICS.NO_DATA' | translate }}</p>
+            }
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </mat-tab>
+
+    <!-- Coverage Overview Tab -->
+    <mat-tab label="{{ 'ENHANCED_ANALYTICS.COVERAGE' | translate }}">
+      <div class="tab-content">
+        <mat-card appearance="outlined">
+          <mat-card-header>
+            <mat-card-title>{{ 'ENHANCED_ANALYTICS.COVERAGE_OVERVIEW' | translate }}</mat-card-title>
+            <mat-card-subtitle>{{ 'ENHANCED_ANALYTICS.COVERAGE_DESC' | translate }}</mat-card-subtitle>
+          </mat-card-header>
+          <mat-card-content>
+            @if (coverageOverview) {
+            <div class="stats-grid">
+              <div class="stat-card">
+                <div class="stat-value">{{ coverageOverview.uniqueRoutes }}</div>
+                <div class="stat-label">{{ 'ENHANCED_ANALYTICS.UNIQUE_ROUTES' | translate }}</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-value">{{ coverageOverview.totalDistance | number:'1.0-0' }} km</div>
+                <div class="stat-label">{{ 'ENHANCED_ANALYTICS.TOTAL_DISTANCE' | translate }}</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-value">{{ coverageOverview.visitedStations }}</div>
+                <div class="stat-label">{{ 'ENHANCED_ANALYTICS.VISITED_STATIONS' | translate }}</div>
+              </div>
+            </div>
+            <div class="coverage-note">
+              <mat-icon>info</mat-icon>
+              <span>{{ coverageOverview.coverageNote }}</span>
+            </div>
+            } @else {
+            <p>{{ 'ENHANCED_ANALYTICS.NO_DATA' | translate }}</p>
+            }
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </mat-tab>
+  </mat-tab-group>
+  }
+</div>
