@@ -405,6 +405,7 @@
       "NO_DATA": "No data available for the selected period",
       "NO_TIMING_DATA": "No timing data available - import trips with departure/arrival times to see trends",
       "EXPORT_CSV": "Export CSV",
+      "EXPORT_PNG": "Export PNG",
       "RANK": "Rank",
       "TRIP_COUNT": "Trips",
       "AVG_DISTANCE": "Avg Distance",

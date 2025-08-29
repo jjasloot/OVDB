@@ -46,7 +46,7 @@
           </mat-card-header>
           <mat-card-content>
             @if (tripFrequencyData.length > 0) {
-            <div class="chart-container">
+            <div class="chart-container" id="trip-frequency-chart">
               <canvas
                 baseChart
                 [data]="tripFrequencyChartData"
@@ -57,6 +57,9 @@
             <div class="export-actions">
               <button mat-raised-button color="primary" (click)="exportTripFrequency()">
                 {{ 'ENHANCED_ANALYTICS.EXPORT_CSV' | translate }}
+              </button>
+              <button mat-raised-button color="accent" (click)="exportTripFrequencyChart()">
+                {{ 'ENHANCED_ANALYTICS.EXPORT_PNG' | translate }}
               </button>
             </div>
             } @else {
@@ -207,13 +210,18 @@
           </mat-card-header>
           <mat-card-content>
             @if (travelTimeTrends && travelTimeTrends.averageDurationByHour.length > 0) {
-            <div class="chart-container">
+            <div class="chart-container" id="travel-trends-chart">
               <canvas
                 baseChart
                 [data]="travelTimeTrendsChartData"
                 [options]="travelTimeTrendsChartOptions"
                 type="bar">
               </canvas>
+            </div>
+            <div class="export-actions">
+              <button mat-raised-button color="accent" (click)="exportTravelTrendsChart()">
+                {{ 'ENHANCED_ANALYTICS.EXPORT_PNG' | translate }}
+              </button>
             </div>
             } @else {
             <p>{{ 'ENHANCED_ANALYTICS.NO_TIMING_DATA' | translate }}</p>

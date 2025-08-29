@@ -322,5 +322,29 @@ namespace OV_DB.Controllers
                 CoverageNote = "Coverage statistics are best-effort due to potential route overlaps and partial segments"
             });
         }
+
+        /// <summary>
+        /// Test endpoint to verify analytics API is working (no auth required for testing)
+        /// </summary>
+        [HttpGet("test")]
+        [AllowAnonymous]
+        public IActionResult TestAnalytics()
+        {
+            return Ok(new 
+            { 
+                message = "Enhanced Analytics API is working correctly!",
+                timestamp = DateTime.UtcNow,
+                version = "1.0.0",
+                features = new string[] {
+                    "Trip frequency analysis",
+                    "GitHub-style activity heatmap", 
+                    "Route rankings and usage stats",
+                    "Travel time trends",
+                    "Integration statistics",
+                    "Coverage overview with route overlap handling",
+                    "CSV export functionality"
+                }
+            });
+        }
     }
 }

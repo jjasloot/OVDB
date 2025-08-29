@@ -317,6 +317,20 @@ export class EnhancedAnalyticsComponent implements OnInit {
     }
   }
 
+  exportTripFrequencyChart(): void {
+    const canvas = document.querySelector('#trip-frequency-chart canvas') as HTMLCanvasElement;
+    if (canvas) {
+      this.analyticsService.exportChartAsPNG(canvas, 'trip-frequency-chart.png');
+    }
+  }
+
+  exportTravelTrendsChart(): void {
+    const canvas = document.querySelector('#travel-trends-chart canvas') as HTMLCanvasElement;
+    if (canvas) {
+      this.analyticsService.exportChartAsPNG(canvas, 'travel-trends-chart.png');
+    }
+  }
+
   exportRouteRankings(): void {
     if (this.routeRankings?.length) {
       this.analyticsService.exportToCsv(this.routeRankings, 'route-rankings.csv');

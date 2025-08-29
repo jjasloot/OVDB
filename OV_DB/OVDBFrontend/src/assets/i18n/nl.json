@@ -398,6 +398,7 @@
       "NO_DATA": "Geen data beschikbaar voor de geselecteerde periode",
       "NO_TIMING_DATA": "Geen timing data beschikbaar - importeer reizen met vertrek-/aankomsttijden om trends te zien",
       "EXPORT_CSV": "Export CSV",
+      "EXPORT_PNG": "Export PNG",
       "RANK": "Rang",
       "TRIP_COUNT": "Reizen",
       "AVG_DISTANCE": "Gem Afstand",

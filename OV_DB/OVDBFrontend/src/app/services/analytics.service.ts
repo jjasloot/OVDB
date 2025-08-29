@@ -67,6 +67,21 @@ export class AnalyticsService {
     this.downloadFile(csv, filename, 'text/csv');
   }
 
+  exportChartAsPNG(canvasElement: HTMLCanvasElement, filename: string): void {
+    canvasElement.toBlob((blob) => {
+      if (blob) {
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+      }
+    }, 'image/png');
+  }
+
   private convertToCSV(data: any[]): string {
     if (!data || data.length === 0) return '';
     
