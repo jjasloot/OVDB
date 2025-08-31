@@ -1,17 +1,307 @@
-textarea {
-    width: 95%;
-    height: 100px;
-}
-
+// Container styles
 .container {
-    margin: 16px;
+  margin: 16px;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 20px;
+  line-height: 1.6;
+  color: #333;
 }
 
-@media (min-width:600px) {
-    .container {
-        margin: 64px;
+// Section styles
+.help-section {
+  margin-bottom: 2.5rem;
+  
+  h1, h2, h3 {
+    color: #2c3e50;
+    margin-bottom: 1rem;
+  }
+  
+  h1 {
+    font-size: 2.5rem;
+    text-align: center;
+    margin-bottom: 1.5rem;
+    background: linear-gradient(45deg, #3498db, #2980b9);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  
+  h2 {
+    font-size: 1.8rem;
+    border-bottom: 3px solid #3498db;
+    padding-bottom: 0.5rem;
+    margin-top: 2rem;
+  }
+  
+  h3 {
+    font-size: 1.3rem;
+    color: #2980b9;
+    margin-top: 1.5rem;
+  }
+}
+
+// Welcome section
+.welcome-section {
+  text-align: center;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  padding: 2rem;
+  border-radius: 12px;
+  margin-bottom: 3rem;
+  
+  .help-description {
+    font-size: 1.1rem;
+    margin-top: 1rem;
+    color: #495057;
+  }
+}
+
+// Steps container
+.steps-container {
+  display: grid;
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.step-item {
+  background: #f8f9fa;
+  padding: 1.5rem;
+  border-radius: 8px;
+  border-left: 4px solid #3498db;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  
+  strong {
+    color: #2c3e50;
+  }
+  
+  em {
+    color: #e74c3c;
+    font-style: normal;
+    font-weight: 600;
+  }
+}
+
+// Feature items
+.feature-item {
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background: #fdfdfd;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(52, 152, 219, 0.15);
+  }
+  
+  h3 {
+    margin-top: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    
+    &::before {
+      content: '🔧';
+      font-size: 1.2rem;
     }
+  }
+}
+
+// Tips container
+.tips-container {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.tip-item {
+  background: linear-gradient(135deg, #e8f5e8 0%, #f0f8f0 100%);
+  padding: 1rem;
+  border-radius: 8px;
+  border-left: 4px solid #27ae60;
+  
+  strong {
+    color: #27ae60;
+  }
+}
+
+// Call to action section
+.cta-section {
+  text-align: center;
+  background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+  color: white;
+  padding: 2rem;
+  border-radius: 12px;
+  margin: 3rem 0;
+  
+  .cta-text {
+    font-size: 1.3rem;
+    margin-bottom: 1.5rem;
+    font-weight: 500;
+  }
+  
+  .cta-button {
+    display: inline-block;
+    background: white;
+    color: #2980b9;
+    padding: 12px 30px;
+    border-radius: 25px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      color: #2980b9;
+    }
+  }
+}
+
+// Changelog section
+.changelog-section {
+  background: #f8f9fa;
+  padding: 1.5rem;
+  border-radius: 8px;
+  border: 1px solid #dee2e6;
+  
+  h3 {
+    margin-top: 0;
+    color: #495057;
+  }
+  
+  textarea {
+    width: 100%;
+    height: 200px;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    padding: 0.5rem;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9rem;
+    background: white;
+    resize: vertical;
+  }
+}
+
+// Feature-specific icon styling
+.help-section {
+  h3 {
+    &:has-text("Interactive Maps")::before,
+    &[data-feature="maps"]::before { content: '🗺️ '; }
+    
+    &:has-text("Route Management")::before,
+    &[data-feature="routes"]::before { content: '🛤️ '; }
+    
+    &:has-text("Trip Tracking")::before,
+    &[data-feature="trips"]::before { content: '🎯 '; }
+    
+    &:has-text("Smart Filtering")::before,
+    &[data-feature="filtering"]::before { content: '🔍 '; }
+    
+    &:has-text("Travel Statistics")::before,
+    &[data-feature="statistics"]::before { content: '📊 '; }
+    
+    &:has-text("Station Maps")::before,
+    &[data-feature="stations"]::before { content: '🚉 '; }
+    
+    &:has-text("Dynamic Images")::before,
+    &[data-feature="images"]::before { content: '🖼️ '; }
+    
+    &:has-text("Share Your Adventures")::before,
+    &[data-feature="sharing"]::before { content: '🌐 '; }
+    
+    &:has-text("Träwelling")::before,
+    &[data-feature="traewelling"]::before { content: '🚅 '; }
+    
+    &:has-text("Telegram")::before,
+    &[data-feature="telegram"]::before { content: '📱 '; }
+    
+    &:has-text("Route Import Wizard")::before,
+    &[data-feature="wizard"]::before { content: '🧙‍♂️ '; }
+    
+    &:has-text("File Upload")::before,
+    &[data-feature="upload"]::before { content: '📁 '; }
+    
+    &:has-text("Data Export")::before,
+    &[data-feature="export"]::before { content: '💾 '; }
+  }
+}
+
+// Responsive design
+@media (min-width: 600px) {
+  .container {
+    padding: 40px;
+  }
+  
+  .steps-container {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .tips-container {
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  }
+}
+
+@media (min-width: 900px) {
+  .help-section h1 {
+    font-size: 3rem;
+  }
+  
+  .steps-container {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+// Link styling
+a {
+  color: #3498db;
+  text-decoration: none;
+  
+  &:hover {
+    color: #2980b9;
+    text-decoration: underline;
+  }
+}
+
+// Dark mode support
+@media (prefers-color-scheme: dark) {
+  .container {
+    color: #e9ecef;
+  }
+  
+  .help-section h1, .help-section h2, .help-section h3 {
+    color: #f8f9fa;
+  }
+  
+  .welcome-section {
+    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+    
+    .help-description {
+      color: #bdc3c7;
+    }
+  }
+  
+  .step-item, .feature-item {
+    background: #2c3e50;
+    color: #e9ecef;
+    border-color: #34495e;
+  }
+  
+  .tip-item {
+    background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+    color: white;
+  }
+  
+  .changelog-section {
+    background: #2c3e50;
+    color: #e9ecef;
+    border-color: #34495e;
+    
     textarea {
-        width: 80%;
+      background: #34495e;
+      color: #e9ecef;
+      border-color: #4a6741;
     }
+  }
 }
