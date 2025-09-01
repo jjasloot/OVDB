@@ -108,10 +108,16 @@
   <p>{{ "HOME.INFONOTLOGGEDIN" | translate }}</p>
   <div class="buttons">
     <button mat-raised-button [routerLink]="['/login']">
-      {{ "HOME.LOGIN" | translate }}
-    </button>
-    <button mat-raised-button [routerLink]="['/register']">
+        <mat-icon>login</mat-icon>
+        {{ "HOME.LOGIN" | translate }}
+      </button>
+      <button mat-raised-button [routerLink]="['/register']">
+      <mat-icon>person_add</mat-icon>
       {{ "HOME.REGISTER" | translate }}
+    </button>
+    <button mat-raised-button [routerLink]="['/help']">
+      <mat-icon>help_outline</mat-icon>
+      {{'MENU.HELP'|translate}}
     </button>
   </div>
   }

@@ -1,17 +1,118 @@
-textarea {
-    width: 95%;
-    height: 100px;
-}
-
+// Minimal help component styling using Material Design defaults and CSS custom properties
 .container {
-    margin: 16px;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 20px;
+  background-color: var(--help-background-color);
+  color: var(--help-text-color);
 }
 
-@media (min-width:600px) {
-    .container {
-        margin: 64px;
-    }
-    textarea {
-        width: 80%;
-    }
+.help-section {
+  margin-bottom: 2rem;
+  
+  h1, h2, h3 {
+    color: var(--help-heading-color);
+    margin-bottom: 1rem;
+  }
+  
+  h1 {
+    text-align: center;
+    font-size: 2.5rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  h2 {
+    font-size: 1.8rem;
+    border-bottom: 2px solid var(--help-step-border);
+    padding-bottom: 0.5rem;
+    margin-top: 2rem;
+  }
+}
+
+.welcome-section {
+  text-align: center;
+  background: var(--help-section-background);
+  padding: 2rem;
+  border-radius: 8px;
+  margin-bottom: 2rem;
+}
+
+.steps-container {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.tips-container {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.step-item {
+  background: var(--help-step-background);
+  padding: 1rem;
+  border-radius: 4px;
+  border-left: 4px solid var(--help-step-border);
+  margin-bottom: 1rem;
+}
+
+.feature-item {
+  background: var(--help-feature-background);
+  padding: 1rem;
+  border-radius: 4px;
+  border: 1px solid var(--help-feature-border);
+  margin-bottom: 1rem;
+  
+  h3 {
+    margin-top: 0;
+  }
+}
+
+.tip-item {
+  background: var(--help-tip-background);
+  padding: 1rem;
+  border-radius: 4px;
+  border-left: 4px solid var(--help-tip-border);
+  margin-bottom: 1rem;
+  
+  strong {
+    color: var(--help-tip-border);
+  }
+}
+
+.cta-section {
+  text-align: center;
+  background: var(--help-cta-background);
+  color: var(--help-cta-text);
+  padding: 2rem;
+  border-radius: 8px;
+  margin: 2rem 0;
+}
+
+.cta-button {
+  display: inline-block;
+  background: var(--help-cta-button-background);
+  color: var(--help-cta-button-text);
+  padding: 8px 16px;
+  border-radius: 4px;
+  text-decoration: none;
+  font-weight: 500;
+  
+  &:hover {
+    text-decoration: none;
+    opacity: 0.9;
+  }
+}
+
+// Responsive design
+@media (min-width: 600px) {
+  .container {
+    padding: 40px;
+  }
+  
+  .steps-container,
+  .tips-container {
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  }
 }

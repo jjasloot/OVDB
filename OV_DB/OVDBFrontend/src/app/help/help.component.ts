@@ -1,6 +1,7 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { TranslationService } from '../services/translation.service';
+import { RouterLink } from '@angular/router';
 
 import { TranslateModule } from '@ngx-translate/core';
 
@@ -8,7 +9,7 @@ import { TranslateModule } from '@ngx-translate/core';
     selector: 'app-help',
     templateUrl: './help.component.html',
     styleUrls: ['./help.component.scss'],
-    imports: [TranslateModule]
+    imports: [TranslateModule, RouterLink]
 })
 export class HelpComponent implements OnInit {
   private httpClient = inject(HttpClient);
