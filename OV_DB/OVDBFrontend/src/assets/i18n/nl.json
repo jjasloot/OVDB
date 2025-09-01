@@ -73,7 +73,7 @@
     "DESCRIPTION": "Houd alle reizen die je gemaakt hebt bij. Maak de eerste keer een nieuwe route aan en vul deze daarna aan met ritten.<br><br>Importeer de routes met de wizard vanuit OpenStreetMap of maak gebruik van <a href=\"https://bikerouter.de\" target=\"_blank\">bikerouter.de</a>.<br><br>",
     "WELCOME_TITLE": "Welkom bij OVDB",
     "WELCOME_DESCRIPTION": "OVDB is een tool voor het bijhouden, visualiseren en analyseren van al je reizen. Of je nu reist per trein, bus, tram, metro of veerboot - OVDB helpt je kaarten van je reizen te maken, statistieken bij te houden en je reiservaringen te tonen.",
-    "GETTING_STARTED_TITLE": "🚀 Aan de Slag",
+    "GETTING_STARTED_TITLE": "🚀 Aan de slag",
     "GETTING_STARTED_STEP1": "<strong>Stap 1: Stel route types in</strong><br>Voordat je routes toevoegt, maak route types aan in de <em>Data → Types</em> sectie. Definieer categorieën zoals 'Trein', 'Bus' en 'Tram' met kleuren om je verschillende vervoersmiddelen te organiseren en visualiseren.",
     "GETTING_STARTED_STEP2": "<strong>Stap 2: Voeg je eerste route toe</strong><br>Gebruik de wizard om openbaar vervoer routes te zoeken vanuit OpenStreetMap, of upload je eigen GPX/KML bestanden. Elke route vertegenwoordigt een specifieke lijn of pad die je hebt bereisd.",
     "GETTING_STARTED_STEP3": "<strong>Stap 3: Houd je ritten bij</strong><br>Voor elke keer dat je een route reist, voeg je een <em>Rit</em> toe met de datum en eventuele extra details zoals vertrektijden of speciale eigenschappen.",
