@@ -32,6 +32,22 @@ html {
   --mdc-theme-primary: #4caf50;
   --mat-toolbar-container-background-color: #4caf50;
   --mat-app-background-color: white;
+  
+  // Help page colors - light theme
+  --help-background-color: white;
+  --help-text-color: #333;
+  --help-heading-color: #2c3e50;
+  --help-section-background: #f8f9fa;
+  --help-step-background: #f8f9fa;
+  --help-step-border: #3498db;
+  --help-feature-background: #fdfdfd;
+  --help-feature-border: #e9ecef;
+  --help-tip-background: linear-gradient(135deg, #e8f5e8 0%, #f0f8f0 100%);
+  --help-tip-border: #27ae60;
+  --help-cta-background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+  --help-cta-text: white;
+  --help-cta-button-background: white;
+  --help-cta-button-text: #2980b9;
 }
 
 // Ensure toolbar has the bright green color
@@ -88,6 +104,22 @@ mat-toolbar.mat-primary {
     --mdc-filled-button-container-color: #006b0e !important;
     --mdc-fab-container-color: #006b0e !important;
   }
+  
+  // Help page colors - dark theme
+  --help-background-color: #303030;
+  --help-text-color: #e9ecef;
+  --help-heading-color: #f8f9fa;
+  --help-section-background: #2c3e50;
+  --help-step-background: #2c3e50;
+  --help-step-border: #3498db;
+  --help-feature-background: #2c3e50;
+  --help-feature-border: #34495e;
+  --help-tip-background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+  --help-tip-border: #27ae60;
+  --help-cta-background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+  --help-cta-text: white;
+  --help-cta-button-background: white;
+  --help-cta-button-text: #2980b9;
 }
 
 /* You can add global styles to this file, and also import other style files */
