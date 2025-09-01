@@ -100,11 +100,6 @@
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    
-    &::before {
-      content: '🔧';
-      font-size: 1.2rem;
-    }
   }
 }
 
@@ -185,48 +180,7 @@
 }
 
 // Feature-specific icon styling
-.help-section {
-  h3 {
-    &:has-text("Interactive Maps")::before,
-    &[data-feature="maps"]::before { content: '🗺️ '; }
-    
-    &:has-text("Route Management")::before,
-    &[data-feature="routes"]::before { content: '🛤️ '; }
-    
-    &:has-text("Trip Tracking")::before,
-    &[data-feature="trips"]::before { content: '🎯 '; }
-    
-    &:has-text("Smart Filtering")::before,
-    &[data-feature="filtering"]::before { content: '🔍 '; }
-    
-    &:has-text("Travel Statistics")::before,
-    &[data-feature="statistics"]::before { content: '📊 '; }
-    
-    &:has-text("Station Maps")::before,
-    &[data-feature="stations"]::before { content: '🚉 '; }
-    
-    &:has-text("Dynamic Images")::before,
-    &[data-feature="images"]::before { content: '🖼️ '; }
-    
-    &:has-text("Share Your Adventures")::before,
-    &[data-feature="sharing"]::before { content: '🌐 '; }
-    
-    &:has-text("Träwelling")::before,
-    &[data-feature="traewelling"]::before { content: '🚅 '; }
-    
-    &:has-text("Telegram")::before,
-    &[data-feature="telegram"]::before { content: '📱 '; }
-    
-    &:has-text("Route Import Wizard")::before,
-    &[data-feature="wizard"]::before { content: '🧙‍♂️ '; }
-    
-    &:has-text("File Upload")::before,
-    &[data-feature="upload"]::before { content: '📁 '; }
-    
-    &:has-text("Data Export")::before,
-    &[data-feature="export"]::before { content: '💾 '; }
-  }
-}
+
 
 // Responsive design
 @media (min-width: 600px) {

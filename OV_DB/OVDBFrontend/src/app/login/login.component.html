@@ -9,14 +9,18 @@
     <input matInput type="password" formControlName="password">
   </mat-form-field>
   @if (failed) {
-    <div class="failed">{{'LOGIN.UPINCORRECT'|translate}}</div>
-  }
-  @if (!!error) {
-    <div class="failed">{{error.message}}</div>
+  <div class="failed">{{'LOGIN.UPINCORRECT'|translate}}</div>
   }
 
-  <button mat-raised-button (click)="submit()" [disabled]="loading">{{'LOGIN.SUBMIT'|translate}}</button>
+  <button mat-raised-button (click)="submit()"
+    [disabled]="loading||form.pristine||form.invalid">{{'LOGIN.SUBMIT'|translate}}</button>
   @if (loading) {
-    <mat-spinner style="margin:auto"></mat-spinner>
+  <mat-spinner style="margin:auto"></mat-spinner>
   }
+  <div style="display: flex; flex-direction: column; justify-content: center; margin-top: 32px; align-items: center;">
+    <div>
+      {{'LOGIN.NO_ACCOUNT'|translate}}&nbsp;
+    </div>
+    <a mat-button [routerLink]="['/register']">{{'HOME.REGISTER'|translate}}</a>
+  </div>
 </form>

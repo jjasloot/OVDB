@@ -83,10 +83,12 @@
         <button mat-icon-button [routerLink]="['/help']">
           <mat-icon>help_outline</mat-icon>
         </button>
-        <mat-select hideSingleSelectionIndicator [value]="currentLanguage" (selectionChange)="setLanguage($event)">
-          <mat-option [value]="'nl'">nl</mat-option>
-          <mat-option [value]="'en'">en</mat-option>
-        </mat-select>
+        @if(currentLanguage!=='nl'){
+        <button mat-icon-button (click)="setLanguage('nl')"><mat-icon>🇳🇱</mat-icon></button>
+        }
+        @if(currentLanguage!=='en'){
+        <button mat-icon-button (click)="setLanguage('en')"><mat-icon>🇬🇧</mat-icon></button>
+        }
         <button mat-icon-button (click)="signIn()">
           <mat-icon>person</mat-icon>
         </button>

@@ -21,31 +21,28 @@
             <div class="step-item">
                 <div [innerHTML]="'HELP.GETTING_STARTED_STEP4'|translate"></div>
             </div>
-            <div class="step-item">
-                <div [innerHTML]="'HELP.GETTING_STARTED_STEP5'|translate"></div>
-            </div>
         </div>
     </section>
 
     <!-- Core Features -->
     <section class="help-section">
         <h2>{{'HELP.CORE_FEATURES_TITLE'|translate}}</h2>
-        
+
         <div class="feature-item">
             <h3>{{'HELP.MAPS_TITLE'|translate}}</h3>
             <div [innerHTML]="'HELP.MAPS_DESCRIPTION'|translate"></div>
         </div>
-        
+
         <div class="feature-item">
             <h3>{{'HELP.ROUTES_TITLE'|translate}}</h3>
             <div [innerHTML]="'HELP.ROUTES_DESCRIPTION'|translate"></div>
         </div>
-        
+
         <div class="feature-item">
             <h3>{{'HELP.TRIPS_TITLE'|translate}}</h3>
             <div [innerHTML]="'HELP.TRIPS_DESCRIPTION'|translate"></div>
         </div>
-        
+
         <div class="feature-item">
             <h3>{{'HELP.FILTERING_TITLE'|translate}}</h3>
             <div [innerHTML]="'HELP.FILTERING_DESCRIPTION'|translate"></div>
@@ -55,22 +52,17 @@
     <!-- Advanced Features -->
     <section class="help-section">
         <h2>{{'HELP.ADVANCED_FEATURES_TITLE'|translate}}</h2>
-        
+
         <div class="feature-item">
             <h3>{{'HELP.STATISTICS_TITLE'|translate}}</h3>
             <div [innerHTML]="'HELP.STATISTICS_DESCRIPTION'|translate"></div>
         </div>
-        
+
         <div class="feature-item">
             <h3>{{'HELP.STATION_MAPS_TITLE'|translate}}</h3>
             <div [innerHTML]="'HELP.STATION_MAPS_DESCRIPTION'|translate"></div>
         </div>
-        
-        <div class="feature-item">
-            <h3>{{'HELP.IMAGES_TITLE'|translate}}</h3>
-            <div [innerHTML]="'HELP.IMAGES_DESCRIPTION'|translate"></div>
-        </div>
-        
+
         <div class="feature-item">
             <h3>{{'HELP.SHARING_TITLE'|translate}}</h3>
             <div [innerHTML]="'HELP.SHARING_DESCRIPTION'|translate"></div>
@@ -80,12 +72,12 @@
     <!-- Smart Integrations -->
     <section class="help-section">
         <h2>{{'HELP.INTEGRATION_TITLE'|translate}}</h2>
-        
+
         <div class="feature-item">
             <h3>{{'HELP.TRAEWELLING_TITLE'|translate}}</h3>
             <div [innerHTML]="'HELP.TRAEWELLING_DESCRIPTION'|translate"></div>
         </div>
-        
+
         <div class="feature-item">
             <h3>{{'HELP.TELEGRAM_TITLE'|translate}}</h3>
             <div [innerHTML]="'HELP.TELEGRAM_DESCRIPTION'|translate"></div>
@@ -95,17 +87,17 @@
     <!-- Import & Export -->
     <section class="help-section">
         <h2>{{'HELP.IMPORT_EXPORT_TITLE'|translate}}</h2>
-        
+
         <div class="feature-item">
             <h3>{{'HELP.IMPORT_WIZARD_TITLE'|translate}}</h3>
             <div [innerHTML]="'HELP.IMPORT_WIZARD_DESCRIPTION'|translate"></div>
         </div>
-        
+
         <div class="feature-item">
             <h3>{{'HELP.FILE_UPLOAD_TITLE'|translate}}</h3>
             <div [innerHTML]="'HELP.FILE_UPLOAD_DESCRIPTION'|translate"></div>
         </div>
-        
+
         <div class="feature-item">
             <h3>{{'HELP.EXPORT_TITLE'|translate}}</h3>
             <div [innerHTML]="'HELP.EXPORT_DESCRIPTION'|translate"></div>
@@ -136,9 +128,12 @@
         <a [routerLink]="['/admin']" class="cta-button">{{'HOME.DATA'|translate}}</a>
     </section>
 
-    <!-- Changelog Section -->
+    <!-- Changelog Section
     <section class="help-section changelog-section">
         <h3>{{'HELP.CHANGELOG'|translate}}</h3>
         <textarea readonly>{{changelog}}</textarea>
+    </section> -->
+    <section class="help-section">
+        <div ><em>{{'HELP.POST_SCRIPTUM'|translate}}</em></div>
     </section>
 </div>
