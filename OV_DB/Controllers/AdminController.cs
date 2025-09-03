@@ -88,7 +88,9 @@ namespace OV_DB.Controllers
                     .SelectMany(m => m.RouteMaps)
                     .Select(rm => rm.Route)
                     .SelectMany(r => r.RouteInstances)
-                    .Max(ri => (DateTime?)ri.Date)
+                    .OrderByDescending(ri => ri.Date)
+                    .Select(ri => (DateTime?)ri.Date)
+                    .FirstOrDefault()
             }).ToListAsync();
 
             return Ok(list);
