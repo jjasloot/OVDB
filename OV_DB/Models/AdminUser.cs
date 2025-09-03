@@ -12,5 +12,11 @@ namespace OV_DB.Models
         public int RouteCount { get; set; }
         public bool IsAdmin { get; set; }
         public int Id { get; set; }
+        
+        // Route instance statistics
+        public int RouteInstancesCount { get; set; }
+        public int RouteInstancesWithTimeCount { get; set; }
+        public int RouteInstancesWithTrawellingIdCount { get; set; }
+        public DateTime? LastRouteInstanceDate { get; set; }
     }
 }

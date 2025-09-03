@@ -4,4 +4,10 @@ export interface AdminUser{
     lastLogin: Date;
     routeCount: number;
     isAdmin: boolean;
+    
+    // Route instance statistics
+    routeInstancesCount: number;
+    routeInstancesWithTimeCount: number;
+    routeInstancesWithTrawellingIdCount: number;
+    lastRouteInstanceDate?: Date;
 }

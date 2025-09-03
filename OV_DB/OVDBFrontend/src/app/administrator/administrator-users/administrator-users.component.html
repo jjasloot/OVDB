@@ -1,27 +1,49 @@
 <div class="mat-elevation-z8">
-    <mat-table [dataSource]="data">
+    <mat-table [dataSource]="dataSource" matSort>
         <ng-container matColumnDef="id">
-            <mat-header-cell *matHeaderCellDef> Id</mat-header-cell>
+            <mat-header-cell *matHeaderCellDef mat-sort-header> Id</mat-header-cell>
             <mat-cell *matCellDef="let element"> {{element.id}} </mat-cell>
         </ng-container>
 
         <ng-container matColumnDef="email">
-            <mat-header-cell *matHeaderCellDef> Email </mat-header-cell>
+            <mat-header-cell *matHeaderCellDef mat-sort-header> Email </mat-header-cell>
             <mat-cell *matCellDef="let element"> {{element.email}} </mat-cell>
         </ng-container>
 
         <ng-container matColumnDef="lastLogin">
-            <mat-header-cell *matHeaderCellDef> Last login </mat-header-cell>
+            <mat-header-cell *matHeaderCellDef mat-sort-header> Last login </mat-header-cell>
             <mat-cell *matCellDef="let element"> {{element.lastLogin|date:'medium':undefined:'nl-NL'}} </mat-cell>
         </ng-container>
 
-        <ng-container matColumnDef="routes">
-            <mat-header-cell *matHeaderCellDef> Routes </mat-header-cell>
+        <ng-container matColumnDef="routeCount">
+            <mat-header-cell *matHeaderCellDef mat-sort-header> Routes </mat-header-cell>
             <mat-cell *matCellDef="let element"> {{element.routeCount}} </mat-cell>
         </ng-container>
 
+        <ng-container matColumnDef="routeInstancesCount">
+            <mat-header-cell *matHeaderCellDef mat-sort-header> Route Instances </mat-header-cell>
+            <mat-cell *matCellDef="let element"> {{element.routeInstancesCount}} </mat-cell>
+        </ng-container>
+
+        <ng-container matColumnDef="routeInstancesWithTimeCount">
+            <mat-header-cell *matHeaderCellDef mat-sort-header> With Time </mat-header-cell>
+            <mat-cell *matCellDef="let element"> {{element.routeInstancesWithTimeCount}} </mat-cell>
+        </ng-container>
+
+        <ng-container matColumnDef="routeInstancesWithTrawellingIdCount">
+            <mat-header-cell *matHeaderCellDef mat-sort-header> With TräwellingID </mat-header-cell>
+            <mat-cell *matCellDef="let element"> {{element.routeInstancesWithTrawellingIdCount}} </mat-cell>
+        </ng-container>
+
+        <ng-container matColumnDef="lastRouteInstanceDate">
+            <mat-header-cell *matHeaderCellDef mat-sort-header> Last Route Instance </mat-header-cell>
+            <mat-cell *matCellDef="let element"> 
+                {{element.lastRouteInstanceDate ? (element.lastRouteInstanceDate|date:'medium':undefined:'nl-NL') : 'N/A'}} 
+            </mat-cell>
+        </ng-container>
+
         <ng-container matColumnDef="isAdmin">
-            <mat-header-cell *matHeaderCellDef> IsAdmin </mat-header-cell>
+            <mat-header-cell *matHeaderCellDef mat-sort-header> IsAdmin </mat-header-cell>
             <mat-cell *matCellDef="let element">
                 <mat-checkbox [checked]="element.isAdmin"></mat-checkbox>
             </mat-cell>
