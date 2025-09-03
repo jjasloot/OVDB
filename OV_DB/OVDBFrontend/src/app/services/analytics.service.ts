@@ -9,6 +9,7 @@ import {
   IntegrationStatsData,
   CoverageOverviewData
 } from '../models/analytics.interfaces';
+import { environment } from 'src/environments/environment';
 
 @Injectable({
   providedIn: 'root'
@@ -22,44 +23,44 @@ export class AnalyticsService {
     if (startDate) params = params.set('startDate', startDate.toISOString());
     if (endDate) params = params.set('endDate', endDate.toISOString());
     if (year) params = params.set('year', year.toString());
-    
-    return this.http.get<TripFrequencyData[]>(`api/analytics/trip-frequency/${mapGuid}`, { params });
+
+    return this.http.get<TripFrequencyData[]>(`${environment.backend}api/analytics/trip-frequency/${mapGuid}`, { params });
   }
 
   getActivityHeatmap(mapGuid: string, year?: number): Observable<ActivityHeatmapData> {
     let params = new HttpParams();
     if (year) params = params.set('year', year.toString());
-    
-    return this.http.get<ActivityHeatmapData>(`api/analytics/activity-heatmap/${mapGuid}`, { params });
+
+    return this.http.get<ActivityHeatmapData>(`${environment.backend}api/analytics/activity-heatmap/${mapGuid}`, { params });
   }
 
   getRouteRankings(mapGuid: string, year?: number, limit?: number): Observable<RouteRankingData[]> {
     let params = new HttpParams();
     if (year) params = params.set('year', year.toString());
     if (limit) params = params.set('limit', limit.toString());
-    
-    return this.http.get<RouteRankingData[]>(`api/analytics/route-rankings/${mapGuid}`, { params });
+
+    return this.http.get<RouteRankingData[]>(`${environment.backend}api/analytics/route-rankings/${mapGuid}`, { params });
   }
 
   getTravelTimeTrends(mapGuid: string, year?: number): Observable<TravelTimeTrendsData> {
     let params = new HttpParams();
     if (year) params = params.set('year', year.toString());
-    
-    return this.http.get<TravelTimeTrendsData>(`api/analytics/travel-time-trends/${mapGuid}`, { params });
+
+    return this.http.get<TravelTimeTrendsData>(`${environment.backend}api/analytics/travel-time-trends/${mapGuid}`, { params });
   }
 
   getIntegrationStats(mapGuid: string, year?: number): Observable<IntegrationStatsData> {
     let params = new HttpParams();
     if (year) params = params.set('year', year.toString());
-    
-    return this.http.get<IntegrationStatsData>(`api/analytics/integration-stats/${mapGuid}`, { params });
+
+    return this.http.get<IntegrationStatsData>(`${environment.backend}api/analytics/integration-stats/${mapGuid}`, { params });
   }
 
   getCoverageOverview(mapGuid: string, year?: number): Observable<CoverageOverviewData> {
     let params = new HttpParams();
     if (year) params = params.set('year', year.toString());
-    
-    return this.http.get<CoverageOverviewData>(`api/analytics/coverage-overview/${mapGuid}`, { params });
+
+    return this.http.get<CoverageOverviewData>(`${environment.backend}api/analytics/coverage-overview/${mapGuid}`, { params });
   }
 
   exportToCsv(data: any[], filename: string): void {
@@ -84,13 +85,13 @@ export class AnalyticsService {
 
   private convertToCSV(data: any[]): string {
     if (!data || data.length === 0) return '';
-    
+
     const keys = Object.keys(data[0]);
     const csvContent = [
       keys.join(','),
       ...data.map(item => keys.map(key => this.formatCSVField(item[key])).join(','))
     ].join('\n');
-    
+
     return csvContent;
   }
 
