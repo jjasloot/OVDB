@@ -15,22 +15,22 @@
             <mat-cell *matCellDef="let element"> {{element.lastLogin|date:'medium':undefined:'nl-NL'}} </mat-cell>
         </ng-container>
 
-        <ng-container matColumnDef="routes">
+        <ng-container matColumnDef="routeCount">
             <mat-header-cell *matHeaderCellDef mat-sort-header> Routes </mat-header-cell>
             <mat-cell *matCellDef="let element"> {{element.routeCount}} </mat-cell>
         </ng-container>
 
-        <ng-container matColumnDef="routeInstances">
+        <ng-container matColumnDef="routeInstancesCount">
             <mat-header-cell *matHeaderCellDef mat-sort-header> Route Instances </mat-header-cell>
             <mat-cell *matCellDef="let element"> {{element.routeInstancesCount}} </mat-cell>
         </ng-container>
 
-        <ng-container matColumnDef="routeInstancesWithTime">
+        <ng-container matColumnDef="routeInstancesWithTimeCount">
             <mat-header-cell *matHeaderCellDef mat-sort-header> With Time </mat-header-cell>
             <mat-cell *matCellDef="let element"> {{element.routeInstancesWithTimeCount}} </mat-cell>
         </ng-container>
 
-        <ng-container matColumnDef="routeInstancesWithTrawelling">
+        <ng-container matColumnDef="routeInstancesWithTrawellingIdCount">
             <mat-header-cell *matHeaderCellDef mat-sort-header> With TräwellingID </mat-header-cell>
             <mat-cell *matCellDef="let element"> {{element.routeInstancesWithTrawellingIdCount}} </mat-cell>
         </ng-container>

@@ -1,8 +1,11 @@
 .mat-column-id,
-.mat-column-routes,
-.mat-column-routeInstances,
-.mat-column-routeInstancesWithTime,
-.mat-column-routeInstancesWithTrawelling,
+.mat-column-routeCount,
+.mat-column-routeInstancesCount,
+.mat-column-routeInstancesWithTimeCount,
 .mat-column-isAdmin {
     max-width: 100px;
+}
+
+.mat-column-routeInstancesWithTrawellingIdCount {
+    max-width: 150px;
 }

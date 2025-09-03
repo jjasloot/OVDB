@@ -19,7 +19,7 @@ export class AdministratorUsersComponent implements OnInit, AfterViewInit {
   @ViewChild(MatSort) sort!: MatSort;
 
   dataSource = new MatTableDataSource<AdminUser>([]);
-  displayedColumns: string[] = ['id', 'email', 'lastLogin', 'routes', 'routeInstances', 'routeInstancesWithTime', 'routeInstancesWithTrawelling', 'lastRouteInstanceDate', 'isAdmin'];
+  displayedColumns: string[] = ['id', 'email', 'lastLogin', 'routeCount', 'routeInstancesCount', 'routeInstancesWithTimeCount', 'routeInstancesWithTrawellingIdCount', 'lastRouteInstanceDate', 'isAdmin'];
 
   ngOnInit(): void {
     this.apiService.administratorGetUsers().subscribe(data => {
