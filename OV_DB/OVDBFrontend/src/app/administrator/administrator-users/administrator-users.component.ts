@@ -16,7 +16,7 @@ export class AdministratorUsersComponent implements OnInit {
 
 
   data: AdminUser[];
-  displayedColumns: string[] = ['id', 'email', 'lastLogin', 'routes', 'isAdmin'];
+  displayedColumns: string[] = ['id', 'email', 'lastLogin', 'routes', 'routeInstances', 'routeInstancesWithTime', 'routeInstancesWithTrawelling', 'lastRouteInstanceDate', 'isAdmin'];
 
   ngOnInit(): void {
     this.apiService.administratorGetUsers().subscribe(data => {

@@ -63,7 +63,32 @@ namespace OV_DB.Controllers
                 Email = u.Email,
                 LastLogin = u.LastLogin,
                 IsAdmin = u.IsAdmin,
-                RouteCount = u.Maps.Sum(m => m.RouteMaps.Count)
+                RouteCount = u.Maps.Sum(m => m.RouteMaps.Count),
+                
+                // Calculate route instances statistics for user's routes
+                RouteInstancesCount = u.Maps
+                    .SelectMany(m => m.RouteMaps)
+                    .Select(rm => rm.Route)
+                    .SelectMany(r => r.RouteInstances)
+                    .Count(),
+                    
+                RouteInstancesWithTimeCount = u.Maps
+                    .SelectMany(m => m.RouteMaps)
+                    .Select(rm => rm.Route)
+                    .SelectMany(r => r.RouteInstances)
+                    .Count(ri => ri.StartTime.HasValue && ri.EndTime.HasValue),
+                    
+                RouteInstancesWithTrawellingIdCount = u.Maps
+                    .SelectMany(m => m.RouteMaps)
+                    .Select(rm => rm.Route)
+                    .SelectMany(r => r.RouteInstances)
+                    .Count(ri => ri.TrawellingStatusId.HasValue),
+                    
+                LastRouteInstanceDate = u.Maps
+                    .SelectMany(m => m.RouteMaps)
+                    .Select(rm => rm.Route)
+                    .SelectMany(r => r.RouteInstances)
+                    .Max(ri => (DateTime?)ri.Date)
             }).ToListAsync();
 
             return Ok(list);

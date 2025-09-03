@@ -20,6 +20,28 @@
             <mat-cell *matCellDef="let element"> {{element.routeCount}} </mat-cell>
         </ng-container>
 
+        <ng-container matColumnDef="routeInstances">
+            <mat-header-cell *matHeaderCellDef> Route Instances </mat-header-cell>
+            <mat-cell *matCellDef="let element"> {{element.routeInstancesCount}} </mat-cell>
+        </ng-container>
+
+        <ng-container matColumnDef="routeInstancesWithTime">
+            <mat-header-cell *matHeaderCellDef> With Time </mat-header-cell>
+            <mat-cell *matCellDef="let element"> {{element.routeInstancesWithTimeCount}} </mat-cell>
+        </ng-container>
+
+        <ng-container matColumnDef="routeInstancesWithTrawelling">
+            <mat-header-cell *matHeaderCellDef> With TräwellingID </mat-header-cell>
+            <mat-cell *matCellDef="let element"> {{element.routeInstancesWithTrawellingIdCount}} </mat-cell>
+        </ng-container>
+
+        <ng-container matColumnDef="lastRouteInstanceDate">
+            <mat-header-cell *matHeaderCellDef> Last Route Instance </mat-header-cell>
+            <mat-cell *matCellDef="let element"> 
+                {{element.lastRouteInstanceDate ? (element.lastRouteInstanceDate|date:'medium':undefined:'nl-NL') : 'N/A'}} 
+            </mat-cell>
+        </ng-container>
+
         <ng-container matColumnDef="isAdmin">
             <mat-header-cell *matHeaderCellDef> IsAdmin </mat-header-cell>
             <mat-cell *matCellDef="let element">
