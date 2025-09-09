@@ -41,31 +41,31 @@
             <mat-icon matSuffix>access_time</mat-icon>
           </mat-form-field>
           
-          <div class="endtime-container">
+          <div class="time-row">
             <mat-form-field appearance="outline" class="time-field">
               <mat-label>{{'ROUTEINSTANCESEDIT.ENDTIME'|translate}}</mat-label>
               <input matInput type="time" [(ngModel)]="endTimeOnly">
               <mat-icon matSuffix>access_time</mat-icon>
             </mat-form-field>
             
-            <div class="day-offset-selector">
-              <label class="day-offset-label">{{'ROUTEINSTANCESEDIT.DAYOFFSET'|translate}}:</label>
-              <mat-button-toggle-group 
-                [(ngModel)]="endTimeDayOffset" 
-                (change)="setEndTimeDayOffset($event.value)"
-                class="day-offset-buttons"
-                aria-label="Day offset">
+            <mat-form-field appearance="outline" class="day-offset-field">
+              <mat-label>{{'ROUTEINSTANCESEDIT.DAYOFFSET'|translate}}</mat-label>
+              <mat-select [(ngModel)]="endTimeDayOffset" (selectionChange)="setEndTimeDayOffset($event.value)">
                 @for (offset of dayOffsetOptions; track offset) {
-                  <mat-button-toggle [value]="offset" class="day-offset-button">
+                  <mat-option [value]="offset">
                     @if (offset === 0) {
                       {{'ROUTEINSTANCESEDIT.SAMEDAY'|translate}}
                     } @else {
-                      +{{offset}}
+                      +{{offset}} @if (offset === 1) {
+                        {{'ROUTEINSTANCESEDIT.DAY'|translate}}
+                      } @else {
+                        {{'ROUTEINSTANCESEDIT.DAYS'|translate}}
+                      }
                     }
-                  </mat-button-toggle>
+                  </mat-option>
                 }
-              </mat-button-toggle-group>
-            </div>
+              </mat-select>
+            </mat-form-field>
           </div>
         </div>
       }
