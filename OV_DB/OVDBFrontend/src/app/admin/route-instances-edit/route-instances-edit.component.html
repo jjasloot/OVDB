@@ -41,11 +41,32 @@
             <mat-icon matSuffix>access_time</mat-icon>
           </mat-form-field>
           
-          <mat-form-field appearance="outline" class="time-field">
-            <mat-label>{{'ROUTEINSTANCESEDIT.ENDTIME'|translate}}</mat-label>
-            <input matInput type="time" [(ngModel)]="endTimeOnly">
-            <mat-icon matSuffix>access_time</mat-icon>
-          </mat-form-field>
+          <div class="endtime-container">
+            <mat-form-field appearance="outline" class="time-field">
+              <mat-label>{{'ROUTEINSTANCESEDIT.ENDTIME'|translate}}</mat-label>
+              <input matInput type="time" [(ngModel)]="endTimeOnly">
+              <mat-icon matSuffix>access_time</mat-icon>
+            </mat-form-field>
+            
+            <div class="day-offset-selector">
+              <label class="day-offset-label">{{'ROUTEINSTANCESEDIT.DAYOFFSET'|translate}}:</label>
+              <mat-button-toggle-group 
+                [(ngModel)]="endTimeDayOffset" 
+                (change)="setEndTimeDayOffset($event.value)"
+                class="day-offset-buttons"
+                aria-label="Day offset">
+                @for (offset of dayOffsetOptions; track offset) {
+                  <mat-button-toggle [value]="offset" class="day-offset-button">
+                    @if (offset === 0) {
+                      {{'ROUTEINSTANCESEDIT.SAMEDAY'|translate}}
+                    } @else {
+                      +{{offset}}
+                    }
+                  </mat-button-toggle>
+                }
+              </mat-button-toggle-group>
+            </div>
+          </div>
         </div>
       }
     </mat-card-content>

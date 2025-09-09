@@ -22,6 +22,49 @@ mat-form-field {
     flex-wrap: wrap;
 }
 
+.endtime-container {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex: 1;
+    min-width: 200px;
+}
+
+.day-offset-selector {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.day-offset-label {
+    font-size: 0.75rem;
+    color: rgba(0, 0, 0, 0.6);
+    margin: 0;
+    font-weight: 400;
+}
+
+[data-theme="dark"] .day-offset-label {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.day-offset-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px;
+}
+
+.day-offset-button {
+    font-size: 0.75rem !important;
+    line-height: 1 !important;
+    min-width: 32px !important;
+    height: 28px !important;
+    padding: 4px 8px !important;
+}
+
+.day-offset-button .mat-button-toggle-label-content {
+    line-height: 1 !important;
+}
+
 .date-field {
     flex: 2;
     min-width: 200px;
