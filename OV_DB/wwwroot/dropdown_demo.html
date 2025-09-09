@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Day Offset Dropdown - Mobile Friendly Interface</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .section {
+            margin-bottom: 30px;
+        }
+        h2 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+        .comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .field-group {
+            display: flex;
+            gap: 8px;
+            align-items: flex-start;
+            flex-wrap: wrap;
+        }
+        .field {
+            flex: 1;
+            min-width: 140px;
+        }
+        .field-narrow {
+            width: 160px;
+            min-width: 160px;
+        }
+        label {
+            display: block;
+            font-size: 0.75rem;
+            color: #666;
+            margin-bottom: 4px;
+            font-weight: 500;
+        }
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        input:focus, select:focus {
+            outline: none;
+            border-color: #3f51b5;
+            box-shadow: 0 0 0 2px rgba(63, 81, 181, 0.2);
+        }
+        .button-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2px;
+            margin-top: 4px;
+        }
+        .button {
+            font-size: 0.75rem;
+            line-height: 1;
+            min-width: 32px;
+            height: 28px;
+            padding: 4px 8px;
+            border: 1px solid #ccc;
+            background: white;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .button.active {
+            background: #3f51b5;
+            color: white;
+            border-color: #3f51b5;
+        }
+        .button:hover {
+            background: #f0f0f0;
+        }
+        .button.active:hover {
+            background: #303f9f;
+        }
+        .advantages {
+            background: #e8f5e8;
+            padding: 15px;
+            border-radius: 4px;
+            border-left: 4px solid #4caf50;
+        }
+        .advantages h3 {
+            color: #2e7d32;
+            margin: 0 0 10px 0;
+        }
+        .advantages ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+        .advantages li {
+            margin-bottom: 5px;
+            color: #2e7d32;
+        }
+        @media (max-width: 600px) {
+            .comparison {
+                grid-template-columns: 1fr;
+            }
+            .field-group {
+                flex-direction: column;
+            }
+            .field, .field-narrow {
+                width: 100%;
+                min-width: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Day Offset Interface Improvement</h1>
+        
+        <div class="section">
+            <h2>Before vs After Comparison</h2>
+            
+            <div class="comparison">
+                <div>
+                    <h3>❌ Before: Button Toggle Group</h3>
+                    <div class="field-group">
+                        <div class="field">
+                            <label>End time</label>
+                            <input type="time" value="09:10">
+                        </div>
+                    </div>
+                    <div style="margin-top: 8px;">
+                        <label>Days later:</label>
+                        <div class="button-group">
+                            <button class="button">Same day</button>
+                            <button class="button active">+1</button>
+                            <button class="button">+2</button>
+                            <button class="button">+3</button>
+                            <button class="button">+4</button>
+                            <button class="button">+5</button>
+                            <button class="button">+6</button>
+                            <button class="button">+7</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div>
+                    <h3>✅ After: Compact Dropdown</h3>
+                    <div class="field-group">
+                        <div class="field">
+                            <label>End time</label>
+                            <input type="time" value="09:10">
+                        </div>
+                        <div class="field-narrow">
+                            <label>Day offset</label>
+                            <select>
+                                <option>Same day</option>
+                                <option selected>+1 day</option>
+                                <option>+2 days</option>
+                                <option>+3 days</option>
+                                <option>+4 days</option>
+                                <option>+5 days</option>
+                                <option>+6 days</option>
+                                <option>+7 days</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="section">
+            <div class="advantages">
+                <h3>🚀 Improvements with Dropdown Approach</h3>
+                <ul>
+                    <li><strong>More Compact:</strong> Takes up significantly less space, especially on mobile</li>
+                    <li><strong>Mobile-Friendly:</strong> Dropdowns are native mobile UI elements with better touch interaction</li>
+                    <li><strong>No Wrapping:</strong> Buttons wrapped to multiple lines on narrow screens; dropdown stays single line</li>
+                    <li><strong>Clear Labels:</strong> "+1 day" vs "+2 days" provides better context than just "+1", "+2"</li>
+                    <li><strong>Scalable:</strong> Easy to add more options without cluttering the interface</li>
+                    <li><strong>Standard UX:</strong> Users expect dropdowns for selection lists in forms</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2>Mobile Responsiveness Test</h2>
+            <p><em>Resize your browser window to see how the new interface adapts better to narrow screens.</em></p>
+        </div>
+    </div>
+</body>
+</html>
