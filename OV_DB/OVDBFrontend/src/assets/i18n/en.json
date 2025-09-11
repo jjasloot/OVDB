@@ -213,6 +213,9 @@
   "ROUTEINSTANCESEDIT.ADDTIMES": "Add start and end times",
   "ROUTEINSTANCESEDIT.STARTTIME": "Start time",
   "ROUTEINSTANCESEDIT.ENDTIME": "End time",
+  "ROUTEINSTANCESEDIT.DAYOFFSET": "Day",
+  "ROUTEINSTANCESEDIT.DAY": "day",
+  "ROUTEINSTANCESEDIT.DAYS": "days",
   "ROUTEINSTANCESEDIT.PROPERTYKEY": "Key",
   "ROUTEINSTANCESEDIT.PROPERTYVALUE": "Value",
   "ROUTEINSTANCESEDIT.PROPERTYBOOL": "True/False",
@@ -276,14 +279,6 @@
   "REQUESTS.NEW_REQUEST_PLACEHOLDER": "Could you add Iceland? Could you split Italy into its provinces, e.g. Lomdardy and Tuscany?",
   "REQUESTS.SEND_REQUEST": "Send request",
   "REQUESTS.RESPONSE": "Response",
-  "MENU": {
-    "HELP": "Help",
-    "SIGNOUT": "Uitloggen",
-    "MENU": "Menu",
-    "REQUESTS": "Requests",
-    "MAPS": "Maps",
-    "DATA": "Data"
-  },
   "STATS": {
     "OPERATORS": "Operators",
     "CUMULATIVE": "Cumulative",

@@ -22,6 +22,25 @@ mat-form-field {
     flex-wrap: wrap;
 }
 
+.time-row {
+    display: flex;
+    gap: 8px;
+    flex: 1;
+    min-width: 200px;
+    align-items: flex-start;
+}
+
+.day-offset-selector {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.day-offset-field {
+    width: 90px !important;
+    min-width: 90px;
+}
+
 .date-field {
     flex: 2;
     min-width: 200px;

@@ -13,6 +13,7 @@ import { MatDatepickerInput, MatDatepickerToggle, MatDatepicker } from '@angular
 import { FormsModule } from '@angular/forms';
 import { MatAutocompleteTrigger, MatAutocomplete } from '@angular/material/autocomplete';
 import { MatOption } from '@angular/material/core';
+import { MatSelect } from '@angular/material/select';
 import { MatIconButton, MatButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
 import { MatCheckbox } from '@angular/material/checkbox';
@@ -31,7 +32,7 @@ import { TrawellingTripContext } from 'src/app/models/traewelling.model';
   selector: 'app-route-instances-edit',
   templateUrl: './route-instances-edit.component.html',
   styleUrls: ['./route-instances-edit.component.scss'],
-  imports: [TrawellingContextCardComponent, MatDialogTitle, CdkScrollable, MatDialogContent, MatCard, MatCardContent, MatSlideToggle, MatFormField, MatLabel, MatInput, MatDatepickerInput, FormsModule, MatDatepickerToggle, MatSuffix, MatDatepicker, MatIcon, MatTable, MatColumnDef, MatHeaderCellDef, MatHeaderCell, MatCellDef, MatCell, MatAutocompleteTrigger, MatAutocomplete, MatOption, MatFooterCellDef, MatFooterCell, MatIconButton, MatCheckbox, MatHeaderRowDef, MatHeaderRow, MatRowDef, MatRow, MatFooterRowDef, MatFooterRow, MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle, MatSelectionList, MatListOption, MatDialogActions, MatButton, AsyncPipe, TranslateModule]
+  imports: [TrawellingContextCardComponent, MatDialogTitle, CdkScrollable, MatDialogContent, MatCard, MatCardContent, MatSlideToggle, MatFormField, MatLabel, MatInput, MatDatepickerInput, FormsModule, MatDatepickerToggle, MatSuffix, MatDatepicker, MatIcon, MatSelect, MatTable, MatColumnDef, MatHeaderCellDef, MatHeaderCell, MatCellDef, MatCell, MatAutocompleteTrigger, MatAutocomplete, MatOption, MatFooterCellDef, MatFooterCell, MatIconButton, MatCheckbox, MatHeaderRowDef, MatHeaderRow, MatRowDef, MatRow, MatFooterRowDef, MatFooterRow, MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle, MatSelectionList, MatListOption, MatDialogActions, MatButton, AsyncPipe, TranslateModule]
 })
 export class RouteInstancesEditComponent implements OnInit {
   readonly table = viewChild<MatTable<RouteInstanceProperty>>('table');
@@ -43,6 +44,7 @@ export class RouteInstancesEditComponent implements OnInit {
   selectedMaps: number[] = [];
   useDetailedTime = false;
   traewellingTripData: TrawellingTripContext | null = null;
+  endTimeDayOffset = 0; // Number of days to add to end time (0-7)
 
   // Getter and setter for datetime-local inputs (legacy - keeping for compatibility)
   get startTimeLocal(): string {
@@ -96,6 +98,9 @@ export class RouteInstancesEditComponent implements OnInit {
     const combinedDate = new Date(baseDate.getFullYear(), baseDate.getMonth(), baseDate.getDate(), hours, minutes);
     this.instance.startTime = this.formatDateTimeLocal(combinedDate);
     console.log(combinedDate);
+    
+    // Auto-detect if we need day offset when start time changes
+    this.autoDetectDayOffset();
   }
 
   get endTimeOnly(): string {
@@ -112,8 +117,12 @@ export class RouteInstancesEditComponent implements OnInit {
 
     const baseDate = this.instance.date ? new Date(this.instance.date) : new Date();
     const [hours, minutes] = value.split(':').map(num => parseInt(num, 10));
-    const combinedDate = new Date(baseDate.getFullYear(), baseDate.getMonth(), baseDate.getDate(), hours, minutes);
+    // Add day offset to the base date
+    const combinedDate = new Date(baseDate.getFullYear(), baseDate.getMonth(), baseDate.getDate() + this.endTimeDayOffset, hours, minutes);
     this.instance.endTime = this.formatDateTimeLocal(combinedDate);
+    
+    // Auto-detect if we need day offset when end time < start time
+    this.autoDetectDayOffset();
   }
 
   private formatDateTimeLocal(date: Date): string {
@@ -147,6 +156,9 @@ export class RouteInstancesEditComponent implements OnInit {
   ngOnInit() {
     // Check if the instance already has time information
     this.useDetailedTime = !!(this.instance.startTime || this.instance.endTime);
+    
+    // Calculate initial day offset based on existing times
+    this.calculateExistingDayOffset();
 
     this.apiService.getAutocompleteForTags().subscribe(data => {
       this.options = data;
@@ -221,5 +233,71 @@ export class RouteInstancesEditComponent implements OnInit {
 
   name(item: any) {
     return this.translationService.getNameForItem(item);
+  }
+
+  /**
+   * Auto-detect if day offset is needed when end time < start time
+   */
+  private autoDetectDayOffset() {
+    if (!this.instance.startTime || !this.instance.endTime || this.endTimeDayOffset > 0) {
+      return; // Don't auto-adjust if user has manually set an offset
+    }
+
+    const startTime = this.getTimeOnlyFromDateTime(this.instance.startTime);
+    const endTime = this.getTimeOnlyFromDateTime(this.instance.endTime);
+    
+    if (endTime < startTime) {
+      this.setEndTimeDayOffset(1);
+    }
+  }
+
+  /**
+   * Calculate existing day offset from current start/end times
+   */
+  private calculateExistingDayOffset() {
+    if (!this.instance.startTime || !this.instance.endTime) {
+      this.endTimeDayOffset = 0;
+      return;
+    }
+
+    const startDate = new Date(this.instance.startTime);
+    const endDate = new Date(this.instance.endTime);
+    
+    // Calculate the difference in days
+    const startDayStart = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
+    const endDayStart = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
+    
+    const diffTime = endDayStart.getTime() - startDayStart.getTime();
+    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+    
+    this.endTimeDayOffset = Math.max(0, Math.min(7, diffDays)); // Clamp between 0-7
+  }
+
+  /**
+   * Extract time portion as minutes from midnight for comparison
+   */
+  private getTimeOnlyFromDateTime(dateTimeStr: string): number {
+    const date = new Date(dateTimeStr);
+    return date.getHours() * 60 + date.getMinutes();
+  }
+
+  /**
+   * Set the day offset for end time
+   */
+  setEndTimeDayOffset(offset: number) {
+    this.endTimeDayOffset = Math.max(0, Math.min(7, offset)); // Clamp between 0-7
+    
+    // Recalculate end time with new offset
+    if (this.endTimeOnly) {
+      const currentEndTime = this.endTimeOnly;
+      this.endTimeOnly = currentEndTime; // Trigger the setter with new offset
+    }
+  }
+
+  /**
+   * Get array of day offset options for UI
+   */
+  get dayOffsetOptions(): number[] {
+    return [0, 1, 2, 3, 4, 5, 6, 7];
   }
 }
