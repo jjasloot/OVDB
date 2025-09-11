@@ -19,7 +19,10 @@ namespace OV_DB.Models
         public string NameNL { get; set; }
         public string From { get; set; }
         public string To { get; set; }
+        public DateTime? StartTime { get; set; }
+        public DateTime? EndTime { get; set; }
         public double Distance { get; set; }
         public List<RouteInstanceProperty> ExtraInfo { get; set; } = new List<RouteInstanceProperty>();
+        public double? Duration { get; set; }
     }
 }

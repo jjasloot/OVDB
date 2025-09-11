@@ -55,11 +55,14 @@ namespace OV_DB.Controllers
                     NameNL = ri.Route.NameNL,
                     From = ri.Route.From,
                     To = ri.Route.To,
+                    StartTime = ri.StartTime,
+                    EndTime = ri.EndTime,
                     Type = ri.Route.RouteType.Name,
                     TypeNL = ri.Route.RouteType.NameNL,
-                    Distance = ri.Route.OverrideDistance.HasValue ? ri.Route.OverrideDistance.Value : ri.Route.CalculatedDistance
+                    Distance = ri.Route.OverrideDistance.HasValue ? ri.Route.OverrideDistance.Value : ri.Route.CalculatedDistance,
+                    Duration = ri.DurationHours
                 })
-                .OrderBy(ri => ri.Date).ThenBy(ri => ri.Line).ToListAsync();
+                .OrderBy(ri => ri.Date).ThenBy(ri => ri.StartTime).ThenBy(ri => ri.Line).ToListAsync();
 
             var extraInfo = routes.SelectMany(ri => ri.ExtraInfo.Select(ri => ri.Key)).Distinct().OrderBy(d => d).ToList();
 
@@ -71,9 +74,12 @@ namespace OV_DB.Controllers
                 ws.Cell(row, 4).Value = "Lijn";
                 ws.Cell(row, 5).Value = "Van";
                 ws.Cell(row, 6).Value = "Tot";
-                ws.Cell(row, 7).Value = "Afstand (km)";
-                ws.Cell(row, 8).Value = "Naam";
-                ws.Cell(row, 9).Value = "Opmerking";
+                ws.Cell(row, 7).Value = "Vertrektijd";
+                ws.Cell(row, 8).Value = "Aankomsttijd";
+                ws.Cell(row, 9).Value = "Duur (uren)";
+                ws.Cell(row, 10).Value = "Afstand (km)";
+                ws.Cell(row, 11).Value = "Naam";
+                ws.Cell(row, 12).Value = "Opmerking";
             }
             else
             {
@@ -83,11 +89,14 @@ namespace OV_DB.Controllers
                 ws.Cell(row, 4).Value = "Line";
                 ws.Cell(row, 5).Value = "From";
                 ws.Cell(row, 6).Value = "To";
-                ws.Cell(row, 7).Value = "Distance (km)";
-                ws.Cell(row, 8).Value = "Name";
-                ws.Cell(row, 9).Value = "Remarks";
+                ws.Cell(row, 7).Value = "Departure";
+                ws.Cell(row, 8).Value = "Arrival";
+                ws.Cell(row, 9).Value = "Duration (hours)";
+                ws.Cell(row, 10).Value = "Distance (km)";
+                ws.Cell(row, 11).Value = "Name";
+                ws.Cell(row, 12).Value = "Remarks";
             }
-            var column = 10;
+            var column = 13;
             extraInfo.ForEach(key =>
             {
                 ws.Cell(row, column).Value = key;
@@ -114,13 +123,16 @@ namespace OV_DB.Controllers
                 ws.Cell(row, 4).Value = route.Line;
                 ws.Cell(row, 5).Value = route.From;
                 ws.Cell(row, 6).Value = route.To;
-                ws.Cell(row, 7).Value = Math.Round(route.Distance, 2);
-                ws.Cell(row, 8).Value = (!english && !string.IsNullOrWhiteSpace(route.NameNL)) ? route.NameNL : route.Name;
-                ws.Cell(row, 9).Value = (!english && !string.IsNullOrWhiteSpace(route.DescriptionNL)) ? route.DescriptionNL : route.Description;
+                ws.Cell(row, 7).Value = route.StartTime;
+                ws.Cell(row, 8).Value = route.EndTime;
+                ws.Cell(row, 9).Value = route.Duration.HasValue ? Math.Floor(route.Duration.Value) + ":" + (route.Duration.Value * 60) % 60 : "";
+                ws.Cell(row, 10).Value = Math.Round(route.Distance, 2);
+                ws.Cell(row, 11).Value = (!english && !string.IsNullOrWhiteSpace(route.NameNL)) ? route.NameNL : route.Name;
+                ws.Cell(row, 12).Value = (!english && !string.IsNullOrWhiteSpace(route.DescriptionNL)) ? route.DescriptionNL : route.Description;
                 route.ExtraInfo.ForEach(ri =>
                 {
                     var key = ri.Key;
-                    var index = 10 + extraInfo.IndexOf(key);
+                    var index = 13 + extraInfo.IndexOf(key);
                     if (ri.Bool != null)
                     {
                         if (english)
