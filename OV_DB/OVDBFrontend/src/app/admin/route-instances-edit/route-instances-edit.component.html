@@ -54,13 +54,9 @@
                 @for (offset of dayOffsetOptions; track offset) {
                   <mat-option [value]="offset">
                     @if (offset === 0) {
-                      {{'ROUTEINSTANCESEDIT.SAMEDAY'|translate}}
+                      0
                     } @else {
-                      +{{offset}} @if (offset === 1) {
-                        {{'ROUTEINSTANCESEDIT.DAY'|translate}}
-                      } @else {
-                        {{'ROUTEINSTANCESEDIT.DAYS'|translate}}
-                      }
+                      +{{offset}}
                     }
                   </mat-option>
                 }
