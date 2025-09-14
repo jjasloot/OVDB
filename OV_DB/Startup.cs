@@ -182,7 +182,6 @@ namespace OV_DB
             app.UseCors();
             app.UseXfo(o => o.SameOrigin());
             app.UseXContentTypeOptions();
-            app.UseReferrerPolicy(opts => opts.NoReferrer());
             app.UseXXssProtection(options => options.EnabledWithBlockMode());
             app.UseCors();
             app.UseAuthentication();
