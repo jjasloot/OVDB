@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  ovdb-test-db:
+    image: mariadb:11.2
+    container_name: ovdb-integration-test-db
+    environment:
+      MYSQL_ROOT_PASSWORD: test_root_password
+      MYSQL_DATABASE: ovdb_integration_test
+      MYSQL_USER: ovdb_test_user
+      MYSQL_PASSWORD: test_password
+    ports:
+      - "3307:3306"
+    volumes:
+      - ovdb-test-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - ovdb-test-network
+
+networks:
+  ovdb-test-network:
+    driver: bridge
+
+volumes:
+  ovdb-test-data:
