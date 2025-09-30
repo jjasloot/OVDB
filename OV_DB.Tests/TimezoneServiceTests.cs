@@ -50,25 +50,23 @@ namespace OV_DB.Tests
         {
             // Arrange
             var service = new TimezoneService();
-            var startTime = new DateTime(2025, 6, 15, 14, 0, 0); // 14:00 local time as entered by user
-            var endTime = new DateTime(2025, 6, 15, 16, 0, 0);   // 16:00 local time as entered by user
+            var startTime = new DateTime(2025, 6, 15, 14, 0, 0);
+            var endTime = new DateTime(2025, 6, 15, 16, 0, 0);
             
             // Create LineString from Amsterdam to London (different timezones)
             var geometryFactory = NtsGeometryServices.Instance.CreateGeometryFactory(srid: 4326);
             var coords = new Coordinate[]
             {
-                new Coordinate(4.9041, 52.3676), // Amsterdam
-                new Coordinate(-0.1276, 51.5074) // London
+                new Coordinate(4.9041, 52.3676), // Amsterdam (CEST: UTC+2)
+                new Coordinate(-0.1276, 51.5074) // London (BST: UTC+1)
             };
             var lineString = geometryFactory.CreateLineString(coords);
 
             // Act
             var duration = service.CalculateDurationInHours(startTime, endTime, lineString);
 
-            // Assert
-            // With simplified approach: treat input times as local trip times (no timezone conversion)
-            // User entered 14:00 to 16:00, so duration is 2 hours as they experienced it
-            Assert.Equal(2.0, duration);
+            // Assert - Amsterdam 14:00 CEST (12:00 UTC) to London 16:00 BST (15:00 UTC) = 3 hours
+            Assert.Equal(3.0, duration);
         }
 
         [Fact]
@@ -76,25 +74,23 @@ namespace OV_DB.Tests
         {
             // Arrange
             var service = new TimezoneService();
-            var startTime = new DateTime(2025, 3, 15, 10, 0, 0); // 10:00 local time as entered by user
-            var endTime = new DateTime(2025, 3, 15, 11, 0, 0);   // 11:00 local time as entered by user (arrived at 11 AM local time)
+            var startTime = new DateTime(2025, 3, 15, 10, 0, 0);
+            var endTime = new DateTime(2025, 3, 15, 11, 0, 0);
             
             // Create LineString from New York to Los Angeles
             var geometryFactory = NtsGeometryServices.Instance.CreateGeometryFactory(srid: 4326);
             var coords = new Coordinate[]
             {
-                new Coordinate(-74.0060, 40.7128), // New York
-                new Coordinate(-118.2437, 34.0522) // Los Angeles
+                new Coordinate(-74.0060, 40.7128), // New York (EDT: UTC-4)
+                new Coordinate(-118.2437, 34.0522) // Los Angeles (PDT: UTC-7)
             };
             var lineString = geometryFactory.CreateLineString(coords);
 
             // Act
             var duration = service.CalculateDurationInHours(startTime, endTime, lineString);
 
-            // Assert
-            // With simplified approach: treat input times as local trip times (no timezone conversion)  
-            // User entered 10:00 to 11:00, so duration is 1 hour as they experienced it
-            Assert.Equal(1.0, duration);
+            // Assert - NY 10:00 EDT (14:00 UTC) to LA 11:00 PDT (18:00 UTC) = 4 hours
+            Assert.Equal(4.0, duration);
         }
     }
 }

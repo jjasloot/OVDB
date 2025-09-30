@@ -203,18 +203,23 @@ namespace OV_DB
                     Console.WriteLine(ex.Message);
                 }
             }
-            app.UseSpa(spa =>
+            
+            // Only configure SPA in Development or Production, not Testing
+            if (!env.IsEnvironment("Testing"))
             {
-                // To learn more about options for serving an Angular SPA from ASP.NET Core,
-                // see https://go.microsoft.com/fwlink/?linkid=864501
-
-                spa.Options.SourcePath = "OVDBFrontend";
-
-                if (env.IsDevelopment())
+                app.UseSpa(spa =>
                 {
-                    //spa.UseAngularCliServer(npmScript: "start");
-                }
-            });
+                    // To learn more about options for serving an Angular SPA from ASP.NET Core,
+                    // see https://go.microsoft.com/fwlink/?linkid=864501
+
+                    spa.Options.SourcePath = "OVDBFrontend";
+
+                    if (env.IsDevelopment())
+                    {
+                        //spa.UseAngularCliServer(npmScript: "start");
+                    }
+                });
+            }
         }
 
         public static IEdmModel GetEdmModel()
