@@ -297,7 +297,8 @@
     "DATA": "Data",
     "REQUESTS": "Verzoeken",
     "DARK_MODE": "Donkere modus",
-    "LIGHT_MODE": "Lichte modus"
+    "LIGHT_MODE": "Lichte modus",
+    "ACHIEVEMENTS": "Prestaties"
   },
   "PROFILE": {
     "TITLE": "Gebruikersprofiel",
@@ -426,5 +427,16 @@
     "START_TIME": "Vertrek",
     "END_TIME": "Aankomst",
     "DESCRIPTION": "Beschrijving"
+  },
+  "ACHIEVEMENTS": {
+    "TITLE": "Prestaties",
+    "CURRENT_PROGRESS": "Huidige Voortgang",
+    "UNLOCKED": "Ontgrendeld",
+    "CATEGORIES": {
+      "DISTANCE": "Afstand Prestaties",
+      "STATIONS": "Station Verkenner",
+      "COUNTRIES": "Wereld Reiziger",
+      "TRANSPORT_TYPES": "Vervoer Diversiteit"
+    }
   }
 }

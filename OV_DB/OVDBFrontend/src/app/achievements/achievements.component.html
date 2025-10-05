@@ -1,0 +1,70 @@
+<div class="achievements-container">
+  <h1>{{ 'ACHIEVEMENTS.TITLE' | translate }}</h1>
+  
+  @if (loading()) {
+    <div class="loading-container">
+      <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+    </div>
+  }
+
+  <mat-tab-group>
+    @for (category of achievementCategories(); track category.category) {
+      <mat-tab [label]="getCategoryName(category.category) | translate">
+        <div class="category-content">
+          <div class="category-progress">
+            <h3>{{ 'ACHIEVEMENTS.CURRENT_PROGRESS' | translate }}: {{ category.currentValue }}</h3>
+          </div>
+
+          <div class="achievements-grid">
+            @for (achievement of category.achievements; track achievement.id) {
+              <mat-card [class.unlocked]="achievement.isUnlocked" [class.locked]="!achievement.isUnlocked">
+                <mat-card-header>
+                  <div mat-card-avatar>
+                    <mat-icon [style.color]="getLevelColor(achievement.level)">
+                      {{ achievement.iconName }}
+                    </mat-icon>
+                  </div>
+                  <mat-card-title>
+                    {{ getAchievementName(achievement) }}
+                  </mat-card-title>
+                  <mat-card-subtitle>
+                    <mat-chip [style.background-color]="getLevelColor(achievement.level)">
+                      {{ achievement.level | uppercase }}
+                    </mat-chip>
+                  </mat-card-subtitle>
+                </mat-card-header>
+                
+                <mat-card-content>
+                  <p>{{ getAchievementDescription(achievement) }}</p>
+                  
+                  @if (!achievement.isUnlocked) {
+                    <div class="progress-section">
+                      <div class="progress-text">
+                        {{ achievement.currentProgress }} / {{ achievement.thresholdValue }}
+                      </div>
+                      <mat-progress-bar 
+                        mode="determinate" 
+                        [value]="getProgressPercentage(achievement)"
+                        [color]="achievement.isUnlocked ? 'primary' : 'accent'">
+                      </mat-progress-bar>
+                    </div>
+                  } @else {
+                    <div class="unlocked-badge">
+                      <mat-icon>check_circle</mat-icon>
+                      <span>{{ 'ACHIEVEMENTS.UNLOCKED' | translate }}</span>
+                      @if (achievement.unlockedAt) {
+                        <span class="unlock-date">
+                          {{ achievement.unlockedAt | date: 'short' }}
+                        </span>
+                      }
+                    </div>
+                  }
+                </mat-card-content>
+              </mat-card>
+            }
+          </div>
+        </div>
+      </mat-tab>
+    }
+  </mat-tab-group>
+</div>

@@ -34,6 +34,7 @@ import { AdministratorRequestsComponent } from "./administrator/administrator-re
 import { AdministratorOperatorsComponent } from "./administrator/administrator-operators/administrator-operators.component";
 import { ProfileComponent } from "./profile/profile.component";
 import { TrawellingComponent } from "./traewelling/traewelling.component";
+import { AchievementsComponent } from "./achievements/achievements.component";
 
 export const routes: Routes = [
   {
@@ -53,6 +54,11 @@ export const routes: Routes = [
       { path: "help", component: HelpComponent },
       { path: "route/:routeId/:guid", component: SingleRouteMapComponent },
       { path: "stats", component: StatsComponent, canActivate: [LoginGuard] },
+      {
+        path: "achievements",
+        component: AchievementsComponent,
+        canActivate: [LoginGuard],
+      },
       {
         path: "profile",
         component: ProfileComponent,

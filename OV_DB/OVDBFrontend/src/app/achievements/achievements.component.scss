@@ -1,0 +1,118 @@
+.achievements-container {
+  padding: 20px;
+  max-width: 1400px;
+  margin: 0 auto;
+
+  h1 {
+    margin-bottom: 20px;
+    text-align: center;
+  }
+}
+
+.loading-container {
+  padding: 20px;
+}
+
+.category-content {
+  padding: 20px 0;
+}
+
+.category-progress {
+  margin-bottom: 20px;
+  text-align: center;
+
+  h3 {
+    margin: 0;
+  }
+}
+
+.achievements-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+  padding: 20px 0;
+}
+
+mat-card {
+  transition: all 0.3s ease;
+  
+  &.unlocked {
+    border: 2px solid #4CAF50;
+    box-shadow: 0 4px 8px rgba(76, 175, 80, 0.2);
+  }
+
+  &.locked {
+    opacity: 0.7;
+  }
+
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+  }
+}
+
+mat-card-header {
+  margin-bottom: 16px;
+
+  mat-icon {
+    font-size: 40px;
+    width: 40px;
+    height: 40px;
+  }
+}
+
+mat-card-content {
+  p {
+    margin-bottom: 16px;
+    min-height: 40px;
+  }
+}
+
+.progress-section {
+  margin-top: 12px;
+
+  .progress-text {
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 8px;
+    text-align: right;
+  }
+
+  mat-progress-bar {
+    height: 10px;
+    border-radius: 5px;
+  }
+}
+
+.unlocked-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #4CAF50;
+  font-weight: 500;
+  padding: 8px;
+  background-color: rgba(76, 175, 80, 0.1);
+  border-radius: 4px;
+  margin-top: 12px;
+
+  mat-icon {
+    font-size: 24px;
+    width: 24px;
+    height: 24px;
+  }
+
+  .unlock-date {
+    margin-left: auto;
+    font-size: 12px;
+    color: #666;
+  }
+}
+
+mat-chip {
+  color: white;
+  font-weight: 500;
+}
+
+::ng-deep .mat-mdc-tab-labels {
+  justify-content: center;
+}

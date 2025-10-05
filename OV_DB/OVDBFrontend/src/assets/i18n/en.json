@@ -296,7 +296,8 @@
     "DATA": "Data",
     "REQUESTS": "Requests",
     "DARK_MODE": "Dark mode",
-    "LIGHT_MODE": "Light mode"
+    "LIGHT_MODE": "Light mode",
+    "ACHIEVEMENTS": "Achievements"
   },
   "PROFILE": {
     "TITLE": "User profile",
@@ -425,5 +426,16 @@
     "START_TIME": "Departure",
     "END_TIME": "Arrival",
     "DESCRIPTION": "Description"
+  },
+  "ACHIEVEMENTS": {
+    "TITLE": "Achievements",
+    "CURRENT_PROGRESS": "Current Progress",
+    "UNLOCKED": "Unlocked",
+    "CATEGORIES": {
+      "DISTANCE": "Distance Achievements",
+      "STATIONS": "Station Explorer",
+      "COUNTRIES": "World Traveler",
+      "TRANSPORT_TYPES": "Transport Diversity"
+    }
   }
 }
