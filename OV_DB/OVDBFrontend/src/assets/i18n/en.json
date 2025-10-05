@@ -331,7 +331,10 @@
     "TRAEWELLING_CONNECTED_SUCCESSFULLY": "Träwelling account connected successfully",
     "TRAEWELLING_DISCONNECTED_SUCCESSFULLY": "Träwelling account disconnected successfully",
     "TRAEWELLING_ERROR_CONNECTING": "Error connecting to Träwelling",
-    "TRAEWELLING_ERROR_DISCONNECTING": "Error disconnecting from Träwelling"
+    "TRAEWELLING_ERROR_DISCONNECTING": "Error disconnecting from Träwelling",
+    "RECENT_ACHIEVEMENTS": "Recent Achievements",
+    "VIEW_ALL_ACHIEVEMENTS": "View All Achievements",
+    "NO_ACHIEVEMENTS_YET": "No achievements yet. Start exploring to unlock achievements!"
   },
   "TRAEWELLING": {
     "TITLE": "Träwelling connection",
