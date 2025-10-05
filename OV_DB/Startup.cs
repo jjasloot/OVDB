@@ -149,6 +149,7 @@ namespace OV_DB
             services.AddHttpClient<ITrawellingService, TrawellingService>();
             services.AddScoped<ITrawellingService, TrawellingService>();
             services.AddScoped<IAchievementService, AchievementService>();
+            services.AddScoped<IAchievementIconService, AchievementIconService>();
 
             services.AddHostedService<UpdateRegionService>();
             services.AddHostedService<RefreshRoutesService>();

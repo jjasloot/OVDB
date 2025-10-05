@@ -439,7 +439,8 @@
       "DISTANCE": "Afstand Prestaties",
       "STATIONS": "Station Verkenner",
       "COUNTRIES": "Wereld Reiziger",
-      "TRANSPORT_TYPES": "Vervoer Diversiteit"
+      "TRANSPORT_TYPES": "Vervoer Diversiteit",
+      "DISTANCE_YEARLY": "Jaarlijkse Afstand Prestaties"
     }
   }
 }

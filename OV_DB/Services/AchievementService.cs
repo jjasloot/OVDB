@@ -113,6 +113,76 @@ namespace OV_DB.Services
                 }
             });
 
+            // Distance Achievements - Yearly
+            achievements.AddRange(new[]
+            {
+                new Achievement
+                {
+                    Key = "distance_yearly_bronze",
+                    Name = "Yearly Commuter",
+                    NameNL = "Jaarlijkse Forenzen",
+                    Description = "Travel 1,000 km in a single year",
+                    DescriptionNL = "Reis 1.000 km in een jaar",
+                    Category = "distance_yearly",
+                    Level = "bronze",
+                    IconName = "calendar_month",
+                    ThresholdValue = 1000,
+                    DisplayOrder = displayOrder++
+                },
+                new Achievement
+                {
+                    Key = "distance_yearly_silver",
+                    Name = "Yearly Voyager",
+                    NameNL = "Jaarlijkse Reiziger",
+                    Description = "Travel 5,000 km in a single year",
+                    DescriptionNL = "Reis 5.000 km in een jaar",
+                    Category = "distance_yearly",
+                    Level = "silver",
+                    IconName = "event",
+                    ThresholdValue = 5000,
+                    DisplayOrder = displayOrder++
+                },
+                new Achievement
+                {
+                    Key = "distance_yearly_gold",
+                    Name = "Yearly Explorer",
+                    NameNL = "Jaarlijkse Ontdekker",
+                    Description = "Travel 10,000 km in a single year",
+                    DescriptionNL = "Reis 10.000 km in een jaar",
+                    Category = "distance_yearly",
+                    Level = "gold",
+                    IconName = "today",
+                    ThresholdValue = 10000,
+                    DisplayOrder = displayOrder++
+                },
+                new Achievement
+                {
+                    Key = "distance_yearly_platinum",
+                    Name = "Yearly Globetrotter",
+                    NameNL = "Jaarlijkse Globetrotter",
+                    Description = "Travel 25,000 km in a single year",
+                    DescriptionNL = "Reis 25.000 km in een jaar",
+                    Category = "distance_yearly",
+                    Level = "platinum",
+                    IconName = "date_range",
+                    ThresholdValue = 25000,
+                    DisplayOrder = displayOrder++
+                },
+                new Achievement
+                {
+                    Key = "distance_yearly_diamond",
+                    Name = "Yearly Champion",
+                    NameNL = "Jaarlijkse Kampioen",
+                    Description = "Travel 50,000 km in a single year",
+                    DescriptionNL = "Reis 50.000 km in een jaar",
+                    Category = "distance_yearly",
+                    Level = "diamond",
+                    IconName = "celebration",
+                    ThresholdValue = 50000,
+                    DisplayOrder = displayOrder++
+                }
+            });
+
             // Station Collector Achievements
             achievements.AddRange(new[]
             {
@@ -306,6 +376,9 @@ namespace OV_DB.Services
             await CheckCategoryAchievements(userId, "distance_overall", totalDistance, 
                 allAchievements, userAchievements, newAchievements);
 
+            // Check yearly distance achievements
+            await CheckYearlyDistanceAchievements(userId, allAchievements, userAchievements, newAchievements);
+
             // Check station achievements
             await CheckCategoryAchievements(userId, "stations", stationCount, 
                 allAchievements, userAchievements, newAchievements);
@@ -351,6 +424,59 @@ namespace OV_DB.Services
                         UnlockedAt = DateTime.UtcNow,
                         CurrentProgress = currentValue
                     });
+                }
+            }
+        }
+
+        private async Task CheckYearlyDistanceAchievements(
+            int userId,
+            List<Achievement> allAchievements,
+            List<UserAchievement> userAchievements,
+            List<UserAchievement> newAchievements)
+        {
+            var yearlyAchievements = allAchievements
+                .Where(a => a.Category == "distance_yearly")
+                .OrderBy(a => a.ThresholdValue)
+                .ToList();
+
+            if (!yearlyAchievements.Any())
+                return;
+
+            // Get distance per year for the user
+            var yearlyDistances = await _context.RouteInstances
+                .Where(ri => ri.Route.RouteMaps.Any(rm => rm.Map.UserId == userId))
+                .GroupBy(ri => ri.Date.Year)
+                .Select(g => new
+                {
+                    Year = g.Key,
+                    Distance = g.Sum(ri => (ri.Route.OverrideDistance.HasValue && ri.Route.OverrideDistance > 0)
+                        ? ri.Route.OverrideDistance.Value
+                        : ri.Route.CalculatedDistance)
+                })
+                .ToListAsync();
+
+            foreach (var yearData in yearlyDistances)
+            {
+                var yearDistance = (int)yearData.Distance;
+                
+                foreach (var achievement in yearlyAchievements)
+                {
+                    // Check if user already has this achievement for this year
+                    var alreadyUnlocked = userAchievements.Any(ua => 
+                        ua.AchievementId == achievement.Id && 
+                        ua.Year == yearData.Year);
+                    
+                    if (!alreadyUnlocked && yearDistance >= achievement.ThresholdValue)
+                    {
+                        newAchievements.Add(new UserAchievement
+                        {
+                            UserId = userId,
+                            AchievementId = achievement.Id,
+                            UnlockedAt = DateTime.UtcNow,
+                            CurrentProgress = yearDistance,
+                            Year = yearData.Year
+                        });
+                    }
                 }
             }
         }

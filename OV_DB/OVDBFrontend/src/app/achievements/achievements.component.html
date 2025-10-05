@@ -52,6 +52,9 @@
                     <div class="unlocked-badge">
                       <mat-icon>check_circle</mat-icon>
                       <span>{{ 'ACHIEVEMENTS.UNLOCKED' | translate }}</span>
+                      @if (achievement.year) {
+                        <span class="achievement-year">{{ achievement.year }}</span>
+                      }
                       @if (achievement.unlockedAt) {
                         <span class="unlock-date">
                           {{ achievement.unlockedAt | date: 'short' }}

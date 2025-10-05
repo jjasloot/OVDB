@@ -54,6 +54,7 @@ export class AchievementsComponent implements OnInit {
   getCategoryName(category: string): string {
     const categoryNames: { [key: string]: string } = {
       'distance_overall': 'ACHIEVEMENTS.CATEGORIES.DISTANCE',
+      'distance_yearly': 'ACHIEVEMENTS.CATEGORIES.DISTANCE_YEARLY',
       'stations': 'ACHIEVEMENTS.CATEGORIES.STATIONS',
       'countries': 'ACHIEVEMENTS.CATEGORIES.COUNTRIES',
       'transport_types': 'ACHIEVEMENTS.CATEGORIES.TRANSPORT_TYPES'

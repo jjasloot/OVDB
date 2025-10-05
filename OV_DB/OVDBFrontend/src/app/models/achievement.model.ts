@@ -8,10 +8,12 @@ export interface Achievement {
   category: string;
   level: string;
   iconName: string;
+  iconUrl?: string;
   thresholdValue: number;
   currentProgress: number;
   isUnlocked: boolean;
   unlockedAt?: Date;
+  year?: number;
 }
 
 export interface AchievementProgress {

@@ -438,7 +438,8 @@
       "DISTANCE": "Distance Achievements",
       "STATIONS": "Station Explorer",
       "COUNTRIES": "World Traveler",
-      "TRANSPORT_TYPES": "Transport Diversity"
+      "TRANSPORT_TYPES": "Transport Diversity",
+      "DISTANCE_YEARLY": "Yearly Distance Achievements"
     }
   }
 }

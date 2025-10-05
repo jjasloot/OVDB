@@ -19,5 +19,7 @@ namespace OVDB_database.Models
         public DateTime UnlockedAt { get; set; }
         
         public int CurrentProgress { get; set; }
+        
+        public int? Year { get; set; }
     }
 }

@@ -13,9 +13,11 @@ namespace OV_DB.Models
         public string Category { get; set; }
         public string Level { get; set; }
         public string IconName { get; set; }
+        public string IconUrl { get; set; }
         public int ThresholdValue { get; set; }
         public int CurrentProgress { get; set; }
         public bool IsUnlocked { get; set; }
         public DateTime? UnlockedAt { get; set; }
+        public int? Year { get; set; }
     }
 }

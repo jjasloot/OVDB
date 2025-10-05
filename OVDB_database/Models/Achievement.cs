@@ -29,6 +29,8 @@ namespace OVDB_database.Models
         
         public int DisplayOrder { get; set; }
         
+        public string IconUrl { get; set; }
+        
         public List<UserAchievement> UserAchievements { get; set; }
     }
 }

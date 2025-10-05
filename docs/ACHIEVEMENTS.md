@@ -5,7 +5,7 @@ This document describes the achievement system implemented in OVDB.
 ## Overview
 
 The achievement system adds gamification to OVDB by rewarding users for various milestones:
-- Distance traveled
+- Distance traveled (overall and per year)
 - Unique stations visited
 - Countries visited
 - Different transport types used
@@ -15,19 +15,27 @@ The achievement system adds gamification to OVDB by rewarding users for various 
 ### Backend
 
 #### Database Models
-- **Achievement**: Stores achievement definitions with multilingual names, descriptions, icons, categories, levels, and thresholds
-- **UserAchievement**: Tracks which achievements users have unlocked and when
+- **Achievement**: Stores achievement definitions with multilingual names, descriptions, icons, categories, levels, thresholds, and optional icon URLs
+- **UserAchievement**: Tracks which achievements users have unlocked, when, and optionally for which year
 
 #### Services
 - **AchievementService**: 
   - Initializes predefined achievements on first startup
   - Checks user progress and awards new achievements
   - Calculates statistics for different achievement categories
+  - Supports both overall and yearly distance tracking
+
+- **AchievementIconService**:
+  - Generates custom achievement icons programmatically
+  - Creates colored circular badges based on achievement level
+  - Stores icons in wwwroot/achievements directory
+  - Provides icon URLs for frontend display
 
 #### API Endpoints
 - `GET /api/achievements` - Returns all achievements with user's progress
 - `GET /api/achievements/unlocked` - Returns user's unlocked achievements
 - `POST /api/achievements/check` - Manually triggers achievement check
+- `POST /api/achievements/generate-icons` - Generates icons for all achievements
 
 ### Frontend
 
@@ -47,12 +55,20 @@ The achievement system adds gamification to OVDB by rewarding users for various 
 
 ## Achievement Categories
 
-### Distance Achievements
-- Bronze: 1,000 km
-- Silver: 10,000 km
-- Gold: 50,000 km
-- Platinum: 100,000 km
-- Diamond: 500,000 km
+### Overall Distance Achievements
+- Bronze: 1,000 km (all time)
+- Silver: 10,000 km (all time)
+- Gold: 50,000 km (all time)
+- Platinum: 100,000 km (all time)
+- Diamond: 500,000 km (all time)
+
+### Yearly Distance Achievements
+These can be earned once per year:
+- Bronze: 1,000 km (in one year)
+- Silver: 5,000 km (in one year)
+- Gold: 10,000 km (in one year)
+- Platinum: 25,000 km (in one year)
+- Diamond: 50,000 km (in one year)
 
 ### Station Achievements
 - Bronze: 10 stations
@@ -79,6 +95,8 @@ The achievement system adds gamification to OVDB by rewarding users for various 
 2. View your progress across different categories
 3. Check recent achievements in your profile
 4. Achievements are automatically checked and awarded as you log trips
+5. Yearly distance achievements show the year they were earned
+6. Generate achievement icons using POST /api/achievements/generate-icons
 
 ### For Developers
 

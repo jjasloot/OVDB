@@ -101,6 +101,15 @@ mat-card-content {
     height: 24px;
   }
 
+  .achievement-year {
+    font-weight: bold;
+    color: #2196F3;
+    margin-left: 8px;
+    padding: 2px 8px;
+    background-color: rgba(33, 150, 243, 0.1);
+    border-radius: 4px;
+  }
+
   .unlock-date {
     margin-left: auto;
     font-size: 12px;

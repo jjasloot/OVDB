@@ -19,11 +19,16 @@ namespace OV_DB.Controllers
     {
         private readonly OVDBDatabaseContext _context;
         private readonly IAchievementService _achievementService;
+        private readonly IAchievementIconService _iconService;
 
-        public AchievementsController(OVDBDatabaseContext context, IAchievementService achievementService)
+        public AchievementsController(
+            OVDBDatabaseContext context, 
+            IAchievementService achievementService,
+            IAchievementIconService iconService)
         {
             _context = context;
             _achievementService = achievementService;
+            _iconService = iconService;
         }
 
         [HttpGet]
@@ -77,10 +82,12 @@ namespace OV_DB.Controllers
                             Category = a.Category,
                             Level = a.Level,
                             IconName = a.IconName,
+                            IconUrl = a.IconUrl,
                             ThresholdValue = a.ThresholdValue,
                             CurrentProgress = categoryProgress.ContainsKey(a.Category) ? categoryProgress[a.Category] : 0,
                             IsUnlocked = unlockedAchievementIds.Contains(a.Id),
-                            UnlockedAt = userAchievement?.UnlockedAt
+                            UnlockedAt = userAchievement?.UnlockedAt,
+                            Year = userAchievement?.Year
                         };
                     }).ToList()
                 })
@@ -115,10 +122,12 @@ namespace OV_DB.Controllers
                 Category = ua.Achievement.Category,
                 Level = ua.Achievement.Level,
                 IconName = ua.Achievement.IconName,
+                IconUrl = ua.Achievement.IconUrl,
                 ThresholdValue = ua.Achievement.ThresholdValue,
                 CurrentProgress = ua.CurrentProgress,
                 IsUnlocked = true,
-                UnlockedAt = ua.UnlockedAt
+                UnlockedAt = ua.UnlockedAt,
+                Year = ua.Year
             }).ToList();
 
             return Ok(result);
@@ -135,6 +144,31 @@ namespace OV_DB.Controllers
 
             await _achievementService.CheckAndAwardAchievementsAsync(userIdClaim);
             return Ok();
+        }
+
+        [HttpPost("generate-icons")]
+        public async Task<ActionResult> GenerateAchievementIcons()
+        {
+            var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value ?? "-1");
+            if (userIdClaim < 0)
+            {
+                return Forbid();
+            }
+
+            var achievements = await _context.Achievements.ToListAsync();
+            
+            foreach (var achievement in achievements)
+            {
+                var iconUrl = await _iconService.GenerateAchievementIconAsync(achievement.Key, achievement.Level);
+                if (!string.IsNullOrEmpty(iconUrl))
+                {
+                    achievement.IconUrl = iconUrl;
+                }
+            }
+
+            await _context.SaveChangesAsync();
+            
+            return Ok(new { Message = "Achievement icons generated successfully", Count = achievements.Count });
         }
 
         private async Task<int> CalculateTotalDistanceAsync(int userId)
