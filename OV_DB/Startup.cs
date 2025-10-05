@@ -148,6 +148,7 @@ namespace OV_DB
             services.AddScoped<TelegramBotService>();
             services.AddHttpClient<ITrawellingService, TrawellingService>();
             services.AddScoped<ITrawellingService, TrawellingService>();
+            services.AddScoped<IAchievementService, AchievementService>();
 
             services.AddHostedService<UpdateRegionService>();
             services.AddHostedService<RefreshRoutesService>();
@@ -197,6 +198,10 @@ namespace OV_DB
                 try
                 {
                     serviceScope.ServiceProvider.GetService<OVDBDatabaseContext>().Database.Migrate();
+                    
+                    // Initialize achievements
+                    var achievementService = serviceScope.ServiceProvider.GetService<IAchievementService>();
+                    achievementService?.InitializeAchievementsAsync().Wait();
                 }
                 catch (Exception ex)
                 {
