@@ -90,9 +90,9 @@
   </button>
   @if (isFromCache()) {
     <span class="cache-indicator">
-      <mat-icon style="font-size: 16px; width: 16px; height: 16px;">cached</mat-icon>
+      <mat-icon class="cache-icon">cached</mat-icon>
       @if (cacheAge() !== null) {
-        <span style="font-size: 12px; opacity: 0.7;">{{ cacheAge() }}s ago</span>
+        <span class="cache-age">{{ cacheAge() }}s ago</span>
       }
     </span>
   }

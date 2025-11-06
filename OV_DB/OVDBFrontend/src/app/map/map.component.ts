@@ -282,15 +282,19 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     this.setApplicableFilter();
   }
 
-  private getRoutes(filter: string): Observable<MapDataDTO> {
-    // Check cache first
-    const cacheKey = this.mapDataCacheService.getCacheKey(
+  private getCurrentCacheKey(filter: string): string {
+    return this.mapDataCacheService.getCacheKey(
       this.guid() || '',
       filter,
       this.translationService.language,
       this.includeLineColours,
       this.limitToSelectedArea
     );
+  }
+
+  private getRoutes(filter: string): Observable<MapDataDTO> {
+    // Check cache first
+    const cacheKey = this.getCurrentCacheKey(filter);
     
     const cachedData = this.mapDataCacheService.get(cacheKey);
     if (cachedData) {
@@ -318,13 +322,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
   private showRoutes(data: MapDataDTO) {
     // Cache the data if it's not from cache
     if (!this.isFromCache()) {
-      const cacheKey = this.mapDataCacheService.getCacheKey(
-        this.guid() || '',
-        this.getFilter(),
-        this.translationService.language,
-        this.includeLineColours,
-        this.limitToSelectedArea
-      );
+      const cacheKey = this.getCurrentCacheKey(this.getFilter());
       this.mapDataCacheService.set(cacheKey, data);
     }
     

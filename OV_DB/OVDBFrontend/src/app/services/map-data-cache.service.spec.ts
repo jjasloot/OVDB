@@ -79,22 +79,24 @@ describe('MapDataCacheService', () => {
     expect(age).toBeNull();
   });
 
-  it('should expire cache after 5 minutes', (done) => {
+  it('should expire cache after 5 minutes', () => {
     const mockData: MapDataDTO = {
       routes: { type: 'FeatureCollection', features: [] },
       area: null
     };
     const key = service.getCacheKey('guid1', 'filter1', 'en', true, false);
     
-    // Mock the timestamp to be 5 minutes and 1 second ago
+    // Store data in cache
     service.set(key, mockData);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const cache = (service as any).cache;
-    const cached = cache.get(key);
-    cached.timestamp = Date.now() - (5 * 60 * 1000 + 1000);
     
+    // Verify data is in cache
+    expect(service.get(key)).toEqual(mockData);
+    
+    // Mock Date.now to return time 5 minutes and 1 second in the future
+    spyOn(Date, 'now').and.returnValue(Date.now() + (5 * 60 * 1000 + 1000));
+    
+    // Cache should be expired now
     const retrieved = service.get(key);
     expect(retrieved).toBeNull();
-    done();
   });
 });
