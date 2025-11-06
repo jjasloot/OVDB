@@ -307,7 +307,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     this.isFromCache.set(false);
     this.cacheAge.set(null);
     
-    //Generate a GUID
+    // Generate a GUID
     this.requestIdentifier = uuidv4();
 
     return this.apiService.getRoutes(
