@@ -12,10 +12,12 @@ import { TranslationService } from "../services/translation.service";
 import { Router, ActivatedRoute } from "@angular/router";
 import { MapInstanceDialogComponent } from "../map-instance-dialog/map-instance-dialog.component";
 import { switchMap } from "rxjs/operators";
-import { Observable } from "rxjs";
+import { Observable, of } from "rxjs";
 import { MapDataDTO } from "../models/map-data.model";
 import { v4 as uuidv4 } from "uuid";
 import { SignalRService } from "../services/signal-r.service";
+import { MapDataCacheService } from "../services/map-data-cache.service";
+import { DataUpdateService } from "../services/data-update.service";
 import {
   NgTemplateOutlet,
   NgClass,
@@ -60,10 +62,14 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
   private activatedRoute = inject(ActivatedRoute);
   private signalRService = inject(SignalRService);
   private cd = inject(ChangeDetectorRef);
+  private mapDataCacheService = inject(MapDataCacheService);
+  private dataUpdateService = inject(DataUpdateService);
 
   readonly guid = input<string>(undefined);
   readonly mapContainer = viewChild<HTMLElement>("mapContainer");
   loading: boolean | number = false;
+  isFromCache = signal<boolean>(false);
+  cacheAge = signal<number | null>(null);
   from: moment.Moment;
   to: moment.Moment;
   selectedRegion: number[] = [];
@@ -228,6 +234,11 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
         }
       },
     });
+    
+    // Subscribe to data updates to clear cache
+    this.dataUpdateService.updateRequested$.subscribe(() => {
+      this.mapDataCacheService.clear();
+    });
   }
 
   ngOnDestroy() {
@@ -272,6 +283,26 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private getRoutes(filter: string): Observable<MapDataDTO> {
+    // Check cache first
+    const cacheKey = this.mapDataCacheService.getCacheKey(
+      this.guid() || '',
+      filter,
+      this.translationService.language,
+      this.includeLineColours,
+      this.limitToSelectedArea
+    );
+    
+    const cachedData = this.mapDataCacheService.get(cacheKey);
+    if (cachedData) {
+      this.isFromCache.set(true);
+      this.cacheAge.set(this.mapDataCacheService.getCacheAge(cacheKey));
+      return of(cachedData);
+    }
+    
+    // Not in cache, fetch from API
+    this.isFromCache.set(false);
+    this.cacheAge.set(null);
+    
     //Generate a GUID
     this.requestIdentifier = uuidv4();
 
@@ -285,6 +316,18 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     );
   }
   private showRoutes(data: MapDataDTO) {
+    // Cache the data if it's not from cache
+    if (!this.isFromCache()) {
+      const cacheKey = this.mapDataCacheService.getCacheKey(
+        this.guid() || '',
+        this.getFilter(),
+        this.translationService.language,
+        this.includeLineColours,
+        this.limitToSelectedArea
+      );
+      this.mapDataCacheService.set(cacheKey, data);
+    }
+    
     const parent = this;
     const track = geoJSON(data.routes, {
       style: (feature) => {
@@ -566,6 +609,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   refresh() {
+    this.mapDataCacheService.clear();
     this.getRoutes$.next(this.getFilter());
   }
 

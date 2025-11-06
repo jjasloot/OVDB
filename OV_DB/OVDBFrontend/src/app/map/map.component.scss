@@ -88,3 +88,16 @@ mat-panel-title {
 #refresh {
   margin-left: 1rem;
 }
+
+.cache-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 8px;
+  color: rgba(0, 0, 0, 0.6);
+  font-size: 12px;
+  
+  mat-icon {
+    vertical-align: middle;
+  }
+}
