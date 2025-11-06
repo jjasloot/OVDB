@@ -17,6 +17,7 @@ import { AreYouSureDialogComponent } from "src/app/are-you-sure-dialog/are-you-s
 import saveAs from "file-saver";
 import { AuthenticationService } from "src/app/services/authentication.service";
 import { OperatorService } from "src/app/services/operator.service";
+import { DataUpdateService } from "src/app/services/data-update.service";
 import { MatButton } from "@angular/material/button";
 import { MatIcon } from "@angular/material/icon";
 import { MatFormField, MatLabel, MatSuffix } from "@angular/material/form-field";
@@ -77,6 +78,7 @@ export class RouteDetailComponent implements OnInit {
   private dateAdapter = inject<DateAdapter<any>>(DateAdapter);
   private dialog = inject(MatDialog);
   private router = inject(Router);
+  private dataUpdateService = inject(DataUpdateService);
 
   routeId: number;
   route: Route;
@@ -180,6 +182,7 @@ export class RouteDetailComponent implements OnInit {
       route.operatorIds = this.activeOperators();
     }
     this.apiService.updateRoute(values as Route).subscribe((_) => {
+      this.dataUpdateService.requestUpdate();
       if (!goToInstances) {
         this.goBack();
       } else {
@@ -215,6 +218,7 @@ export class RouteDetailComponent implements OnInit {
     dialogRef.afterClosed().subscribe((result: boolean) => {
       if (result) {
         this.apiService.deleteRoute(this.route.routeId).subscribe((_) => {
+          this.dataUpdateService.requestUpdate();
           this.goBack();
         });
       }

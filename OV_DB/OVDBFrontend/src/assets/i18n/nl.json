@@ -195,6 +195,7 @@
   "MAP.POPUP.REMARK": "Opmerking",
   "MAP.POPUP.LINENUMBER": "Lijnnummer",
   "MAP.POPUP.OPERATINGCOMPANY": "Bedienend bedrijf",
+  "MAP.CACHE.AGO": "geleden",
   "ADDMAP.SHOWROUTEINFO": "Laat route informatie zien op de kaart",
   "ADDMAP.SHOWROUTEOUTLINE": "Benadruk route bij selectie",
   "ROUTESLIST.SELECT": "Selecteer",
