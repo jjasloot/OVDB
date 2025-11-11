@@ -149,6 +149,12 @@ namespace OV_DB
             services.AddHttpClient<ITrawellingService, TrawellingService>();
             services.AddScoped<ITrawellingService, TrawellingService>();
 
+            // Register named HttpClients for different services to avoid socket exhaustion
+            services.AddHttpClient("OSM", client =>
+            {
+                client.DefaultRequestHeaders.Add("User-Agent", "OVDB");
+            });
+
             services.AddHostedService<UpdateRegionService>();
             services.AddHostedService<RefreshRoutesService>();
             services.AddHostedService<RefreshRoutesWithoutRegionsService>();

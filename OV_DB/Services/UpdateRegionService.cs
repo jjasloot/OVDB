@@ -16,11 +16,12 @@ using System.Threading.Tasks;
 
 namespace OV_DB.Services
 {
-    public class UpdateRegionService(IServiceProvider serviceProvider, IHubContext<MapGenerationHub> hubContext) : IHostedService, IDisposable
+    public class UpdateRegionService(IServiceProvider serviceProvider, IHubContext<MapGenerationHub> hubContext, IHttpClientFactory httpClientFactory) : IHostedService, IDisposable
     {
         public static readonly ConcurrentQueue<int> RegionQueue = new ConcurrentQueue<int>();
         private Task _backgroundTask;
         private CancellationTokenSource _cancellationTokenSource;
+        private readonly IHttpClientFactory _httpClientFactory = httpClientFactory;
 
         public Task StartAsync(CancellationToken cancellationToken)
         {
@@ -131,18 +132,15 @@ namespace OV_DB.Services
         {
             var query = $"[out:json][timeout:240];area({osmId})->.searchArea;(node[\"railway\"=\"station\"][!\"subway\"][!\"funicular\"][!\"tram\"][\"station\"!=\"monorail\"][\"station\"!=\"subway\"][\"station\"!=\"tram\"](area.searchArea);node[\"railway\"=\"station\"][\"train\"=\"yes\"](area.searchArea);node[\"railway\"=\"halt\"][!\"subway\"][!\"funicular\"][!\"tram\"][\"station\"!=\"monorail\"][\"station\"!=\"subway\"][\"station\"!=\"tram\"](area.searchArea);node[\"railway\"=\"halt\"][\"train\"=\"yes\"](area.searchArea););out body;";
             string text = null;
-            using (var httpClient = new HttpClient())
-            {
-                httpClient.Timeout = TimeSpan.FromSeconds(240);
-                httpClient.DefaultRequestHeaders.Add("User-Agent", "OVDB");
+            var httpClient = _httpClientFactory.CreateClient("OSM");
+            httpClient.Timeout = TimeSpan.FromSeconds(240);
 
-                var response = await httpClient.PostAsync("https://overpass-api.de/api/interpreter", new StringContent(query));
-                if (response.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
-                {
-                    return null;
-                }
-                text = await response.Content.ReadAsStringAsync();
+            var response = await httpClient.PostAsync("https://overpass-api.de/api/interpreter", new StringContent(query));
+            if (response.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
+            {
+                return null;
             }
+            text = await response.Content.ReadAsStringAsync();
 
             return text;
         }

@@ -16,8 +16,9 @@ namespace OV_DB.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class StationImporterController(OVDBDatabaseContext dbContext, IStationRegionsService stationRegionsService, IHubContext<MapGenerationHub> mapGenerationHubContext) : ControllerBase
+    public class StationImporterController(OVDBDatabaseContext dbContext, IStationRegionsService stationRegionsService, IHubContext<MapGenerationHub> mapGenerationHubContext, IHttpClientFactory httpClientFactory) : ControllerBase
     {
+        private readonly IHttpClientFactory _httpClientFactory = httpClientFactory;
         [HttpPost("region/{regionId}")]
         public async Task<IActionResult> UpdateRegionAsync(int regionId)
         {
@@ -99,18 +100,15 @@ namespace OV_DB.Controllers
         {
             var query = $"[out:json][timeout:240];area({osmId})->.searchArea;(node[\"railway\"=\"station\"][!\"subway\"][!\"funicular\"][!\"tram\"][\"station\"!=\"monorail\"][\"station\"!=\"subway\"][\"station\"!=\"tram\"](area.searchArea);node[\"railway\"=\"station\"][\"train\"=\"yes\"](area.searchArea);node[\"railway\"=\"halt\"][!\"subway\"][!\"funicular\"][!\"tram\"][\"station\"!=\"monorail\"][\"station\"!=\"subway\"][\"station\"!=\"tram\"](area.searchArea);node[\"railway\"=\"halt\"][\"train\"=\"yes\"](area.searchArea););out body;";
             string text = null;
-            using (var httpClient = new HttpClient())
-            {
-                httpClient.Timeout = TimeSpan.FromSeconds(240);
-                httpClient.DefaultRequestHeaders.Add("User-Agent", "OVDB");
+            var httpClient = _httpClientFactory.CreateClient("OSM");
+            httpClient.Timeout = TimeSpan.FromSeconds(240);
 
-                var response = await httpClient.PostAsync("https://overpass-api.de/api/interpreter", new StringContent(query));
-                if (response.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
-                {
-                    return null;
-                }
-                text = await response.Content.ReadAsStringAsync();
+            var response = await httpClient.PostAsync("https://overpass-api.de/api/interpreter", new StringContent(query));
+            if (response.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
+            {
+                return null;
             }
+            text = await response.Content.ReadAsStringAsync();
 
             return text;
         }
@@ -120,18 +118,15 @@ namespace OV_DB.Controllers
         {
             var query = $"[out:json][timeout:240];\r\nnode({osmId});out body;";
             string text = null;
-            using (var httpClient = new HttpClient())
-            {
-                httpClient.Timeout = TimeSpan.FromSeconds(240);
-                httpClient.DefaultRequestHeaders.Add("User-Agent", "OVDB");
+            var httpClient = _httpClientFactory.CreateClient("OSM");
+            httpClient.Timeout = TimeSpan.FromSeconds(240);
 
-                var response = await httpClient.PostAsync("https://overpass-api.de/api/interpreter", new StringContent(query));
-                if (response.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
-                {
-                    return null;
-                }
-                text = await response.Content.ReadAsStringAsync();
+            var response = await httpClient.PostAsync("https://overpass-api.de/api/interpreter", new StringContent(query));
+            if (response.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
+            {
+                return null;
             }
+            text = await response.Content.ReadAsStringAsync();
 
             return text;
         }
@@ -141,18 +136,15 @@ namespace OV_DB.Controllers
         {
             var query = $"[out:json][timeout:240];area({osmId})->.searchArea;(way[\"railway\"=\"station\"][!\"subway\"][!\"funicular\"][!\"tram\"][\"station\"!=\"monorail\"][\"station\"!=\"subway\"][\"station\"!=\"tram\"](area.searchArea);node[\"railway\"=\"station\"][\"train\"=\"yes\"](area.searchArea);node[\"railway\"=\"halt\"][!\"subway\"][!\"funicular\"][!\"tram\"][\"station\"!=\"monorail\"][\"station\"!=\"subway\"][\"station\"!=\"tram\"](area.searchArea);way[\"railway\"=\"halt\"][\"train\"=\"yes\"](area.searchArea););out center;";
             string text = null;
-            using (var httpClient = new HttpClient())
-            {
-                httpClient.Timeout = TimeSpan.FromSeconds(240);
-                httpClient.DefaultRequestHeaders.Add("User-Agent", "OVDB");
+            var httpClient = _httpClientFactory.CreateClient("OSM");
+            httpClient.Timeout = TimeSpan.FromSeconds(240);
 
-                var response = await httpClient.PostAsync("https://overpass-api.de/api/interpreter", new StringContent(query));
-                if (response.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
-                {
-                    return null;
-                }
-                text = await response.Content.ReadAsStringAsync();
+            var response = await httpClient.PostAsync("https://overpass-api.de/api/interpreter", new StringContent(query));
+            if (response.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
+            {
+                return null;
             }
+            text = await response.Content.ReadAsStringAsync();
 
             return text;
         }

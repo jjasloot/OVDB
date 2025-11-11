@@ -31,13 +31,15 @@ namespace OV_DB.Controllers
         private OVDBDatabaseContext _context;
         private IConfiguration _configuration;
         private readonly IRouteRegionsService _routeRegionsService;
+        private readonly IHttpClientFactory _httpClientFactory;
 
-        public ImporterController(IMemoryCache memoryCache, OVDBDatabaseContext context, IConfiguration configuration, IRouteRegionsService routeRegionsService)
+        public ImporterController(IMemoryCache memoryCache, OVDBDatabaseContext context, IConfiguration configuration, IRouteRegionsService routeRegionsService, IHttpClientFactory httpClientFactory)
         {
             _cache = memoryCache;
             _context = context;
             _configuration = configuration;
             _routeRegionsService = routeRegionsService;
+            _httpClientFactory = httpClientFactory;
         }
 
         [HttpGet("find")]
@@ -128,17 +130,14 @@ namespace OV_DB.Controllers
             query += $";relation({id});";
             query += "(._;>;);out;node(r)->.nodes;.nodes is_in;area._[boundary=administrative][admin_level=10]->.areas;foreach.areas -> .a {  node.nodes(area.a);  convert node ::id = id(), is_in= a.set(t[\"name\"]);  out; }";
             string text = null;
-            using (var httpClient = new HttpClient())
-            {
-                httpClient.DefaultRequestHeaders.Add("User-Agent", "OVDB");
+            var httpClient = _httpClientFactory.CreateClient("OSM");
 
-                var response = await httpClient.PostAsync("https://overpass-api.de/api/interpreter", new StringContent(query));
-                if (response.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
-                {
-                    return null;
-                }
-                text = await response.Content.ReadAsStringAsync();
+            var response = await httpClient.PostAsync("https://overpass-api.de/api/interpreter", new StringContent(query));
+            if (response.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
+            {
+                return null;
             }
+            text = await response.Content.ReadAsStringAsync();
 
             return text;
         }
@@ -475,16 +474,14 @@ namespace OV_DB.Controllers
             query += $"<has-kv k=\"route\"/>";
             query += $"</query><print mode=\"tags\" order=\"quadtile\"/></osm-script>";
             string text = null;
-            using (var httpClient = new HttpClient())
+            var httpClient = _httpClientFactory.CreateClient("OSM");
+
+            var response = await httpClient.PostAsync("https://overpass-api.de/api/interpreter", new StringContent(query));
+            if (response.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
             {
-                httpClient.DefaultRequestHeaders.Add("User-Agent", "OVDB");
-                var response = await httpClient.PostAsync("https://overpass-api.de/api/interpreter", new StringContent(query));
-                if (response.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
-                {
-                    return null;
-                }
-                text = await response.Content.ReadAsStringAsync();
+                return null;
             }
+            text = await response.Content.ReadAsStringAsync();
 
             var lines = JsonConvert.DeserializeObject<OsmLinesList>(text);
             var responseList = new List<OSMLineDTO>();
@@ -517,7 +514,7 @@ namespace OV_DB.Controllers
             return responseList; ;
         }
 
-        private static async Task<List<OSMLineDTO>> CreateRoutesListAsync(string reference, OSMRouteType? routeType, string network, DateTime? dateTime)
+        private async Task<List<OSMLineDTO>> CreateRoutesListAsync(string reference, OSMRouteType? routeType, string network, DateTime? dateTime)
         {
             var query = $"<osm-script output=\"json\"><query type=\"relation\">";
             if (dateTime.HasValue)
@@ -535,24 +532,22 @@ namespace OV_DB.Controllers
             }
             query += $"</query><print mode=\"tags\" geometry=\"center\" order=\"quadtile\"/></osm-script>";
             string text = null;
-            using (var httpClient = new HttpClient())
-            {
-                httpClient.DefaultRequestHeaders.Add("User-Agent", "OVDB/1.0 (contact-me jaapslootbeek@gmail.com)");
-                try
-                {
-                    var response = await httpClient.PostAsync("https://overpass-api.de/api/interpreter", new StringContent(query));
+            var httpClient = _httpClientFactory.CreateClient("OSM");
 
-                    if (response.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
-                    {
-                        return null;
-                    }
-                    text = await response.Content.ReadAsStringAsync();
-                }
-                catch (Exception ex)
+            try
+            {
+                var response = await httpClient.PostAsync("https://overpass-api.de/api/interpreter", new StringContent(query));
+
+                if (response.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
                 {
-                    Console.WriteLine(ex);
-                    throw;
+                    return null;
                 }
+                text = await response.Content.ReadAsStringAsync();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+                throw;
             }
 
             var lines = JsonConvert.DeserializeObject<OsmLinesList>(text);
