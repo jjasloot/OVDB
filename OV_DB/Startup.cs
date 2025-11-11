@@ -156,7 +156,8 @@ namespace OV_DB
             // Register named HttpClients for different services to avoid socket exhaustion
             services.AddHttpClient("OSM", client =>
             {
-                client.DefaultRequestHeaders.Add("User-Agent", "OVDB (contact-me jaapslootbeek@gmail.com)");
+                client.DefaultRequestHeaders.Add("User-Agent", "OVDB/1.0 (contact-me jaapslootbeek@gmail.com)");
+                client.Timeout = TimeSpan.FromSeconds(240);
             });
 
             services.AddHostedService<UpdateRegionService>();

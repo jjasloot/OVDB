@@ -848,7 +848,7 @@ namespace OV_DB.Controllers
                     });
                     if (editMultiple.Maps != null)
                     {
-                        editMultiple.Maps.ForEach(rm1 =>
+                        validSelectedMapIds.ForEach(rm1 =>
                         {
                             if (!route.RouteMaps.Select(rm => rm.MapId).Contains(rm1))
                             {

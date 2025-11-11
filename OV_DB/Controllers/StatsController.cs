@@ -185,7 +185,7 @@ namespace OV_DB.Controllers
             }).ToList();
 
 
-            var x3 = x2.Select(route =>
+            var x3 = x2.Where(route => route.Coordinates.Length > 0).Select(route =>
               {
                   // Use Min/Max instead of OrderBy for better performance
                   var minLat = route.Coordinates[0];

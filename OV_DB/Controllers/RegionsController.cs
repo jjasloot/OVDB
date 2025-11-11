@@ -59,12 +59,15 @@ namespace OV_DB.Controllers
             string text = null;
             var httpClient = _httpClientFactory.CreateClient("OSM");
 
-            var response = await httpClient.PostAsync("https://overpass-api.de/api/interpreter", new StringContent(query));
-            if (response.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
+            using (var content = new StringContent(query))
             {
-                return null;
+                var response = await httpClient.PostAsync("https://overpass-api.de/api/interpreter", content);
+                if (response.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
+                {
+                    return null;
+                }
+                text = await response.Content.ReadAsStringAsync();
             }
-            text = await response.Content.ReadAsStringAsync();
             
             var parsed = JsonConvert.DeserializeObject<OSM>(text.ToString());
             return parsed.Elements.Single().Tags;
