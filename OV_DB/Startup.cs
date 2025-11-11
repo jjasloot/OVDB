@@ -125,14 +125,6 @@ namespace OV_DB
             // Add response caching
             services.AddResponseCaching();
 
-            // Add response compression
-            services.AddResponseCompression(options =>
-            {
-                options.EnableForHttps = true;
-                options.Providers.Add<Microsoft.AspNetCore.ResponseCompression.GzipCompressionProvider>();
-                options.Providers.Add<Microsoft.AspNetCore.ResponseCompression.BrotliCompressionProvider>();
-            });
-
             services.AddSpaStaticFiles(configuration =>
             {
                 configuration.RootPath = "OVDBFrontend/dist/OVDBFrontend/browser";
@@ -164,7 +156,7 @@ namespace OV_DB
             // Register named HttpClients for different services to avoid socket exhaustion
             services.AddHttpClient("OSM", client =>
             {
-                client.DefaultRequestHeaders.Add("User-Agent", "OVDB");
+                client.DefaultRequestHeaders.Add("User-Agent", "OVDB (contact-me jaapslootbeek@gmail.com)");
             });
 
             services.AddHostedService<UpdateRegionService>();
@@ -199,9 +191,6 @@ namespace OV_DB
             {
                 app.UseSpaStaticFiles();
             }
-
-            // Add response caching middleware
-            app.UseResponseCaching();
 
             app.UseRouting();
             app.UseCors();
