@@ -51,6 +51,7 @@ namespace OV_DB.Controllers
         private IQueryable<RouteInstance> QueryForInstances(Guid map, int? year, int userIdClaim)
         {
             var query = _context.RouteInstances
+                .AsNoTracking()
                 .Where(ri => ri.Route.RouteMaps.Any(rm => rm.Map.UserId == userIdClaim) && (ri.Route.RouteMaps.Any(rm => rm.Map.MapGuid == map) || ri.RouteInstanceMaps.Any(rim => rim.Map.MapGuid == map)));
 
             if (year.HasValue)
@@ -186,13 +187,27 @@ namespace OV_DB.Controllers
 
             var x3 = x2.Select(route =>
               {
+                  // Use Min/Max instead of OrderBy for better performance
+                  var minLat = route.Coordinates[0];
+                  var maxLat = route.Coordinates[0];
+                  var minLong = route.Coordinates[0];
+                  var maxLong = route.Coordinates[0];
+
+                  foreach (var coord in route.Coordinates)
+                  {
+                      if (coord.Y < minLat.Y) minLat = coord;
+                      if (coord.Y > maxLat.Y) maxLat = coord;
+                      if (coord.X < minLong.X) minLong = coord;
+                      if (coord.X > maxLong.X) maxLong = coord;
+                  }
+
                   return new
                   {
                       Route = route,
-                      MinLat = route.Coordinates.OrderBy(c => c.Y).First(),
-                      MaxLat = route.Coordinates.OrderByDescending(c => c.Y).First(),
-                      MinLong = route.Coordinates.OrderBy(c => c.X).First(),
-                      MaxLong = route.Coordinates.OrderByDescending(c => c.X).First()
+                      MinLat = minLat,
+                      MaxLat = maxLat,
+                      MinLong = minLong,
+                      MaxLong = maxLong
                   };
               }).ToList();
 

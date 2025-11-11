@@ -347,7 +347,7 @@ namespace OV_DB.Controllers
             {
                 return Forbid();
             }
-            var regions = _context.Regions.ToList();
+            var regions = _context.Regions.AsNoTracking().ToList();
 
             foreach (var region in regions)
             {
