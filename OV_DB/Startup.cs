@@ -121,6 +121,10 @@ namespace OV_DB
                 {
                     options.JsonSerializerOptions.Converters.Add(new NetTopologySuite.IO.Converters.GeoJsonConverterFactory());
                 });
+
+            // Add response caching
+            services.AddResponseCaching();
+
             services.AddSpaStaticFiles(configuration =>
             {
                 configuration.RootPath = "OVDBFrontend/dist/OVDBFrontend/browser";
@@ -149,6 +153,13 @@ namespace OV_DB
             services.AddHttpClient<ITrawellingService, TrawellingService>();
             services.AddScoped<ITrawellingService, TrawellingService>();
 
+            // Register named HttpClients for different services to avoid socket exhaustion
+            services.AddHttpClient("OSM", client =>
+            {
+                client.DefaultRequestHeaders.Add("User-Agent", "OVDB/1.0 (contact-me jaapslootbeek@gmail.com)");
+                client.Timeout = TimeSpan.FromSeconds(240);
+            });
+
             services.AddHostedService<UpdateRegionService>();
             services.AddHostedService<RefreshRoutesService>();
             services.AddHostedService<RefreshRoutesWithoutRegionsService>();
@@ -160,6 +171,9 @@ namespace OV_DB
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
+            // Add response compression early in the pipeline
+            app.UseResponseCompression();
+
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
@@ -178,6 +192,7 @@ namespace OV_DB
             {
                 app.UseSpaStaticFiles();
             }
+
             app.UseRouting();
             app.UseCors();
             app.UseXfo(o => o.SameOrigin());

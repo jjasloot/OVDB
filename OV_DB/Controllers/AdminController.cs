@@ -24,11 +24,13 @@ namespace OV_DB.Controllers
     {
         private readonly IConfiguration _configuration;
         private readonly OVDBDatabaseContext _dbContext;
+        private readonly IHttpClientFactory _httpClientFactory;
 
-        public AdminController(OVDBDatabaseContext dbContext, IConfiguration configuration)
+        public AdminController(OVDBDatabaseContext dbContext, IConfiguration configuration, IHttpClientFactory httpClientFactory)
         {
             _configuration = configuration;
             _dbContext = dbContext;
+            _httpClientFactory = httpClientFactory;
         }
 
         [HttpPost("AddMissingGuidsForRoute")]
@@ -297,23 +299,24 @@ namespace OV_DB.Controllers
             return Ok();
         }
 
-        private static async Task<Dictionary<string, string>> GetTagsAsync(long id)
+        private async Task<Dictionary<string, string>> GetTagsAsync(long id)
         {
             var query = $"[out:json]";
             query += $";relation({id});";
             query += "out tags;";
             string text = null;
-            using (var httpClient = new HttpClient())
-            {
-                httpClient.DefaultRequestHeaders.Add("User-Agent", "OVDB");
+            var httpClient = _httpClientFactory.CreateClient("OSM");
 
-                var response = await httpClient.PostAsync("https://overpass-api.de/api/interpreter", new StringContent(query));
+            using (var content = new StringContent(query))
+            {
+                var response = await httpClient.PostAsync("https://overpass-api.de/api/interpreter", content);
                 if (response.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
                 {
                     return null;
                 }
                 text = await response.Content.ReadAsStringAsync();
             }
+            
             var parsed = JsonConvert.DeserializeObject<OSM>(text.ToString());
             return parsed.Elements.Single().Tags;
         }

@@ -142,6 +142,7 @@ namespace OV_DB.Controllers
         public async Task<ActionResult<IEnumerable<int?>>> GetRoutesYears()
         {
             var years = await _context.Routes
+                .AsNoTracking()
                 .Where(r => r.RouteTypeId != null)
                 .Select(r => r.FirstDateTime.HasValue ? (int?)r.FirstDateTime.Value.Year : null)
                 .Distinct()
@@ -390,7 +391,7 @@ namespace OV_DB.Controllers
                 }
                 if (string.IsNullOrWhiteSpace(route.Name)) route.Name = "Route";
 
-                var types = await _context.RouteTypes.Where(r => r.UserId == userId).ToListAsync();
+                var types = await _context.RouteTypes.AsNoTracking().Where(r => r.UserId == userId).ToListAsync();
 
                 if (placeMark.ExtendedData != null)
                 {
@@ -451,7 +452,7 @@ namespace OV_DB.Controllers
                     if (extendedData.Any(d => d.Name == "maps"))
                     {
                         route.RouteMaps = new List<RouteMap>();
-                        var dbMaps = await _context.Maps.Where(r => r.UserId == userId).ToListAsync();
+                        var dbMaps = await _context.Maps.AsNoTracking().Where(r => r.UserId == userId).ToListAsync();
                         var inputMaps = extendedData.Single(d => d.Name == "maps").Value.Split(',').ToList();
                         inputMaps.ForEach(inputMap =>
                         {
@@ -476,7 +477,7 @@ namespace OV_DB.Controllers
                 }
                 if (!route.RouteMaps.Any())
                 {
-                    var maps = await _context.Maps.Where(m => m.UserId == userId).ToListAsync();
+                    var maps = await _context.Maps.AsNoTracking().Where(m => m.UserId == userId).ToListAsync();
 
                     var defaultMap = maps.Where(m => m.Default == true).FirstOrDefault();
                     if (defaultMap == null)
@@ -547,7 +548,7 @@ namespace OV_DB.Controllers
             if (string.IsNullOrWhiteSpace(route.Name)) route.Name = "Route";
 
 
-            var maps = await _context.Maps.Where(m => m.UserId == userId).ToListAsync();
+            var maps = await _context.Maps.AsNoTracking().Where(m => m.UserId == userId).ToListAsync();
 
             var defaultMap = maps.Where(m => m.Default == true).SingleOrDefault();
             if (defaultMap == null)
@@ -599,6 +600,7 @@ namespace OV_DB.Controllers
                 return Forbid();
             }
             var route = await _context.Routes
+                .AsNoTracking()
                 .Include(r => r.RouteType)
                 .Include(r => r.RouteMaps)
                 .ThenInclude(rm => rm.Map)
@@ -650,9 +652,7 @@ namespace OV_DB.Controllers
             }
 
             var routes = await _context.Routes
-                            .Include(r => r.RouteType)
-                            .Include(r => r.RouteMaps)
-                            .ThenInclude(rm => rm.Map)
+                            .AsNoTracking()
                             .Where(r => r.RouteMaps.Any(rm => rm.Map.UserId == userIdClaim))
                             .Where(r => splitRouteIds.Contains(r.RouteId))
                             .Select(r => new { r.Name, r.LineString })
@@ -690,6 +690,7 @@ namespace OV_DB.Controllers
             }
 
             var query = _context.Routes
+                            .AsNoTracking()
                             .Include(r => r.RouteType)
                             .Include(r => r.RouteMaps)
                             .ThenInclude(rm => rm.Map)
@@ -832,7 +833,7 @@ namespace OV_DB.Controllers
 
             if (editMultiple.UpdateMaps)
             {
-                var validSelectedMapIds = await _context.Maps.Where(m => editMultiple.Maps.Contains(m.MapId) && m.UserId == userIdClaim).Select(m => m.MapId).ToListAsync();
+                var validSelectedMapIds = await _context.Maps.AsNoTracking().Where(m => editMultiple.Maps.Contains(m.MapId) && m.UserId == userIdClaim).Select(m => m.MapId).ToListAsync();
 
                 selectedRoutes.ForEach(route =>
                 {
@@ -847,7 +848,7 @@ namespace OV_DB.Controllers
                     });
                     if (editMultiple.Maps != null)
                     {
-                        editMultiple.Maps.ForEach(rm1 =>
+                        validSelectedMapIds.ForEach(rm1 =>
                         {
                             if (!route.RouteMaps.Select(rm => rm.MapId).Contains(rm1))
                             {

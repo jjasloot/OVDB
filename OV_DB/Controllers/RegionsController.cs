@@ -27,10 +27,11 @@ namespace OV_DB.Controllers
     [Route("api/[controller]")]
     [ApiController]
     [Authorize]
-    public class RegionsController(IMemoryCache memoryCache, OVDBDatabaseContext context, IMapper mapper, IHubContext<MapGenerationHub> hubContext) : ControllerBase
+    public class RegionsController(IMemoryCache memoryCache, OVDBDatabaseContext context, IMapper mapper, IHubContext<MapGenerationHub> hubContext, IHttpClientFactory httpClientFactory) : ControllerBase
     {
         private IMemoryCache _cache = memoryCache;
         private OVDBDatabaseContext _context = context;
+        private readonly IHttpClientFactory _httpClientFactory = httpClientFactory;
 
         private async Task<string> GetPolygonAsync(long id)
         {
@@ -38,38 +39,36 @@ namespace OV_DB.Controllers
             query += $";relation({id});";
             query += "._;>;out;";
             string text = null;
-            using (var httpClient = new HttpClient())
-            {
-                httpClient.DefaultRequestHeaders.Add("User-Agent", "OVDB");
+            var httpClient = _httpClientFactory.CreateClient("OSM");
 
-                var response = await httpClient.GetAsync($"https://polygons.openstreetmap.fr/get_geojson.py?id={id}&params=0");
-                if (response.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
-                {
-                    return null;
-                }
-                text = await response.Content.ReadAsStringAsync();
+            var response = await httpClient.GetAsync($"https://polygons.openstreetmap.fr/get_geojson.py?id={id}&params=0");
+            if (response.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
+            {
+                return null;
             }
+            text = await response.Content.ReadAsStringAsync();
 
             return text;
         }
 
-        private static async Task<Dictionary<string, string>> GetTagsAsync(long id)
+        private async Task<Dictionary<string, string>> GetTagsAsync(long id)
         {
             var query = $"[out:json]";
             query += $";relation({id});";
             query += "out tags;";
             string text = null;
-            using (var httpClient = new HttpClient())
-            {
-                httpClient.DefaultRequestHeaders.Add("User-Agent", "OVDB");
+            var httpClient = _httpClientFactory.CreateClient("OSM");
 
-                var response = await httpClient.PostAsync("https://overpass-api.de/api/interpreter", new StringContent(query));
+            using (var content = new StringContent(query))
+            {
+                var response = await httpClient.PostAsync("https://overpass-api.de/api/interpreter", content);
                 if (response.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
                 {
                     return null;
                 }
                 text = await response.Content.ReadAsStringAsync();
             }
+            
             var parsed = JsonConvert.DeserializeObject<OSM>(text.ToString());
             return parsed.Elements.Single().Tags;
         }
@@ -351,7 +350,7 @@ namespace OV_DB.Controllers
             {
                 return Forbid();
             }
-            var regions = _context.Regions.ToList();
+            var regions = _context.Regions.AsNoTracking().ToList();
 
             foreach (var region in regions)
             {
