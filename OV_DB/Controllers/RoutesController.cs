@@ -653,9 +653,6 @@ namespace OV_DB.Controllers
 
             var routes = await _context.Routes
                             .AsNoTracking()
-                            .Include(r => r.RouteType)
-                            .Include(r => r.RouteMaps)
-                            .ThenInclude(rm => rm.Map)
                             .Where(r => r.RouteMaps.Any(rm => rm.Map.UserId == userIdClaim))
                             .Where(r => splitRouteIds.Contains(r.RouteId))
                             .Select(r => new { r.Name, r.LineString })
