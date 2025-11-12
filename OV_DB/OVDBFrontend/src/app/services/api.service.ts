@@ -21,6 +21,7 @@ import { MapDataDTO } from "../models/map-data.model";
 import { RegionOperators } from "../models/region-operators.model";
 import { RegionStat } from "../models/region.model";
 import { UserProfile, UpdateProfile, ChangePassword } from "../models/user-profile.model";
+import { Achievement, AchievementProgress } from "../models/achievement.model";
 import { 
   TrawellingConnectionStatus, 
   TrawellingConnectResponse, 
@@ -596,6 +597,26 @@ export class ApiService {
     return this.httpClient.post<LinkToRouteInstanceResponse>(
       environment.backend + "api/traewelling/link",
       request
+    );
+  }
+
+  // Achievement API methods
+  getAchievements(): Observable<AchievementProgress[]> {
+    return this.httpClient.get<AchievementProgress[]>(
+      environment.backend + "api/achievements"
+    );
+  }
+
+  getUnlockedAchievements(): Observable<Achievement[]> {
+    return this.httpClient.get<Achievement[]>(
+      environment.backend + "api/achievements/unlocked"
+    );
+  }
+
+  checkAchievements(): Observable<any> {
+    return this.httpClient.post(
+      environment.backend + "api/achievements/check",
+      {}
     );
   }
 }

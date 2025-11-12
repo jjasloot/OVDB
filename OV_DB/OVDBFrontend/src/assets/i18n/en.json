@@ -296,7 +296,8 @@
     "DATA": "Data",
     "REQUESTS": "Requests",
     "DARK_MODE": "Dark mode",
-    "LIGHT_MODE": "Light mode"
+    "LIGHT_MODE": "Light mode",
+    "ACHIEVEMENTS": "Achievements"
   },
   "PROFILE": {
     "TITLE": "User profile",
@@ -330,7 +331,10 @@
     "TRAEWELLING_CONNECTED_SUCCESSFULLY": "Träwelling account connected successfully",
     "TRAEWELLING_DISCONNECTED_SUCCESSFULLY": "Träwelling account disconnected successfully",
     "TRAEWELLING_ERROR_CONNECTING": "Error connecting to Träwelling",
-    "TRAEWELLING_ERROR_DISCONNECTING": "Error disconnecting from Träwelling"
+    "TRAEWELLING_ERROR_DISCONNECTING": "Error disconnecting from Träwelling",
+    "RECENT_ACHIEVEMENTS": "Recent Achievements",
+    "VIEW_ALL_ACHIEVEMENTS": "View All Achievements",
+    "NO_ACHIEVEMENTS_YET": "No achievements yet. Start exploring to unlock achievements!"
   },
   "TRAEWELLING": {
     "TITLE": "Träwelling connection",
@@ -425,5 +429,17 @@
     "START_TIME": "Departure",
     "END_TIME": "Arrival",
     "DESCRIPTION": "Description"
+  },
+  "ACHIEVEMENTS": {
+    "TITLE": "Achievements",
+    "CURRENT_PROGRESS": "Current Progress",
+    "UNLOCKED": "Unlocked",
+    "CATEGORIES": {
+      "DISTANCE": "Distance Achievements",
+      "STATIONS": "Station Explorer",
+      "COUNTRIES": "World Traveler",
+      "TRANSPORT_TYPES": "Transport Diversity",
+      "DISTANCE_YEARLY": "Yearly Distance Achievements"
+    }
   }
 }

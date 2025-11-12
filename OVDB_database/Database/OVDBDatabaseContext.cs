@@ -35,6 +35,8 @@ namespace OVDB_database.Database
         public DbSet<Operator> Operators { get; set; }
         public DbSet<TrawellingIgnoredStatus> TrawellingIgnoredStatuses { get; set; }
         public DbSet<TrawellingStation> TrawellingStations { get; set; }
+        public DbSet<Achievement> Achievements { get; set; }
+        public DbSet<UserAchievement> UserAchievements { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder options)
         {

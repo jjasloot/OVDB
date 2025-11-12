@@ -1,8 +1,9 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { UntypedFormBuilder, UntypedFormGroup, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { ApiService } from '../services/api.service';
 import { UserProfile, UpdateProfile, ChangePassword } from '../models/user-profile.model';
 import { TrawellingConnectionStatus } from '../models/traewelling.model';
+import { Achievement } from '../models/achievement.model';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { TranslationService } from '../services/translation.service';
@@ -14,13 +15,16 @@ import { MatSelect, MatOption } from '@angular/material/select';
 import { MatCard, MatCardContent, MatCardHeader, MatCardTitle } from '@angular/material/card';
 import { MatProgressSpinner } from '@angular/material/progress-spinner';
 import { MatIcon } from '@angular/material/icon';
-import { Router } from '@angular/router';
+import { MatChipsModule } from '@angular/material/chips';
+import { CommonModule } from '@angular/common';
+import { Router, RouterModule } from '@angular/router';
 
 @Component({
   selector: 'app-profile',
   templateUrl: './profile.component.html',
   styleUrls: ['./profile.component.scss'],
   imports: [
+    CommonModule,
     FormsModule, 
     ReactiveFormsModule, 
     MatFormField, 
@@ -36,6 +40,8 @@ import { Router } from '@angular/router';
     MatCardTitle, 
     MatProgressSpinner, 
     MatIcon,
+    MatChipsModule,
+    RouterModule,
     TranslateModule
   ]
 })
@@ -52,12 +58,14 @@ export class ProfileComponent implements OnInit {
   passwordForm: UntypedFormGroup;
   userProfile: UserProfile | null = null;
   trawellingStatus: TrawellingConnectionStatus | null = null;
+  recentAchievements = signal<Achievement[]>([]);
   loading = false;
   savingProfile = false;
   changingPassword = false;
   trawellingLoading = false;
   trawellingConnecting = false;
   trawellingDisconnecting = false;
+  achievementsLoading = false;
 
   languages = [
     { value: 'en', label: 'English' },
@@ -82,6 +90,7 @@ export class ProfileComponent implements OnInit {
   ngOnInit(): void {
     this.loadProfile();
     this.loadTrawellingStatus();
+    this.loadRecentAchievements();
   }
 
   passwordMatchValidator(group: UntypedFormGroup) {
@@ -246,5 +255,36 @@ export class ProfileComponent implements OnInit {
 
   viewTrawellingTrips(): void {
     this.router.navigate(['/admin/traewelling']);
+  }
+
+  loadRecentAchievements(): void {
+    this.achievementsLoading = true;
+    this.apiService.getUnlockedAchievements().subscribe({
+      next: (achievements) => {
+        // Get the 3 most recent achievements
+        this.recentAchievements.set(achievements.slice(0, 3));
+        this.achievementsLoading = false;
+      },
+      error: (error) => {
+        console.error('Error loading achievements:', error);
+        this.achievementsLoading = false;
+      }
+    });
+  }
+
+  getLevelColor(level: string): string {
+    const colors: { [key: string]: string } = {
+      'bronze': '#CD7F32',
+      'silver': '#C0C0C0',
+      'gold': '#FFD700',
+      'platinum': '#E5E4E2',
+      'diamond': '#B9F2FF'
+    };
+    return colors[level] || '#888';
+  }
+
+  getAchievementName(achievement: Achievement): string {
+    const currentLang = this.translateService.currentLang || this.translateService.defaultLang;
+    return currentLang === 'nl' && achievement.nameNL ? achievement.nameNL : achievement.name;
   }
 }

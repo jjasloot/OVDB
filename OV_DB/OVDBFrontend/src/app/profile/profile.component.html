@@ -124,6 +124,57 @@
       </mat-card-content>
     </mat-card>
 
+    <!-- Recent Achievements Card -->
+    <mat-card class="achievements-card">
+      <mat-card-header>
+        <mat-card-title>
+          {{ 'PROFILE.RECENT_ACHIEVEMENTS' | translate }}
+        </mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        @if (achievementsLoading) {
+          <div class="loading-container">
+            <mat-spinner diameter="24"></mat-spinner>
+          </div>
+        } @else if (recentAchievements().length > 0) {
+          <div class="achievements-list">
+            @for (achievement of recentAchievements(); track achievement.id) {
+              <div class="achievement-item">
+                <mat-icon [style.color]="getLevelColor(achievement.level)">
+                  {{ achievement.iconName }}
+                </mat-icon>
+                <div class="achievement-details">
+                  <strong>{{ getAchievementName(achievement) }}</strong>
+                  <mat-chip [style.background-color]="getLevelColor(achievement.level)">
+                    {{ achievement.level | uppercase }}
+                  </mat-chip>
+                </div>
+                @if (achievement.unlockedAt) {
+                  <span class="unlock-date">
+                    {{ achievement.unlockedAt | date: 'short' }}
+                  </span>
+                }
+              </div>
+            }
+          </div>
+          <div class="view-all-achievements">
+            <button mat-raised-button color="primary" routerLink="/achievements">
+              <mat-icon>emoji_events</mat-icon>
+              {{ 'PROFILE.VIEW_ALL_ACHIEVEMENTS' | translate }}
+            </button>
+          </div>
+        } @else {
+          <p class="no-achievements">{{ 'PROFILE.NO_ACHIEVEMENTS_YET' | translate }}</p>
+          <div class="view-all-achievements">
+            <button mat-raised-button color="primary" routerLink="/achievements">
+              <mat-icon>emoji_events</mat-icon>
+              {{ 'PROFILE.VIEW_ALL_ACHIEVEMENTS' | translate }}
+            </button>
+          </div>
+        }
+      </mat-card-content>
+    </mat-card>
+
     <!-- Password Change Card -->
     <mat-card class="password-card">
       <mat-card-header>

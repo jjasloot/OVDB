@@ -152,6 +152,8 @@ namespace OV_DB
             services.AddScoped<TelegramBotService>();
             services.AddHttpClient<ITrawellingService, TrawellingService>();
             services.AddScoped<ITrawellingService, TrawellingService>();
+            services.AddScoped<IAchievementService, AchievementService>();
+            services.AddScoped<IAchievementIconService, AchievementIconService>();
 
             // Register named HttpClients for different services to avoid socket exhaustion
             services.AddHttpClient("OSM", client =>
@@ -212,6 +214,10 @@ namespace OV_DB
                 try
                 {
                     serviceScope.ServiceProvider.GetService<OVDBDatabaseContext>().Database.Migrate();
+                    
+                    // Initialize achievements
+                    var achievementService = serviceScope.ServiceProvider.GetService<IAchievementService>();
+                    achievementService?.InitializeAchievementsAsync().Wait();
                 }
                 catch (Exception ex)
                 {
