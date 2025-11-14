@@ -6,5 +6,6 @@
         public string? PreferredLanguage { get; set; }
         public long? TelegramUserId { get; set; }
         public bool HasTraewelling { get; set; }
+        public string? PreferredMapProvider { get; set; }
     }
 }

@@ -686,6 +686,9 @@ namespace OVDB_database.Migrations
                     b.Property<int?>("PreferredLanguage")
                         .HasColumnType("int");
 
+                    b.Property<int?>("PreferredMapProvider")
+                        .HasColumnType("int");
+
                     b.Property<string>("RefreshToken")
                         .HasColumnType("longtext");
 
