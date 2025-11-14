@@ -1,11 +1,27 @@
 @if (!error) {
   <div #box class="container" style="display: flex;flex-direction: column;">
     <div class="map-container" #mapContainer>
-      <div class="map" leaflet [leafletOptions]="options" [leafletLayers]="layers" [leafletLayersControl]="leafletLayersControl" [leafletFitBounds]="bounds">
-      </div>
+      @if (mapProvider() === 'leaflet') {
+        <div class="map" leaflet [leafletOptions]="options" [leafletLayers]="layers" [leafletLayersControl]="leafletLayersControl" [leafletFitBounds]="bounds">
+        </div>
+      }
+      @if (mapProvider() === 'maplibre') {
+        <div class="map" #maplibreContainer></div>
+      }
       <div [ngClass]="{'loading':loading,'loading-indicator':true}">
         <mat-spinner></mat-spinner>
       </div>
+      @if (canToggleMapProvider) {
+        <button
+          mat-fab
+          color="primary"
+          class="map-toggle-button"
+          (click)="toggleMapProvider()"
+          [disabled]="loading"
+          >
+          <mat-icon>map</mat-icon>
+        </button>
+      }
     </div>
   </div>
 }

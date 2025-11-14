@@ -1,4 +1,4 @@
-import { Component, OnInit, viewChild, inject } from '@angular/core';
+import { Component, OnInit, viewChild, inject, ElementRef, OnDestroy } from '@angular/core';
 import { LatLngBounds, LatLng, geoJSON } from 'leaflet';
 import { tileLayer } from 'leaflet';
 import { TranslateService, TranslateModule } from '@ngx-translate/core';
@@ -8,20 +8,32 @@ import { ActivatedRoute } from '@angular/router';
 import { LeafletModule } from '@bluehalo/ngx-leaflet';
 import { NgClass } from '@angular/common';
 import { MatProgressSpinner } from '@angular/material/progress-spinner';
+import { MapProviderService } from '../services/map-provider.service';
+import { MapConfigService } from '../services/map-config.service';
+import { MatButton, MatFabButton } from '@angular/material/button';
+import { MatIcon } from '@angular/material/icon';
+import * as maplibregl from 'maplibre-gl';
 
 @Component({
     selector: 'app-single-route-map',
     templateUrl: './single-route-map.component.html',
     styleUrls: ['./single-route-map.component.scss'],
-    imports: [LeafletModule, NgClass, MatProgressSpinner, TranslateModule]
+    imports: [LeafletModule, NgClass, MatProgressSpinner, TranslateModule, MatFabButton, MatIcon]
 })
-export class SingleRouteMapComponent implements OnInit {
+export class SingleRouteMapComponent implements OnInit, OnDestroy {
   private translateService = inject(TranslateService);
   private translationService = inject(TranslationService);
   private activatedRoute = inject(ActivatedRoute);
   private apiService = inject(ApiService);
+  private mapProviderService = inject(MapProviderService);
+  private mapConfigService = inject(MapConfigService);
 
   readonly mapContainer = viewChild<HTMLElement>('mapContainer');
+  readonly maplibreContainer = viewChild<ElementRef<HTMLDivElement>>('maplibreContainer');
+  
+  mapProvider = this.mapProviderService.currentProvider;
+  canToggleMapProvider = this.mapProviderService.canToggleProvider();
+  private maplibreMap: maplibregl.Map | null = null;
   loading = false;
   layers = [];
   error: boolean;
@@ -128,9 +140,133 @@ export class SingleRouteMapComponent implements OnInit {
       this.layers = [track];
       this.bounds = track.getBounds();
       this.loading = false;
+      
+      // Also update MapLibre if it's the active provider
+      if (this.mapProvider() === 'maplibre') {
+        setTimeout(() => this.showRouteOnMapLibre(), 100);
+      }
     }
     catch {
       this.error = true;
+    }
+  }
+
+  ngOnDestroy() {
+    if (this.maplibreMap) {
+      this.maplibreMap.remove();
+      this.maplibreMap = null;
+    }
+  }
+
+  toggleMapProvider() {
+    const newProvider = this.mapProvider() === 'leaflet' ? 'maplibre' : 'leaflet';
+    this.mapProviderService.setProvider(newProvider);
+    
+    if (newProvider === 'maplibre') {
+      setTimeout(() => {
+        this.initMapLibre();
+        if (this.layers.length > 0) {
+          this.showRouteOnMapLibre();
+        }
+      }, 100);
+    } else {
+      if (this.maplibreMap) {
+        this.maplibreMap.remove();
+        this.maplibreMap = null;
+      }
+    }
+  }
+
+  private initMapLibre() {
+    const container = this.maplibreContainer();
+    if (!container) {
+      return;
+    }
+
+    const style = this.mapConfigService.getMapLibreStyle('OpenStreetMap Mat');
+    
+    this.maplibreMap = new maplibregl.Map({
+      container: container.nativeElement,
+      style: style,
+      center: [5.5, 52.0],
+      zoom: 7,
+      transformRequest: this.mapConfigService.getMapLibreTransformRequest()
+    });
+
+    this.maplibreMap.on('load', () => {
+      this.maplibreMap!.addControl(new maplibregl.NavigationControl(), 'top-right');
+    });
+  }
+
+  private showRouteOnMapLibre() {
+    if (!this.maplibreMap || this.layers.length === 0) {
+      return;
+    }
+
+    const leafletLayer = this.layers[0];
+    const geojsonData = (leafletLayer as any).toGeoJSON();
+
+    if (!this.maplibreMap.getSource('route')) {
+      this.maplibreMap.addSource('route', {
+        type: 'geojson',
+        data: geojsonData
+      });
+
+      this.maplibreMap.addLayer({
+        id: 'route-layer',
+        type: 'line',
+        source: 'route',
+        paint: {
+          'line-color': ['get', 'stroke'],
+          'line-width': 3
+        }
+      });
+
+      this.maplibreMap.on('click', 'route-layer', (e) => {
+        if (e.features && e.features.length > 0) {
+          const feature = e.features[0];
+          const properties = feature.properties as any;
+          
+          let popup = '<h2>' + properties.name + '</h2><p>';
+          popup += this.translateService.instant('MAP.POPUP.TYPE') + ': ' + properties.type;
+          if (properties.description) {
+            popup += '<br>' + this.translateService.instant('MAP.POPUP.REMARK') + ': ' + properties.description;
+          }
+          if (properties.lineNumber) {
+            popup += '<br>' + this.translateService.instant('MAP.POPUP.LINENUMBER') + ': ' + properties.lineNumber;
+          }
+          if (properties.operatingCompany) {
+            popup += '<br>' + this.translateService.instant('MAP.POPUP.OPERATINGCOMPANY') + ': ' + properties.operatingCompany;
+          }
+          popup += '</p>';
+
+          new maplibregl.Popup()
+            .setLngLat(e.lngLat)
+            .setHTML(popup)
+            .addTo(this.maplibreMap!);
+        }
+      });
+
+      this.maplibreMap.on('mouseenter', 'route-layer', () => {
+        this.maplibreMap!.getCanvas().style.cursor = 'pointer';
+      });
+      this.maplibreMap.on('mouseleave', 'route-layer', () => {
+        this.maplibreMap!.getCanvas().style.cursor = '';
+      });
+    } else {
+      const source = this.maplibreMap.getSource('route') as maplibregl.GeoJSONSource;
+      if (source) {
+        source.setData(geojsonData);
+      }
+    }
+
+    if (this.bounds && this.bounds.isValid()) {
+      const sw = this.bounds.getSouthWest();
+      const ne = this.bounds.getNorthEast();
+      this.maplibreMap.fitBounds([
+        [sw.lng, sw.lat],
+        [ne.lng, ne.lat]
+      ], { padding: 50 });
     }
   }
 
