@@ -1,4 +1,4 @@
-import { Component, OnInit, AfterViewInit, ChangeDetectorRef, NgZone, EventEmitter, OnDestroy, input, viewChild, signal, inject } from "@angular/core";
+import { Component, OnInit, AfterViewInit, ChangeDetectorRef, NgZone, EventEmitter, OnDestroy, input, viewChild, signal, inject, ElementRef } from "@angular/core";
 import moment from "moment";
 import { tileLayer } from "leaflet";
 import { ApiService } from "../services/api.service";
@@ -16,6 +16,9 @@ import { Observable } from "rxjs";
 import { MapDataDTO } from "../models/map-data.model";
 import { v4 as uuidv4 } from "uuid";
 import { SignalRService } from "../services/signal-r.service";
+import { MapProviderService } from "../services/map-provider.service";
+import { MapConfigService } from "../services/map-config.service";
+import * as maplibregl from 'maplibre-gl';
 import {
   NgTemplateOutlet,
   NgClass,
@@ -60,9 +63,17 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
   private activatedRoute = inject(ActivatedRoute);
   private signalRService = inject(SignalRService);
   private cd = inject(ChangeDetectorRef);
+  private mapProviderService = inject(MapProviderService);
+  private mapConfigService = inject(MapConfigService);
 
   readonly guid = input<string>(undefined);
   readonly mapContainer = viewChild<HTMLElement>("mapContainer");
+  readonly maplibreContainer = viewChild<ElementRef<HTMLDivElement>>("maplibreContainer");
+  
+  mapProvider = this.mapProviderService.currentProvider;
+  canToggleMapProvider = this.mapProviderService.canToggleProvider();
+  private maplibreMap: maplibregl.Map | null = null;
+  private maplibreGeoJsonSource: maplibregl.GeoJSONSource | null = null;
   loading: boolean | number = false;
   from: moment.Moment;
   to: moment.Moment;
@@ -197,6 +208,9 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
   }
   ngAfterViewInit(): void {
     this.cd.detectChanges();
+    if (this.mapProvider() === 'maplibre') {
+      this.initMapLibre();
+    }
   }
 
   ngOnInit() {
@@ -232,6 +246,10 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
 
   ngOnDestroy() {
     this.signalRService.disconnect();
+    if (this.maplibreMap) {
+      this.maplibreMap.remove();
+      this.maplibreMap = null;
+    }
   }
 
   readFromQueryParams() {
@@ -397,6 +415,11 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
       this.bounds = track.getBounds();
     }
     this.loading = false;
+    
+    // Also update MapLibre if it's the active provider
+    if (this.mapProvider() === 'maplibre') {
+      setTimeout(() => this.showRoutesOnMapLibre(), 100);
+    }
   }
   private getFilter() {
     const queryParams = {};
@@ -583,5 +606,130 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
         this.active.set(key);
       }
     });
+  }
+
+  toggleMapProvider() {
+    const newProvider = this.mapProvider() === 'leaflet' ? 'maplibre' : 'leaflet';
+    this.mapProviderService.setProvider(newProvider);
+    
+    if (newProvider === 'maplibre') {
+      // Wait for template to update, then initialize MapLibre
+      setTimeout(() => {
+        this.initMapLibre();
+        if (this.layers.length > 0) {
+          this.showRoutesOnMapLibre();
+        }
+      }, 100);
+    } else {
+      // Clean up MapLibre
+      if (this.maplibreMap) {
+        this.maplibreMap.remove();
+        this.maplibreMap = null;
+      }
+    }
+  }
+
+  private initMapLibre() {
+    const container = this.maplibreContainer();
+    if (!container) {
+      console.error('MapLibre container not found');
+      return;
+    }
+
+    const style = this.mapConfigService.getMapLibreStyle('OpenStreetMap Mat');
+    
+    this.maplibreMap = new maplibregl.Map({
+      container: container.nativeElement,
+      style: style,
+      center: [5.5, 52.0], // Netherlands approximate center
+      zoom: 7,
+      transformRequest: this.mapConfigService.getMapLibreTransformRequest()
+    });
+
+    this.maplibreMap.on('load', () => {
+      // Add navigation controls
+      this.maplibreMap!.addControl(new maplibregl.NavigationControl(), 'top-right');
+    });
+  }
+
+  private showRoutesOnMapLibre() {
+    if (!this.maplibreMap || this.layers.length === 0) {
+      return;
+    }
+
+    const leafletLayer = this.layers[0];
+    const geojsonData = (leafletLayer as any).toGeoJSON();
+
+    if (!this.maplibreMap.getSource('routes')) {
+      this.maplibreMap.addSource('routes', {
+        type: 'geojson',
+        data: geojsonData
+      });
+
+      this.maplibreMap.addLayer({
+        id: 'routes-layer',
+        type: 'line',
+        source: 'routes',
+        paint: {
+          'line-color': ['get', 'stroke'],
+          'line-width': 3
+        }
+      });
+
+      // Add popups on click
+      this.maplibreMap.on('click', 'routes-layer', (e) => {
+        if (e.features && e.features.length > 0) {
+          const feature = e.features[0];
+          const properties = feature.properties as any;
+          
+          // Create popup HTML similar to Leaflet version
+          let popup = '<h2>' + properties.name + '</h2><p>';
+          popup += properties.totalInstances + ' ' + this.translateService.instant('INSTANCES');
+          popup += '<br>' + this.translateService.instant('MAP.POPUP.TYPE') + ': ' + properties.type;
+          
+          if (properties.description) {
+            popup += '<br>' + this.translateService.instant('MAP.POPUP.REMARK') + ': ' + properties.description;
+          }
+          if (properties.lineNumber) {
+            popup += '<br>' + this.translateService.instant('MAP.POPUP.LINENUMBER') + ': ' + properties.lineNumber;
+          }
+          if (properties.operatingCompany) {
+            popup += '<br>' + this.translateService.instant('MAP.POPUP.OPERATINGCOMPANY') + ': ' + properties.operatingCompany;
+          }
+          if (properties.distance) {
+            popup += '<br>' + this.translateService.instant('ROUTES.DISTANCE') + ': ' + properties.distance + ' km';
+          }
+          popup += '</p>';
+
+          new maplibregl.Popup()
+            .setLngLat(e.lngLat)
+            .setHTML(popup)
+            .addTo(this.maplibreMap!);
+        }
+      });
+
+      // Change cursor on hover
+      this.maplibreMap.on('mouseenter', 'routes-layer', () => {
+        this.maplibreMap!.getCanvas().style.cursor = 'pointer';
+      });
+      this.maplibreMap.on('mouseleave', 'routes-layer', () => {
+        this.maplibreMap!.getCanvas().style.cursor = '';
+      });
+    } else {
+      this.maplibreGeoJsonSource = this.maplibreMap.getSource('routes') as maplibregl.GeoJSONSource;
+      if (this.maplibreGeoJsonSource) {
+        this.maplibreGeoJsonSource.setData(geojsonData);
+      }
+    }
+
+    // Fit bounds
+    if (this.bounds && this.bounds.isValid()) {
+      const sw = this.bounds.getSouthWest();
+      const ne = this.bounds.getNorthEast();
+      this.maplibreMap.fitBounds([
+        [sw.lng, sw.lat],
+        [ne.lng, ne.lat]
+      ], { padding: 50 });
+    }
   }
 }
