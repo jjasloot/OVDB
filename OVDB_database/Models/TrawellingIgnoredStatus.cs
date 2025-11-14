@@ -1,8 +1,10 @@
 using System;
 using System.ComponentModel.DataAnnotations;
+using Microsoft.EntityFrameworkCore;
 
 namespace OVDB_database.Models
 {
+    [Index(nameof(UserId), nameof(TrawellingStatusId), IsUnique = true)]
     public class TrawellingIgnoredStatus
     {
         [Key]
