@@ -2,6 +2,7 @@ import { Injectable, inject, signal } from '@angular/core';
 import { AuthenticationService } from './authentication.service';
 import { ApiService } from './api.service';
 import { TranslationService } from './translation.service';
+import { MapProviderService } from './map-provider.service';
 
 @Injectable({
   providedIn: 'root'
@@ -10,6 +11,7 @@ export class UserPreferenceService {
   private authService = inject(AuthenticationService);
   private apiService = inject(ApiService);
   private translationService = inject(TranslationService);
+  private mapProviderService = inject(MapProviderService);
   hasTraewelling = signal(false);
 
   applyUserLanguagePreference(): void {
@@ -22,6 +24,11 @@ export class UserPreferenceService {
             this.translationService.language = profile.preferredLanguage as 'nl' | 'en';
           }
           this.hasTraewelling.set(profile.hasTraewelling ?? false);
+          
+          // Apply preferred map provider if set
+          if (profile.preferredMapProvider) {
+            this.mapProviderService.setProvider(profile.preferredMapProvider);
+          }
         },
         error: (error) => {
           // Silently fail - if profile can't be fetched, just use browser language

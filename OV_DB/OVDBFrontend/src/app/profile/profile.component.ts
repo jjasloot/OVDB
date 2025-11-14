@@ -1,12 +1,13 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { UntypedFormBuilder, UntypedFormGroup, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { ApiService } from '../services/api.service';
-import { UserProfile, UpdateProfile, ChangePassword } from '../models/user-profile.model';
+import { UserProfile, UpdateProfile, ChangePassword, MapProvider } from '../models/user-profile.model';
 import { TrawellingConnectionStatus } from '../models/traewelling.model';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { TranslationService } from '../services/translation.service';
 import { UserPreferenceService } from '../services/user-preference.service';
+import { MapProviderService } from '../services/map-provider.service';
 import { MatFormField, MatLabel, MatError } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 import { MatButton } from '@angular/material/button';
@@ -46,6 +47,7 @@ export class ProfileComponent implements OnInit {
   private translateService = inject(TranslateService);
   private translationService = inject(TranslationService);
   private userPreferenceService = inject(UserPreferenceService);
+  private mapProviderService = inject(MapProviderService);
   private router = inject(Router);
 
   profileForm: UntypedFormGroup;
@@ -64,10 +66,16 @@ export class ProfileComponent implements OnInit {
     { value: 'nl', label: 'Nederlands' }
   ];
 
+  mapProviders = [
+    { value: 'leaflet', label: 'Leaflet' },
+    { value: 'maplibre', label: 'MapLibre' }
+  ];
+
   constructor() {
     this.profileForm = this.formBuilder.group({
       preferredLanguage: ['', Validators.required],
-      telegramUserId: [null]
+      telegramUserId: [null],
+      preferredMapProvider: ['leaflet', Validators.required]
     });
 
     this.passwordForm = this.formBuilder.group({
@@ -97,7 +105,8 @@ export class ProfileComponent implements OnInit {
         this.userProfile = profile;
         this.profileForm.patchValue({
           preferredLanguage: profile.preferredLanguage || '',
-          telegramUserId: profile.telegramUserId || null
+          telegramUserId: profile.telegramUserId || null,
+          preferredMapProvider: profile.preferredMapProvider || 'leaflet'
         });
         this.loading = false;
       },
@@ -114,7 +123,8 @@ export class ProfileComponent implements OnInit {
       this.savingProfile = true;
       const updateProfile: UpdateProfile = {
         preferredLanguage: this.profileForm.value.preferredLanguage,
-        telegramUserId: this.profileForm.value.telegramUserId
+        telegramUserId: this.profileForm.value.telegramUserId,
+        preferredMapProvider: this.profileForm.value.preferredMapProvider
       };
 
       this.apiService.updateUserProfile(updateProfile).subscribe({
@@ -125,6 +135,11 @@ export class ProfileComponent implements OnInit {
           // Update language if changed
           if (updateProfile.preferredLanguage !== this.translationService.language) {
             this.translationService.language = updateProfile.preferredLanguage as 'nl' | 'en';
+          }
+          
+          // Update map provider if changed
+          if (updateProfile.preferredMapProvider) {
+            this.mapProviderService.setProvider(updateProfile.preferredMapProvider);
           }
         },
         error: (error) => {

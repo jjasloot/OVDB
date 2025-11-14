@@ -31,6 +31,17 @@
             <mat-icon matSuffix>language</mat-icon>
           </mat-form-field>
 
+          <!-- Map Provider Preference -->
+          <mat-form-field>
+            <mat-label>{{ 'PROFILE.PREFERRED_MAP_PROVIDER' | translate }}</mat-label>
+            <mat-select formControlName="preferredMapProvider">
+              @for (provider of mapProviders; track provider.value) {
+                <mat-option [value]="provider.value">{{ provider.label }}</mat-option>
+              }
+            </mat-select>
+            <mat-icon matSuffix>map</mat-icon>
+          </mat-form-field>
+
           <!-- Telegram User ID -->
           <mat-form-field>
             <mat-label>{{ 'PROFILE.TELEGRAM_USER_ID' | translate }}</mat-label>
