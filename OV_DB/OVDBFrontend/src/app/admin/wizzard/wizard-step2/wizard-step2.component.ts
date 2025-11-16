@@ -11,6 +11,7 @@ import { MatDialog } from "@angular/material/dialog";
 import { AreYouSureDialogComponent } from "src/app/are-you-sure-dialog/are-you-sure-dialog.component";
 import { Moment } from "moment";
 import moment from "moment";
+import { DataUpdateService } from "src/app/services/data-update.service";
 import { MatIconButton, MatButton } from "@angular/material/button";
 import { MatIcon } from "@angular/material/icon";
 import { MatCard, MatCardHeader, MatCardTitle, MatCardContent } from "@angular/material/card";
@@ -54,6 +55,7 @@ export class WizzardStep2Component implements OnInit {
   private translateService = inject(TranslateService);
   private dialog = inject(MatDialog);
   private router = inject(Router);
+  private dataUpdateService = inject(DataUpdateService);
 
   id: string;
   data: OSMDataLine;
@@ -141,6 +143,7 @@ export class WizzardStep2Component implements OnInit {
 
         this.apiService.importerAddRoute(this.data).subscribe(
           (route) => {
+            this.dataUpdateService.requestUpdate();
             // If this comes from Träwelling, navigate to route edit with trip data pre-populated
             if (this.fromTraewelling && this.trawellingTripData) {
               this.router.navigate(["/", "admin", "routes", route.routeId], {
