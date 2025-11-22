@@ -630,6 +630,11 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
       
       // Add style switcher control
       this.addStyleSwitcher();
+      
+      // If routes are already loaded, show them now
+      if (this.layers.length > 0) {
+        this.showRoutesOnMapLibre();
+      }
     });
   }
 
@@ -725,6 +730,14 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private showRoutesOnMapLibre() {
     if (!this.maplibreMap || this.layers.length === 0) {
+      return;
+    }
+
+    // Ensure map is loaded before proceeding
+    if (!this.maplibreMap.loaded()) {
+      this.maplibreMap.once('load', () => {
+        this.showRoutesOnMapLibre();
+      });
       return;
     }
 
