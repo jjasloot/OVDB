@@ -27,8 +27,11 @@ namespace OV_DB.Controllers
         private readonly OVDBDatabaseContext _dbContext;
         private readonly PasswordHasher<User> passwordHasher;
         
-        // Refresh tokens expire after 30 days
+        // Token expiration settings
         private const int RefreshTokenExpirationDays = 30;
+        private const int RevokedTokenRetentionDays = 7;
+        private const int MaxDeviceInfoLength = 500;
+        private const string DeviceInfoTruncationSuffix = "...";
 
         public AuthenticationController(IConfiguration configuration, OVDBDatabaseContext dbContext)
         {
@@ -175,10 +178,14 @@ namespace OV_DB.Controllers
         [HttpGet("sessions")]
         public async Task<ActionResult<IEnumerable<object>>> GetActiveSessionsAsync()
         {
-            var userId = int.Parse(User.Claims.Where(s => s.Type == "sub").SingleOrDefault().Value);
+            var userId = GetUserIdFromClaims();
+            if (userId == null)
+            {
+                return Unauthorized();
+            }
 
             var activeSessions = await _dbContext.RefreshTokens
-                .Where(rt => rt.UserId == userId && !rt.IsRevoked && !rt.IsExpired)
+                .Where(rt => rt.UserId == userId.Value && !rt.IsRevoked && !rt.IsExpired)
                 .OrderByDescending(rt => rt.LastUsedAt ?? rt.CreatedAt)
                 .Select(rt => new
                 {
@@ -196,10 +203,14 @@ namespace OV_DB.Controllers
         [HttpPost("revoke/{sessionId}")]
         public async Task<IActionResult> RevokeSessionAsync(int sessionId)
         {
-            var userId = int.Parse(User.Claims.Where(s => s.Type == "sub").SingleOrDefault().Value);
+            var userId = GetUserIdFromClaims();
+            if (userId == null)
+            {
+                return Unauthorized();
+            }
 
             var refreshToken = await _dbContext.RefreshTokens
-                .FirstOrDefaultAsync(rt => rt.Id == sessionId && rt.UserId == userId);
+                .FirstOrDefaultAsync(rt => rt.Id == sessionId && rt.UserId == userId.Value);
 
             if (refreshToken == null)
             {
@@ -282,9 +293,10 @@ namespace OV_DB.Controllers
             if (string.IsNullOrEmpty(deviceInfo))
             {
                 deviceInfo = Request.Headers["User-Agent"].ToString();
-                if (deviceInfo.Length > 500)
+                if (deviceInfo.Length > MaxDeviceInfoLength)
                 {
-                    deviceInfo = deviceInfo.Substring(0, 497) + "...";
+                    var maxContentLength = MaxDeviceInfoLength - DeviceInfoTruncationSuffix.Length;
+                    deviceInfo = deviceInfo.Substring(0, maxContentLength) + DeviceInfoTruncationSuffix;
                 }
             }
 
@@ -326,13 +338,32 @@ namespace OV_DB.Controllers
         {
             var expiredTokens = await _dbContext.RefreshTokens
                 .Where(rt => rt.UserId == userId && (rt.IsRevoked || rt.ExpiresAt < DateTime.UtcNow))
-                .Where(rt => rt.RevokedAt == null || rt.RevokedAt < DateTime.UtcNow.AddDays(-7)) // Keep revoked tokens for 7 days for audit
+                .Where(rt => rt.RevokedAt == null || rt.RevokedAt < DateTime.UtcNow.AddDays(-RevokedTokenRetentionDays)) // Keep revoked tokens for audit
                 .ToListAsync();
 
             if (expiredTokens.Any())
             {
                 _dbContext.RefreshTokens.RemoveRange(expiredTokens);
             }
+        }
+
+        /// <summary>
+        /// Helper method to extract user ID from JWT claims
+        /// </summary>
+        private int? GetUserIdFromClaims()
+        {
+            var subClaim = User.Claims.FirstOrDefault(s => s.Type == "sub");
+            if (subClaim == null || string.IsNullOrEmpty(subClaim.Value))
+            {
+                return null;
+            }
+
+            if (int.TryParse(subClaim.Value, out var userId))
+            {
+                return userId;
+            }
+
+            return null;
         }
     }
 }

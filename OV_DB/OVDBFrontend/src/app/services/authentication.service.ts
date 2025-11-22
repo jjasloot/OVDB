@@ -16,7 +16,7 @@ export class AuthenticationService {
 
 
   public token: string;
-  public refreshToken: string;
+  public refreshToken: string | null;
   helper = new JwtHelperService();
   refreshTrigger: any;
   returnUrl: string;
