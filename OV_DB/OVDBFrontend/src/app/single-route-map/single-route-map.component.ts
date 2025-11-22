@@ -91,6 +91,11 @@ export class SingleRouteMapComponent implements OnInit, OnDestroy {
       this.getRoute();
     });
     this.translationService.languageChanged.subscribe(() => this.getRoute());
+    
+    // Initialize MapLibre if it's the active provider
+    if (this.mapProvider() === 'maplibre') {
+      setTimeout(() => this.initMapLibre(), 0);
+    }
   }
 
 
@@ -173,11 +178,24 @@ export class SingleRouteMapComponent implements OnInit, OnDestroy {
 
     this.maplibreMap.on('load', () => {
       this.maplibreMap!.addControl(new maplibregl.NavigationControl(), 'top-right');
+      
+      // If route is already loaded, show it now
+      if (this.layers.length > 0) {
+        this.showRouteOnMapLibre();
+      }
     });
   }
 
   private showRouteOnMapLibre() {
     if (!this.maplibreMap || this.layers.length === 0) {
+      return;
+    }
+
+    // Wait for map to be loaded
+    if (!this.maplibreMap.loaded()) {
+      this.maplibreMap.once('load', () => {
+        this.showRouteOnMapLibre();
+      });
       return;
     }
 

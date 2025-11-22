@@ -208,7 +208,10 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
   ngAfterViewInit(): void {
     this.cd.detectChanges();
     if (this.mapProvider() === 'maplibre') {
-      this.initMapLibre();
+      // Use setTimeout to ensure the container is fully ready
+      setTimeout(() => {
+        this.initMapLibre();
+      }, 0);
     }
   }
 
@@ -697,18 +700,19 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
           this._map!.setStyle(newStyle);
           
           // Restore state and re-add routes after style loads
-          this._map!.once('style.load', () => {
-            this._map!.setCenter(center);
-            this._map!.setZoom(zoom);
-            this._map!.setBearing(bearing);
-            this._map!.setPitch(pitch);
-            
-            // Re-add routes after style is loaded
-            if (this._parent && this._parent.showRoutesOnMapLibre) {
-              setTimeout(() => {
+          this._map!.once('styledata', () => {
+            // Wait a bit more for style to be fully ready
+            this._map!.once('idle', () => {
+              this._map!.setCenter(center);
+              this._map!.setZoom(zoom);
+              this._map!.setBearing(bearing);
+              this._map!.setPitch(pitch);
+              
+              // Re-add routes after style is loaded
+              if (this._parent && this._parent.showRoutesOnMapLibre) {
                 this._parent.showRoutesOnMapLibre();
-              }, 100);
-            }
+              }
+            });
           });
         };
         

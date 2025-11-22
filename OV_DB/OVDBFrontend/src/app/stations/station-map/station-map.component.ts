@@ -270,10 +270,15 @@ export class StationMapComponent implements OnInit, OnDestroy {
       data: geojson as any,
       cluster: true,
       clusterMaxZoom: 9, // Max zoom to cluster points on (disable clustering at zoom 10+)
-      clusterRadius: 40
+      clusterRadius: 40,
+      clusterProperties: {
+        // Count visited and total stations in each cluster
+        'visited_count': ['+', ['case', ['get', 'visited'], 1, 0]],
+        'total_count': ['+', 1]
+      }
     });
 
-    // Add cluster circles
+    // Add cluster circles with color based on visited status
     this.maplibreMap.addLayer({
       id: 'clusters',
       type: 'circle',
@@ -282,8 +287,11 @@ export class StationMapComponent implements OnInit, OnDestroy {
       paint: {
         'circle-color': [
           'case',
-          ['all', ['==', ['get', 'visited'], true]], '#00FF00',
-          ['all', ['==', ['get', 'visited'], false]], '#FF0000',
+          // All visited (green)
+          ['==', ['get', 'visited_count'], ['get', 'total_count']], '#00FF00',
+          // None visited (red)
+          ['==', ['get', 'visited_count'], 0], '#FF0000',
+          // Partially visited (orange)
           '#FFA500'
         ],
         'circle-radius': [
