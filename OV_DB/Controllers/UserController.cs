@@ -49,7 +49,8 @@ namespace OV_DB.Controllers
                 Email = user.Email,
                 PreferredLanguage = user.PreferredLanguage?.ToLanguageCode(),
                 TelegramUserId = user.TelegramUserId,
-                HasTraewelling = !string.IsNullOrWhiteSpace(user.TrawellingAccessToken)
+                HasTraewelling = !string.IsNullOrWhiteSpace(user.TrawellingAccessToken),
+                PreferredMapProvider = user.PreferredMapProvider?.ToMapProviderString()
             });
         }
 
@@ -76,10 +77,21 @@ namespace OV_DB.Controllers
                 return BadRequest("Invalid language preference. Must be 'en', 'nl', or null.");
             }
 
+            // Validate map provider preference if provided
+            if (updateProfile.PreferredMapProvider != null &&
+                updateProfile.PreferredMapProvider != "leaflet" &&
+                updateProfile.PreferredMapProvider != "maplibre")
+            {
+                return BadRequest("Invalid map provider preference. Must be 'leaflet', 'maplibre', or null.");
+            }
+
             user.PreferredLanguage = updateProfile.PreferredLanguage != null 
                 ? LanguageHelper.FromLanguageCode(updateProfile.PreferredLanguage) 
                 : null;
             user.TelegramUserId = updateProfile.TelegramUserId;
+            user.PreferredMapProvider = updateProfile.PreferredMapProvider != null
+                ? MapProviderHelper.FromMapProviderString(updateProfile.PreferredMapProvider)
+                : null;
 
             DatabaseContext.Update(user);
             await DatabaseContext.SaveChangesAsync();

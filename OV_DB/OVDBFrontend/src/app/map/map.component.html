@@ -16,14 +16,19 @@
       <ng-content *ngTemplateOutlet="filterButtons"> </ng-content>
     </mat-expansion-panel>
     <div class="map-container" #mapContainer>
-      <div
-        class="map"
-        leaflet
-        [leafletOptions]="options"
-        [leafletLayers]="layers"
-        [leafletLayersControl]="leafletLayersControl"
-        [leafletFitBounds]="bounds"
-      ></div>
+      @if (mapProvider() === 'leaflet') {
+        <div
+          class="map"
+          leaflet
+          [leafletOptions]="options"
+          [leafletLayers]="layers"
+          [leafletLayersControl]="leafletLayersControl"
+          [leafletFitBounds]="bounds"
+        ></div>
+      }
+      @if (mapProvider() === 'maplibre') {
+        <div class="map" #maplibreContainer></div>
+      }
       <div [ngClass]="{ loading: loading, 'loading-indicator': true }">
         <mat-progress-spinner
           [mode]="loading === true ? 'indeterminate' : 'determinate'"

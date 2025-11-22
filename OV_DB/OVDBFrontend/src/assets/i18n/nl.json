@@ -331,7 +331,8 @@
     "TRAEWELLING_CONNECTED_SUCCESSFULLY": "Träwelling account succesvol verbonden",
     "TRAEWELLING_DISCONNECTED_SUCCESSFULLY": "Träwelling account succesvol ontkoppeld",
     "TRAEWELLING_ERROR_CONNECTING": "Fout bij verbinden met Träwelling",
-    "TRAEWELLING_ERROR_DISCONNECTING": "Fout bij ontkoppelen van Träwelling"
+    "TRAEWELLING_ERROR_DISCONNECTING": "Fout bij ontkoppelen van Träwelling",
+    "PREFERRED_MAP_PROVIDER": "Voorkeur kaartprovider"
   },
   "TRAEWELLING": {
     "TITLE": "Träwelling koppeling",
