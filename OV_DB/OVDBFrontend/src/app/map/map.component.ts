@@ -637,36 +637,50 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     if (!this.maplibreMap) return;
 
     const styles = this.mapConfigService.getMapLibreStyles();
+    const parent = this;
     
-    // Create style switcher control
+    // Create style switcher control as a select dropdown
     class StyleSwitcherControl {
       private _map: maplibregl.Map | undefined;
       private _container: HTMLDivElement | undefined;
-      private _currentStyleIndex = 1; // Start with OpenStreetMap Mat
+      private _select: HTMLSelectElement | undefined;
       private _styles: any[];
-      private _mapConfigService: any;
+      private _parent: any;
 
-      constructor(styles: any[], mapConfigService: any) {
+      constructor(styles: any[], parentComponent: any) {
         this._styles = styles;
-        this._mapConfigService = mapConfigService;
+        this._parent = parentComponent;
       }
 
       onAdd(map: maplibregl.Map): HTMLElement {
         this._map = map;
         this._container = document.createElement('div');
         this._container.className = 'maplibregl-ctrl maplibregl-ctrl-group';
-        this._container.style.cursor = 'pointer';
+        this._container.style.backgroundColor = 'white';
+        this._container.style.padding = '5px';
         
-        const button = document.createElement('button');
-        button.type = 'button';
-        button.title = 'Switch map style';
-        button.innerHTML = '🗺️';
-        button.style.fontSize = '16px';
-        button.style.padding = '5px';
+        // Create select dropdown
+        this._select = document.createElement('select');
+        this._select.style.border = 'none';
+        this._select.style.fontSize = '12px';
+        this._select.style.cursor = 'pointer';
+        this._select.style.backgroundColor = 'white';
         
-        button.onclick = () => {
-          this._currentStyleIndex = (this._currentStyleIndex + 1) % this._styles.length;
-          const newStyle = this._styles[this._currentStyleIndex].style;
+        // Add options
+        this._styles.forEach((style, index) => {
+          const option = document.createElement('option');
+          option.value = index.toString();
+          option.text = style.name;
+          if (index === 1) { // OpenStreetMap Mat is default
+            option.selected = true;
+          }
+          this._select!.appendChild(option);
+        });
+        
+        // Handle style change
+        this._select.onchange = () => {
+          const selectedIndex = parseInt(this._select!.value);
+          const newStyle = this._styles[selectedIndex].style;
           
           // Store current state
           const center = this._map!.getCenter();
@@ -677,16 +691,23 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
           // Change style
           this._map!.setStyle(newStyle);
           
-          // Restore state and re-add sources/layers after style loads
-          this._map!.once('styledata', () => {
+          // Restore state and re-add routes after style loads
+          this._map!.once('style.load', () => {
             this._map!.setCenter(center);
             this._map!.setZoom(zoom);
             this._map!.setBearing(bearing);
             this._map!.setPitch(pitch);
+            
+            // Re-add routes after style is loaded
+            if (this._parent && this._parent.showRoutesOnMapLibre) {
+              setTimeout(() => {
+                this._parent.showRoutesOnMapLibre();
+              }, 100);
+            }
           });
         };
         
-        this._container.appendChild(button);
+        this._container.appendChild(this._select);
         return this._container;
       }
 
@@ -698,7 +719,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
       }
     }
 
-    const styleSwitcher = new StyleSwitcherControl(styles, this.mapConfigService);
+    const styleSwitcher = new StyleSwitcherControl(styles, parent);
     this.maplibreMap.addControl(styleSwitcher as any, 'top-right');
   }
 
@@ -707,15 +728,33 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
 
+    // Ensure map style is loaded
+    if (!this.maplibreMap.isStyleLoaded()) {
+      this.maplibreMap.once('style.load', () => {
+        this.showRoutesOnMapLibre();
+      });
+      return;
+    }
+
     const leafletLayer = this.layers[0];
     const geojsonData = (leafletLayer as any).toGeoJSON();
 
+    // Check if source exists, if not create it
     if (!this.maplibreMap.getSource('routes')) {
       this.maplibreMap.addSource('routes', {
         type: 'geojson',
         data: geojsonData
       });
+    } else {
+      // Update existing source
+      const source = this.maplibreMap.getSource('routes') as maplibregl.GeoJSONSource;
+      if (source) {
+        source.setData(geojsonData);
+      }
+    }
 
+    // Check if layer exists, if not create it
+    if (!this.maplibreMap.getLayer('routes-layer')) {
       this.maplibreMap.addLayer({
         id: 'routes-layer',
         type: 'line',
@@ -726,7 +765,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
         }
       });
 
-      // Add popups on click
+      // Add popups on click - only add event listeners once
       this.maplibreMap.on('click', 'routes-layer', (e) => {
         if (e.features && e.features.length > 0) {
           const feature = e.features[0];
@@ -765,11 +804,6 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
       this.maplibreMap.on('mouseleave', 'routes-layer', () => {
         this.maplibreMap!.getCanvas().style.cursor = '';
       });
-    } else {
-      this.maplibreGeoJsonSource = this.maplibreMap.getSource('routes') as maplibregl.GeoJSONSource;
-      if (this.maplibreGeoJsonSource) {
-        this.maplibreGeoJsonSource.setData(geojsonData);
-      }
     }
 
     // Fit bounds

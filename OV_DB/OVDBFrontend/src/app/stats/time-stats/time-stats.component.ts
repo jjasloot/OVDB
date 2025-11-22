@@ -117,6 +117,12 @@ export class TimeStatsComponent implements OnInit, OnDestroy {
     });
   }
 
+  ngOnDestroy(): void {
+    if (this.maplibreMap) {
+      this.maplibreMap.remove();
+      this.maplibreMap = null;
+    }
+  }
 
   changeMap(mapGuid: string) {
     this.selectedMap = mapGuid;

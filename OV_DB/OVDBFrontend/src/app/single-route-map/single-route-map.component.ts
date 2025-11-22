@@ -10,15 +10,13 @@ import { NgClass } from '@angular/common';
 import { MatProgressSpinner } from '@angular/material/progress-spinner';
 import { MapProviderService } from '../services/map-provider.service';
 import { MapConfigService } from '../services/map-config.service';
-import { MatButton, MatFabButton } from '@angular/material/button';
-import { MatIcon } from '@angular/material/icon';
 import * as maplibregl from 'maplibre-gl';
 
 @Component({
     selector: 'app-single-route-map',
     templateUrl: './single-route-map.component.html',
     styleUrls: ['./single-route-map.component.scss'],
-    imports: [LeafletModule, NgClass, MatProgressSpinner, TranslateModule, MatFabButton, MatIcon]
+    imports: [LeafletModule, NgClass, MatProgressSpinner, TranslateModule]
 })
 export class SingleRouteMapComponent implements OnInit, OnDestroy {
   private translateService = inject(TranslateService);
