@@ -1,5 +1,5 @@
 import { NgClass } from '@angular/common';
-import { Component, Signal, viewChild, OnInit, inject } from '@angular/core';
+import { Component, Signal, viewChild, OnInit, OnDestroy, inject, ElementRef } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButton } from '@angular/material/button';
 import { MatCard, MatCardContent, MatCardTitle } from '@angular/material/card';
@@ -14,6 +14,9 @@ import saveAs from 'file-saver';
 import { LatLngBounds, LatLng, tileLayer, marker, icon, Rectangle } from 'leaflet';
 import { ApiService } from 'src/app/services/api.service';
 import { TranslationService } from 'src/app/services/translation.service';
+import { MapProviderService } from 'src/app/services/map-provider.service';
+import { MapConfigService } from 'src/app/services/map-config.service';
+import * as maplibregl from 'maplibre-gl';
 import { Map } from 'src/app/models/map.model';
 import { BaseChartDirective } from 'ng2-charts';
 import 'chartjs-adapter-luxon';
@@ -24,10 +27,17 @@ import { MatTabsModule } from '@angular/material/tabs';
   templateUrl: './time-stats.component.html',
   styleUrl: './time-stats.component.scss'
 })
-export class TimeStatsComponent implements OnInit {
+export class TimeStatsComponent implements OnInit, OnDestroy {
   private apiService = inject(ApiService);
   private translationService = inject(TranslationService);
+  private mapProviderService = inject(MapProviderService);
+  private mapConfigService = inject(MapConfigService);
   translateService = inject(TranslateService);
+
+  readonly maplibreContainer = viewChild<ElementRef<HTMLDivElement>>('maplibreContainer');
+  mapProvider = this.mapProviderService.currentProvider;
+  private maplibreMap: maplibregl.Map | null = null;
+  private extremesData: any = null;
 
   data: ChartConfiguration['data'];
   singleData: any;

@@ -32,7 +32,6 @@ export class SingleRouteMapComponent implements OnInit, OnDestroy {
   readonly maplibreContainer = viewChild<ElementRef<HTMLDivElement>>('maplibreContainer');
   
   mapProvider = this.mapProviderService.currentProvider;
-  canToggleMapProvider = this.mapProviderService.canToggleProvider();
   private maplibreMap: maplibregl.Map | null = null;
   loading = false;
   layers = [];
@@ -155,25 +154,6 @@ export class SingleRouteMapComponent implements OnInit, OnDestroy {
     if (this.maplibreMap) {
       this.maplibreMap.remove();
       this.maplibreMap = null;
-    }
-  }
-
-  toggleMapProvider() {
-    const newProvider = this.mapProvider() === 'leaflet' ? 'maplibre' : 'leaflet';
-    this.mapProviderService.setProvider(newProvider);
-    
-    if (newProvider === 'maplibre') {
-      setTimeout(() => {
-        this.initMapLibre();
-        if (this.layers.length > 0) {
-          this.showRouteOnMapLibre();
-        }
-      }, 100);
-    } else {
-      if (this.maplibreMap) {
-        this.maplibreMap.remove();
-        this.maplibreMap = null;
-      }
     }
   }
 

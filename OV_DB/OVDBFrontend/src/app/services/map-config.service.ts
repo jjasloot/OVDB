@@ -8,6 +8,11 @@ export interface MapLayerConfig {
   opacity: number;
 }
 
+export interface MapLibreStyleConfig {
+  name: string;
+  style: any;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -51,16 +56,27 @@ export class MapConfigService {
     return layers;
   }
 
+  // Get all available MapLibre styles
+  getMapLibreStyles(): MapLibreStyleConfig[] {
+    return this.layerConfigs.map(config => ({
+      name: config.name,
+      style: this.createMapLibreStyle(config)
+    }));
+  }
+
   // Get MapLibre style for a specific layer
   getMapLibreStyle(layerName: string = 'OpenStreetMap Mat'): any {
     const config = this.layerConfigs.find(l => l.name === layerName) || this.layerConfigs[1];
-    
+    return this.createMapLibreStyle(config);
+  }
+
+  private createMapLibreStyle(config: MapLayerConfig): any {
     return {
       version: 8,
       sources: {
         'osm-tiles': {
           type: 'raster',
-          tiles: [config.url],
+          tiles: [config.url.replace('{s}', 'a')],
           tileSize: 256,
           attribution: config.attribution
         }

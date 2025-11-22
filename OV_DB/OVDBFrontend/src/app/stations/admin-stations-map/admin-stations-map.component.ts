@@ -2,9 +2,12 @@ import {
   ChangeDetectorRef,
   Component,
   OnInit,
+  OnDestroy,
   inject,
   input,
-  signal
+  signal,
+  ElementRef,
+  viewChild
 } from "@angular/core";
 import { MatCheckboxChange, MatCheckbox } from "@angular/material/checkbox";
 import { LatLngBounds, LatLng, markerClusterGroup, divIcon, circleMarker } from "leaflet";
@@ -14,6 +17,9 @@ import { StationAdminProperties } from "src/app/models/stationAdminProperties.mo
 import { ApiService } from "src/app/services/api.service";
 import { RegionsService } from "src/app/services/regions.service";
 import { TranslationService } from "src/app/services/translation.service";
+import { MapProviderService } from "src/app/services/map-provider.service";
+import { MapConfigService } from "src/app/services/map-config.service";
+import * as maplibregl from 'maplibre-gl';
 import { LeafletModule } from "@bluehalo/ngx-leaflet";
 import { KeyValuePipe, NgClass } from "@angular/common";
 import { MatProgressSpinner } from "@angular/material/progress-spinner";
@@ -57,13 +63,20 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
     KeyValuePipe,
   ]
 })
-export class AdminStationsMapComponent implements OnInit {
+export class AdminStationsMapComponent implements OnInit, OnDestroy {
   private apiService = inject(ApiService);
   private cd = inject(ChangeDetectorRef);
+  private mapProviderService = inject(MapProviderService);
+  private mapConfigService = inject(MapConfigService);
 
   regionsService = inject(RegionsService);
   translationService = inject(TranslationService);
   signalRService = inject(SignalRService);
+  
+  readonly maplibreContainer = viewChild<ElementRef<HTMLDivElement>>("maplibreContainer");
+  mapProvider = this.mapProviderService.currentProvider;
+  private maplibreMap: maplibregl.Map | null = null;
+  private stationsData: any[] = [];
   baseLayers = {
     OpenStreetMap: tileLayer(
       "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
@@ -145,7 +158,16 @@ export class AdminStationsMapComponent implements OnInit {
   ngOnInit(): void {
     this.getData(true);
     this.getRegions();
+    if (this.mapProvider() === 'maplibre') {
+      setTimeout(() => this.initMapLibre(), 100);
+    }
+  }
 
+  ngOnDestroy(): void {
+    if (this.maplibreMap) {
+      this.maplibreMap.remove();
+      this.maplibreMap = null;
+    }
   }
 
   getRegions() {
@@ -170,6 +192,16 @@ export class AdminStationsMapComponent implements OnInit {
     const text = await this.apiService
       .getStationsAdminMap(this.selectedRegions)
       .toPromise();
+    this.stationsData = text;
+
+    if (this.mapProvider() === 'leaflet') {
+      this.setupLeafletMap(text, updateBounds);
+    } else {
+      this.setupMapLibreMap(text, updateBounds);
+    }
+  }
+
+  private setupLeafletMap(text: any[], updateBounds: boolean) {
     const parent = this;
     const markers = markerClusterGroup({
       iconCreateFunction: (cluster) => {
@@ -221,6 +253,183 @@ export class AdminStationsMapComponent implements OnInit {
     if (updateBounds) {
       this.bounds = markers.getBounds();
     }
+    this.loading = false;
+    this.cd.detectChanges();
+  }
+
+  private initMapLibre() {
+    const container = this.maplibreContainer();
+    if (!container || this.maplibreMap) {
+      return;
+    }
+
+    const style = this.mapConfigService.getMapLibreStyle('OpenStreetMap Mat');
+    
+    this.maplibreMap = new maplibregl.Map({
+      container: container.nativeElement,
+      style: style,
+      center: [5.5, 52.0],
+      zoom: 7,
+      transformRequest: this.mapConfigService.getMapLibreTransformRequest()
+    });
+
+    this.maplibreMap.on('load', () => {
+      this.maplibreMap!.addControl(new maplibregl.NavigationControl(), 'top-right');
+      if (this.stationsData && this.stationsData.length > 0) {
+        this.setupMapLibreMap(this.stationsData, true);
+      }
+    });
+  }
+
+  private setupMapLibreMap(text: any[], updateBounds: boolean) {
+    if (!this.maplibreMap || !this.maplibreMap.isStyleLoaded()) {
+      return;
+    }
+
+    // Create GeoJSON features
+    const features = text.map((station: any) => ({
+      type: 'Feature',
+      geometry: {
+        type: 'Point',
+        coordinates: [station.longitude, station.lattitude]
+      },
+      properties: {
+        id: station.id,
+        hidden: station.hidden,
+        special: station.special,
+        ...station
+      }
+    }));
+
+    const geojson = {
+      type: 'FeatureCollection',
+      features: features
+    };
+
+    // Remove existing layers and source if they exist
+    if (this.maplibreMap.getLayer('clusters')) {
+      this.maplibreMap.removeLayer('clusters');
+    }
+    if (this.maplibreMap.getLayer('cluster-count')) {
+      this.maplibreMap.removeLayer('cluster-count');
+    }
+    if (this.maplibreMap.getLayer('unclustered-point')) {
+      this.maplibreMap.removeLayer('unclustered-point');
+    }
+    if (this.maplibreMap.getSource('stations')) {
+      this.maplibreMap.removeSource('stations');
+    }
+
+    // Add source
+    this.maplibreMap.addSource('stations', {
+      type: 'geojson',
+      data: geojson as any,
+      cluster: true,
+      clusterMaxZoom: 9,
+      clusterRadius: 40
+    });
+
+    // Add cluster circles
+    this.maplibreMap.addLayer({
+      id: 'clusters',
+      type: 'circle',
+      source: 'stations',
+      filter: ['has', 'point_count'],
+      paint: {
+        'circle-color': '#FFA500',
+        'circle-radius': [
+          'step',
+          ['get', 'point_count'],
+          15,
+          10, 20,
+          30, 25
+        ]
+      }
+    });
+
+    // Add cluster count
+    this.maplibreMap.addLayer({
+      id: 'cluster-count',
+      type: 'symbol',
+      source: 'stations',
+      filter: ['has', 'point_count'],
+      layout: {
+        'text-field': '{point_count_abbreviated}',
+        'text-font': ['Open Sans Bold'],
+        'text-size': 12
+      }
+    });
+
+    // Add unclustered points
+    this.maplibreMap.addLayer({
+      id: 'unclustered-point',
+      type: 'circle',
+      source: 'stations',
+      filter: ['!', ['has', 'point_count']],
+      paint: {
+        'circle-color': [
+          'case',
+          ['get', 'hidden'], '#FF0000',
+          ['get', 'special'], '#0000FF',
+          '#00FF00'
+        ],
+        'circle-radius': 6,
+        'circle-stroke-width': 1,
+        'circle-stroke-color': '#000',
+        'circle-opacity': 0.65,
+        'circle-stroke-opacity': 1
+      }
+    });
+
+    // Handle click on unclustered point
+    this.maplibreMap.on('click', 'unclustered-point', (e) => {
+      if (e.features && e.features.length > 0) {
+        const feature = e.features[0];
+        this.selectedStation.set(feature.properties as StationAdminProperties);
+        this.cd.detectChanges();
+      }
+    });
+
+    // Handle click on cluster
+    this.maplibreMap.on('click', 'clusters', (e) => {
+      const features = this.maplibreMap!.queryRenderedFeatures(e.point, {
+        layers: ['clusters']
+      });
+      const clusterId = features[0].properties?.cluster_id;
+      const source = this.maplibreMap!.getSource('stations') as maplibregl.GeoJSONSource;
+      
+      (source as any).getClusterExpansionZoom(clusterId, (err: any, zoom: any) => {
+        if (err) return;
+        this.maplibreMap!.easeTo({
+          center: (features[0].geometry as any).coordinates,
+          zoom: zoom
+        });
+      });
+    });
+
+    // Change cursor on hover
+    this.maplibreMap.on('mouseenter', 'clusters', () => {
+      this.maplibreMap!.getCanvas().style.cursor = 'pointer';
+    });
+    this.maplibreMap.on('mouseleave', 'clusters', () => {
+      this.maplibreMap!.getCanvas().style.cursor = '';
+    });
+    this.maplibreMap.on('mouseenter', 'unclustered-point', () => {
+      this.maplibreMap!.getCanvas().style.cursor = 'pointer';
+    });
+    this.maplibreMap.on('mouseleave', 'unclustered-point', () => {
+      this.maplibreMap!.getCanvas().style.cursor = '';
+    });
+
+    // Fit bounds
+    if (updateBounds && features.length > 0) {
+      const bounds = new maplibregl.LngLatBounds();
+      features.forEach((feature: any) => {
+        bounds.extend(feature.geometry.coordinates);
+      });
+      this.maplibreMap.fitBounds(bounds, { padding: 50 });
+    }
+
     this.loading = false;
     this.cd.detectChanges();
   }
