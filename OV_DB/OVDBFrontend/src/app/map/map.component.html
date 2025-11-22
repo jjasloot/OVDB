@@ -93,15 +93,4 @@
     >
     <mat-icon>refresh</mat-icon>
   </button>
-  @if (canToggleMapProvider) {
-    <button
-      mat-button
-      color="primary"
-      (click)="toggleMapProvider()"
-      [disabled]="loading"
-      >
-      <mat-icon>map</mat-icon>
-      {{ mapProvider() === 'leaflet' ? 'MapLibre' : 'Leaflet' }}
-    </button>
-  }
 </ng-template>

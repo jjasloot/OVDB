@@ -71,7 +71,6 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
   readonly maplibreContainer = viewChild<ElementRef<HTMLDivElement>>("maplibreContainer");
   
   mapProvider = this.mapProviderService.currentProvider;
-  canToggleMapProvider = this.mapProviderService.canToggleProvider();
   private maplibreMap: maplibregl.Map | null = null;
   private maplibreGeoJsonSource: maplibregl.GeoJSONSource | null = null;
   loading: boolean | number = false;
@@ -608,27 +607,6 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
-  toggleMapProvider() {
-    const newProvider = this.mapProvider() === 'leaflet' ? 'maplibre' : 'leaflet';
-    this.mapProviderService.setProvider(newProvider);
-    
-    if (newProvider === 'maplibre') {
-      // Wait for template to update, then initialize MapLibre
-      setTimeout(() => {
-        this.initMapLibre();
-        if (this.layers.length > 0) {
-          this.showRoutesOnMapLibre();
-        }
-      }, 100);
-    } else {
-      // Clean up MapLibre
-      if (this.maplibreMap) {
-        this.maplibreMap.remove();
-        this.maplibreMap = null;
-      }
-    }
-  }
-
   private initMapLibre() {
     const container = this.maplibreContainer();
     if (!container) {
@@ -649,7 +627,79 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     this.maplibreMap.on('load', () => {
       // Add navigation controls
       this.maplibreMap!.addControl(new maplibregl.NavigationControl(), 'top-right');
+      
+      // Add style switcher control
+      this.addStyleSwitcher();
     });
+  }
+
+  private addStyleSwitcher() {
+    if (!this.maplibreMap) return;
+
+    const styles = this.mapConfigService.getMapLibreStyles();
+    
+    // Create style switcher control
+    class StyleSwitcherControl {
+      private _map: maplibregl.Map | undefined;
+      private _container: HTMLDivElement | undefined;
+      private _currentStyleIndex = 1; // Start with OpenStreetMap Mat
+      private _styles: any[];
+      private _mapConfigService: any;
+
+      constructor(styles: any[], mapConfigService: any) {
+        this._styles = styles;
+        this._mapConfigService = mapConfigService;
+      }
+
+      onAdd(map: maplibregl.Map): HTMLElement {
+        this._map = map;
+        this._container = document.createElement('div');
+        this._container.className = 'maplibregl-ctrl maplibregl-ctrl-group';
+        this._container.style.cursor = 'pointer';
+        
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.title = 'Switch map style';
+        button.innerHTML = '🗺️';
+        button.style.fontSize = '16px';
+        button.style.padding = '5px';
+        
+        button.onclick = () => {
+          this._currentStyleIndex = (this._currentStyleIndex + 1) % this._styles.length;
+          const newStyle = this._styles[this._currentStyleIndex].style;
+          
+          // Store current state
+          const center = this._map!.getCenter();
+          const zoom = this._map!.getZoom();
+          const bearing = this._map!.getBearing();
+          const pitch = this._map!.getPitch();
+          
+          // Change style
+          this._map!.setStyle(newStyle);
+          
+          // Restore state and re-add sources/layers after style loads
+          this._map!.once('styledata', () => {
+            this._map!.setCenter(center);
+            this._map!.setZoom(zoom);
+            this._map!.setBearing(bearing);
+            this._map!.setPitch(pitch);
+          });
+        };
+        
+        this._container.appendChild(button);
+        return this._container;
+      }
+
+      onRemove(): void {
+        if (this._container && this._container.parentNode) {
+          this._container.parentNode.removeChild(this._container);
+        }
+        this._map = undefined;
+      }
+    }
+
+    const styleSwitcher = new StyleSwitcherControl(styles, this.mapConfigService);
+    this.maplibreMap.addControl(styleSwitcher as any, 'top-right');
   }
 
   private showRoutesOnMapLibre() {
