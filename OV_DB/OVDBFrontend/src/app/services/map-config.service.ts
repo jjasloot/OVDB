@@ -16,13 +16,13 @@ export class MapConfigService {
   private layerConfigs: MapLayerConfig[] = [
     {
       name: 'OpenStreetMap',
-      url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+      url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
       opacity: 0.8
     },
     {
       name: 'OpenStreetMap Mat',
-      url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+      url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
       opacity: 0.5
     },

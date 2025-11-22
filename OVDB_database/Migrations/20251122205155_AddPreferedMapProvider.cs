@@ -1,11 +1,11 @@
-using Microsoft.EntityFrameworkCore.Migrations;
+﻿using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
 namespace OVDB_database.Migrations
 {
     /// <inheritdoc />
-    public partial class AddPreferredMapProvider : Migration
+    public partial class AddPreferedMapProvider : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

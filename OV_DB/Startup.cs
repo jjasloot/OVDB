@@ -122,8 +122,7 @@ namespace OV_DB
                     options.JsonSerializerOptions.Converters.Add(new NetTopologySuite.IO.Converters.GeoJsonConverterFactory());
                 });
 
-            // Add response caching
-            services.AddResponseCaching();
+            services.AddResponseCompression();
 
             services.AddSpaStaticFiles(configuration =>
             {
