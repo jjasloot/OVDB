@@ -35,6 +35,7 @@ namespace OVDB_database.Database
         public DbSet<Operator> Operators { get; set; }
         public DbSet<TrawellingIgnoredStatus> TrawellingIgnoredStatuses { get; set; }
         public DbSet<TrawellingStation> TrawellingStations { get; set; }
+        public DbSet<RefreshToken> RefreshTokens { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder options)
         {
@@ -68,6 +69,21 @@ namespace OVDB_database.Database
 
             modelBuilder.Entity<Operator>().HasMany(o => o.RunsTrainsInRegions).WithMany(r => r.OperatorsRunningTrains);
             modelBuilder.Entity<Operator>().HasMany(o => o.RestrictToRegions).WithMany(r => r.OperatorsRestrictedToRegion);
+
+            // RefreshToken configuration
+            modelBuilder.Entity<RefreshToken>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.HasIndex(e => e.Token).IsUnique();
+                entity.HasIndex(e => e.UserId);
+                entity.HasIndex(e => e.ExpiresAt);
+                entity.Property(e => e.Token).IsRequired().HasMaxLength(256);
+                entity.Property(e => e.DeviceInfo).HasMaxLength(500);
+                entity.HasOne(e => e.User)
+                    .WithMany(u => u.RefreshTokens)
+                    .HasForeignKey(e => e.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
         }
 
 

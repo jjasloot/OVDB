@@ -15,7 +15,13 @@ namespace OVDB_database.Models
         public string Password { get; set; }
         public bool IsAdmin { get; set; }
         public DateTime LastLogin { get; set; }
+        
+        /// <summary>
+        /// DEPRECATED: Legacy refresh token field. Use RefreshTokens collection instead.
+        /// Kept for backwards compatibility and database schema stability.
+        /// </summary>
         public string RefreshToken { get; set; }
+        
         public Guid Guid { get; set; }
         public List<Map> Maps { get; set; }
         public List<RouteType> RouteTypes { get; set; }
@@ -27,5 +33,10 @@ namespace OVDB_database.Models
         public string TrawellingRefreshToken { get; set; }
         public DateTime? TrawellingTokenExpiresAt { get; set; }
         public string TrawellingUsername { get; set; }
+        
+        /// <summary>
+        /// Collection of active refresh tokens for this user (supports multiple sessions)
+        /// </summary>
+        public List<RefreshToken> RefreshTokens { get; set; }
     }
 }
