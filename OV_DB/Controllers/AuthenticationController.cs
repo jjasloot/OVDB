@@ -26,6 +26,9 @@ namespace OV_DB.Controllers
         private readonly IConfiguration _configuration;
         private readonly OVDBDatabaseContext _dbContext;
         private readonly PasswordHasher<User> passwordHasher;
+        
+        // Refresh tokens expire after 30 days
+        private const int RefreshTokenExpirationDays = 30;
 
         public AuthenticationController(IConfiguration configuration, OVDBDatabaseContext dbContext)
         {
@@ -71,6 +74,7 @@ namespace OV_DB.Controllers
             {
                 return Forbid();
             }
+            
             var claims = new List<Claim>
             {
                 new Claim("sub", user.Id.ToString()),
@@ -78,34 +82,138 @@ namespace OV_DB.Controllers
                 new Claim("admin",user.IsAdmin?"true":"false")
             };
 
-            var token = GenerateToken(claims);
+            var accessToken = GenerateAccessToken(claims);
+            var refreshToken = await GenerateRefreshToken(user.Id);
 
             user.LastLogin = DateTime.UtcNow;
             _dbContext.Update(user);
             await _dbContext.SaveChangesAsync();
 
-            return new LoginResponse { Token = token, RefreshToken = null };
+            return new LoginResponse { Token = accessToken, RefreshToken = refreshToken.Token };
         }
 
         [HttpPost("refreshToken")]
+        [AllowAnonymous]
         public async Task<ActionResult<LoginResponse>> RefreshTokenAsync([FromBody] RefreshTokenRequest request)
         {
-            var claims = User.Claims.Where(s => s.Type != "aud");
-            var newJwtToken = GenerateToken(claims);
+            if (string.IsNullOrWhiteSpace(request.RefreshToken))
+            {
+                return BadRequest("Refresh token is required");
+            }
 
-            var id = int.Parse(User.Claims.Where(s => s.Type == ClaimTypes.NameIdentifier).SingleOrDefault().Value);
+            // Find the refresh token in the database
+            var refreshToken = await _dbContext.RefreshTokens
+                .Include(rt => rt.User)
+                .FirstOrDefaultAsync(rt => rt.Token == request.RefreshToken);
 
-            var user = await _dbContext.Users.FindAsync(id);
+            if (refreshToken == null)
+            {
+                return Unauthorized("Invalid refresh token");
+            }
 
+            // Validate the refresh token
+            if (refreshToken.IsRevoked)
+            {
+                return Unauthorized("Refresh token has been revoked");
+            }
+
+            if (refreshToken.IsExpired)
+            {
+                return Unauthorized("Refresh token has expired");
+            }
+
+            var user = refreshToken.User;
+
+            // Generate new access token
+            var claims = new List<Claim>
+            {
+                new Claim("sub", user.Id.ToString()),
+                new Claim("email", user.Email),
+                new Claim("admin", user.IsAdmin ? "true" : "false")
+            };
+
+            var newAccessToken = GenerateAccessToken(claims);
+
+            // Token rotation: Generate a new refresh token and revoke the old one
+            var newRefreshToken = await GenerateRefreshToken(user.Id, refreshToken.DeviceInfo);
+            
+            refreshToken.IsRevoked = true;
+            refreshToken.RevokedAt = DateTime.UtcNow;
+            
+            // Update last used timestamp
+            refreshToken.LastUsedAt = DateTime.UtcNow;
             user.LastLogin = DateTime.UtcNow;
 
             await _dbContext.SaveChangesAsync();
 
             return new LoginResponse
             {
-                Token = newJwtToken,
-                RefreshToken = null
+                Token = newAccessToken,
+                RefreshToken = newRefreshToken.Token
             };
+        }
+
+        [HttpPost("logout")]
+        public async Task<IActionResult> LogoutAsync([FromBody] RefreshTokenRequest request)
+        {
+            if (!string.IsNullOrWhiteSpace(request.RefreshToken))
+            {
+                var refreshToken = await _dbContext.RefreshTokens
+                    .FirstOrDefaultAsync(rt => rt.Token == request.RefreshToken);
+
+                if (refreshToken != null && !refreshToken.IsRevoked)
+                {
+                    refreshToken.IsRevoked = true;
+                    refreshToken.RevokedAt = DateTime.UtcNow;
+                    await _dbContext.SaveChangesAsync();
+                }
+            }
+
+            return Ok();
+        }
+
+        [HttpGet("sessions")]
+        public async Task<ActionResult<IEnumerable<object>>> GetActiveSessionsAsync()
+        {
+            var userId = int.Parse(User.Claims.Where(s => s.Type == "sub").SingleOrDefault().Value);
+
+            var activeSessions = await _dbContext.RefreshTokens
+                .Where(rt => rt.UserId == userId && !rt.IsRevoked && !rt.IsExpired)
+                .OrderByDescending(rt => rt.LastUsedAt ?? rt.CreatedAt)
+                .Select(rt => new
+                {
+                    rt.Id,
+                    rt.DeviceInfo,
+                    rt.CreatedAt,
+                    rt.LastUsedAt,
+                    rt.ExpiresAt
+                })
+                .ToListAsync();
+
+            return Ok(activeSessions);
+        }
+
+        [HttpPost("revoke/{sessionId}")]
+        public async Task<IActionResult> RevokeSessionAsync(int sessionId)
+        {
+            var userId = int.Parse(User.Claims.Where(s => s.Type == "sub").SingleOrDefault().Value);
+
+            var refreshToken = await _dbContext.RefreshTokens
+                .FirstOrDefaultAsync(rt => rt.Id == sessionId && rt.UserId == userId);
+
+            if (refreshToken == null)
+            {
+                return NotFound();
+            }
+
+            if (!refreshToken.IsRevoked)
+            {
+                refreshToken.IsRevoked = true;
+                refreshToken.RevokedAt = DateTime.UtcNow;
+                await _dbContext.SaveChangesAsync();
+            }
+
+            return Ok();
         }
 
 
@@ -117,12 +225,6 @@ namespace OV_DB.Controllers
             {
                 return BadRequest("Wachtwoord te kort");
             }
-            //var inviteCode = await _dbContext.InviteCodes.FirstOrDefaultAsync(c => c.Code == createAccount.InviteCode && c.IsUsed == false);
-
-            //if (inviteCode == null)
-            //{
-            //    return BadRequest("Ongeldige invite code");
-            //}
 
             var userSameEmail = await _dbContext.Users.AnyAsync(u => u.Email.ToLower() == createAccount.Email.ToLower());
             if (userSameEmail)
@@ -135,11 +237,7 @@ namespace OV_DB.Controllers
                 Guid = Guid.NewGuid()
 
             };
-            //if (inviteCode.DoesNotExpire == false)
-            //{
-            //    inviteCode.IsUsed = true;
-            //    inviteCode.User = user;
-            //}
+            
             var map = new Map
             {
                 MapGuid = Guid.NewGuid(),
@@ -153,7 +251,11 @@ namespace OV_DB.Controllers
             await _dbContext.SaveChangesAsync();
             return await LogUserIn(new LoginRequest { Email = createAccount.Email, Password = createAccount.Password });
         }
-        private string GenerateToken(IEnumerable<Claim> claims)
+        
+        /// <summary>
+        /// Generates a JWT access token with the specified claims
+        /// </summary>
+        private string GenerateAccessToken(IEnumerable<Claim> claims)
         {
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JWTSigningKey"]));
             var validity = int.Parse(_configuration["Tokens:ValidityInMinutes"]);
@@ -169,5 +271,68 @@ namespace OV_DB.Controllers
             return new JwtSecurityTokenHandler().WriteToken(jwt);
         }
 
+        /// <summary>
+        /// Generates a cryptographically secure refresh token
+        /// </summary>
+        private async Task<RefreshToken> GenerateRefreshToken(int userId, string deviceInfo = null)
+        {
+            var token = GenerateSecureToken();
+            
+            // Extract device info from User-Agent header if not provided
+            if (string.IsNullOrEmpty(deviceInfo))
+            {
+                deviceInfo = Request.Headers["User-Agent"].ToString();
+                if (deviceInfo.Length > 500)
+                {
+                    deviceInfo = deviceInfo.Substring(0, 497) + "...";
+                }
+            }
+
+            var refreshToken = new RefreshToken
+            {
+                Token = token,
+                UserId = userId,
+                CreatedAt = DateTime.UtcNow,
+                ExpiresAt = DateTime.UtcNow.AddDays(RefreshTokenExpirationDays),
+                DeviceInfo = deviceInfo,
+                IsRevoked = false
+            };
+
+            _dbContext.RefreshTokens.Add(refreshToken);
+            
+            // Clean up expired tokens for this user
+            await CleanupExpiredTokens(userId);
+            
+            return refreshToken;
+        }
+
+        /// <summary>
+        /// Generates a cryptographically secure random token string
+        /// </summary>
+        private string GenerateSecureToken()
+        {
+            var randomBytes = new byte[64];
+            using (var rng = RandomNumberGenerator.Create())
+            {
+                rng.GetBytes(randomBytes);
+            }
+            return Convert.ToBase64String(randomBytes);
+        }
+
+        /// <summary>
+        /// Removes expired and revoked refresh tokens for a user
+        /// </summary>
+        private async Task CleanupExpiredTokens(int userId)
+        {
+            var expiredTokens = await _dbContext.RefreshTokens
+                .Where(rt => rt.UserId == userId && (rt.IsRevoked || rt.ExpiresAt < DateTime.UtcNow))
+                .Where(rt => rt.RevokedAt == null || rt.RevokedAt < DateTime.UtcNow.AddDays(-7)) // Keep revoked tokens for 7 days for audit
+                .ToListAsync();
+
+            if (expiredTokens.Any())
+            {
+                _dbContext.RefreshTokens.RemoveRange(expiredTokens);
+            }
+        }
     }
 }
