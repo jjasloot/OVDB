@@ -330,7 +330,19 @@
     "TRAEWELLING_CONNECTED_SUCCESSFULLY": "Träwelling account connected successfully",
     "TRAEWELLING_DISCONNECTED_SUCCESSFULLY": "Träwelling account disconnected successfully",
     "TRAEWELLING_ERROR_CONNECTING": "Error connecting to Träwelling",
-    "TRAEWELLING_ERROR_DISCONNECTING": "Error disconnecting from Träwelling"
+    "TRAEWELLING_ERROR_DISCONNECTING": "Error disconnecting from Träwelling",
+    "ACTIVE_SESSIONS": "Active sessions",
+    "SESSIONS_EXPLANATION": "These are your currently active login sessions. You can revoke access from any device at any time.",
+    "LOADING_SESSIONS": "Loading sessions...",
+    "ERROR_LOADING_SESSIONS": "Error loading sessions",
+    "NO_ACTIVE_SESSIONS": "No active sessions found",
+    "CURRENT_SESSION": "Current",
+    "CREATED": "Created",
+    "LAST_USED": "Last used",
+    "EXPIRES": "Expires",
+    "CONFIRM_REVOKE_SESSION": "Are you sure you want to revoke this session? The device will be logged out.",
+    "SESSION_REVOKED_SUCCESSFULLY": "Session revoked successfully",
+    "ERROR_REVOKING_SESSION": "Error revoking session"
   },
   "TRAEWELLING": {
     "TITLE": "Träwelling connection",

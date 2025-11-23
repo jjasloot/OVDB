@@ -128,4 +128,12 @@ export class AuthenticationService {
   get admin() {
     return this.helper.decodeToken(this.token).admin === 'true';
   }
+
+  getActiveSessions() {
+    return this.httpClient.get<any[]>(environment.backend + 'api/Authentication/sessions');
+  }
+
+  revokeSession(sessionId: number) {
+    return this.httpClient.post(environment.backend + `api/Authentication/revoke/${sessionId}`, {});
+  }
 }
