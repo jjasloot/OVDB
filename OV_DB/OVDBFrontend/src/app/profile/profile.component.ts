@@ -14,7 +14,10 @@ import { MatSelect, MatOption } from '@angular/material/select';
 import { MatCard, MatCardContent, MatCardHeader, MatCardTitle } from '@angular/material/card';
 import { MatProgressSpinner } from '@angular/material/progress-spinner';
 import { MatIcon } from '@angular/material/icon';
+import { MatList, MatListItem, MatListItemTitle, MatListItemLine } from '@angular/material/list';
+import { MatDivider } from '@angular/material/divider';
 import { Router } from '@angular/router';
+import { AuthenticationService } from '../services/authentication.service';
 
 @Component({
   selector: 'app-profile',
@@ -36,6 +39,11 @@ import { Router } from '@angular/router';
     MatCardTitle, 
     MatProgressSpinner, 
     MatIcon,
+    MatList,
+    MatListItem,
+    MatListItemTitle,
+    MatListItemLine,
+    MatDivider,
     TranslateModule
   ]
 })
@@ -47,6 +55,7 @@ export class ProfileComponent implements OnInit {
   private translationService = inject(TranslationService);
   private userPreferenceService = inject(UserPreferenceService);
   private router = inject(Router);
+  private authService = inject(AuthenticationService);
 
   profileForm: UntypedFormGroup;
   passwordForm: UntypedFormGroup;
@@ -58,6 +67,9 @@ export class ProfileComponent implements OnInit {
   trawellingLoading = false;
   trawellingConnecting = false;
   trawellingDisconnecting = false;
+  sessions: any[] = [];
+  sessionsLoading = false;
+  revokingSessionId: number | null = null;
 
   languages = [
     { value: 'en', label: 'English' },
@@ -82,6 +94,7 @@ export class ProfileComponent implements OnInit {
   ngOnInit(): void {
     this.loadProfile();
     this.loadTrawellingStatus();
+    this.loadSessions();
   }
 
   passwordMatchValidator(group: UntypedFormGroup) {
@@ -246,5 +259,115 @@ export class ProfileComponent implements OnInit {
 
   viewTrawellingTrips(): void {
     this.router.navigate(['/admin/traewelling']);
+  }
+
+  loadSessions(): void {
+    this.sessionsLoading = true;
+    this.authService.getActiveSessions().subscribe({
+      next: (sessions) => {
+        this.sessions = sessions;
+        this.sessionsLoading = false;
+      },
+      error: (error) => {
+        console.error('Error loading sessions:', error);
+        this.showMessage('PROFILE.ERROR_LOADING_SESSIONS');
+        this.sessionsLoading = false;
+      }
+    });
+  }
+
+  revokeSession(sessionId: number): void {
+    if (confirm(this.translateService.instant('PROFILE.CONFIRM_REVOKE_SESSION'))) {
+      this.revokingSessionId = sessionId;
+      this.authService.revokeSession(sessionId).subscribe({
+        next: () => {
+          this.showMessage('PROFILE.SESSION_REVOKED_SUCCESSFULLY');
+          this.revokingSessionId = null;
+          this.loadSessions(); // Reload the list
+        },
+        error: (error) => {
+          console.error('Error revoking session:', error);
+          this.showMessage('PROFILE.ERROR_REVOKING_SESSION');
+          this.revokingSessionId = null;
+        }
+      });
+    }
+  }
+
+  formatDate(dateString: string): string {
+    const date = new Date(dateString);
+    return date.toLocaleString();
+  }
+
+  isCurrentSession(session: any): boolean {
+    // Simple heuristic: the most recently used session is likely the current one
+    if (!this.sessions.length) return false;
+    const mostRecent = this.sessions.reduce((prev, current) => {
+      const prevTime = new Date(prev.lastUsedAt || prev.createdAt).getTime();
+      const currentTime = new Date(current.lastUsedAt || current.createdAt).getTime();
+      return currentTime > prevTime ? current : prev;
+    });
+    return session.id === mostRecent.id;
+  }
+
+  parseUserAgent(userAgent: string): string {
+    if (!userAgent || userAgent === 'Unknown Device') {
+      return 'Unknown Device';
+    }
+
+    // Parse browser
+    let browser = 'Unknown Browser';
+    let browserVersion = '';
+    
+    if (userAgent.includes('Firefox/')) {
+      const match = userAgent.match(/Firefox\/([\d.]+)/);
+      browser = 'Firefox';
+      browserVersion = match ? match[1] : '';
+    } else if (userAgent.includes('Edg/')) {
+      const match = userAgent.match(/Edg\/([\d.]+)/);
+      browser = 'Edge';
+      browserVersion = match ? match[1] : '';
+    } else if (userAgent.includes('Chrome/')) {
+      const match = userAgent.match(/Chrome\/([\d.]+)/);
+      browser = 'Chrome';
+      browserVersion = match ? match[1] : '';
+    } else if (userAgent.includes('Safari/') && !userAgent.includes('Chrome')) {
+      const match = userAgent.match(/Version\/([\d.]+)/);
+      browser = 'Safari';
+      browserVersion = match ? match[1] : '';
+    }
+
+    // Parse OS
+    let os = '';
+    if (userAgent.includes('Windows NT 10.0')) {
+      os = 'Windows 10/11';
+    } else if (userAgent.includes('Windows NT 6.3')) {
+      os = 'Windows 8.1';
+    } else if (userAgent.includes('Windows NT 6.2')) {
+      os = 'Windows 8';
+    } else if (userAgent.includes('Windows NT 6.1')) {
+      os = 'Windows 7';
+    } else if (userAgent.includes('Windows')) {
+      os = 'Windows';
+    } else if (userAgent.includes('Mac OS X')) {
+      const match = userAgent.match(/Mac OS X ([\d_]+)/);
+      os = match ? `macOS ${match[1].replace(/_/g, '.')}` : 'macOS';
+    } else if (userAgent.includes('Android')) {
+      const match = userAgent.match(/Android ([\d.]+)/);
+      os = match ? `Android ${match[1]}` : 'Android';
+    } else if (userAgent.includes('iPhone') || userAgent.includes('iPad')) {
+      const device = userAgent.includes('iPad') ? 'iPad' : 'iPhone';
+      const match = userAgent.match(/OS ([\d_]+)/);
+      const version = match ? match[1].replace(/_/g, '.') : '';
+      os = version ? `${device} (iOS ${version})` : device;
+    } else if (userAgent.includes('Linux')) {
+      os = 'Linux';
+    }
+
+    // Format the result
+    const versionStr = browserVersion ? ` ${browserVersion.split('.')[0]}` : '';
+    const result = os ? `${browser}${versionStr} on ${os}` : `${browser}${versionStr}`;
+    
+    return result;
   }
 }

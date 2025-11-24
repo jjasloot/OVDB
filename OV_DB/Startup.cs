@@ -123,7 +123,7 @@ namespace OV_DB
                 });
 
             // Add response caching
-            services.AddResponseCaching();
+            services.AddResponseCompression();
 
             services.AddSpaStaticFiles(configuration =>
             {

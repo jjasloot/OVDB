@@ -19,7 +19,8 @@
 
 .profile-card,
 .password-card,
-.traewelling-card {
+.traewelling-card,
+.sessions-card {
   margin-bottom: 30px;
 
   mat-card-header {
@@ -184,6 +185,74 @@
 
     button {
       width: 100%;
+    }
+  }
+}
+
+.sessions-info {
+  display: flex;
+  align-items: flex-start;
+  background-color: #fff3e0;
+  padding: 16px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  border-left: 4px solid #ff9800;
+
+  mat-icon {
+    color: #ff9800;
+    margin-right: 12px;
+    margin-top: 2px;
+  }
+
+  .sessions-text {
+    flex: 1;
+
+    p {
+      margin: 0;
+      line-height: 1.5;
+      color: #333;
+    }
+  }
+}
+
+.no-sessions {
+  text-align: center;
+  color: #666;
+  padding: 20px;
+  font-style: italic;
+}
+
+.sessions-card {
+  mat-list {
+    padding-top: 0;
+  }
+
+  mat-list-item {
+    height: auto;
+    min-height: 72px;
+    padding: 12px 0;
+
+    .current-session-badge {
+      display: inline-block;
+      background-color: #4caf50;
+      color: white;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 500;
+      margin-left: 8px;
+      vertical-align: middle;
+    }
+
+    .session-created,
+    .session-last-used,
+    .session-expires {
+      font-size: 12px;
+      color: #666;
+    }
+
+    button {
+      margin-right: 0;
     }
   }
 }

@@ -331,7 +331,19 @@
     "TRAEWELLING_CONNECTED_SUCCESSFULLY": "Träwelling account succesvol verbonden",
     "TRAEWELLING_DISCONNECTED_SUCCESSFULLY": "Träwelling account succesvol ontkoppeld",
     "TRAEWELLING_ERROR_CONNECTING": "Fout bij verbinden met Träwelling",
-    "TRAEWELLING_ERROR_DISCONNECTING": "Fout bij ontkoppelen van Träwelling"
+    "TRAEWELLING_ERROR_DISCONNECTING": "Fout bij ontkoppelen van Träwelling",
+    "ACTIVE_SESSIONS": "Actieve sessies",
+    "SESSIONS_EXPLANATION": "Dit zijn je huidige ingelogde sessies. Je kunt de toegang van elk apparaat op elk moment intrekken.",
+    "LOADING_SESSIONS": "Sessies laden...",
+    "ERROR_LOADING_SESSIONS": "Fout bij laden sessies",
+    "NO_ACTIVE_SESSIONS": "Geen actieve sessies gevonden",
+    "CURRENT_SESSION": "Huidig",
+    "CREATED": "Aangemaakt",
+    "LAST_USED": "Laatst gebruikt",
+    "EXPIRES": "Verloopt",
+    "CONFIRM_REVOKE_SESSION": "Weet je zeker dat je deze sessie wilt intrekken? Het apparaat wordt uitgelogd.",
+    "SESSION_REVOKED_SUCCESSFULLY": "Sessie succesvol ingetrokken",
+    "ERROR_REVOKING_SESSION": "Fout bij intrekken sessie"
   },
   "TRAEWELLING": {
     "TITLE": "Träwelling koppeling",
