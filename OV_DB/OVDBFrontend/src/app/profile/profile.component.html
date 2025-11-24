@@ -157,7 +157,7 @@
                     }
                   </mat-icon>
                   <div matListItemTitle>
-                    {{ session.deviceInfo || 'Unknown Device' }}
+                    {{ parseUserAgent(session.deviceInfo) }}
                     @if (isCurrentSession(session)) {
                       <span class="current-session-badge">{{ 'PROFILE.CURRENT_SESSION' | translate }}</span>
                     }

@@ -309,4 +309,65 @@ export class ProfileComponent implements OnInit {
     });
     return session.id === mostRecent.id;
   }
+
+  parseUserAgent(userAgent: string): string {
+    if (!userAgent || userAgent === 'Unknown Device') {
+      return 'Unknown Device';
+    }
+
+    // Parse browser
+    let browser = 'Unknown Browser';
+    let browserVersion = '';
+    
+    if (userAgent.includes('Firefox/')) {
+      const match = userAgent.match(/Firefox\/([\d.]+)/);
+      browser = 'Firefox';
+      browserVersion = match ? match[1] : '';
+    } else if (userAgent.includes('Edg/')) {
+      const match = userAgent.match(/Edg\/([\d.]+)/);
+      browser = 'Edge';
+      browserVersion = match ? match[1] : '';
+    } else if (userAgent.includes('Chrome/')) {
+      const match = userAgent.match(/Chrome\/([\d.]+)/);
+      browser = 'Chrome';
+      browserVersion = match ? match[1] : '';
+    } else if (userAgent.includes('Safari/') && !userAgent.includes('Chrome')) {
+      const match = userAgent.match(/Version\/([\d.]+)/);
+      browser = 'Safari';
+      browserVersion = match ? match[1] : '';
+    }
+
+    // Parse OS
+    let os = '';
+    if (userAgent.includes('Windows NT 10.0')) {
+      os = 'Windows 10/11';
+    } else if (userAgent.includes('Windows NT 6.3')) {
+      os = 'Windows 8.1';
+    } else if (userAgent.includes('Windows NT 6.2')) {
+      os = 'Windows 8';
+    } else if (userAgent.includes('Windows NT 6.1')) {
+      os = 'Windows 7';
+    } else if (userAgent.includes('Windows')) {
+      os = 'Windows';
+    } else if (userAgent.includes('Mac OS X')) {
+      const match = userAgent.match(/Mac OS X ([\d_]+)/);
+      os = match ? `macOS ${match[1].replace(/_/g, '.')}` : 'macOS';
+    } else if (userAgent.includes('Android')) {
+      const match = userAgent.match(/Android ([\d.]+)/);
+      os = match ? `Android ${match[1]}` : 'Android';
+    } else if (userAgent.includes('iPhone') || userAgent.includes('iPad')) {
+      const device = userAgent.includes('iPad') ? 'iPad' : 'iPhone';
+      const match = userAgent.match(/OS ([\d_]+)/);
+      const version = match ? match[1].replace(/_/g, '.') : '';
+      os = version ? `${device} (iOS ${version})` : device;
+    } else if (userAgent.includes('Linux')) {
+      os = 'Linux';
+    }
+
+    // Format the result
+    const versionStr = browserVersion ? ` ${browserVersion.split('.')[0]}` : '';
+    const result = os ? `${browser}${versionStr} on ${os}` : `${browser}${versionStr}`;
+    
+    return result;
+  }
 }
