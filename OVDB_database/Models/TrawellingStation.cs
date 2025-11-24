@@ -1,10 +1,12 @@
 using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.EntityFrameworkCore;
 
 namespace OVDB_database.Models
 {
     [Table("trawelling_stations")]
+    [Index(nameof(TrawellingId), IsUnique = true)]
     public class TrawellingStation
     {
         [Key]

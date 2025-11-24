@@ -3,11 +3,12 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Text;
+using Microsoft.EntityFrameworkCore;
 
 namespace OVDB_database.Models
 {
     [JsonObject(MemberSerialization.OptIn)]
-
+    [Index(nameof(MapGuid), IsUnique = true)]
     public class Map
     {
         [Key]

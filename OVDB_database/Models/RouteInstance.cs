@@ -9,6 +9,7 @@ namespace OVDB_database.Models
     [Index(nameof(Date))]
     [Index(nameof(Date), nameof(RouteId), Name = "idx_routeinstances_date_routeid")]
     [Index(nameof(RouteId), nameof(Date), Name = "idx_routeinstances_routeid_date")]
+    [Index(nameof(TrawellingStatusId))]
     public class RouteInstance
     {
         [Key]

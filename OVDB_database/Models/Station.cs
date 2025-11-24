@@ -4,9 +4,11 @@ using System.ComponentModel.DataAnnotations;
 using System.Text;
 using System.Linq;
 using OVDB_database.Database;
+using Microsoft.EntityFrameworkCore;
 
 namespace OVDB_database.Models
 {
+    [Index(nameof(OsmId))]
     public class Station
     {
         [Key]

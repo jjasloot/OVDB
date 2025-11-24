@@ -9,6 +9,7 @@ namespace OVDB_database.Models
 {
     [JsonObject(MemberSerialization.OptIn)]
     [Index(nameof(Name))]
+    [Index(nameof(Share))]
     public class Route
     {
         [Key]
