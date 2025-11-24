@@ -88,4 +88,12 @@
     >
     <mat-icon>refresh</mat-icon>
   </button>
+  @if (isFromCache()) {
+    <span class="cache-indicator">
+      <mat-icon class="cache-icon">cached</mat-icon>
+      @if (cacheAge() !== null) {
+        <span class="cache-age">{{ cacheAge() }}s {{ "MAP.CACHE.AGO" | translate }}</span>
+      }
+    </span>
+  }
 </ng-template>
