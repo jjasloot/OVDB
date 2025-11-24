@@ -26,7 +26,7 @@ namespace OV_DB.Controllers
         private readonly IConfiguration _configuration;
         private readonly OVDBDatabaseContext _dbContext;
         private readonly PasswordHasher<User> passwordHasher;
-        
+
         // Token expiration settings
         private const int RefreshTokenExpirationDays = 30;
         private const int RevokedTokenRetentionDays = 7;
@@ -77,7 +77,7 @@ namespace OV_DB.Controllers
             {
                 return Forbid();
             }
-            
+
             var claims = new List<Claim>
             {
                 new Claim("sub", user.Id.ToString()),
@@ -120,7 +120,7 @@ namespace OV_DB.Controllers
                 return Unauthorized("Refresh token has been revoked");
             }
 
-            if (refreshToken.IsExpired)
+            if (refreshToken.ExpiresAt <= DateTime.UtcNow)
             {
                 return Unauthorized("Refresh token has expired");
             }
@@ -139,10 +139,10 @@ namespace OV_DB.Controllers
 
             // Token rotation: Generate a new refresh token and revoke the old one
             var newRefreshToken = await GenerateRefreshToken(user.Id, refreshToken.DeviceInfo);
-            
+
             refreshToken.IsRevoked = true;
             refreshToken.RevokedAt = DateTime.UtcNow;
-            
+
             // Update last used timestamp
             refreshToken.LastUsedAt = DateTime.UtcNow;
             user.LastLogin = DateTime.UtcNow;
@@ -185,7 +185,7 @@ namespace OV_DB.Controllers
             }
 
             var activeSessions = await _dbContext.RefreshTokens
-                .Where(rt => rt.UserId == userId.Value && !rt.IsRevoked && !rt.IsExpired)
+                .Where(rt => rt.UserId == userId.Value && !rt.IsRevoked && rt.ExpiresAt > DateTime.UtcNow)
                 .OrderByDescending(rt => rt.LastUsedAt ?? rt.CreatedAt)
                 .Select(rt => new
                 {
@@ -248,7 +248,7 @@ namespace OV_DB.Controllers
                 Guid = Guid.NewGuid()
 
             };
-            
+
             var map = new Map
             {
                 MapGuid = Guid.NewGuid(),
@@ -262,7 +262,7 @@ namespace OV_DB.Controllers
             await _dbContext.SaveChangesAsync();
             return await LogUserIn(new LoginRequest { Email = createAccount.Email, Password = createAccount.Password });
         }
-        
+
         /// <summary>
         /// Generates a JWT access token with the specified claims
         /// </summary>
@@ -288,7 +288,7 @@ namespace OV_DB.Controllers
         private async Task<RefreshToken> GenerateRefreshToken(int userId, string deviceInfo = null)
         {
             var token = GenerateSecureToken();
-            
+
             // Extract device info from User-Agent header if not provided
             if (string.IsNullOrEmpty(deviceInfo))
             {
@@ -311,10 +311,10 @@ namespace OV_DB.Controllers
             };
 
             _dbContext.RefreshTokens.Add(refreshToken);
-            
+
             // Clean up expired tokens for this user
             await CleanupExpiredTokens(userId);
-            
+
             return refreshToken;
         }
 
@@ -352,7 +352,7 @@ namespace OV_DB.Controllers
         /// </summary>
         private int? GetUserIdFromClaims()
         {
-            var subClaim = User.Claims.FirstOrDefault(s => s.Type == "sub");
+            var subClaim = User.Claims.FirstOrDefault(s => s.Type == ClaimTypes.NameIdentifier);
             if (subClaim == null || string.IsNullOrEmpty(subClaim.Value))
             {
                 return null;

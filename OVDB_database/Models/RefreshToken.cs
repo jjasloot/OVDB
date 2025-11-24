@@ -58,15 +58,5 @@ namespace OVDB_database.Models
         /// When this token was revoked (if applicable)
         /// </summary>
         public DateTime? RevokedAt { get; set; }
-
-        /// <summary>
-        /// Helper property to check if token is expired
-        /// </summary>
-        public bool IsExpired => DateTime.UtcNow >= ExpiresAt;
-
-        /// <summary>
-        /// Helper property to check if token is active (not expired and not revoked)
-        /// </summary>
-        public bool IsActive => !IsRevoked && !IsExpired;
     }
 }

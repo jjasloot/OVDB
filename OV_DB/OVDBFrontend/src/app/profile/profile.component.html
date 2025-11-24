@@ -163,13 +163,7 @@
                     }
                   </div>
                   <div matListItemLine>
-                    <span class="session-created">{{ 'PROFILE.CREATED' | translate }}: {{ formatDate(session.createdAt) }}</span>
-                  </div>
-                  <div matListItemLine>
-                    @if (session.lastUsedAt) {
-                      <span class="session-last-used">{{ 'PROFILE.LAST_USED' | translate }}: {{ formatDate(session.lastUsedAt) }}</span>
-                    }
-                    <span class="session-expires"> • {{ 'PROFILE.EXPIRES' | translate }}: {{ formatDate(session.expiresAt) }}</span>
+                    <span class="session-created">{{ 'PROFILE.CREATED' | translate }}: {{ formatDate(session.createdAt) }} - {{ 'PROFILE.EXPIRES' | translate }}: {{ formatDate(session.expiresAt) }}</span>
                   </div>
                   <button mat-icon-button 
                           color="warn" 
