@@ -14,7 +14,7 @@ jobs:
       JWTSigningKey: ${{ secrets.JWTSigningKey }}
       UserAgent: ${{ secrets.UserAgent }}
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
     - name: Build the Docker image
       run: docker build . --file Dockerfile --tag jjasloot/ovdb:$(date +%Y%M%d) --tag jjasloot/ovdb:latest --build-arg JWTSigningKey --build-arg UserAgent
     - name: Docker login
