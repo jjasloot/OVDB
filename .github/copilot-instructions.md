@@ -38,8 +38,8 @@ Always reference these instructions first and fallback to search or bash command
 - **E2E tests**: `npm run e2e` -- fails because Protractor is deprecated
 
 ### Backend
-- **Unit tests exist**: `OV_DB.Tests` project contains xUnit tests (RouteInstanceTests, TimezoneServiceTests)
-- **Tests have execution issues**: `dotnet test` builds successfully but fails during test execution with VSTest errors
+- **Unit tests**: `OV_DB.Tests` project contains xUnit tests (RouteInstanceTests, TimezoneServiceTests)
+- **Run tests**: `dotnet test` -- all 7 tests pass successfully
 - **Manual testing file**: `OV_DB/Services/TelegramBotServiceTests.cs` exists but is not a proper test project
 
 ### Docker Build
@@ -113,7 +113,7 @@ After making changes, **ALWAYS** test these scenarios:
 3. Update database: `dotnet ef database update --project OVDB_database --startup-project OV_DB`
 
 ### Running tests
-1. **Backend tests**: `dotnet test` (currently fails with VSTest execution errors)
+1. **Backend tests**: `dotnet test` -- all 7 tests pass successfully
 2. **Frontend tests**: `cd OV_DB/OVDBFrontend && npm test` (fails due to missing karma-jasmine dependencies)
 3. **E2E tests**: `cd OV_DB/OVDBFrontend && npm run e2e` (deprecated - Protractor no longer supported)
 
@@ -122,7 +122,6 @@ After making changes, **ALWAYS** test these scenarios:
 - **Frontend tests broken**: Missing karma-jasmine dependencies
 - **E2E tests deprecated**: Protractor no longer supported
 - **Many linting errors**: 455+ ESLint errors in frontend code
-- **Backend test execution fails**: OV_DB.Tests project exists but tests fail to execute with VSTest errors
 
 ## CI/CD Information
 - **GitHub Actions**: `.github/workflows/ci.yml` builds both frontend and backend
