@@ -20,6 +20,10 @@ $OVDBFrontend-dark-theme: mat.define-theme((color: (theme-type: dark,
       )));
 
 html {
+  background: var(--mat-toolbar-container-background-color);
+}
+
+body {
   background: var(--mat-app-background-color);
 }
 
