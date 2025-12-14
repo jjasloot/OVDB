@@ -183,6 +183,21 @@ body {
 
 // Mobile improvements for better touch interaction
 @media (max-width: 768px) {
+  // Prevent iOS auto-zoom on input focus by ensuring 16px minimum font size
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="tel"],
+  input[type="number"],
+  input[type="search"],
+  input[type="time"],
+  input[type="date"],
+  textarea,
+  select,
+  .mat-mdc-input-element {
+    font-size: 16px !important;
+  }
+
   // Improve touch targets for all interactive elements
   .mat-mdc-option,
   .mat-mdc-list-option {
