@@ -5,6 +5,7 @@ import { Router } from '@angular/router';
 import { JwtHelperService } from '@auth0/angular-jwt';
 import { RegistrationRequest } from '../models/registrationRequest.model';
 import { tap } from 'rxjs/operators';
+import { BehaviorSubject } from 'rxjs';
 
 @Injectable({
   providedIn: 'root'
@@ -13,7 +14,8 @@ export class AuthenticationService {
   private httpClient = inject(HttpClient);
   private router = inject(Router);
 
-
+  private isLoggedInSubject = new BehaviorSubject<boolean>(false);
+  public isLoggedIn$ = this.isLoggedInSubject.asObservable();
 
   public token: string;
   public refreshToken: string | null;
@@ -24,6 +26,10 @@ export class AuthenticationService {
   constructor() {
     this.token = localStorage.getItem('OVDBToken');
     this.refreshToken = localStorage.getItem('OVDBRefreshToken');
+    
+    // Emit initial login state
+    this.updateLoginState();
+    
     setTimeout(() => {
       if (this.token) {
         this.refreshTheToken();
@@ -69,6 +75,9 @@ export class AuthenticationService {
 
     const expiry = this.helper.getTokenExpirationDate(this.token).valueOf() - new Date().valueOf();
     this.refreshTrigger = setTimeout(() => this.refreshTheToken(), Math.max(expiry - (5 * 60 * 1000), 0));
+    
+    // Emit login state change
+    this.updateLoginState();
   }
 
   refreshTheToken() {
@@ -109,6 +118,10 @@ export class AuthenticationService {
     localStorage.removeItem('OVDBRefreshToken');
     this.refreshToken = null;
     this.token = null;
+    
+    // Emit login state change
+    this.updateLoginState();
+    
     this.router.navigate(['/']);
   }
 
@@ -117,6 +130,10 @@ export class AuthenticationService {
       return false;
     }
     return (this.helper.getTokenExpirationDate(this.token) > new Date());
+  }
+
+  private updateLoginState(): void {
+    this.isLoggedInSubject.next(this.isLoggedIn);
   }
 
   get autoUpdateRunning() {

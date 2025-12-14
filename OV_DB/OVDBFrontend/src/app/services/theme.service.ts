@@ -36,7 +36,7 @@ export class ThemeService {
       bodyElement.classList.remove('dark-theme');
     }
     
-    // Update theme-color meta tag for mobile browsers (status bar/dynamic island)
+    // Update theme-color meta tag for mobile browsers (status bar)
     const themeColorMeta = document.querySelector('meta[name="theme-color"]');
     if (themeColorMeta) {
       themeColorMeta.setAttribute('content', isDark ? '#006b0e' : '#4caf50');
