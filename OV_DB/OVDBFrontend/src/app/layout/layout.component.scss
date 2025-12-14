@@ -2,11 +2,13 @@
   height: 100vh;
   overflow-y: auto;
   position: relative;
+  background-color: #4caf50;
 }
 
 .router-container {
   min-height: calc(100vh - 64px);
   position: relative;
+  background-color: var(--mat-app-background-color);
 }
 
 .row {
@@ -66,4 +68,9 @@ mat-select {
   top: .5rem;
   right: .25rem;
   border-radius: 10px;
+}
+
+// Dark theme support for container background
+:host-context(.dark-theme) .container {
+  background-color: #006b0e;
 }

@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, inject } from "@angular/core";
+import { Component, OnInit, inject, DestroyRef } from "@angular/core";
 import { AuthenticationService } from "../services/authentication.service";
 import { ApiService } from "../services/api.service";
 import { Map } from "../models/map.model";
@@ -18,7 +18,7 @@ import { CdkCopyToClipboard } from "@angular/cdk/clipboard";
 import { MatIcon } from "@angular/material/icon";
 import { MatProgressSpinner } from "@angular/material/progress-spinner";
 import { TranslateModule } from "@ngx-translate/core";
-import { Subscription } from "rxjs";
+import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 @Component({
   selector: "app-home",
   templateUrl: "./home.component.html",
@@ -40,16 +40,16 @@ import { Subscription } from "rxjs";
     TranslateModule,
   ],
 })
-export class HomeComponent implements OnInit, OnDestroy {
+export class HomeComponent implements OnInit {
   private authService = inject(AuthenticationService);
   private router = inject(Router);
   private translationService = inject(TranslationService);
   private apiService = inject(ApiService);
+  private destroyRef = inject(DestroyRef);
 
   maps: Map[];
   loading = 0;
   stationMaps: StationMap[];
-  private loginSubscription: Subscription;
 
   ngOnInit() {
     // Load data if already logged in
@@ -58,17 +58,13 @@ export class HomeComponent implements OnInit, OnDestroy {
     }
     
     // Subscribe to login state changes to reload data when user logs in
-    this.loginSubscription = this.authService.isLoggedIn$.subscribe(isLoggedIn => {
+    this.authService.isLoggedIn$.pipe(
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe(isLoggedIn => {
       if (isLoggedIn && !this.maps && !this.stationMaps) {
         this.loadData();
       }
     });
-  }
-
-  ngOnDestroy() {
-    if (this.loginSubscription) {
-      this.loginSubscription.unsubscribe();
-    }
   }
 
   private loadData() {
