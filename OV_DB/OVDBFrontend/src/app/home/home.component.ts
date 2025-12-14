@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from "@angular/core";
+import { Component, OnInit, OnDestroy, inject } from "@angular/core";
 import { AuthenticationService } from "../services/authentication.service";
 import { ApiService } from "../services/api.service";
 import { Map } from "../models/map.model";
@@ -18,6 +18,7 @@ import { CdkCopyToClipboard } from "@angular/cdk/clipboard";
 import { MatIcon } from "@angular/material/icon";
 import { MatProgressSpinner } from "@angular/material/progress-spinner";
 import { TranslateModule } from "@ngx-translate/core";
+import { Subscription } from "rxjs";
 @Component({
   selector: "app-home",
   templateUrl: "./home.component.html",
@@ -39,7 +40,7 @@ import { TranslateModule } from "@ngx-translate/core";
     TranslateModule,
   ],
 })
-export class HomeComponent implements OnInit {
+export class HomeComponent implements OnInit, OnDestroy {
   private authService = inject(AuthenticationService);
   private router = inject(Router);
   private translationService = inject(TranslationService);
@@ -48,20 +49,39 @@ export class HomeComponent implements OnInit {
   maps: Map[];
   loading = 0;
   stationMaps: StationMap[];
+  private loginSubscription: Subscription;
 
   ngOnInit() {
+    // Load data if already logged in
     if (this.isLoggedIn) {
-      this.loading++;
-      this.apiService.getMaps().subscribe((maps) => {
-        this.maps = maps;
-        this.loading--;
-      });
-      this.loading++;
-      this.apiService.listStationMaps().subscribe((maps) => {
-        this.stationMaps = maps;
-        this.loading--;
-      });
+      this.loadData();
     }
+    
+    // Subscribe to login state changes to reload data when user logs in
+    this.loginSubscription = this.authService.isLoggedIn$.subscribe(isLoggedIn => {
+      if (isLoggedIn && !this.maps && !this.stationMaps) {
+        this.loadData();
+      }
+    });
+  }
+
+  ngOnDestroy() {
+    if (this.loginSubscription) {
+      this.loginSubscription.unsubscribe();
+    }
+  }
+
+  private loadData() {
+    this.loading++;
+    this.apiService.getMaps().subscribe((maps) => {
+      this.maps = maps;
+      this.loading--;
+    });
+    this.loading++;
+    this.apiService.listStationMaps().subscribe((maps) => {
+      this.stationMaps = maps;
+      this.loading--;
+    });
   }
 
   get isLoggedIn() {
