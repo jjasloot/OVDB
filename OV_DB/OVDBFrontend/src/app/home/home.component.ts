@@ -69,15 +69,27 @@ export class HomeComponent implements OnInit {
 
   private loadData() {
     this.loading++;
-    this.apiService.getMaps().subscribe((maps) => {
-      this.maps = maps;
-      this.loading--;
-    });
+    this.apiService.getMaps().subscribe(
+      (maps) => {
+        this.maps = maps;
+        this.loading--;
+      },
+      (error) => {
+        // Optionally, handle/log the error here
+        this.loading--;
+      }
+    );
     this.loading++;
-    this.apiService.listStationMaps().subscribe((maps) => {
-      this.stationMaps = maps;
-      this.loading--;
-    });
+    this.apiService.listStationMaps().subscribe(
+      (maps) => {
+        this.stationMaps = maps;
+        this.loading--;
+      },
+      (error) => {
+        // Optionally, handle/log the error here
+        this.loading--;
+      }
+    );
   }
 
   get isLoggedIn() {
