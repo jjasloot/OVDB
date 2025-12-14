@@ -38,7 +38,8 @@ Always reference these instructions first and fallback to search or bash command
 - **E2E tests**: `npm run e2e` -- fails because Protractor is deprecated
 
 ### Backend
-- **No unit tests**: `dotnet test` finds no test projects in the solution
+- **Unit tests exist**: `OV_DB.Tests` project contains xUnit tests (RouteInstanceTests, TimezoneServiceTests)
+- **Tests have execution issues**: `dotnet test` builds successfully but fails during test execution with VSTest errors
 - **Manual testing file**: `OV_DB/Services/TelegramBotServiceTests.cs` exists but is not a proper test project
 
 ### Docker Build
@@ -82,6 +83,10 @@ After making changes, **ALWAYS** test these scenarios:
 │   │   ├── package.json    # Frontend dependencies
 │   │   └── angular.json    # Angular configuration
 │   └── OV_DB.csproj        # Main project file
+├── OV_DB.Tests/            # xUnit test project
+│   ├── RouteInstanceTests.cs    # Tests for route calculations
+│   ├── TimezoneServiceTests.cs  # Tests for timezone service
+│   └── OV_DB.Tests.csproj       # Test project file
 ├── OVDB_database/          # Entity Framework data layer
 │   ├── Models/             # Entity models
 │   ├── Migrations/         # EF migrations
@@ -107,12 +112,17 @@ After making changes, **ALWAYS** test these scenarios:
 2. Create migration: `dotnet ef migrations add MigrationName --project OVDB_database --startup-project OV_DB`
 3. Update database: `dotnet ef database update --project OVDB_database --startup-project OV_DB`
 
+### Running tests
+1. **Backend tests**: `dotnet test` (currently fails with VSTest execution errors)
+2. **Frontend tests**: `cd OV_DB/OVDBFrontend && npm test` (fails due to missing karma-jasmine dependencies)
+3. **E2E tests**: `cd OV_DB/OVDBFrontend && npm run e2e` (deprecated - Protractor no longer supported)
+
 ## Known Issues
 - **Docker build fails**: npm not found during Docker build process
 - **Frontend tests broken**: Missing karma-jasmine dependencies
 - **E2E tests deprecated**: Protractor no longer supported
 - **Many linting errors**: 455+ ESLint errors in frontend code
-- **No backend tests**: Solution has no test projects despite test files existing
+- **Backend test execution fails**: OV_DB.Tests project exists but tests fail to execute with VSTest errors
 
 ## CI/CD Information
 - **GitHub Actions**: `.github/workflows/ci.yml` builds both frontend and backend
