@@ -10,6 +10,12 @@ namespace OV_DB.Services
     {
         public double CalculateDurationInHours(DateTime startTime, DateTime endTime, LineString lineString)
         {
+            // If no lineString is provided, return simple duration without timezone conversion
+            if (lineString == null || lineString.Count == 0)
+            {
+                return (endTime - startTime).TotalHours;
+            }
+
             var startTimezoneId = GetTimezoneId(lineString[0].Y, lineString[0].X);
             var end = lineString[lineString.Count - 1];
             var endTimezoneId = GetTimezoneId(end.Y, end.X);
