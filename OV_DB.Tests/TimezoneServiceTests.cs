@@ -66,7 +66,7 @@ namespace OV_DB.Tests
             var duration = service.CalculateDurationInHours(startTime, endTime, lineString);
 
             // Assert
-            // Amsterdam is CEST (UTC+2) in June, London is BST (UTC+1) in June
+            // Amsterdam uses CEST (UTC+2) in June, London uses BST (UTC+1) in June
             // 14:00 CEST = 12:00 UTC, 16:00 BST = 15:00 UTC
             // Duration in UTC: 15:00 - 12:00 = 3 hours
             Assert.Equal(3.0, duration);
@@ -93,7 +93,7 @@ namespace OV_DB.Tests
             var duration = service.CalculateDurationInHours(startTime, endTime, lineString);
 
             // Assert
-            // New York is EDT (UTC-4) in March, Los Angeles is PDT (UTC-7) in March
+            // New York uses EDT (UTC-4) in mid-March, Los Angeles uses PDT (UTC-7) in mid-March
             // 10:00 EDT = 14:00 UTC, 11:00 PDT = 18:00 UTC
             // Duration in UTC: 18:00 - 14:00 = 4 hours
             Assert.Equal(4.0, duration);
