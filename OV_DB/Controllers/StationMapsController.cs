@@ -3,14 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
-using AutoMapper;
-using AutoMapper.QueryableExtensions;
 using GeoJSON.Net.Feature;
 using GeoJSON.Net.Geometry;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using OV_DB.Models;
+using OV_DB.Mappings;
 using OVDB_database.Database;
 using OVDB_database.Models;
 
@@ -21,12 +20,10 @@ namespace OV_DB.Controllers
     public class StationMapsController : ControllerBase
     {
         private OVDBDatabaseContext _context;
-        private readonly IMapper _mapper;
 
-        public StationMapsController(OVDBDatabaseContext context, IMapper mapper)
+        public StationMapsController(OVDBDatabaseContext context)
         {
             _context = context;
-            _mapper = mapper;
         }
 
         [HttpGet]
@@ -39,7 +36,7 @@ namespace OV_DB.Controllers
             }
             return await _context.StationGroupings.Where(m => m.UserId == userIdClaim)
                 .OrderBy(m => m.OrderNr)
-                .ProjectTo<StationMapDTO>(_mapper.ConfigurationProvider)
+                .ToStationMapDTOs()
                 .ToListAsync();
         }
 
@@ -52,7 +49,7 @@ namespace OV_DB.Controllers
                 return Forbid();
             }
             var map = await _context.StationGroupings.Where(m => m.UserId == userIdClaim)
-                .ProjectTo<StationMapDTO>(_mapper.ConfigurationProvider)
+                .ToStationMapDTOs()
                 .SingleOrDefaultAsync(m => m.Id == id);
 
             if (map == null)

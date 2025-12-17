@@ -1,10 +1,9 @@
-using AutoMapper;
-using AutoMapper.QueryableExtensions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using OV_DB.Models;
+using OV_DB.Mappings;
 using OVDB_database.Database;
 using OVDB_database.Models;
 using System;
@@ -22,9 +21,8 @@ public class OperatorsController : ControllerBase
 {
     private readonly string _storagePath;
     private readonly OVDBDatabaseContext _dbContext;
-    private readonly IMapper _mapper;
 
-    public OperatorsController(IConfiguration configuration, OVDBDatabaseContext dbContext, IMapper mapper)
+    public OperatorsController(IConfiguration configuration, OVDBDatabaseContext dbContext)
     {
         _storagePath = configuration.GetValue<string>("LogoLocation");
         if (!Directory.Exists(_storagePath))
@@ -32,7 +30,6 @@ public class OperatorsController : ControllerBase
             Directory.CreateDirectory(_storagePath);
         }
         _dbContext = dbContext;
-        _mapper = mapper;
     }
 
     [HttpPost]
@@ -67,7 +64,7 @@ public class OperatorsController : ControllerBase
             return Forbid();
         }
 
-        var operatorDb = await _dbContext.Operators.ProjectTo<OperatorDTO>(_mapper.ConfigurationProvider).FirstOrDefaultAsync(o => o.Id == id);
+        var operatorDb = await _dbContext.Operators.ToOperatorDTOs().FirstOrDefaultAsync(o => o.Id == id);
         if (operatorDb == null)
         {
             return NotFound();
@@ -135,7 +132,7 @@ public class OperatorsController : ControllerBase
         {
             return Forbid();
         }
-        return await _dbContext.Operators.ProjectTo<OperatorDTO>(_mapper.ConfigurationProvider).ToListAsync();
+        return await _dbContext.Operators.ToOperatorDTOs().ToListAsync();
     }
 
     // Update

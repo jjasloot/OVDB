@@ -1,9 +1,8 @@
-﻿using AutoMapper;
-using AutoMapper.QueryableExtensions;
-using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using OV_DB.Models;
+using OV_DB.Mappings;
 using OVDB_database.Database;
 using OVDB_database.Models;
 using System;
@@ -15,7 +14,7 @@ using System.Threading.Tasks;
 namespace OV_DB.Controllers;
 [Route("api/[controller]")]
 [ApiController]
-public class RequestsController(OVDBDatabaseContext dbContext, IMapper mapper) : ControllerBase
+public class RequestsController(OVDBDatabaseContext dbContext) : ControllerBase
 {
     [HttpGet]
     public async Task<IActionResult> GetUserRequests()
@@ -27,7 +26,7 @@ public class RequestsController(OVDBDatabaseContext dbContext, IMapper mapper) :
         }
 
         var requests = await dbContext.Requests.Where(r => r.UserId == userIdClaim).OrderByDescending(r => r.Created).ToListAsync();
-        var responseList = mapper.Map<List<RequestForUserDTO>>(requests);
+        var responseList = requests.Select(r => r.ToRequestForUserDTO()).ToList();
 
         foreach (var request in requests.Where(r => !string.IsNullOrWhiteSpace(r.Response) && !r.ResponseRead))
         {
@@ -49,7 +48,7 @@ public class RequestsController(OVDBDatabaseContext dbContext, IMapper mapper) :
         }
 
         var requests = await dbContext.Requests.OrderByDescending(r => r.Created).Include(r => r.User).ToListAsync();
-        var responseList = mapper.Map<List<RequestForAdminDTO>>(requests);
+        var responseList = requests.Select(r => r.ToRequestForAdminDTO()).ToList();
 
         foreach (var request in requests.Where(r => !string.IsNullOrWhiteSpace(r.Response) && !r.ResponseRead))
         {

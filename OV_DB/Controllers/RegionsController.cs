@@ -1,6 +1,4 @@
-﻿using AutoMapper;
-using AutoMapper.QueryableExtensions;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
@@ -11,6 +9,7 @@ using NetTopologySuite.IO;
 using Newtonsoft.Json;
 using OV_DB.Hubs;
 using OV_DB.Models;
+using OV_DB.Mappings;
 using OV_DB.Services;
 using OVDB_database.Database;
 using OVDB_database.Models;
@@ -27,7 +26,7 @@ namespace OV_DB.Controllers
     [Route("api/[controller]")]
     [ApiController]
     [Authorize]
-    public class RegionsController(IMemoryCache memoryCache, OVDBDatabaseContext context, IMapper mapper, IHubContext<MapGenerationHub> hubContext, IHttpClientFactory httpClientFactory) : ControllerBase
+    public class RegionsController(IMemoryCache memoryCache, OVDBDatabaseContext context, IHubContext<MapGenerationHub> hubContext, IHttpClientFactory httpClientFactory) : ControllerBase
     {
         private IMemoryCache _cache = memoryCache;
         private OVDBDatabaseContext _context = context;
@@ -226,7 +225,7 @@ namespace OV_DB.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<RegionDTO>>> GetAll()
         {
-            var regions = await _context.Regions.OrderBy(r => r.Name).ProjectTo<RegionIntermediate>(mapper.ConfigurationProvider).ToListAsync();
+            var regions = await _context.Regions.OrderBy(r => r.Name).ToRegionIntermediates().ToListAsync();
 
 
             var mappedRegions = regions.Where(r => r.ParentRegionId == null).Select(r => new RegionDTO
@@ -260,7 +259,7 @@ namespace OV_DB.Controllers
         [HttpGet("withStations")]
         public async Task<ActionResult<IEnumerable<RegionDTO>>> GetAllWithStations()
         {
-            var regions = await _context.Regions.Where(r => r.Stations.Any()).OrderBy(r => r.Name).ProjectTo<RegionIntermediate>(mapper.ConfigurationProvider).ToListAsync();
+            var regions = await _context.Regions.Where(r => r.Stations.Any()).OrderBy(r => r.Name).ToRegionIntermediates().ToListAsync();
 
             var mappedRegions = regions.Where(r => r.ParentRegionId == null).Select(r => new RegionDTO
             {

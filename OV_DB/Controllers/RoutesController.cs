@@ -1,12 +1,11 @@
-﻿using AutoMapper;
-using AutoMapper.QueryableExtensions;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OData.Query;
 using Microsoft.EntityFrameworkCore;
 using OV_DB.Helpers;
 using OV_DB.Models;
+using OV_DB.Mappings;
 using OV_DB.Services;
 using OVDB_database.Database;
 using OVDB_database.Models;
@@ -32,14 +31,12 @@ namespace OV_DB.Controllers
     public class RoutesController : ControllerBase
     {
         private readonly OVDBDatabaseContext _context;
-        private readonly IMapper _mapper;
         private readonly IRouteRegionsService _routeRegionsService;
         private readonly ITimezoneService _timezoneService;
 
-        public RoutesController(OVDBDatabaseContext context, IMapper mapper, IRouteRegionsService routeRegionsService, ITimezoneService timezoneService)
+        public RoutesController(OVDBDatabaseContext context, IRouteRegionsService routeRegionsService, ITimezoneService timezoneService)
         {
             _context = context;
-            _mapper = mapper;
             _routeRegionsService = routeRegionsService;
             _timezoneService = timezoneService;
         }
@@ -61,7 +58,7 @@ namespace OV_DB.Controllers
             {
                 originalQuery = originalQuery.Where(r => EF.Functions.Like(r.Name, "%" + filter + "%"));
             }
-            var query = originalQuery.ProjectTo<RouteDTO>(_mapper.ConfigurationProvider);
+            var query = originalQuery.ToRouteDTOs();
             if (!string.IsNullOrWhiteSpace(sortColumn))
             {
                 if (sortColumn == "name")
@@ -134,7 +131,7 @@ namespace OV_DB.Controllers
                 .Where(r => r.RouteMaps.Any(rm => rm.Map.UserId == userIdClaim))
                 .Where(r => r.RouteTypeId == null || (string.IsNullOrWhiteSpace(r.From) && string.IsNullOrWhiteSpace(r.To)))
                 .OrderByDescending(r => r.RouteInstances.Max(ri => ri.Date))
-                .ProjectTo<RouteDTO>(_mapper.ConfigurationProvider)
+                .ToRouteDTOs()
                 .ToListAsync();
         }
 
@@ -161,14 +158,15 @@ namespace OV_DB.Controllers
             var route = await _context.Routes
                 .Where(r => r.RouteMaps.Any(rm => rm.Map.UserId == userIdClaim))
                 .Include(r => r.RouteInstances)
-                .Include(r => r.RouteMaps)
-                .ProjectTo<RouteDTO>(_mapper.ConfigurationProvider)
-                .SingleAsync(r => r.RouteId == id);
+                .Include(r => r.RouteMaps).ThenInclude(rm => rm.Map)
+                .Include(r => r.Operators)
+                .Include(r => r.RouteType)
+                .SingleOrDefaultAsync(r => r.RouteId == id);
             if (route == null)
             {
                 return NotFound();
             }
-            return route;
+            return route.ToRouteDTO();
         }
 
         // PUT: api/RoutesAPI/5
@@ -901,7 +899,7 @@ namespace OV_DB.Controllers
                 route.RouteInstances = route.RouteInstances.Where(ri => ri.Date >= from && ri.Date < to).ToList();
             }
 
-            return _mapper.Map<RouteWithInstancesDTO>(route);
+            return route.ToRouteWithInstancesDTO();
         }
 
         [HttpGet("instances/{mapGuid}/{id}")]
@@ -937,7 +935,7 @@ namespace OV_DB.Controllers
             }
 
 
-            return _mapper.Map<RouteWithInstancesDTO>(route);
+            return route.ToRouteWithInstancesDTO();
         }
 
         [HttpPut("instances")]
