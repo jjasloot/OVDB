@@ -153,7 +153,7 @@ namespace OV_DB.Controllers
             var osm = await _cache.GetOrCreateAsync(idCache, async i => await CreateCache(id, i, dateTime));
             if (osm == null)
             {
-                _cache.Remove(id);
+                _cache.Remove(idCache);
                 await Task.Delay(1000);
                 osm = await _cache.GetOrCreateAsync(idCache, async i => await CreateCache(id, i, dateTime));
             }
