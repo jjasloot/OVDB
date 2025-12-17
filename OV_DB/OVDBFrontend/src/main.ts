@@ -1,4 +1,4 @@
-import { enableProdMode, importProvidersFrom, LOCALE_ID } from "@angular/core";
+import { enableProdMode, importProvidersFrom, LOCALE_ID, provideZoneChangeDetection } from "@angular/core";
 import { environment } from "./environments/environment";
 import {
   MatMomentDateModule,
@@ -103,7 +103,7 @@ if (environment.production) {
 
 bootstrapApplication(AppComponent, {
   providers: [
-    importProvidersFrom(
+    provideZoneChangeDetection(),importProvidersFrom(
       BrowserModule,
       FormsModule,
       ReactiveFormsModule,
