@@ -65,7 +65,7 @@ import { TrawellingContextCardComponent } from "src/app/traewelling/context-card
     DatePipe,
     TranslateModule,
     TrawellingContextCardComponent
-]
+  ]
 })
 export class RouteDetailComponent implements OnInit {
   private activatedRoute = inject(ActivatedRoute);
@@ -179,7 +179,7 @@ export class RouteDetailComponent implements OnInit {
     if (this.activeOperators()) {
       route.operatorIds = this.activeOperators();
     }
-    this.apiService.updateRoute(values as Route).subscribe((_) => {
+    this.apiService.updateRoute({ ...values, firstDateTime: this.formatDateTimeLocal(new Date(values.firstDateTime)) } as Route).subscribe((_) => {
       if (!goToInstances) {
         this.goBack();
       } else {
@@ -189,7 +189,7 @@ export class RouteDetailComponent implements OnInit {
 
         // If we have Träwelling trip data, pass it through query params and session storage
         if (this.fromTraewelling && this.trawellingTripData) {
-          navigationParams.queryParams = { traewellingTripId: this.trawellingTripData.tripId, newRoute:true };
+          navigationParams.queryParams = { traewellingTripId: this.trawellingTripData.tripId, newRoute: true };
         }
 
         this.router.navigate(navigationParams.route, navigationParams.queryParams ? { queryParams: navigationParams.queryParams } : {});
@@ -294,4 +294,14 @@ export class RouteDetailComponent implements OnInit {
       },
     });
   }
+
+  private formatDateTimeLocal(date: Date): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+  }
+
 }
