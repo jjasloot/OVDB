@@ -135,7 +135,7 @@ namespace OV_DB.Controllers
             using (var content = new StringContent(query))
             {
                 var response = await httpClient.PostAsync("https://overpass-api.de/api/interpreter", content);
-                if (response.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
+                if (response.StatusCode == System.Net.HttpStatusCode.TooManyRequests || !response.IsSuccessStatusCode)
                 {
                     return null;
                 }
@@ -157,6 +157,8 @@ namespace OV_DB.Controllers
                 await Task.Delay(1000);
                 osm = await _cache.GetOrCreateAsync(idCache, async i => await CreateCache(id, i, dateTime));
             }
+            if (osm == null) return StatusCode(429);
+
             var relation = osm.Elements.SingleOrDefault(e => e.Type == TypeEnum.Relation);
             var stops = new List<Element>();
             var lists = new List<List<IPosition>>();
@@ -482,7 +484,7 @@ namespace OV_DB.Controllers
             using (var content = new StringContent(query))
             {
                 var response = await httpClient.PostAsync("https://overpass-api.de/api/interpreter", content);
-                if (response.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
+                if (response.StatusCode == System.Net.HttpStatusCode.TooManyRequests || !response.IsSuccessStatusCode)
                 {
                     return null;
                 }
@@ -546,7 +548,7 @@ namespace OV_DB.Controllers
                 {
                     var response = await httpClient.PostAsync("https://overpass-api.de/api/interpreter", content);
 
-                    if (response.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
+                    if (response.StatusCode == System.Net.HttpStatusCode.TooManyRequests || !response.IsSuccessStatusCode)
                     {
                         return null;
                     }

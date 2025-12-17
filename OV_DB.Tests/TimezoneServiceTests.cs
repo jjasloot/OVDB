@@ -50,8 +50,8 @@ namespace OV_DB.Tests
         {
             // Arrange
             var service = new TimezoneService();
-            var startTime = new DateTime(2025, 6, 15, 14, 0, 0); // 14:00 local time as entered by user
-            var endTime = new DateTime(2025, 6, 15, 16, 0, 0);   // 16:00 local time as entered by user
+            var startTime = new DateTime(2025, 6, 15, 14, 0, 0); // 14:00 local time in Amsterdam (CET/CEST)
+            var endTime = new DateTime(2025, 6, 15, 16, 0, 0);   // 16:00 local time in London (BST)
             
             // Create LineString from Amsterdam to London (different timezones)
             var geometryFactory = NtsGeometryServices.Instance.CreateGeometryFactory(srid: 4326);
@@ -66,9 +66,10 @@ namespace OV_DB.Tests
             var duration = service.CalculateDurationInHours(startTime, endTime, lineString);
 
             // Assert
-            // With simplified approach: treat input times as local trip times (no timezone conversion)
-            // User entered 14:00 to 16:00, so duration is 2 hours as they experienced it
-            Assert.Equal(2.0, duration);
+            // Amsterdam uses CEST (UTC+2) in June, London uses BST (UTC+1) in June
+            // 14:00 CEST = 12:00 UTC, 16:00 BST = 15:00 UTC
+            // Duration in UTC: 15:00 - 12:00 = 3 hours
+            Assert.Equal(3.0, duration);
         }
 
         [Fact]
@@ -76,8 +77,8 @@ namespace OV_DB.Tests
         {
             // Arrange
             var service = new TimezoneService();
-            var startTime = new DateTime(2025, 3, 15, 10, 0, 0); // 10:00 local time as entered by user
-            var endTime = new DateTime(2025, 3, 15, 11, 0, 0);   // 11:00 local time as entered by user (arrived at 11 AM local time)
+            var startTime = new DateTime(2025, 3, 15, 10, 0, 0); // 10:00 local time in New York (EDT)
+            var endTime = new DateTime(2025, 3, 15, 11, 0, 0);   // 11:00 local time in Los Angeles (PDT)
             
             // Create LineString from New York to Los Angeles
             var geometryFactory = NtsGeometryServices.Instance.CreateGeometryFactory(srid: 4326);
@@ -92,9 +93,10 @@ namespace OV_DB.Tests
             var duration = service.CalculateDurationInHours(startTime, endTime, lineString);
 
             // Assert
-            // With simplified approach: treat input times as local trip times (no timezone conversion)  
-            // User entered 10:00 to 11:00, so duration is 1 hour as they experienced it
-            Assert.Equal(1.0, duration);
+            // New York uses EDT (UTC-4) in mid-March, Los Angeles uses PDT (UTC-7) in mid-March
+            // 10:00 EDT = 14:00 UTC, 11:00 PDT = 18:00 UTC
+            // Duration in UTC: 18:00 - 14:00 = 4 hours
+            Assert.Equal(4.0, duration);
         }
     }
 }

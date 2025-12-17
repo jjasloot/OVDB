@@ -61,3 +61,24 @@ mat-form-field {
   padding:0 !important
 }
 
+// Mobile improvements
+@media (max-width: 600px) {
+  mat-form-field {
+    width: 100%;
+  }
+
+  .time-inputs-row {
+    flex-direction: column;
+  }
+
+  .date-field,
+  .time-field {
+    flex: 1 1 100%;
+  }
+
+  // Improve touch targets for dropdowns
+  mat-select,
+  mat-autocomplete {
+    min-height: 44px; // iOS recommended touch target
+  }
+}

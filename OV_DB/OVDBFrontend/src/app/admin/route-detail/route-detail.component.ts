@@ -16,9 +16,7 @@ import { MatDialog } from "@angular/material/dialog";
 import { AreYouSureDialogComponent } from "src/app/are-you-sure-dialog/are-you-sure-dialog.component";
 import saveAs from "file-saver";
 import { AuthenticationService } from "src/app/services/authentication.service";
-import { OperatorService } from "src/app/services/operator.service";
 import { MatButton } from "@angular/material/button";
-import { MatIcon } from "@angular/material/icon";
 import { MatFormField, MatLabel, MatSuffix } from "@angular/material/form-field";
 import { MatInput } from "@angular/material/input";
 import { RouteDetailOperatorSelectionComponent } from "./route-detail-operator-selection/route-detail-operator-selection.component";
@@ -27,7 +25,7 @@ import { MatSelect } from "@angular/material/select";
 import { MatCard, MatCardHeader, MatCardSubtitle, MatCardContent } from "@angular/material/card";
 import { MatChip } from "@angular/material/chips";
 import { MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle, MatExpansionPanelDescription } from "@angular/material/expansion";
-import { DecimalPipe, DatePipe } from "@angular/common";
+import { DecimalPipe } from "@angular/common";
 import { TrawellingTripContext } from "src/app/models/traewelling.model";
 import { TrawellingContextCardComponent } from "src/app/traewelling/context-card/traewelling-context-card.component";
 
@@ -37,7 +35,6 @@ import { TrawellingContextCardComponent } from "src/app/traewelling/context-card
   styleUrls: ["./route-detail.component.scss"],
   imports: [
     MatButton,
-    MatIcon,
     FormsModule,
     ReactiveFormsModule,
     MatFormField,
@@ -62,10 +59,9 @@ import { TrawellingContextCardComponent } from "src/app/traewelling/context-card
     MatSelectionList,
     MatListOption,
     DecimalPipe,
-    DatePipe,
     TranslateModule,
     TrawellingContextCardComponent
-]
+  ]
 })
 export class RouteDetailComponent implements OnInit {
   private activatedRoute = inject(ActivatedRoute);
@@ -179,7 +175,7 @@ export class RouteDetailComponent implements OnInit {
     if (this.activeOperators()) {
       route.operatorIds = this.activeOperators();
     }
-    this.apiService.updateRoute(values as Route).subscribe((_) => {
+    this.apiService.updateRoute({ ...values, firstDateTime: this.formatDateTimeLocal(new Date(values.firstDateTime)) } as Route).subscribe((_) => {
       if (!goToInstances) {
         this.goBack();
       } else {
@@ -189,7 +185,7 @@ export class RouteDetailComponent implements OnInit {
 
         // If we have Träwelling trip data, pass it through query params and session storage
         if (this.fromTraewelling && this.trawellingTripData) {
-          navigationParams.queryParams = { traewellingTripId: this.trawellingTripData.tripId, newRoute:true };
+          navigationParams.queryParams = { traewellingTripId: this.trawellingTripData.tripId, newRoute: true };
         }
 
         this.router.navigate(navigationParams.route, navigationParams.queryParams ? { queryParams: navigationParams.queryParams } : {});
@@ -294,4 +290,14 @@ export class RouteDetailComponent implements OnInit {
       },
     });
   }
+
+  private formatDateTimeLocal(date: Date): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+  }
+
 }

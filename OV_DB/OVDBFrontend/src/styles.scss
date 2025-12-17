@@ -20,6 +20,10 @@ $OVDBFrontend-dark-theme: mat.define-theme((color: (theme-type: dark,
       )));
 
 html {
+  background: var(--mat-toolbar-container-background-color);
+}
+
+body {
   background: var(--mat-app-background-color);
 }
 
@@ -71,10 +75,9 @@ mat-toolbar.mat-primary {
   // Override with bright green colors to match original design
   --mdc-theme-primary: #006b0e;
   --mat-toolbar-container-background-color: #006b0e;
-  --mat-app-background-color: #006b0e;
+  --mat-app-background-color: #303030;
 
   // Ensure the page background is dark
-  background-color: #303030 !important;
   color: white;
 
   // Ensure content areas have dark background
@@ -179,4 +182,59 @@ body {
 
 .mat-mdc-text-field-wrapper{
   background:var(--mat-card-filled-container-color);
+}
+
+// Mobile improvements for better touch interaction
+@media (max-width: 768px) {
+  // Prevent iOS auto-zoom on input focus by ensuring 16px minimum font size
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="tel"],
+  input[type="number"],
+  input[type="search"],
+  input[type="time"],
+  input[type="date"],
+  textarea,
+  select,
+  .mat-mdc-input-element {
+    font-size: 16px !important;
+  }
+
+  // Improve touch targets for all interactive elements
+  .mat-mdc-option,
+  .mat-mdc-list-option {
+    min-height: 48px !important; // Material Design touch target size
+  }
+
+  // Ensure autocomplete options are easily tappable
+  .mat-mdc-autocomplete-panel .mat-mdc-option {
+    min-height: 48px !important;
+  }
+
+  // Ensure select options are easily tappable
+  .mat-mdc-select-panel .mat-mdc-option {
+    min-height: 48px !important;
+  }
+
+  // Improve dialog sizing on mobile
+  .mat-mdc-dialog-container {
+    max-width: 95vw !important;
+  }
+
+  // Better button touch targets
+  .mat-mdc-button,
+  .mat-mdc-raised-button,
+  .mat-mdc-icon-button {
+    min-height: 44px;
+  }
+}
+
+// Prevent text selection on double tap (improves UX on mobile)
+.mat-mdc-list-option,
+.mat-mdc-option {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
 }

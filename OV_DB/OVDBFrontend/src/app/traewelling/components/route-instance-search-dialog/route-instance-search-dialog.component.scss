@@ -95,6 +95,8 @@
   border: 1px solid rgba(0, 0, 0, 0.1);
   border-radius: 4px;
   margin-bottom: 8px;
+  min-height: 60px; // Better touch target
+  cursor: pointer;
 
   &:hover {
     background-color: rgba(0, 0, 0, 0.02);
@@ -105,7 +107,10 @@
     border-color: #1976d2;
   }
 
-
+  // Ensure touch events work properly on mobile
+  .mdc-list-item__content {
+    pointer-events: none; // Allow click through to the list option
+  }
 
   .instance-header {
     display: flex;
