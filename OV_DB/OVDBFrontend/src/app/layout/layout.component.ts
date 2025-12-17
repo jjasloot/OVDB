@@ -3,12 +3,10 @@ import { Router, RouterLink, RouterOutlet } from "@angular/router";
 import { AuthenticationService } from "../services/authentication.service";
 import { TranslationService } from "../services/translation.service";
 import { ThemeService } from "../services/theme.service";
-import { MatSelect } from "@angular/material/select";
 import { RequestsService } from "../services/requests.service";
 import { MatToolbar } from "@angular/material/toolbar";
 import { MatButton, MatIconButton } from "@angular/material/button";
 import { MatIcon } from "@angular/material/icon";
-import { MatOption } from "@angular/material/core";
 import { MatMenuModule } from "@angular/material/menu";
 import { TranslateModule } from "@ngx-translate/core";
 
@@ -22,8 +20,6 @@ import { TranslateModule } from "@ngx-translate/core";
     MatButton,
     RouterLink,
     MatIcon,
-    MatSelect,
-    MatOption,
     RouterOutlet,
     MatMenuModule,
     TranslateModule

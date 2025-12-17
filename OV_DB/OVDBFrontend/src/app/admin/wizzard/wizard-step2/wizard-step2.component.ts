@@ -13,12 +13,12 @@ import { Moment } from "moment";
 import moment from "moment";
 import { MatIconButton, MatButton } from "@angular/material/button";
 import { MatIcon } from "@angular/material/icon";
-import { MatCard, MatCardHeader, MatCardTitle, MatCardContent } from "@angular/material/card";
+import { MatCard } from "@angular/material/card";
 import { MatProgressSpinner } from "@angular/material/progress-spinner";
 import { LeafletModule } from "@bluehalo/ngx-leaflet";
 import { MatList, MatListItem } from "@angular/material/list";
 import { MatChipListbox, MatChipOption } from "@angular/material/chips";
-import { NgClass, DatePipe } from "@angular/common";
+import { NgClass } from "@angular/common";
 import { CdkCopyToClipboard } from "@angular/cdk/clipboard";
 import { TrawellingTripContext } from "src/app/models/traewelling.model";
 import { TrawellingContextCardComponent } from "src/app/traewelling/context-card/traewelling-context-card.component";
@@ -31,9 +31,6 @@ import { TrawellingContextCardComponent } from "src/app/traewelling/context-card
     MatIconButton,
     MatIcon,
     MatCard,
-    MatCardHeader,
-    MatCardTitle,
-    MatCardContent,
     MatProgressSpinner,
     LeafletModule,
     MatList,
@@ -42,7 +39,6 @@ import { TrawellingContextCardComponent } from "src/app/traewelling/context-card
     MatChipOption,
     MatButton,
     NgClass,
-    DatePipe,
     TranslateModule,
     CdkCopyToClipboard,
     TrawellingContextCardComponent

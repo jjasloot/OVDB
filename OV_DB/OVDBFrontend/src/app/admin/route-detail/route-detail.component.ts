@@ -16,9 +16,7 @@ import { MatDialog } from "@angular/material/dialog";
 import { AreYouSureDialogComponent } from "src/app/are-you-sure-dialog/are-you-sure-dialog.component";
 import saveAs from "file-saver";
 import { AuthenticationService } from "src/app/services/authentication.service";
-import { OperatorService } from "src/app/services/operator.service";
 import { MatButton } from "@angular/material/button";
-import { MatIcon } from "@angular/material/icon";
 import { MatFormField, MatLabel, MatSuffix } from "@angular/material/form-field";
 import { MatInput } from "@angular/material/input";
 import { RouteDetailOperatorSelectionComponent } from "./route-detail-operator-selection/route-detail-operator-selection.component";
@@ -27,7 +25,7 @@ import { MatSelect } from "@angular/material/select";
 import { MatCard, MatCardHeader, MatCardSubtitle, MatCardContent } from "@angular/material/card";
 import { MatChip } from "@angular/material/chips";
 import { MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle, MatExpansionPanelDescription } from "@angular/material/expansion";
-import { DecimalPipe, DatePipe } from "@angular/common";
+import { DecimalPipe } from "@angular/common";
 import { TrawellingTripContext } from "src/app/models/traewelling.model";
 import { TrawellingContextCardComponent } from "src/app/traewelling/context-card/traewelling-context-card.component";
 
@@ -37,7 +35,6 @@ import { TrawellingContextCardComponent } from "src/app/traewelling/context-card
   styleUrls: ["./route-detail.component.scss"],
   imports: [
     MatButton,
-    MatIcon,
     FormsModule,
     ReactiveFormsModule,
     MatFormField,
@@ -62,7 +59,6 @@ import { TrawellingContextCardComponent } from "src/app/traewelling/context-card
     MatSelectionList,
     MatListOption,
     DecimalPipe,
-    DatePipe,
     TranslateModule,
     TrawellingContextCardComponent
   ]

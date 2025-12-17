@@ -11,7 +11,6 @@ import {
   MatCardHeader,
   MatCardTitle,
   MatCardContent,
-  MatCardActions,
 } from "@angular/material/card";
 import { MatList, MatListItem } from "@angular/material/list";
 import { CdkCopyToClipboard } from "@angular/cdk/clipboard";
@@ -30,7 +29,6 @@ import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
     MatCardHeader,
     MatCardTitle,
     MatCardContent,
-    MatCardActions,
     MatList,
     MatListItem,
     CdkCopyToClipboard,

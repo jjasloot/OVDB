@@ -17,7 +17,6 @@ import { MatButton, MatIconButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
 import { MatChipListbox, MatChipOption } from '@angular/material/chips';
 import { TranslateModule } from '@ngx-translate/core';
-import { MatCard, MatCardContent, MatCardHeader, MatCardTitle, MatCardActions } from '@angular/material/card';
 import { TrawellingTransportCategory, TrawellingTripContext } from 'src/app/models/traewelling.model';
 import { TrawellingContextCardComponent } from 'src/app/traewelling/context-card/traewelling-context-card.component';
 
@@ -25,7 +24,7 @@ import { TrawellingContextCardComponent } from 'src/app/traewelling/context-card
   selector: 'app-wizard-step1',
   templateUrl: './wizard-step1.component.html',
   styleUrls: ['./wizard-step1.component.scss'],
-  imports: [TrawellingContextCardComponent, MatProgressSpinner, FormsModule, ReactiveFormsModule, MatFormField, MatLabel, MatInput, MatSelect, MatOption, MatCheckbox, NgClass, MatDatepickerInput, MatDatepickerToggle, MatSuffix, MatDatepicker, MatButton, MatIconButton, MatIcon, MatChipListbox, MatChipOption, TranslateModule, MatCard, MatCardContent, MatCardHeader, MatCardTitle, MatCardActions]
+  imports: [TrawellingContextCardComponent, MatProgressSpinner, FormsModule, ReactiveFormsModule, MatFormField, MatLabel, MatInput, MatSelect, MatOption, MatCheckbox, NgClass, MatDatepickerInput, MatDatepickerToggle, MatSuffix, MatDatepicker, MatButton, MatIconButton, MatIcon, MatChipListbox, MatChipOption, TranslateModule]
 })
 export class WizzardStep1Component implements OnInit {
   private formBuilder = inject(UntypedFormBuilder);
