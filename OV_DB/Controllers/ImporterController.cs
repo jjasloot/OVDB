@@ -56,6 +56,11 @@ namespace OV_DB.Controllers
                 _cache.Remove(id);
                 await Task.Delay(1000);
                 responseList = await _cache.GetOrCreateAsync(id, async i => await CreateCacheLines(reference, routeType, network, i, dateTime));
+                if (responseList == null)
+                {
+                    _cache.Remove(id);
+                    return StatusCode(429);
+                }
             }
             return Ok(responseList);
         }
@@ -73,6 +78,11 @@ namespace OV_DB.Controllers
                 _cache.Remove(id);
                 await Task.Delay(1000);
                 responseList = await _cache.GetOrCreateAsync(id, async i => await CreateCacheLinesNetwork(network, dateTime, i));
+                if (responseList == null)
+                {
+                    _cache.Remove(id);
+                    return StatusCode(429);
+                }
             }
             return Ok(responseList);
         }
@@ -86,9 +96,14 @@ namespace OV_DB.Controllers
             var osm = await _cache.GetOrCreateAsync(idCache, async i => await CreateCache(id, i, dateTime));
             if (osm == null)
             {
-                _cache.Remove(id);
+                _cache.Remove(idCache);
                 await Task.Delay(1000);
                 osm = await _cache.GetOrCreateAsync(idCache, async i => await CreateCache(id, i, dateTime));
+                if (osm == null)
+                {
+                    _cache.Remove(idCache);
+                    return StatusCode(429);
+                }
             }
             var relation = osm.Elements.SingleOrDefault(e => e.Type == TypeEnum.Relation);
             var stops = new List<Element>();
@@ -153,11 +168,15 @@ namespace OV_DB.Controllers
             var osm = await _cache.GetOrCreateAsync(idCache, async i => await CreateCache(id, i, dateTime));
             if (osm == null)
             {
-                _cache.Remove(id);
+                _cache.Remove(idCache);
                 await Task.Delay(1000);
                 osm = await _cache.GetOrCreateAsync(idCache, async i => await CreateCache(id, i, dateTime));
+                if (osm == null)
+                {
+                    _cache.Remove(idCache);
+                    return StatusCode(429);
+                }
             }
-            if (osm == null) return StatusCode(429);
 
             var relation = osm.Elements.SingleOrDefault(e => e.Type == TypeEnum.Relation);
             var stops = new List<Element>();
