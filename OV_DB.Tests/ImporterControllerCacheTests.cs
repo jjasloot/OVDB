@@ -289,9 +289,12 @@ namespace OV_DB.Tests
                     // Simulate basic response creation
                     var element = new OSMLineDTO();
                     var relation = osm.Elements.SingleOrDefault(e => e.Type == TypeEnum.Relation);
-                    if (relation.Tags.ContainsKey("name"))
-                        element.Name = relation.Tags["name"];
-                    element.Id = relation.Id;
+                    if (relation != null)
+                    {
+                        if (relation.Tags.ContainsKey("name"))
+                            element.Name = relation.Tags["name"];
+                        element.Id = relation.Id;
+                    }
                     result = new OkObjectResult(element);
                 }
             }
