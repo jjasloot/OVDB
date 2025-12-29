@@ -291,8 +291,10 @@ namespace OV_DB.Tests
                     var relation = osm.Elements.SingleOrDefault(e => e.Type == TypeEnum.Relation);
                     if (relation != null)
                     {
-                        if (relation.Tags.ContainsKey("name"))
+                        if (relation.Tags?.ContainsKey("name") == true)
+                        {
                             element.Name = relation.Tags["name"];
+                        }
                         element.Id = relation.Id;
                     }
                     result = new OkObjectResult(element);
