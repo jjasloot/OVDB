@@ -65,7 +65,7 @@ export class EditMultipleComponent implements OnInit {
     });
 
     this.apiService.getMaps().subscribe(maps => {
-      this.maps = maps;
+      this.maps = maps.filter(m => !m.completed);
     });
   }
 
