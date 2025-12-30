@@ -165,7 +165,7 @@ export class RouteInstancesEditComponent implements OnInit {
       this.updateSuggestions('');
     });
     this.apiService.getMaps().subscribe(data => {
-      this.maps = data;
+      this.maps = data.filter(m => !m.completed);
     })
   }
 

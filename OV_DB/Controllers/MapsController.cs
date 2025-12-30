@@ -73,6 +73,7 @@ namespace OV_DB.Controllers
             dbMap.Default = map.Default;
             dbMap.ShowRouteInfo = map.ShowRouteInfo;
             dbMap.ShowRouteOutline = map.ShowRouteOutline;
+            dbMap.Completed = map.Completed;
             if (map.Default == true)
             {
                 var maps = await _context.Maps.Where(m => m.UserId == userIdClaim && m.MapId != map.MapId).ToListAsync();
