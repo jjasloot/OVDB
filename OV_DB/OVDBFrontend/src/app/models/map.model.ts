@@ -7,4 +7,5 @@ export interface Map {
     default: boolean;
     showRouteInfo: boolean;
     showRouteOutline: boolean;
+    completed: boolean;
 }
