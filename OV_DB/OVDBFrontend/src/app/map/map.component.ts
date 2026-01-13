@@ -577,7 +577,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
       if (
         (value.from?.isSame(from) ?? (value.from == null && from == null)) &&
         (value.to?.isSame(to) ?? (value.to == null && from == null)) &&
-        value.selectedYears.every((y) => years.includes(y)) &&
+        value.selectedYears.every((y) => (years??[]).includes(y)) &&
         (years??[]).every((y) => value.selectedYears.includes(y))
       ) {
         this.active.set(key);

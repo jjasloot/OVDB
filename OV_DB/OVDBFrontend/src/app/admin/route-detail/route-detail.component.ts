@@ -121,7 +121,7 @@ export class RouteDetailComponent implements OnInit {
       this.types = types;
     });
     this.apiService.getMaps().subscribe((maps) => {
-      this.maps = maps;
+      this.maps = maps.filter(m => !m.completed);
     });
     this.activatedRoute.paramMap.subscribe((p) => {
       this.routeId = +p.get("routeId");

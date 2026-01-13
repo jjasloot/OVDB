@@ -196,6 +196,7 @@
   "MAP.POPUP.OPERATINGCOMPANY": "Operating company",
   "ADDMAP.SHOWROUTEINFO": "Show route information on map",
   "ADDMAP.SHOWROUTEOUTLINE": "Highlight route on selection",
+  "ADDMAP.COMPLETED": "Completed",
   "ROUTESLIST.SELECT": "Select",
   "ROUTESLIST.SELECTED": "selected for edit",
   "EDITMULTIPLE.TITLE": "Edit multiple routes",
