@@ -67,11 +67,6 @@ namespace OV_DB.Controllers
                     return Forbid();
                 }
             }
-            var routes = _context.RouteInstances
-                .Include(ri => ri.Route)
-                .ThenInclude(r => r.RouteType)
-                .AsQueryable();
-
             var types = await _context.RouteTypes.ToListAsync(cancellationToken: cancellationToken);
             var colours = new Dictionary<int, LineStyle>();
             types.ForEach(t =>
@@ -79,8 +74,19 @@ namespace OV_DB.Controllers
                 colours.Add(t.TypeId, new LineStyle { Color = Color32.Parse(t.Colour) });
             });
             NetTopologySuite.Geometries.Geometry? limitingArea = null;
+            
+            var collection = new FeatureCollection();
+            var routesList = new List<Route>();
+            var routesToReturn = new Dictionary<int, int>();
+
             if (q.Filter != null)
             {
+                // Apply filters - use existing RouteInstance-based logic for backward compatibility
+                var routes = _context.RouteInstances
+                    .Include(ri => ri.Route)
+                    .ThenInclude(r => r.RouteType)
+                    .AsQueryable();
+
                 var model = Startup.GetEdmModel();
                 IEdmType type = model.FindDeclaredType("OVDB_database.Models.RouteInstance");
                 IEdmNavigationSource source = model.FindDeclaredEntitySet("Products");
@@ -93,19 +99,37 @@ namespace OV_DB.Controllers
                 {
                     limitingArea = await ExtractAreaFromQueryAsync(q, cancellationToken);
                 }
-            }
-            routes = routes.Where(r => r.RouteInstanceMaps.Any(rim => rim.MapId == map.MapId) || r.Route.RouteMaps.Any(rm => rm.MapId == map.MapId));
-            var collection = new FeatureCollection();
-            var routesList = new List<Route>();
-            var routesToReturn = new Dictionary<int, int>();
-            await routes.ForEachAsync(r =>
-            {
-                if (routesToReturn.TryAdd(r.RouteId, 0))
+                
+                routes = routes.Where(r => r.RouteInstanceMaps.Any(rim => rim.MapId == map.MapId) || r.Route.RouteMaps.Any(rm => rm.MapId == map.MapId));
+                
+                await routes.ForEachAsync(r =>
                 {
-                    routesList.Add(r.Route);
+                    if (routesToReturn.TryAdd(r.RouteId, 0))
+                    {
+                        routesList.Add(r.Route);
+                    }
+                    routesToReturn[r.RouteId] += 1;
+                }, cancellationToken: cancellationToken);
+            }
+            else
+            {
+                // No filter applied - include all routes (even those without RouteInstances)
+                var allRoutes = await _context.Routes
+                    .Include(r => r.RouteType)
+                    .Include(r => r.RouteInstances)
+                    .Where(r => r.RouteMaps.Any(rm => rm.MapId == map.MapId))
+                    .ToListAsync(cancellationToken: cancellationToken);
+
+                foreach (var route in allRoutes)
+                {
+                    routesList.Add(route);
+                    // Count instances associated with this map
+                    var instanceCount = route.RouteInstances.Count(ri => 
+                        ri.RouteInstanceMaps.Any(rim => rim.MapId == map.MapId) || 
+                        route.RouteMaps.Any(rm => rm.MapId == map.MapId));
+                    routesToReturn[route.RouteId] = instanceCount;
                 }
-                routesToReturn[r.RouteId] += 1;
-            }, cancellationToken: cancellationToken);
+            }
 
             var total = routesList.Count;
             var processed = 0;
