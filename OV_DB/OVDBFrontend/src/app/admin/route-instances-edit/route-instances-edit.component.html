@@ -51,7 +51,7 @@
             <mat-form-field appearance="outline" class="day-offset-field">
               <mat-label>{{'ROUTEINSTANCESEDIT.DAYOFFSET'|translate}}</mat-label>
               <mat-select [(ngModel)]="endTimeDayOffset" (selectionChange)="setEndTimeDayOffset($event.value)">
-                @for (offset of dayOffsetOptions; track offset) {
+                @for (offset of dayOffsetOptions(); track offset) {
                   <mat-option [value]="offset">
                     @if (offset === 0) {
                       0
@@ -74,7 +74,7 @@
         <mat-form-field appearance="outline">
           <input matInput [(ngModel)]="row.key" [matAutocomplete]="auto" (focus)="updateSuggestions($event.target.value)" (input)="updateSuggestions($event.target.value)">
           <mat-autocomplete autoActiveFirstOption #auto="matAutocomplete">
-            @for (option of filteredOptions|async; track option) {
+            @for (option of filteredOptions(); track option) {
               <mat-option [value]="option">
                 {{option}}
               </mat-option>
@@ -127,7 +127,7 @@
       </mat-panel-title>
     </mat-expansion-panel-header>
     <mat-selection-list [(ngModel)]="selectedMaps">
-      @for (map of maps; track map) {
+      @for (map of maps(); track map) {
         <mat-list-option [value]="map.mapId">
           {{name(map)}}
         </mat-list-option>

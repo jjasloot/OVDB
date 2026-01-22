@@ -31,7 +31,11 @@ namespace OV_DB.Controllers
             {
                 return Forbid();
             }
-            return await _context.Maps.AsNoTracking().Where(m => m.UserId == userIdClaim).OrderBy(m => m.OrderNr).ToListAsync();
+            return await _context.Maps.AsNoTracking()
+                .Where(m => m.UserId == userIdClaim)
+                .OrderBy(m => m.Completed)
+                .ThenBy(m => m.OrderNr)
+                .ToListAsync();
         }
 
         // GET: api/Maps/5

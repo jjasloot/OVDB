@@ -421,7 +421,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     }
        this.router.navigate(
       this.activatedRoute.snapshot.url.map((u) => u.path),
-      { queryParams }
+      { queryParams , replaceUrl: true }
     );
 
     this.loading.set(true);

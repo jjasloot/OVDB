@@ -1,4 +1,4 @@
-import { Component, OnInit, effect, inject } from "@angular/core";
+import { Component, OnInit, effect, inject, signal } from "@angular/core";
 import { Router, RouterLinkActive, RouterLink, RouterOutlet } from "@angular/router";
 import { TranslateService } from "@ngx-translate/core";
 import { MatTabNav, MatTabLink, MatTabNavPanel } from "@angular/material/tabs";
@@ -22,7 +22,7 @@ export class RoutesComponent implements OnInit {
   private router = inject(Router);
   private translateService = inject(TranslateService);
   private userPreferenceService = inject(UserPreferenceService);
-  navLinks: { label: string; link: string; index: number }[];
+  navLinks = signal<{ label: string; link: string; index: number }[]>([]);
   activeLinkIndex: number;
 
   language = toSignal(this.translateService.onLangChange);
@@ -77,13 +77,13 @@ export class RoutesComponent implements OnInit {
       });
     }
 
-    this.navLinks = navLinks;
+    this.navLinks.set(navLinks);
   });
 
   ngOnInit(): void {
     this.router.events.subscribe((res) => {
-      this.activeLinkIndex = this.navLinks.indexOf(
-        this.navLinks.find((tab) => tab.link === "." + this.router.url)
+      this.activeLinkIndex = this.navLinks().indexOf(
+        this.navLinks().find((tab) => tab.link === "." + this.router.url)
       );
     });
 
