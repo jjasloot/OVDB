@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using NetTopologySuite.IO;
 using NetTopologySuite.Operation.Overlay;
 using NetTopologySuite.Operation.OverlayNG;
@@ -16,7 +17,7 @@ public interface IRouteRegionsService
     Task<bool> AssignRegionsToRouteAsync(Route route);
 }
 
-public class RouteRegionsService(OVDBDatabaseContext dbContext) : IRouteRegionsService
+public class RouteRegionsService(OVDBDatabaseContext dbContext, ILogger<RouteRegionsService> logger) : IRouteRegionsService
 {
     public async Task<bool> AssignRegionsToRouteAsync(Route route)
     {
@@ -57,16 +58,17 @@ public class RouteRegionsService(OVDBDatabaseContext dbContext) : IRouteRegionsS
                 if (!intersection.IsEmpty)
                     route.Regions.Add(region);
             }
-            catch
+            catch (Exception ex)
             {
-                Console.WriteLine("Unable to check " + region.Name);
+                logger.LogWarning(ex, "Unable to check region {RegionName} (ID: {RegionId}) for route {RouteId}", region.Name, region.Id, route.RouteId);
             }
         }
         var newRegions = route.Regions.Select(r => r.Id).ToHashSet();
         var updated = !existingRegions.SetEquals(newRegions);
         if (updated)
         {
-            Console.WriteLine(route.Name + ": " + string.Join(", ", existingRegions) + " => "+string.Join(", ", newRegions));
+            logger.LogDebug("Route {RouteName} (ID: {RouteId}) regions updated: {OldRegions} => {NewRegions}", 
+                route.Name, route.RouteId, string.Join(", ", existingRegions), string.Join(", ", newRegions));
         }
         return updated;
 

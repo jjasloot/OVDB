@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, OnInit, input, inject } from "@angular/core";
+import { ChangeDetectorRef, Component, OnInit, input, inject, signal, computed } from "@angular/core";
 import {
   LatLngBounds,
   LatLng,
@@ -63,51 +63,52 @@ export class StationMapComponent implements OnInit {
     layers: [this.baseLayers["OpenStreetMap Mat"]],
     zoom: 5,
   };
-  private _bounds: LatLngBounds;
-  total: number;
-  visited: number;
-  names: { name: any; nameNL: any };
+  private _bounds = signal<LatLngBounds>(null);
+  total = signal<number>(0);
+  visited = signal<number>(0);
+  names = signal<{ name: any; nameNL: any }>({ name: null, nameNL: null });
+  layers = signal<any[]>([]);
+  loading = signal(true);
+
+  percentage = computed(() => {
+    if (!this.total() || this.visited() == undefined) {
+      return "?";
+    }
+    return Math.round((this.visited() / this.total()) * 1000) / 10;
+  });
+
   get bounds(): LatLngBounds {
-    return this._bounds;
+    return this._bounds();
   }
   set bounds(value: LatLngBounds) {
     if (!!value && value.isValid()) {
-      this._bounds = value;
+      this._bounds.set(value);
     } else {
-      this.bounds = new LatLngBounds(
+      this._bounds.set(new LatLngBounds(
         new LatLng(50.656245, 2.92136),
         new LatLng(53.604563, 7.428211)
-      );
+      ));
     }
   }
   leafletLayersControl = {
     baseLayers: this.baseLayers,
     // overlays: this.layers
   };
-  layers = [];
-
-  loading = true;
-  get percentage() {
-    if (!this.total || this.visited == undefined) {
-      return "?";
-    }
-    return Math.round((this.visited / this.total) * 1000) / 10;
-  }
   ngOnInit(): void {
     this.getData();
   }
 
   async getData() {
-    this.loading = true;
+    this.loading.set(true);
 
     const text = await this.apiService.getStationMap(this.guid()).toPromise();
     const parent = this;
-    this.total = text.total;
-    this.visited = text.visited;
-    this.names = {
+    this.total.set(text.total);
+    this.visited.set(text.visited);
+    this.names.set({
       name: text.name,
       nameNL: text.nameNL,
-    };
+    });
     const markers = window.L.markerClusterGroup({
       iconCreateFunction: (cluster) => {
         return divIcon({
@@ -159,7 +160,7 @@ export class StationMapComponent implements OnInit {
         fillOpacity: 0.65,
         radius: 6,
       });
-      (this.layers[0] as MarkerClusterGroup).refreshClusters();
+      (this.layers()[0] as MarkerClusterGroup).refreshClusters();
       await parent.apiService
         .updateStation(
           f.propagatedFrom.feature.properties.id,
@@ -167,9 +168,9 @@ export class StationMapComponent implements OnInit {
         )
         .toPromise();
       if (f.propagatedFrom.feature.properties.visited) {
-        parent.visited++;
+        parent.visited.update(v => v + 1);
       } else {
-        parent.visited--;
+        parent.visited.update(v => v - 1);
       }
       parent.cd.detectChanges();
       console.log(f.propagatedFrom);
@@ -180,11 +181,11 @@ export class StationMapComponent implements OnInit {
         fillOpacity: f.propagatedFrom.feature.properties.visited ? 0.8 : 0.5,
         radius: f.propagatedFrom.feature.properties.visited ? 8 : 4,
       });
-      (this.layers[0] as MarkerClusterGroup).refreshClusters();
+      (this.layers()[0] as MarkerClusterGroup).refreshClusters();
     });
-    this.layers = [markers];
+    this.layers.set([markers]);
     this.bounds = markers.getBounds();
-    this.loading = false;
+    this.loading.set(false);
   }
 
   getName(object) {

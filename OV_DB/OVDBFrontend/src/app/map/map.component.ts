@@ -63,7 +63,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
 
   readonly guid = input<string>(undefined);
   readonly mapContainer = viewChild<HTMLElement>("mapContainer");
-  loading: boolean | number = false;
+  loading = signal<boolean | number>(false);
   from: moment.Moment;
   to: moment.Moment;
   selectedRegion: number[] = [];
@@ -223,7 +223,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     this.signalRService.updates$.subscribe({
       next: (data) => {
         if (data.requestIdentifier === this.requestIdentifier) {
-          this.loading = data.percentage;
+          this.loading.set(data.percentage);
           this.cd.detectChanges();
         }
       },
@@ -396,7 +396,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     } else {
       this.bounds = track.getBounds();
     }
-    this.loading = false;
+    this.loading.set(false);
   }
   private getFilter() {
     const queryParams = {};
@@ -421,10 +421,10 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     }
        this.router.navigate(
       this.activatedRoute.snapshot.url.map((u) => u.path),
-      { queryParams }
+      { queryParams , replaceUrl: true }
     );
 
-    this.loading = true;
+    this.loading.set(true);
     let filter = "";
     if (!!this.to && !!this.from) {
       filter += filter +=
@@ -577,7 +577,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
       if (
         (value.from?.isSame(from) ?? (value.from == null && from == null)) &&
         (value.to?.isSame(to) ?? (value.to == null && from == null)) &&
-        value.selectedYears.every((y) => years.includes(y)) &&
+        value.selectedYears.every((y) => (years??[]).includes(y)) &&
         (years??[]).every((y) => value.selectedYears.includes(y))
       ) {
         this.active.set(key);

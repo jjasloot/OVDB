@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, DestroyRef } from "@angular/core";
+import { Component, OnInit, inject, DestroyRef, signal } from "@angular/core";
 import { AuthenticationService } from "../services/authentication.service";
 import { ApiService } from "../services/api.service";
 import { Map } from "../models/map.model";
@@ -45,16 +45,16 @@ export class HomeComponent implements OnInit {
   private apiService = inject(ApiService);
   private destroyRef = inject(DestroyRef);
 
-  maps: Map[];
+  maps = signal<Map[]>([]);
   loading = 0;
-  stationMaps: StationMap[];
+  stationMaps = signal<StationMap[]>([]);
 
   ngOnInit() {
     // Load data if already logged in
     if (this.isLoggedIn) {
       this.loadData();
     }
-    
+
     // Subscribe to login state changes to reload data when user logs in
     this.authService.isLoggedIn$.pipe(
       takeUntilDestroyed(this.destroyRef)
@@ -69,7 +69,7 @@ export class HomeComponent implements OnInit {
     this.loading++;
     this.apiService.getMaps().subscribe(
       (maps) => {
-        this.maps = maps;
+        this.maps.set(maps);
         this.loading--;
       },
       (error) => {
@@ -80,7 +80,7 @@ export class HomeComponent implements OnInit {
     this.loading++;
     this.apiService.listStationMaps().subscribe(
       (maps) => {
-        this.stationMaps = maps;
+        this.stationMaps.set(maps);
         this.loading--;
       },
       (error) => {
@@ -99,8 +99,9 @@ export class HomeComponent implements OnInit {
   }
 
   view(map: Map) {
+    const years = map.completed ? null : this.getCurrentYear();
     this.router.navigate(["/map", map.mapGuid], {
-      queryParams: { years: this.getCurrentYear() },
+      queryParams: years ? { years } : {},
     });
   }
 

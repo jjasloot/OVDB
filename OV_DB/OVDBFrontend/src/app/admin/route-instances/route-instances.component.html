@@ -1,8 +1,8 @@
 <div class="container">
   <h3>{{'RIDES.FOR'|translate}} {{typeName}} {{routeName}}</h3>
-  @if (!loading) {
+  @if (!loading()) {
   <div>
-    @for (instance of instances; track instance) {
+    @for (instance of instances(); track instance.routeInstanceId) {
     <mat-expansion-panel>
       <mat-expansion-panel-header>
         <mat-panel-title>

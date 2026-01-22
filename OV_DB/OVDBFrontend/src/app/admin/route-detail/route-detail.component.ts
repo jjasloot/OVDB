@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, viewChild, inject } from "@angular/core";
+import { Component, DestroyRef, OnInit, signal, viewChild, inject, computed } from "@angular/core";
 import { ActivatedRoute, Router } from "@angular/router";
 import { Route } from "src/app/models/route.model";
 import { ApiService } from "src/app/services/api.service";
@@ -28,6 +28,7 @@ import { MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle, Mat
 import { DecimalPipe } from "@angular/common";
 import { TrawellingTripContext } from "src/app/models/traewelling.model";
 import { TrawellingContextCardComponent } from "src/app/traewelling/context-card/traewelling-context-card.component";
+import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 
 @Component({
   selector: "app-route-detail",
@@ -73,18 +74,19 @@ export class RouteDetailComponent implements OnInit {
   private dateAdapter = inject<DateAdapter<any>>(DateAdapter);
   private dialog = inject(MatDialog);
   private router = inject(Router);
+  private destroyRef = inject(DestroyRef);
 
-  routeId: number;
-  route: Route;
+  routeId = signal<number>(0);
+  route = signal<Route | null>(null);
   form: UntypedFormGroup;
-  types: RouteType[];
-  countries: Country[];
-  maps: Map[];
+  types = signal<RouteType[]>([]);
+  countries = signal<Country[]>([]);
+  maps = signal<Map[]>([]);
   activeOperators = signal<number[]>([]);
   logo = signal<string | null>(null);
-  colour: string;
-  fromTraewelling = false;
-  trawellingTripData: TrawellingTripContext | null = null;
+  colour = signal<string>("");
+  fromTraewelling = signal(false);
+  trawellingTripData = signal<TrawellingTripContext | null>(null);
 
   readonly countriesSelection = viewChild<MatSelectionList>("countriesSelection");
   readonly mapsSelection = viewChild<MatSelectionList>("mapsSelection");
@@ -114,45 +116,55 @@ export class RouteDetailComponent implements OnInit {
   }
 
   ngOnInit() {
-    this.translationService.languageChanged.subscribe(() => {
-      this.dateAdapter.setLocale(this.translationService.dateLocale);
-    });
-    this.apiService.getTypes().subscribe((types) => {
-      this.types = types;
-    });
-    this.apiService.getMaps().subscribe((maps) => {
-      this.maps = maps;
-    });
-    this.activatedRoute.paramMap.subscribe((p) => {
-      this.routeId = +p.get("routeId");
-      this.loadData();
-    });
+    this.translationService.languageChanged
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => {
+        this.dateAdapter.setLocale(this.translationService.dateLocale);
+      });
+    this.apiService.getTypes()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((types) => {
+        this.types.set(types);
+      });
+    this.apiService.getMaps()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((maps) => {
+        this.maps.set(maps.filter(m => !m.completed));
+      });
+    this.activatedRoute.paramMap
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((p) => {
+        this.routeId.set(+p.get("routeId"));
+        this.loadData();
+      });
 
     // Check if coming from Träwelling
-    this.activatedRoute.queryParams.subscribe(params => {
-      if (params['traewellingTripId']) {
-        this.fromTraewelling = true;
-        const tripDataStr = sessionStorage.getItem('traewellingTripContext');
-        if (tripDataStr) {
-          const trawellingTripData = JSON.parse(tripDataStr) as TrawellingTripContext;
-          if (trawellingTripData.tripId === +params['traewellingTripId']) {
-            // If the IDs match, use the data
-            this.trawellingTripData = trawellingTripData;
+    this.activatedRoute.queryParams
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(params => {
+        if (params['traewellingTripId']) {
+          this.fromTraewelling.set(true);
+          const tripDataStr = sessionStorage.getItem('traewellingTripContext');
+          if (tripDataStr) {
+            const trawellingTripData = JSON.parse(tripDataStr) as TrawellingTripContext;
+            if (trawellingTripData.tripId === +params['traewellingTripId']) {
+              // If the IDs match, use the data
+              this.trawellingTripData.set(trawellingTripData);
+            }
           }
         }
-      }
-    });
+      });
   }
   private loadData() {
-    this.apiService.getRoute(this.routeId).subscribe((data) => {
-      this.route = data;
-      if (!this.route.firstDateTime) {
-        this.route.firstDateTime = moment();
+    this.apiService.getRoute(this.routeId()).subscribe((data) => {
+      this.route.set(data);
+      if (!data.firstDateTime) {
+        data.firstDateTime = moment();
       }
-      this.colour = this.route.overrideColour;
-      this.selectedMaps = this.route.routeMaps.map((r) => r.mapId);
-      this.form.patchValue(this.route);
-      if (this.route.routeInstancesCount > 1) {
+      this.colour.set(data.overrideColour);
+      this.selectedMaps = data.routeMaps.map((r) => r.mapId);
+      this.form.patchValue(data);
+      if (data.routeInstancesCount > 1) {
         this.form.controls.firstDateTime.disable();
       }
     });
@@ -167,8 +179,8 @@ export class RouteDetailComponent implements OnInit {
       return false;
     }
     const route = values as UpdateRoute;
-    route.routeId = this.route.routeId;
-    route.overrideColour = this.colour;
+    route.routeId = this.route()!.routeId;
+    route.overrideColour = this.colour();
     route.maps = mapsSelection.selectedOptions.selected.map(
       (s) => s.value
     );
@@ -180,12 +192,12 @@ export class RouteDetailComponent implements OnInit {
         this.goBack();
       } else {
         const navigationParams: any = {
-          route: ["/", "admin", "routes", "instances", this.route.routeId]
+          route: ["/", "admin", "routes", "instances", this.route()!.routeId]
         };
 
         // If we have Träwelling trip data, pass it through query params and session storage
-        if (this.fromTraewelling && this.trawellingTripData) {
-          navigationParams.queryParams = { traewellingTripId: this.trawellingTripData.tripId, newRoute: true };
+        if (this.fromTraewelling() && this.trawellingTripData()) {
+          navigationParams.queryParams = { traewellingTripId: this.trawellingTripData()!.tripId, newRoute: true };
         }
 
         this.router.navigate(navigationParams.route, navigationParams.queryParams ? { queryParams: navigationParams.queryParams } : {});
@@ -203,14 +215,14 @@ export class RouteDetailComponent implements OnInit {
         item:
           this.translateService.instant("ROUTE.DELETEFRONT") +
           " " +
-          this.route.name +
+          this.route()!.name +
           " " +
           this.translateService.instant("ROUTE.DELETEBACK"),
       },
     });
     dialogRef.afterClosed().subscribe((result: boolean) => {
       if (result) {
-        this.apiService.deleteRoute(this.route.routeId).subscribe((_) => {
+        this.apiService.deleteRoute(this.route()!.routeId).subscribe((_) => {
           this.goBack();
         });
       }
@@ -221,7 +233,7 @@ export class RouteDetailComponent implements OnInit {
     if (!this.countriesSelection() || !this.countries) {
       return "";
     }
-    const countries = this.countries
+    const countries = this.countries()
       .filter((c) =>
         this.countriesSelection().selectedOptions.selected.some(
           (rc) => rc.value === c.countryId
@@ -243,7 +255,7 @@ export class RouteDetailComponent implements OnInit {
     if (!this.mapsSelection() || !this.maps) {
       return "";
     }
-    const maps = this.maps
+    const maps = this.maps()
       .filter((m) =>
         this.mapsSelection().selectedOptions.selected.some(
           (rm) => rm.value === m.mapId
@@ -266,8 +278,8 @@ export class RouteDetailComponent implements OnInit {
   }
 
   export() {
-    this.apiService.getExport(this.route.routeId).subscribe((data) => {
-      saveAs(data, this.route.name.trim().replace(" ", "_") + ".gpx");
+    this.apiService.getExport(this.route()!.routeId).subscribe((data) => {
+      saveAs(data, this.route()!.name.trim().replace(" ", "_") + ".gpx");
     });
   }
 
@@ -284,7 +296,7 @@ export class RouteDetailComponent implements OnInit {
   }
 
   assignRegions() {
-    this.apiService.assignRegionsToRoute(this.route.routeId).subscribe({
+    this.apiService.assignRegionsToRoute(this.route()!.routeId).subscribe({
       next: () => {
         this.loadData();
       },
@@ -292,6 +304,9 @@ export class RouteDetailComponent implements OnInit {
   }
 
   private formatDateTimeLocal(date: Date): string {
+    if(!date || isNaN(date.getTime())) {
+      return "";
+    }
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');

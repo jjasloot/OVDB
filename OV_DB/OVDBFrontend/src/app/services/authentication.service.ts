@@ -73,8 +73,16 @@ export class AuthenticationService {
       this.refreshToken = data.refreshToken;
     }
 
-    const expiry = this.helper.getTokenExpirationDate(this.token).valueOf() - new Date().valueOf();
-    this.refreshTrigger = setTimeout(() => this.refreshTheToken(), Math.max(expiry - (5 * 60 * 1000), 0));
+    // Get token expiration date with null check
+    const expirationDate = this.helper.getTokenExpirationDate(this.token);
+    if (!expirationDate) {
+      console.error('Invalid token - cannot schedule refresh');
+      return;
+    }
+
+    const expiry = expirationDate.valueOf() - new Date().valueOf();
+    const refreshBuffer = 5 * 60 * 1000; // 5 minutes in milliseconds
+    this.refreshTrigger = setTimeout(() => this.refreshTheToken(), Math.max(expiry - refreshBuffer, 0));
     
     // Emit login state change
     this.updateLoginState();
@@ -129,7 +137,11 @@ export class AuthenticationService {
     if (!this.token) {
       return false;
     }
-    return (this.helper.getTokenExpirationDate(this.token) > new Date());
+    const expirationDate = this.helper.getTokenExpirationDate(this.token);
+    if (!expirationDate) {
+      return false;
+    }
+    return expirationDate > new Date();
   }
 
   private updateLoginState(): void {

@@ -29,6 +29,8 @@ namespace OVDB_database.Models
         public bool ShowRouteInfo { get; set; } = true;
         [JsonProperty]
         public bool ShowRouteOutline { get; set; } = true;
+        [JsonProperty]
+        public bool Completed { get; set; } = false;
         public int OrderNr { get; set; }
 
         public User? User { get; set; }

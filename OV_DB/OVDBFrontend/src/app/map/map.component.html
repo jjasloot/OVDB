@@ -24,10 +24,10 @@
         [leafletLayersControl]="leafletLayersControl"
         [leafletFitBounds]="bounds"
       ></div>
-      <div [ngClass]="{ loading: loading, 'loading-indicator': true }">
+      <div [ngClass]="{ loading: loading(), 'loading-indicator': true }">
         <mat-progress-spinner
-          [mode]="loading === true ? 'indeterminate' : 'determinate'"
-          [value]="loading === true ? null : loading"
+          [mode]="loading() === true ? 'indeterminate' : 'determinate'"
+          [value]="loading() === true ? null : loading()"
         ></mat-progress-spinner>
       </div>
     </div>
@@ -84,7 +84,7 @@
     color="primary"
     id="refresh"
     (click)="refresh()"
-    [disabled]="loading"
+    [disabled]="loading()"
     >
     <mat-icon>refresh</mat-icon>
   </button>

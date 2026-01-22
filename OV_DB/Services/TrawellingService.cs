@@ -420,7 +420,7 @@ namespace OV_DB.Services
                     }
                 }
 
-                if (!optimizedTrips.Any() && layer < 20 && !string.IsNullOrWhiteSpace(statusesResponse.Links.Next))
+                if (!optimizedTrips.Any() && layer < 10 && !string.IsNullOrWhiteSpace(statusesResponse.Links.Next))
                 {
                     return await GetOptimizedTripsAsync(user, page + 1, layer + 1);
                 }

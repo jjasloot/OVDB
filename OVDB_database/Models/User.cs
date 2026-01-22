@@ -1,4 +1,4 @@
-﻿using Newtonsoft.Json;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -11,7 +11,14 @@ namespace OVDB_database.Models
     {
         [Key]
         public int Id { get; set; }
+        
+        [Required]
+        [EmailAddress]
+        [MaxLength(256)]
         public string Email { get; set; }
+        
+        [Required]
+        [MaxLength(512)]
         public string Password { get; set; }
         public bool IsAdmin { get; set; }
         public DateTime LastLogin { get; set; }

@@ -1,5 +1,5 @@
 <nav mat-tab-nav-bar [tabPanel]="tabPanel">
-  @for (link of navLinks; track link) {
+  @for (link of navLinks(); track link.link) {
     <a mat-tab-link [routerLink]="link.link" routerLinkActive #rla="routerLinkActive" [active]="rla.isActive">
       {{link.label}}
     </a>

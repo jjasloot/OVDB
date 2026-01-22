@@ -1,17 +1,17 @@
 <h3 mat-dialog-title>Aangepaste selectie</h3>
 <div mat-dialog-content>
   <mat-accordion>
-    @if (regions) {
+    @if (regions()) {
     <mat-expansion-panel>
       <mat-expansion-panel-header>
         <mat-panel-title>
           {{ "FILTER.COUNTRIES" | translate }}
         </mat-panel-title>
         <mat-panel-description class="ellipsis">
-          {{ regionsString }}
+          {{ regionsString() }}
         </mat-panel-description>
       </mat-expansion-panel-header>
-      @for (region of regions; track region.id) {
+      @for (region of regions(); track region.id) {
       <mat-expansion-panel [disabled]="region.subRegions.length === 0">
         <mat-expansion-panel-header>
           <mat-checkbox (click)="$event.stopPropagation()" [checked]="isCountryChecked(region.id)"
@@ -61,36 +61,36 @@
       }
     </mat-expansion-panel>
     }
-    @if (routeTypes) {
+    @if (routeTypes()) {
     <mat-expansion-panel>
       <mat-expansion-panel-header>
         <mat-panel-title>
           {{ "FILTER.TYPES" | translate }}
         </mat-panel-title>
         <mat-panel-description class="ellipsis">
-          {{ typesString }}
+          {{ typesString() }}
         </mat-panel-description>
       </mat-expansion-panel-header>
       <div class="grid">
-        @for (type of routeTypes; track type) {
+        @for (type of routeTypes(); track type) {
         <mat-checkbox [checked]="isTypeChecked(type.typeId)" (change)="setType(type.typeId, $event)">{{ name(type)
           }}</mat-checkbox>
         }
       </div>
     </mat-expansion-panel>
     }
-    @if (routeTypes) {
+    @if (routeTypes()) {
     <mat-expansion-panel>
       <mat-expansion-panel-header>
         <mat-panel-title>
           {{ "FILTER.YEARS" | translate }}
         </mat-panel-title>
         <mat-panel-description class="ellipsis">
-          {{ yearsString }}
+          {{ yearsString() }}
         </mat-panel-description>
       </mat-expansion-panel-header>
       <div class="grid">
-        @for (year of years; track year) {
+        @for (year of years(); track year) {
         <mat-checkbox [checked]="isYearChecked(year)" (change)="setYear(year, $event)">
           {{ displayYear(year) }}</mat-checkbox>
         }
@@ -103,25 +103,25 @@
     <div class="info">{{ "FILTER.EXPLAINDATES" | translate }}</div>
     <mat-form-field>
       <mat-label>{{ "FILTER.STARTDATE" | translate }}</mat-label>
-      <input matInput [matDatepicker]="picker" [(ngModel)]="from" (input)="resetYears()" />
+      <input matInput [matDatepicker]="picker" [ngModel]="from()" (ngModelChange)="from.set($event)" (input)="resetYears()" />
       <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
       <mat-datepicker #picker></mat-datepicker>
     </mat-form-field>
     <mat-form-field>
       <mat-label>{{ "FILTER.ENDDATE" | translate }}</mat-label>
-      <input matInput [matDatepicker]="picker2" [(ngModel)]="to" (input)="resetYears()" />
+      <input matInput [matDatepicker]="picker2" [ngModel]="to()" (ngModelChange)="to.set($event)" (input)="resetYears()" />
       <mat-datepicker-toggle matSuffix [for]="picker2"></mat-datepicker-toggle>
       <mat-datepicker #picker2></mat-datepicker>
     </mat-form-field>
   </div>
 
   <div>
-    <mat-checkbox [(ngModel)]="includeLineColours">{{
+    <mat-checkbox [ngModel]="includeLineColours()" (ngModelChange)="includeLineColours.set($event)">{{
       "FILTER.INCLUDELINECOLOURS" | translate
       }}</mat-checkbox>
   </div>
   <div>
-    <mat-checkbox [(ngModel)]="limitToSelectedAreas">{{
+    <mat-checkbox [ngModel]="limitToSelectedAreas()" (ngModelChange)="limitToSelectedAreas.set($event)">{{
       "FILTER.LIMITTOSELECTEDAREAS" | translate }}</mat-checkbox>
   </div>
 </div>

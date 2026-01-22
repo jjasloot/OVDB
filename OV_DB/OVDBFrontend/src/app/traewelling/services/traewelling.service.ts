@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { map, first } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 import {
   TrawellingConnectionStatus,
@@ -29,21 +29,24 @@ export class TrawellingService {
 
   // Connection management
   async getConnectionStatus(): Promise<TrawellingConnectionStatus> {
-    const response = this.http.get<TrawellingConnectionStatus>(`${this.baseUrl}/status`);
-    return response.toPromise();
+    return this.http.get<TrawellingConnectionStatus>(`${this.baseUrl}/status`)
+      .pipe(first())
+      .toPromise();
   }
 
   // Trip management
   async getUnimportedTrips(page: number = 1): Promise<TrawellingTripsResponse> {
     const params = new HttpParams().set('page', page.toString());
-    const response = this.http.get<TrawellingTripsResponse>(`${this.baseUrl}/unimported`, { params });
-    return response.toPromise();
+    return this.http.get<TrawellingTripsResponse>(`${this.baseUrl}/unimported`, { params })
+      .pipe(first())
+      .toPromise();
   }
 
   async ignoreTrip(tripId: number): Promise<TrawellingIgnoreResponse> {
     const request: TrawellingIgnoreRequest = { statusId: tripId };
-    const response = this.http.post<TrawellingIgnoreResponse>(`${this.baseUrl}/ignore`, request);
-    return response.toPromise();
+    return this.http.post<TrawellingIgnoreResponse>(`${this.baseUrl}/ignore`, request)
+      .pipe(first())
+      .toPromise();
   }
 
   // Route Instance linking (existing functionality)
@@ -52,14 +55,16 @@ export class TrawellingService {
       .set('date', trip.transport.origin.departureScheduled.split('T')[0])
       .set('query', trip.transport.origin.name);
     
-    const response = this.http.get<RouteInstanceSearchResult[]>(`${this.baseUrl}/route-instances`, { params });
-    return response.toPromise();
+    return this.http.get<RouteInstanceSearchResult[]>(`${this.baseUrl}/route-instances`, { params })
+      .pipe(first())
+      .toPromise();
   }
 
   async linkToRouteInstance(tripId: number, routeInstanceId: number): Promise<LinkToRouteInstanceResponse> {
     const request: LinkToRouteInstanceRequest = { statusId: tripId, routeInstanceId };
-    const response = this.http.post<LinkToRouteInstanceResponse>(`${this.baseUrl}/link`, request);
-    return response.toPromise();
+    return this.http.post<LinkToRouteInstanceResponse>(`${this.baseUrl}/link`, request)
+      .pipe(first())
+      .toPromise();
   }
 
   // Route search for "Add to Existing Route" functionality
@@ -71,8 +76,12 @@ export class TrawellingService {
       .set('sortColumn','date')
       .set('descending',true);
     
-    const response = this.http.get<RoutesListResponse>(this.routesUrl, { params });
-    return response.pipe(map((routes) => routes.routes || [])).toPromise();
+    return this.http.get<RoutesListResponse>(this.routesUrl, { params })
+      .pipe(
+        map((routes) => routes.routes || []),
+        first()
+      )
+      .toPromise();
   }
 
   // Trip context extraction for route creation workflows

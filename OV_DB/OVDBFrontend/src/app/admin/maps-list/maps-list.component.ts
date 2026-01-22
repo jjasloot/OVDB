@@ -104,8 +104,9 @@ export class MapsListComponent implements OnInit {
     return location.origin + "/link/" + map.sharingLinkName;
   }
   view(map: Map) {
+    const years = map.completed ? null : this.getCurrentYear();
     this.router.navigate(["/map", map.mapGuid], {
-      queryParams: { years: this.getCurrentYear()},
+      queryParams: years ? { years } : {},
     });
   }
 

@@ -3,7 +3,7 @@
 </button>
 
 <div class="form">
-  <app-traewelling-context-card [tripContext]="trawellingTripData" />
+  <app-traewelling-context-card [tripContext]="trawellingTripData()" />
   @if(!!route){
   <form [formGroup]="form" (ngSubmit)="onSubmit(form.value, false)">
     <mat-form-field>
@@ -39,7 +39,7 @@
       <input matInput formControlName="lineNumber" />
     </mat-form-field>
     <div style="display: flex">
-      <app-route-detail-operator-selection [formField]="form.controls['operatingCompany']" [routeId]="routeId"
+      <app-route-detail-operator-selection [formField]="form.controls['operatingCompany']" [routeId]="routeId()"
         (activeOperators)="activeOperators.set($event)"></app-route-detail-operator-selection>
     </div>
     <div class="row">
@@ -60,7 +60,7 @@
     <mat-form-field>
       <mat-label>{{ "ROUTEDETAILS.TYPE" | translate }}</mat-label>
       <mat-select formControlName="routeTypeId" required>
-        @for (type of types; track type) {
+        @for (type of types(); track type) {
         <mat-option [value]="type.typeId">
           {{ name(type) }}
         </mat-option>
@@ -69,7 +69,7 @@
     </mat-form-field>
     <p>
       {{ "ROUTEDETAILS.CALCULATEDDISTANCE" | translate }}:
-      {{ route?.calculatedDistance | number : "1.1-3" }} km
+      {{ route()?.calculatedDistance | number : "1.1-3" }} km
     </p>
     <mat-form-field>
       <mat-label>{{ "ROUTEDETAILS.OVERRIDEISTANCE" | translate }}</mat-label>
@@ -84,7 +84,7 @@
         }}</mat-card-subtitle>
     </mat-card-header>
     <mat-card-content>
-      @for(region of route.regions; track region.id) {
+      @for(region of route()?.regions; track region.id) {
       <mat-chip style="margin-right: 1rem">{{ name(region) }}
       </mat-chip>
       }
@@ -102,7 +102,7 @@
     </mat-expansion-panel-header>
 
     <mat-selection-list [(ngModel)]="selectedMaps" #mapsSelection>
-      @for (map of maps; track map) {
+      @for (map of maps(); track map) {
       <mat-list-option [value]="map.mapId">
         {{ map.name }}
       </mat-list-option>

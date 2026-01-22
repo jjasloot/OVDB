@@ -23,11 +23,11 @@
       </mat-card-content>
     </mat-card>
 
-    @if (!!maps) {
+    @if (!!maps() || !!stationMaps()) {
     <div>
-      @if (maps.length > 0 || stationMaps.length > 0) {
+      @if (maps().length > 0 || stationMaps().length > 0) {
       <mat-list>
-        @for (map of maps; track map) {
+        @for (map of maps(); track map) {
         <mat-list-item>
           <div style="
               display: flex;
@@ -35,7 +35,9 @@
               justify-content: space-between;
             ">
             <h4 mat-line>
-              <b>{{ getName(map) }}</b>
+              <b>{{ getName(map) }}</b>@if(map.completed){
+              <mat-icon style="height: 19px;">download_done</mat-icon>
+              }
             </h4>
             <div class="desktop buttons">
               <button mat-raised-button color="primary" (click)="view(map)">
@@ -60,7 +62,7 @@
           </div>
         </mat-list-item>
         }
-        @for (map of stationMaps; track map) {
+        @for (map of stationMaps(); track map) {
         <mat-list-item>
           <div style="
               display: flex;
@@ -108,10 +110,10 @@
   <p>{{ "HOME.INFONOTLOGGEDIN" | translate }}</p>
   <div class="buttons">
     <button mat-raised-button [routerLink]="['/login']">
-        <mat-icon>login</mat-icon>
-        {{ "HOME.LOGIN" | translate }}
-      </button>
-      <button mat-raised-button [routerLink]="['/register']">
+      <mat-icon>login</mat-icon>
+      {{ "HOME.LOGIN" | translate }}
+    </button>
+    <button mat-raised-button [routerLink]="['/register']">
       <mat-icon>person_add</mat-icon>
       {{ "HOME.REGISTER" | translate }}
     </button>

@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using NetTopologySuite.Geometries;
 using OVDB_database.Database;
@@ -12,9 +13,11 @@ using OVDB_database.Database;
 namespace OVDB_database.Migrations
 {
     [DbContext(typeof(OVDBDatabaseContext))]
-    partial class OVDBDatabaseContextModelSnapshot : ModelSnapshot
+    [Migration("20251230190130_AddCompletedToMap")]
+    partial class AddCompletedToMap
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -32,9 +35,7 @@ namespace OVDB_database.Migrations
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("InviteCodeId"));
 
                     b.Property<string>("Code")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("varchar(50)");
+                        .HasColumnType("longtext");
 
                     b.Property<int?>("CreatedByUserId")
                         .HasColumnType("int");
@@ -49,9 +50,6 @@ namespace OVDB_database.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("InviteCodeId");
-
-                    b.HasIndex("Code")
-                        .IsUnique();
 
                     b.HasIndex("CreatedByUserId");
 
@@ -168,8 +166,6 @@ namespace OVDB_database.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("ExpiresAt");
-
-                    b.HasIndex("IsRevoked");
 
                     b.HasIndex("Token")
                         .IsUnique();
@@ -390,9 +386,7 @@ namespace OVDB_database.Migrations
                         .HasColumnType("tinyint(1)");
 
                     b.Property<string>("Key")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("varchar(100)");
+                        .HasColumnType("longtext");
 
                     b.Property<int>("RouteInstanceId")
                         .HasColumnType("int");
@@ -402,7 +396,7 @@ namespace OVDB_database.Migrations
 
                     b.HasKey("RouteInstancePropertyId");
 
-                    b.HasIndex("RouteInstanceId", "Key");
+                    b.HasIndex("RouteInstanceId");
 
                     b.ToTable("RouteInstanceProperties");
                 });
@@ -566,9 +560,6 @@ namespace OVDB_database.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("MapGuid")
-                        .IsUnique();
-
                     b.HasIndex("UserId");
 
                     b.ToTable("StationGroupings");
@@ -601,9 +592,6 @@ namespace OVDB_database.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("StationMapId");
-
-                    b.HasIndex("MapGuid")
-                        .IsUnique();
 
                     b.HasIndex("UserId");
 
@@ -747,9 +735,7 @@ namespace OVDB_database.Migrations
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Email")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("varchar(256)");
+                        .HasColumnType("longtext");
 
                     b.Property<Guid>("Guid")
                         .HasColumnType("char(36)");
@@ -761,9 +747,7 @@ namespace OVDB_database.Migrations
                         .HasColumnType("datetime(6)");
 
                     b.Property<string>("Password")
-                        .IsRequired()
-                        .HasMaxLength(512)
-                        .HasColumnType("varchar(512)");
+                        .HasColumnType("longtext");
 
                     b.Property<int?>("PreferredLanguage")
                         .HasColumnType("int");
@@ -787,16 +771,6 @@ namespace OVDB_database.Migrations
                         .HasColumnType("longtext");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("Email")
-                        .IsUnique();
-
-                    b.HasIndex("Guid")
-                        .IsUnique();
-
-                    b.HasIndex("TelegramUserId")
-                        .IsUnique()
-                        .HasFilter("[TelegramUserId] IS NOT NULL");
 
                     b.ToTable("Users");
                 });
@@ -895,13 +869,11 @@ namespace OVDB_database.Migrations
                 {
                     b.HasOne("OVDB_database.Models.User", "CreatedByUser")
                         .WithMany()
-                        .HasForeignKey("CreatedByUserId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .HasForeignKey("CreatedByUserId");
 
                     b.HasOne("OVDB_database.Models.User", "User")
                         .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .HasForeignKey("UserId");
 
                     b.Navigation("CreatedByUser");
 

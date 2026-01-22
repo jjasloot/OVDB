@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from "@angular/core";
+import { Component, OnInit, inject, signal, computed, effect } from "@angular/core";
 import { MatCheckboxChange, MatCheckbox } from "@angular/material/checkbox";
 import { MatDialogRef, MAT_DIALOG_DATA, MatDialogTitle, MatDialogContent, MatDialogActions } from "@angular/material/dialog";
 import { FilterSettings } from "../models/filterSettings";
@@ -59,24 +59,59 @@ export class MapFilterComponent implements OnInit {
   data = inject(MAT_DIALOG_DATA);
 
   settings: FilterSettings;
-  regions: Region[] = [];
-  selectedCountries: number[] = [];
-  selectedTypes: number[] = [];
-  selectedYears: number[] = [];
-  to: Moment;
-  from: Moment;
-  routeTypes: RouteType[];
-  years: number[];
-  ownMap = false;
-  guid: string;
-  includeLineColours = true;
-  limitToSelectedAreas = false;
+  regions = signal<Region[]>([]);
+  selectedCountries = signal<number[]>([]);
+  selectedTypes = signal<number[]>([]);
+  selectedYears = signal<number[]>([]);
+  to = signal<Moment | null>(null);
+  from = signal<Moment | null>(null);
+  routeTypes = signal<RouteType[]>([]);
+  years = signal<number[]>([]);
+  ownMap = signal(false);
+  guid = signal<string>("");
+  includeLineColours = signal(true);
+  limitToSelectedAreas = signal(false);
+
+  regionsString = computed(() => {
+    return (
+      this.selectedCountries().length +
+      " " +
+      this.translateService.instant("FILTER.SELECTED")
+    );
+  });
+
+  typesString = computed(() => {
+    const typesNames = this.routeTypes()
+      .filter((c) => this.selectedTypes().includes(c.typeId))
+      .map((c) => this.name(c));
+    let typesString = typesNames.join(", ");
+    if (typesNames.length > 2) {
+      typesString =
+        typesNames.length +
+        " " +
+        this.translateService.instant("FILTER.SELECTED");
+    }
+    return typesString;
+  });
+
+  yearsString = computed(() => {
+    const displayedYears = this.selectedYears().map((y) => this.displayYear(y));
+    let yearsString = displayedYears.join(", ");
+    if (displayedYears.length > 3) {
+      yearsString =
+        displayedYears.length +
+        " " +
+        this.translateService.instant("FILTER.SELECTED");
+    }
+    return yearsString;
+  });
+
   constructor() {
     const data = this.data;
 
     this.settings = data.settings;
-    this.ownMap = data.ownMap;
-    this.guid = data.guid;
+    this.ownMap.set(data.ownMap);
+    this.guid.set(data.guid);
   }
 
   ngOnInit() {
@@ -85,38 +120,40 @@ export class MapFilterComponent implements OnInit {
       this.sortNames();
       this.dateAdapter.setLocale(this.translationService.dateLocale);
     });
-    this.selectedCountries = this.settings.selectedCountries;
-    this.selectedTypes = this.settings.selectedTypes;
-    this.selectedYears = this.settings.selectedYears;
-    this.from = this.settings.from;
-    this.to = this.settings.to;
-    this.includeLineColours = this.settings.includeLineColours;
-    this.limitToSelectedAreas = this.settings.limitToSelectedAreas;
-    this.regionsService.getMapsRegions(this.guid).subscribe((regions) => {
-      this.regions = regions;
+    this.selectedCountries.set(this.settings.selectedCountries);
+    this.selectedTypes.set(this.settings.selectedTypes);
+    this.selectedYears.set(this.settings.selectedYears);
+    this.from.set(this.settings.from);
+    this.to.set(this.settings.to);
+    this.includeLineColours.set(this.settings.includeLineColours);
+    this.limitToSelectedAreas.set(this.settings.limitToSelectedAreas);
+    this.regionsService.getMapsRegions(this.guid()).subscribe((regions) => {
+      this.regions.set(regions);
       this.sortNames();
     });
 
-    this.apiService.getTypes(this.guid).subscribe((types) => {
-      this.routeTypes = types;
+    this.apiService.getTypes(this.guid()).subscribe((types) => {
+      this.routeTypes.set(types);
     });
-    this.apiService.getYears(this.guid).subscribe((types) => {
-      this.years = types.sort().reverse();
+    this.apiService.getYears(this.guid()).subscribe((types) => {
+      this.years.set(types.sort().reverse());
     });
   }
   sortNames() {
-    if (this.regions) {
-      this.regions = this.regions.sort((a, b) => {
-        if (this.name(a) > this.name(b)) {
-          return 1;
-        }
-        if (this.name(a) < this.name(b)) {
-          return -1;
-        }
-        return 0;
-      });
+    if (this.regions()) {
+      this.regions.update((regions) =>
+        regions.sort((a, b) => {
+          if (this.name(a) > this.name(b)) {
+            return 1;
+          }
+          if (this.name(a) < this.name(b)) {
+            return -1;
+          }
+          return 0;
+        })
+      );
 
-      this.regions.forEach((region) => {
+      this.regions().forEach((region) => {
         region.subRegions = region.subRegions.sort((a, b) => {
           if (this.name(a) > this.name(b)) {
             return 1;
@@ -137,121 +174,100 @@ export class MapFilterComponent implements OnInit {
   }
 
   return() {
-    if (this.selectedCountries.length === 0) {
-      this.limitToSelectedAreas = false;
+    if (this.selectedCountries().length === 0) {
+      this.limitToSelectedAreas.set(false);
     }
-    if (this.from !== null && this.from.isValid()) {
+    if (this.from() !== null && this.from().isValid()) {
       const settings = new FilterSettings(
         "filter",
-        this.includeLineColours,
-        this.limitToSelectedAreas,
-        this.from,
-        this.to,
-        this.selectedCountries,
-        this.selectedTypes,
+        this.includeLineColours(),
+        this.limitToSelectedAreas(),
+        this.from(),
+        this.to(),
+        this.selectedCountries(),
+        this.selectedTypes(),
         []
       );
       this.dialogRef.close(settings);
     } else {
       const settings = new FilterSettings(
         "filter",
-        this.includeLineColours,
-        this.limitToSelectedAreas,
+        this.includeLineColours(),
+        this.limitToSelectedAreas(),
         null,
         null,
-        this.selectedCountries,
-        this.selectedTypes,
-        this.selectedYears
+        this.selectedCountries(),
+        this.selectedTypes(),
+        this.selectedYears()
       );
       this.dialogRef.close(settings);
     }
   }
 
   isCountryChecked(id: number) {
-    return this.selectedCountries.includes(id);
+    return this.selectedCountries().includes(id);
   }
 
   setCountry(id: number, event: MatCheckboxChange, subRegions?: Region[]) {
-    if (event.checked && !this.selectedCountries.includes(id)) {
-      this.selectedCountries.push(id);
-      this.selectedCountries = this.selectedCountries.filter(
-        (i) => !subRegions.map((r) => r.id).includes(i)
+    if (event.checked && !this.selectedCountries().includes(id)) {
+      this.selectedCountries.update((countries) => [
+        ...countries,
+        id,
+      ]);
+      this.selectedCountries.update((countries) =>
+        countries.filter(
+          (i) => !subRegions.map((r) => r.id).includes(i)
+        )
       );
     }
-    if (!event.checked && this.selectedCountries.includes(id)) {
-      this.selectedCountries = this.selectedCountries.filter((i) => i !== id);
-      this.selectedCountries = this.selectedCountries.filter(
-        (i) => !subRegions.map((r) => r.id).includes(i)
+    if (!event.checked && this.selectedCountries().includes(id)) {
+      this.selectedCountries.update((countries) =>
+        countries.filter((i) => i !== id)
+      );
+      this.selectedCountries.update((countries) =>
+        countries.filter(
+          (i) => !subRegions.map((r) => r.id).includes(i)
+        )
       );
     }
-
-
   }
 
 
   anyChecked(regions: Region[]) {
-    return regions.some((r) => this.selectedCountries.includes(r.id) || r.subRegions.some(sr => this.selectedCountries.includes(sr.id)));
+    return regions.some((r) => this.selectedCountries().includes(r.id) || r.subRegions.some(sr => this.selectedCountries().includes(sr.id)));
   }
 
   isTypeChecked(id: number) {
-    return this.selectedTypes.includes(id);
+    return this.selectedTypes().includes(id);
   }
 
   setType(id: number, event: MatCheckboxChange) {
-    if (event.checked && !this.selectedTypes.includes(id)) {
-      this.selectedTypes.push(id);
+    if (event.checked && !this.selectedTypes().includes(id)) {
+      this.selectedTypes.update((types) => [...types, id]);
     }
-    if (!event.checked && this.selectedTypes.includes(id)) {
-      this.selectedTypes = this.selectedTypes.filter((i) => i !== id);
+    if (!event.checked && this.selectedTypes().includes(id)) {
+      this.selectedTypes.update((types) =>
+        types.filter((i) => i !== id)
+      );
     }
   }
 
   isYearChecked(id: number) {
-    return this.selectedYears.includes(id);
+    return this.selectedYears().includes(id);
   }
 
   setYear(year: number, event: MatCheckboxChange) {
-    if (event.checked && !this.selectedYears.includes(year)) {
-      this.selectedYears.push(year);
+    if (event.checked && !this.selectedYears().includes(year)) {
+      this.selectedYears.update((years) => [...years, year]);
     }
-    if (!event.checked && this.selectedYears.includes(year)) {
-      this.selectedYears = this.selectedYears.filter((i) => i !== year);
+    if (!event.checked && this.selectedYears().includes(year)) {
+      this.selectedYears.update((years) =>
+        years.filter((i) => i !== year)
+      );
     }
   }
 
-  get regionsString(): string {
-    return (
-      this.selectedCountries.length +
-      " " +
-      this.translateService.instant("FILTER.SELECTED")
-    );
-  }
 
-  get typesString(): string {
-    const typesNames = this.routeTypes
-      .filter((c) => this.selectedTypes.includes(c.typeId))
-      .map((c) => this.name(c));
-    let typesString = typesNames.join(", ");
-    if (typesNames.length > 2) {
-      typesString =
-        typesNames.length +
-        " " +
-        this.translateService.instant("FILTER.SELECTED");
-    }
-    return typesString;
-  }
-
-  get yearsString(): string {
-    const displayedYears = this.selectedYears.map((y) => this.displayYear(y));
-    let yearsString = displayedYears.join(", ");
-    if (displayedYears.length > 3) {
-      yearsString =
-        displayedYears.length +
-        " " +
-        this.translateService.instant("FILTER.SELECTED");
-    }
-    return yearsString;
-  }
 
   displayYear(year: number) {
     if (year) {
@@ -261,7 +277,7 @@ export class MapFilterComponent implements OnInit {
   }
 
   resetYears() {
-    this.selectedYears = [];
+    this.selectedYears.set([]);
   }
 
   anySubRegionHasSubSubRegions(region: Region) {
