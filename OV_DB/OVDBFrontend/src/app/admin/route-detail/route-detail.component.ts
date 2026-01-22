@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, viewChild, inject } from "@angular/core";
+import { Component, DestroyRef, OnInit, signal, viewChild, inject } from "@angular/core";
 import { ActivatedRoute, Router } from "@angular/router";
 import { Route } from "src/app/models/route.model";
 import { ApiService } from "src/app/services/api.service";
@@ -28,6 +28,7 @@ import { MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle, Mat
 import { DecimalPipe } from "@angular/common";
 import { TrawellingTripContext } from "src/app/models/traewelling.model";
 import { TrawellingContextCardComponent } from "src/app/traewelling/context-card/traewelling-context-card.component";
+import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 
 @Component({
   selector: "app-route-detail",
@@ -73,6 +74,7 @@ export class RouteDetailComponent implements OnInit {
   private dateAdapter = inject<DateAdapter<any>>(DateAdapter);
   private dialog = inject(MatDialog);
   private router = inject(Router);
+  private destroyRef = inject(DestroyRef);
 
   routeId: number;
   route: Route;
@@ -114,34 +116,44 @@ export class RouteDetailComponent implements OnInit {
   }
 
   ngOnInit() {
-    this.translationService.languageChanged.subscribe(() => {
-      this.dateAdapter.setLocale(this.translationService.dateLocale);
-    });
-    this.apiService.getTypes().subscribe((types) => {
-      this.types = types;
-    });
-    this.apiService.getMaps().subscribe((maps) => {
-      this.maps = maps.filter(m => !m.completed);
-    });
-    this.activatedRoute.paramMap.subscribe((p) => {
-      this.routeId = +p.get("routeId");
-      this.loadData();
-    });
+    this.translationService.languageChanged
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => {
+        this.dateAdapter.setLocale(this.translationService.dateLocale);
+      });
+    this.apiService.getTypes()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((types) => {
+        this.types = types;
+      });
+    this.apiService.getMaps()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((maps) => {
+        this.maps = maps.filter(m => !m.completed);
+      });
+    this.activatedRoute.paramMap
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((p) => {
+        this.routeId = +p.get("routeId");
+        this.loadData();
+      });
 
     // Check if coming from Träwelling
-    this.activatedRoute.queryParams.subscribe(params => {
-      if (params['traewellingTripId']) {
-        this.fromTraewelling = true;
-        const tripDataStr = sessionStorage.getItem('traewellingTripContext');
-        if (tripDataStr) {
-          const trawellingTripData = JSON.parse(tripDataStr) as TrawellingTripContext;
-          if (trawellingTripData.tripId === +params['traewellingTripId']) {
-            // If the IDs match, use the data
-            this.trawellingTripData = trawellingTripData;
+    this.activatedRoute.queryParams
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(params => {
+        if (params['traewellingTripId']) {
+          this.fromTraewelling = true;
+          const tripDataStr = sessionStorage.getItem('traewellingTripContext');
+          if (tripDataStr) {
+            const trawellingTripData = JSON.parse(tripDataStr) as TrawellingTripContext;
+            if (trawellingTripData.tripId === +params['traewellingTripId']) {
+              // If the IDs match, use the data
+              this.trawellingTripData = trawellingTripData;
+            }
           }
         }
-      }
-    });
+      });
   }
   private loadData() {
     this.apiService.getRoute(this.routeId).subscribe((data) => {

@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using OVDB_database.Database;
@@ -25,15 +25,15 @@ namespace OV_DB.Controllers
         public async Task<ActionResult<List<int>>> GetYearsAsync(string id)
         {
             var guid = Guid.Parse(id);
-            var map = await DatabaseContext.Maps.SingleOrDefaultAsync(u => u.MapGuid == guid);
+            var map = await DatabaseContext.Maps.AsNoTracking().SingleOrDefaultAsync(u => u.MapGuid == guid);
             if (map == null)
             {
                 return NotFound();
             }
-            var years = await DatabaseContext.Routes
-             .Where(r => r.RouteTypeId != null)
-             .Where(r => r.RouteMaps.Any(rm => rm.MapId == map.MapId) || r.RouteInstances.Any(ri => ri.RouteInstanceMaps.Any(rim => rim.MapId == map.MapId)))
-             .SelectMany(r => r.RouteInstances.Select(ri => ri.Date.Year))
+            var years = await DatabaseContext.RouteInstances
+             .Where(ri => ri.Route.RouteTypeId != null)
+             .Where(ri => ri.Route.RouteMaps.Any(rm => rm.MapId == map.MapId) || ri.RouteInstanceMaps.Any(rim => rim.MapId == map.MapId))
+             .Select(ri => ri.Date.Year)
              .Distinct()
              .ToListAsync();
             return Ok(years);
@@ -43,13 +43,15 @@ namespace OV_DB.Controllers
         public async Task<ActionResult<List<RouteType>>> GetTypesAsync(string id)
         {
             var guid = Guid.Parse(id);
-            var map = await DatabaseContext.Maps.SingleOrDefaultAsync(u => u.MapGuid == guid);
+            var map = await DatabaseContext.Maps.AsNoTracking().SingleOrDefaultAsync(u => u.MapGuid == guid);
             if (map == null)
             {
                 return NotFound();
             }
             var list = await DatabaseContext.RouteTypes
-                .Where(rt => rt.Routes.Any(r => r.RouteMaps.Any(rm => rm.MapId == map.MapId) || r.RouteInstances.Any(ri => ri.RouteInstanceMaps.Any(rim => rim.MapId == map.MapId))))
+                .Where(rt => DatabaseContext.Routes
+                    .Where(r => r.RouteTypeId == rt.TypeId)
+                    .Any(r => r.RouteMaps.Any(rm => rm.MapId == map.MapId) || r.RouteInstances.Any(ri => ri.RouteInstanceMaps.Any(rim => rim.MapId == map.MapId))))
                 .OrderBy(r => r.OrderNr).ToListAsync();
             return list;
         }

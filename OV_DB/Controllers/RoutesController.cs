@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -55,6 +55,7 @@ namespace OV_DB.Controllers
             }
             var originalQuery = _context.Routes
                 .Include(r => r.RouteInstances)
+                .Include(r => r.RouteType)
                 .Where(r => r.RouteMaps.Any(rm => rm.Map.UserId == userIdClaim));
 
             if (!string.IsNullOrWhiteSpace(filter))

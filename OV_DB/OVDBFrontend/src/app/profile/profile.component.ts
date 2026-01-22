@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, DestroyRef, OnInit, inject } from '@angular/core';
 import { UntypedFormBuilder, UntypedFormGroup, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { ApiService } from '../services/api.service';
 import { UserProfile, UpdateProfile, ChangePassword } from '../models/user-profile.model';
@@ -18,6 +18,7 @@ import { MatList, MatListItem, MatListItemTitle, MatListItemLine } from '@angula
 import { MatDivider } from '@angular/material/divider';
 import { Router } from '@angular/router';
 import { AuthenticationService } from '../services/authentication.service';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'app-profile',
@@ -56,6 +57,7 @@ export class ProfileComponent implements OnInit {
   private userPreferenceService = inject(UserPreferenceService);
   private router = inject(Router);
   private authService = inject(AuthenticationService);
+  private destroyRef = inject(DestroyRef);
 
   profileForm: UntypedFormGroup;
   passwordForm: UntypedFormGroup;
@@ -70,6 +72,7 @@ export class ProfileComponent implements OnInit {
   sessions: any[] = [];
   sessionsLoading = false;
   revokingSessionId: number | null = null;
+  private pollingIntervalId: number | null = null;
 
   languages = [
     { value: 'en', label: 'English' },
@@ -174,9 +177,11 @@ export class ProfileComponent implements OnInit {
   }
 
   private showMessage(messageKey: string): void {
-    this.translateService.get(messageKey).subscribe(message => {
-      this.snackBar.open(message, '', { duration: 3000 });
-    });
+    this.translateService.get(messageKey)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(message => {
+        this.snackBar.open(message, '', { duration: 3000 });
+      });
   }
 
   loadTrawellingStatus(): void {
@@ -208,11 +213,13 @@ export class ProfileComponent implements OnInit {
           
           if (event.data.type === 'oauth-success') {
             window.removeEventListener('message', messageListener);
+            this.stopPolling();
             this.trawellingConnecting = false;
             this.showMessage('PROFILE.TRAEWELLING_CONNECTED_SUCCESSFULLY');
             this.loadTrawellingStatus();
           } else if (event.data.type === 'oauth-error') {
             window.removeEventListener('message', messageListener);
+            this.stopPolling();
             this.trawellingConnecting = false;
             this.showMessage('PROFILE.TRAEWELLING_ERROR_CONNECTING');
           }
@@ -221,9 +228,9 @@ export class ProfileComponent implements OnInit {
         window.addEventListener('message', messageListener);
         
         // Fallback: Poll for the window to be closed (in case postMessage fails)
-        const checkClosed = setInterval(() => {
+        this.pollingIntervalId = window.setInterval(() => {
           if (authWindow?.closed) {
-            clearInterval(checkClosed);
+            this.stopPolling();
             window.removeEventListener('message', messageListener);
             if (this.trawellingConnecting) {
               // Only reload if we haven't already handled the message
@@ -369,5 +376,12 @@ export class ProfileComponent implements OnInit {
     const result = os ? `${browser}${versionStr} on ${os}` : `${browser}${versionStr}`;
     
     return result;
+  }
+
+  private stopPolling(): void {
+    if (this.pollingIntervalId !== null) {
+      window.clearInterval(this.pollingIntervalId);
+      this.pollingIntervalId = null;
+    }
   }
 }

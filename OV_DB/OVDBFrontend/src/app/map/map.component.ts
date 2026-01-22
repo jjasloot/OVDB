@@ -63,7 +63,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
 
   readonly guid = input<string>(undefined);
   readonly mapContainer = viewChild<HTMLElement>("mapContainer");
-  loading: boolean | number = false;
+  loading = signal<boolean | number>(false);
   from: moment.Moment;
   to: moment.Moment;
   selectedRegion: number[] = [];
@@ -223,7 +223,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     this.signalRService.updates$.subscribe({
       next: (data) => {
         if (data.requestIdentifier === this.requestIdentifier) {
-          this.loading = data.percentage;
+          this.loading.set(data.percentage);
           this.cd.detectChanges();
         }
       },
@@ -396,7 +396,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     } else {
       this.bounds = track.getBounds();
     }
-    this.loading = false;
+    this.loading.set(false);
   }
   private getFilter() {
     const queryParams = {};
@@ -424,7 +424,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
       { queryParams }
     );
 
-    this.loading = true;
+    this.loading.set(true);
     let filter = "";
     if (!!this.to && !!this.from) {
       filter += filter +=

@@ -1,4 +1,4 @@
-import { Component, OnInit, AfterViewInit, ElementRef, HostListener, viewChild, inject } from "@angular/core";
+import { Component, DestroyRef, OnInit, AfterViewInit, ElementRef, HostListener, viewChild, inject } from "@angular/core";
 import { ApiService } from "src/app/services/api.service";
 import { Route } from "src/app/models/route.model";
 import { Router } from "@angular/router";
@@ -34,6 +34,7 @@ import { MatChipListbox, MatChipOption } from "@angular/material/chips";
 import { MatTooltip } from "@angular/material/tooltip";
 import { MatIcon } from "@angular/material/icon";
 import { AsyncPipe, DatePipe, DecimalPipe, formatNumber } from "@angular/common";
+import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 
 @Component({
   selector: "app-routes-list",
@@ -77,6 +78,7 @@ export class RoutesListComponent implements OnInit, AfterViewInit {
   private bottomSheet = inject(MatBottomSheet);
   private operatorService = inject(OperatorService);
   private tableStateService = inject(TableStateService);
+  private destroyRef = inject(DestroyRef);
 
   private readonly TABLE_ID = 'routes-list';
   
@@ -165,18 +167,23 @@ export class RoutesListComponent implements OnInit, AfterViewInit {
           this.paginator().pageIndex = 0;
           this.saveCurrentTableState();
           this.filter$.next();
-        })
+        }),
+        takeUntilDestroyed(this.destroyRef)
       )
       .subscribe();
 
-    this.sort().sortChange.subscribe(() => {
-      this.paginator().pageIndex = 0;
-      this.saveCurrentTableState();
-    });
+    this.sort().sortChange
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => {
+        this.paginator().pageIndex = 0;
+        this.saveCurrentTableState();
+      });
 
-    this.paginator().page.subscribe(() => {
-      this.saveCurrentTableState();
-    });
+    this.paginator().page
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => {
+        this.saveCurrentTableState();
+      });
 
     merge(this.sort().sortChange, this.paginator().page, this.filter$)
       .pipe(
@@ -187,7 +194,8 @@ export class RoutesListComponent implements OnInit, AfterViewInit {
             this.saveCurrentTableState();
           }
         }),
-        switchMap(() => this.loadRoutesPage())
+        switchMap(() => this.loadRoutesPage()),
+        takeUntilDestroyed(this.destroyRef)
       )
       .subscribe({
         next: (routes) => {

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
@@ -31,7 +31,7 @@ namespace OV_DB.Controllers
             {
                 return Forbid();
             }
-            return await _context.Maps.Where(m => m.UserId == userIdClaim).OrderBy(m => m.OrderNr).ToListAsync();
+            return await _context.Maps.AsNoTracking().Where(m => m.UserId == userIdClaim).OrderBy(m => m.OrderNr).ToListAsync();
         }
 
         // GET: api/Maps/5
@@ -43,7 +43,7 @@ namespace OV_DB.Controllers
             {
                 return Forbid();
             }
-            var map = await _context.Maps.Where(m => m.UserId == userIdClaim).SingleOrDefaultAsync(m => m.MapId == id);
+            var map = await _context.Maps.AsNoTracking().Where(m => m.UserId == userIdClaim).SingleOrDefaultAsync(m => m.MapId == id);
 
             if (map == null)
             {

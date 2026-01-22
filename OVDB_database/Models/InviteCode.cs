@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Text;
@@ -9,6 +9,8 @@ namespace OVDB_database.Models
     {
         [Key]
         public int InviteCodeId { get; set; }
+        [Required]
+        [MaxLength(50)]
         public string Code { get; set; }
         public bool IsUsed { get; set; } = false;
         public int? UserId { get; set; }

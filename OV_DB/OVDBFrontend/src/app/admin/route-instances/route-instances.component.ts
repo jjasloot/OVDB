@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit, inject } from "@angular/core";
+import { Component, DestroyRef, OnInit, inject } from "@angular/core";
 import { ActivatedRoute, Router } from "@angular/router";
 import { ApiService } from "src/app/services/api.service";
 import { RouteInstance } from "src/app/models/routeInstance.model";
@@ -18,6 +18,7 @@ import { MatButton, MatFabButton } from "@angular/material/button";
 import { MatProgressSpinner } from "@angular/material/progress-spinner";
 import { MatIcon } from "@angular/material/icon";
 import { TrawellingTripContext } from "src/app/models/traewelling.model";
+import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 
 @Component({
   selector: "app-route-instances",
@@ -45,6 +46,7 @@ export class RouteInstancesComponent implements OnInit {
   private dateAdapter = inject<DateAdapter<any>>(DateAdapter);
   private dialog = inject(MatDialog);
   private router = inject(Router);
+  private destroyRef = inject(DestroyRef);
 
   routeId: number;
   route: Route;
@@ -61,33 +63,39 @@ export class RouteInstancesComponent implements OnInit {
 
   ngOnInit(): void {
     this.dateAdapter.setLocale(this.translationService.dateLocale);
-    this.translationService.languageChanged.subscribe(() => {
-      this.dateAdapter.setLocale(this.translationService.dateLocale);
-    });
+    this.translationService.languageChanged
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => {
+        this.dateAdapter.setLocale(this.translationService.dateLocale);
+      });
 
-    this.activatedRoute.paramMap.subscribe((p) => {
-      this.routeId = +p.get("routeId");
-      this.getData();
-    });
+    this.activatedRoute.paramMap
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((p) => {
+        this.routeId = +p.get("routeId");
+        this.getData();
+      });
 
     // Check if coming from Träwelling
-    this.activatedRoute.queryParams.subscribe(params => {
-      this.newRoute = !!params['newRoute'];
-      if (params['traewellingTripId']) {
-        this.fromTraewelling = true;
-        const tripDataStr = sessionStorage.getItem('traewellingTripContext');
-        if (tripDataStr) {
-          const trawellingTripData = JSON.parse(tripDataStr) as TrawellingTripContext;
-          if (trawellingTripData.tripId === +params['traewellingTripId']) {
-            // If the IDs match, use the data
-            this.trawellingTripData = trawellingTripData;
-            if (!this.newRoute) {
-              this.add();
+    this.activatedRoute.queryParams
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(params => {
+        this.newRoute = !!params['newRoute'];
+        if (params['traewellingTripId']) {
+          this.fromTraewelling = true;
+          const tripDataStr = sessionStorage.getItem('traewellingTripContext');
+          if (tripDataStr) {
+            const trawellingTripData = JSON.parse(tripDataStr) as TrawellingTripContext;
+            if (trawellingTripData.tripId === +params['traewellingTripId']) {
+              // If the IDs match, use the data
+              this.trawellingTripData = trawellingTripData;
+              if (!this.newRoute) {
+                this.add();
+              }
             }
           }
         }
-      }
-    });
+      });
   }
 
 

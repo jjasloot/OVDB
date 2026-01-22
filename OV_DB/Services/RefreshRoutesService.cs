@@ -11,10 +11,11 @@ using System.Collections.Concurrent;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using OV_DB.Models;
+using Microsoft.Extensions.Logging;
 
 namespace OV_DB.Services
 {
-    public class RefreshRoutesService(IServiceProvider serviceProvider, IHubContext<MapGenerationHub> hubContext) : IHostedService, IDisposable
+    public class RefreshRoutesService(IServiceProvider serviceProvider, IHubContext<MapGenerationHub> hubContext, ILogger<RefreshRoutesService> logger) : IHostedService, IDisposable
     {
         public static readonly ConcurrentQueue<int> RouteQueue = new ConcurrentQueue<int>();
         private Task _backgroundTask;
@@ -37,7 +38,10 @@ namespace OV_DB.Services
                     {
                         await RefreshRoutesAsync(routeId);
                     }
-                    catch { }
+                    catch (Exception ex)
+                    {
+                        logger.LogError(ex, "Error refreshing routes for region {RegionId}", routeId);
+                    }
                 }
                 else
                 {

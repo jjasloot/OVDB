@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using OVDB_database.Models;
 using System;
@@ -77,12 +77,54 @@ namespace OVDB_database.Database
                 entity.HasIndex(e => e.Token).IsUnique();
                 entity.HasIndex(e => e.UserId);
                 entity.HasIndex(e => e.ExpiresAt);
+                entity.HasIndex(e => e.IsRevoked);
                 entity.Property(e => e.Token).IsRequired().HasMaxLength(256);
                 entity.Property(e => e.DeviceInfo).HasMaxLength(500);
                 entity.HasOne(e => e.User)
                     .WithMany(u => u.RefreshTokens)
                     .HasForeignKey(e => e.UserId)
                     .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            // User entity configuration
+            modelBuilder.Entity<User>(entity =>
+            {
+                entity.HasIndex(e => e.Email).IsUnique();
+                entity.HasIndex(e => e.Guid).IsUnique();
+                entity.HasIndex(e => e.TelegramUserId).IsUnique()
+                    .HasFilter("[TelegramUserId] IS NOT NULL");
+            });
+
+            // InviteCode entity configuration
+            modelBuilder.Entity<InviteCode>(entity =>
+            {
+                entity.HasIndex(e => e.Code).IsUnique();
+                entity.HasOne(e => e.CreatedByUser)
+                    .WithMany()
+                    .HasForeignKey(e => e.CreatedByUserId)
+                    .OnDelete(DeleteBehavior.SetNull);
+                entity.HasOne(e => e.User)
+                    .WithMany()
+                    .HasForeignKey(e => e.UserId)
+                    .OnDelete(DeleteBehavior.SetNull);
+            });
+
+            // StationMap entity configuration
+            modelBuilder.Entity<StationMap>(entity =>
+            {
+                entity.HasIndex(e => e.MapGuid).IsUnique();
+            });
+
+            // StationGrouping entity configuration
+            modelBuilder.Entity<StationGrouping>(entity =>
+            {
+                entity.HasIndex(e => e.MapGuid).IsUnique();
+            });
+
+            // RouteInstanceProperty entity configuration
+            modelBuilder.Entity<RouteInstanceProperty>(entity =>
+            {
+                entity.HasIndex(e => new { e.RouteInstanceId, e.Key });
             });
         }
 

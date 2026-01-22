@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from "@angular/core";
+import { Component, DestroyRef, OnInit, inject } from "@angular/core";
 import { Router, RouterLink, RouterOutlet } from "@angular/router";
 import { AuthenticationService } from "../services/authentication.service";
 import { TranslationService } from "../services/translation.service";
@@ -9,6 +9,7 @@ import { MatButton, MatIconButton } from "@angular/material/button";
 import { MatIcon } from "@angular/material/icon";
 import { MatMenuModule } from "@angular/material/menu";
 import { TranslateModule } from "@ngx-translate/core";
+import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 
 @Component({
   selector: "app-layout",
@@ -30,6 +31,7 @@ export class LayoutComponent implements OnInit {
   private authService = inject(AuthenticationService);
   private requestsService = inject(RequestsService);
   private translationService = inject(TranslationService);
+  private destroyRef = inject(DestroyRef);
   themeService = inject(ThemeService);
 
   hasUnreadRequests = false;
@@ -37,12 +39,15 @@ export class LayoutComponent implements OnInit {
 
   ngOnInit() {
     if (this.isLoggedIn) {
-      this.requestsService.hasAnyUnreadRequests().subscribe((hasUnread) => {
-        this.hasUnreadRequests = hasUnread;
-      });
+      this.requestsService.hasAnyUnreadRequests()
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe((hasUnread) => {
+          this.hasUnreadRequests = hasUnread;
+        });
       if (this.isAdmin) {
         this.requestsService
           .adminHasAnyUnreadRequests()
+          .pipe(takeUntilDestroyed(this.destroyRef))
           .subscribe((hasUnread) => {
             this.hasUnreadRequestsAdmin = hasUnread;
           });
