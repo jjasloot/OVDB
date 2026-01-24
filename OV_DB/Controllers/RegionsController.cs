@@ -73,6 +73,25 @@ namespace OV_DB.Controllers
             return parsed.Elements.Single().Tags;
         }
 
+        [HttpPut("{id}")]
+        public async Task<IActionResult> Update(int id, [FromBody] RegionDTO input)
+        {
+            var adminClaim = (User.Claims.SingleOrDefault(c => c.Type == "admin").Value ?? "false");
+            if (string.Equals(adminClaim, "false", StringComparison.OrdinalIgnoreCase))
+            {
+                return Forbid();
+            }
+
+            var region = await _context.Regions.FindAsync(id);
+            if (region == null)
+                return NotFound();
+
+            region.IsoCode = input.IsoCode;
+            
+            await _context.SaveChangesAsync();
+            return Ok();
+        }
+
         [HttpPost]
         public async Task<ActionResult> CreateNew(NewRegion newRegion)
         {
@@ -237,6 +256,7 @@ namespace OV_DB.Controllers
                 NameNL = r.NameNL,
                 OriginalName = r.OriginalName,
                 OsmRelationId = r.OsmRelationId,
+                IsoCode = r.IsoCode,
                 SubRegions = regions.Where(c => c.ParentRegionId == r.Id).Select(c => new RegionDTO
                 {
                     Id = c.Id,
@@ -244,13 +264,15 @@ namespace OV_DB.Controllers
                     NameNL = c.NameNL,
                     OriginalName = c.OriginalName,
                     OsmRelationId = c.OsmRelationId,
+                    IsoCode = c.IsoCode,
                     SubRegions = regions.Where(sc => sc.ParentRegionId == c.Id).Select(sc => new RegionDTO
                     {
                         Id = sc.Id,
                         Name = sc.Name,
                         NameNL = sc.NameNL,
                         OriginalName = sc.OriginalName,
-                        OsmRelationId = sc.OsmRelationId
+                        OsmRelationId = sc.OsmRelationId,
+                        IsoCode = sc.IsoCode
                     })
                 })
             });
@@ -270,6 +292,7 @@ namespace OV_DB.Controllers
                 NameNL = r.NameNL,
                 OriginalName = r.OriginalName,
                 OsmRelationId = r.OsmRelationId,
+                IsoCode = r.IsoCode,
                 SubRegions = regions.Where(c => c.ParentRegionId == r.Id).Select(c => new RegionDTO
                 {
                     Id = c.Id,
@@ -277,13 +300,15 @@ namespace OV_DB.Controllers
                     NameNL = c.NameNL,
                     OriginalName = c.OriginalName,
                     OsmRelationId = c.OsmRelationId,
+                    IsoCode = c.IsoCode,
                     SubRegions = regions.Where(sc => sc.ParentRegionId == c.Id).Select(sc => new RegionDTO
                     {
                         Id = sc.Id,
                         Name = sc.Name,
                         NameNL = sc.NameNL,
                         OriginalName = sc.OriginalName,
-                        OsmRelationId = sc.OsmRelationId
+                        OsmRelationId = sc.OsmRelationId,
+                        IsoCode = sc.IsoCode
                     })
                 })
             });
@@ -316,6 +341,7 @@ namespace OV_DB.Controllers
                     NameNL = r.NameNL,
                     OriginalName = r.OriginalName,
                     OsmRelationId = r.OsmRelationId,
+                    IsoCode = r.IsoCode,
                     SubRegions = r.SubRegions.Select(c => new RegionDTO
                     {
                         Id = c.Id,
@@ -323,13 +349,15 @@ namespace OV_DB.Controllers
                         NameNL = c.NameNL,
                         OriginalName = c.OriginalName,
                         OsmRelationId = c.OsmRelationId,
+                        IsoCode = c.IsoCode,
                         SubRegions = c.SubRegions.Select(sc => new RegionDTO
                         {
                             Id = sc.Id,
                             Name = sc.Name,
                             NameNL = sc.NameNL,
                             OriginalName = sc.OriginalName,
-                            OsmRelationId = sc.OsmRelationId
+                            OsmRelationId = sc.OsmRelationId,
+                            IsoCode = sc.IsoCode
                         }).OrderBy(s => s.OriginalName).ToList()
                     }).OrderBy(s => s.OriginalName).ToList()
                 }).ToListAsync();

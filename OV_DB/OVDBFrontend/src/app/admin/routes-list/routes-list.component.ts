@@ -4,6 +4,7 @@ import { Route } from "src/app/models/route.model";
 import { Router } from "@angular/router";
 import { MatPaginator } from "@angular/material/paginator";
 import { RoutesDataSource } from "../data-sources/routes-data-source";
+import { AuthenticationService } from "src/app/services/authentication.service";
 import {
   tap,
   debounceTime,
@@ -78,6 +79,7 @@ export class RoutesListComponent implements OnInit, AfterViewInit {
   private bottomSheet = inject(MatBottomSheet);
   private operatorService = inject(OperatorService);
   private tableStateService = inject(TableStateService);
+  private authService = inject(AuthenticationService);
   private destroyRef = inject(DestroyRef);
 
   private readonly TABLE_ID = 'routes-list';
@@ -364,6 +366,16 @@ export class RoutesListComponent implements OnInit, AfterViewInit {
   exportSet() {
     this.apiService.getExportForSet(this.selectedRoutes).subscribe((data) => {
       saveAs(data, "Export.zip");
+    });
+  }
+
+  get isAdmin(): boolean {
+    return this.authService.admin;
+  }
+
+  exportToTrainlog() {
+    this.apiService.exportToTrainlog(this.selectedRoutes).subscribe((data) => {
+      saveAs(data, "trainlog_export.csv");
     });
   }
 

@@ -41,6 +41,8 @@ namespace OVDB_database.Models
         [JsonProperty]
         public RouteType? RouteType { get; set; }
         [JsonProperty]
+        public string TrainlogType { get; set; }
+        [JsonProperty]
         public double CalculatedDistance { get; set; }
         [JsonProperty]
         public double? OverrideDistance { get; set; }

@@ -23,6 +23,11 @@
       {{ "ROUTESLIST.EXPORTSET" | translate }}
     </button>
     }
+    @if(isAdmin && selectedRoutes.length > 0){
+    <button mat-stroked-button (click)="exportToTrainlog()" color="accent">
+      {{ "ROUTESLIST.EXPORTTOTRAINLOG" | translate }}
+    </button>
+    }
   </div>
   <table mat-table [dataSource]="dataSource" matSort matSortActive="date" matSortDirection="desc" matSortDisableClear>
     <ng-container matColumnDef="select">

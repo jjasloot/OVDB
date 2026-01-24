@@ -306,6 +306,14 @@ export class ApiService {
     });
   }
 
+  exportToTrainlog(routeIds: number[]) {
+    return this.httpClient.post(
+      environment.backend + "api/export/Trainlog",
+      { routeIds: routeIds },
+      { responseType: "blob" }
+    );
+  }
+
   updateRouteTypeOrder(newOrder: number[]): Observable<any> {
     return this.httpClient.post<RouteType>(
       environment.backend + "api/routeTypes/order",

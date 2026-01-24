@@ -3,6 +3,10 @@
   <mat-card-header>
     <mat-card-title>{{ region.name }}</mat-card-title>
     <mat-card-subtitle>{{ region.osmRelationId }}</mat-card-subtitle>
+    <mat-form-field appearance="outline" subscriptSizing="dynamic" style="margin-left: 10px; width: 80px;">
+      <mat-label>ISO</mat-label>
+      <input matInput [(ngModel)]="region.isoCode" (change)="saveRegion(region)">
+    </mat-form-field>
     <button mat-button (click)="refreshRoutesForRegion(region.id)">
       <mat-icon [fontIcon]="'refresh'"></mat-icon>
     </button>
@@ -21,6 +25,10 @@
       <mat-card-header>
         <mat-card-title>{{ subregion.name }}</mat-card-title>
         <mat-card-subtitle>{{ subregion.osmRelationId }}</mat-card-subtitle>
+        <mat-form-field appearance="outline" subscriptSizing="dynamic" style="margin-left: 10px; width: 80px;">
+          <mat-label>ISO</mat-label>
+          <input matInput [(ngModel)]="subregion.isoCode" (change)="saveRegion(subregion)">
+        </mat-form-field>
         <button mat-button (click)="refreshRoutesForRegion(subregion.id)">
           <mat-icon [fontIcon]="'refresh'"></mat-icon>
         </button>
@@ -34,11 +42,24 @@
         </mat-chip><br />
         }
         @for(intermediateRegion of subregion.subRegions; track intermediateRegion.id) {
-        {{ intermediateRegion.name }} ({{ intermediateRegion.osmRelationId }}) }
+        <div style="display: flex; align-items: center; margin-bottom: 5px;">
+          <span>{{ intermediateRegion.name }} ({{ intermediateRegion.osmRelationId }})</span>
+          <mat-form-field appearance="outline" subscriptSizing="dynamic" style="margin-left: 10px; width: 80px;">
+            <mat-label>ISO</mat-label>
+            <input matInput [(ngModel)]="intermediateRegion.isoCode" (change)="saveRegion(intermediateRegion)">
+          </mat-form-field>
+        </div>
+        }
       </mat-card-content>
     </mat-card>
     }@else {
-    {{ subregion.name }} ({{ subregion.osmRelationId }})
+    <div style="display: flex; align-items: center; margin-bottom: 5px;">
+      <span>{{ subregion.name }} ({{ subregion.osmRelationId }})</span>
+      <mat-form-field appearance="outline" subscriptSizing="dynamic" style="margin-left: 10px; width: 80px;">
+        <mat-label>ISO</mat-label>
+        <input matInput [(ngModel)]="subregion.isoCode" (change)="saveRegion(subregion)">
+      </mat-form-field>
+    </div>
     }
     }
   </mat-card-content>

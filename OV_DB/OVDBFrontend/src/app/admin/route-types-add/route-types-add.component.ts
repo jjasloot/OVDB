@@ -9,6 +9,7 @@ import { MatInput } from "@angular/material/input";
 import { FormsModule } from "@angular/forms";
 import { MatCheckbox } from "@angular/material/checkbox";
 import { MatButton } from "@angular/material/button";
+import { MatSelectModule } from '@angular/material/select';
 
 @Component({
     selector: "app-route-types-add",
@@ -26,6 +27,7 @@ import { MatButton } from "@angular/material/button";
         MatDialogActions,
         MatButton,
         TranslateModule,
+        MatSelectModule
     ]
 })
 export class RouteTypesAddComponent implements OnInit {
@@ -40,6 +42,7 @@ export class RouteTypesAddComponent implements OnInit {
   colour: string;
   id: number;
   isTrain = false;
+  trainlogType: string;
   constructor() {
     const data = inject(MAT_DIALOG_DATA);
 
@@ -49,6 +52,7 @@ export class RouteTypesAddComponent implements OnInit {
       this.routeTypeName = data.routeType.name;
       this.routeTypeNameNL = data.routeType.nameNL;
       this.isTrain = data.routeType.isTrain;
+      this.trainlogType = data.routeType.trainlogType;
     }
   }
 
@@ -70,6 +74,7 @@ export class RouteTypesAddComponent implements OnInit {
           colour: this.colour,
           nameNL: this.routeTypeNameNL,
           isTrain: this.isTrain,
+          trainlogType: this.trainlogType,
         } as RouteType)
         .subscribe(
           () => {
@@ -88,6 +93,7 @@ export class RouteTypesAddComponent implements OnInit {
           colour: this.colour,
           nameNL: this.routeTypeNameNL,
           isTrain: this.isTrain,
+          trainlogType: this.trainlogType,
         } as RouteType)
         .subscribe(
           () => {
