@@ -163,6 +163,15 @@ export class RouteDetailComponent implements OnInit {
       }
       this.colour.set(data.overrideColour);
       this.selectedMaps = data.routeMaps.map((r) => r.mapId);
+      
+      // Reload maps to include any completed maps that are already linked to this route
+      this.apiService.getMaps()
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe((maps) => {
+          // Include maps that are either not completed OR already linked to this route
+          this.maps.set(maps.filter(m => !m.completed || this.selectedMaps.includes(m.mapId)));
+        });
+      
       this.form.patchValue(data);
       if (data.routeInstancesCount > 1) {
         this.form.controls.firstDateTime.disable();
