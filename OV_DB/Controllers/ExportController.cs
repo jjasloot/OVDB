@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using OV_DB.Helpers;
 using OV_DB.Models;
@@ -14,6 +14,7 @@ using CsvHelper;
 using CsvHelper.Configuration.Attributes;
 using System.Globalization;
 using NetTopologySuite.Geometries;
+using System.Security.Claims;
 
 namespace OV_DB.Controllers
 {
@@ -31,11 +32,14 @@ namespace OV_DB.Controllers
         [HttpPost("Trainlog")]
         public async Task<IActionResult> ExportToTrainlog([FromBody] ExportRequest request)
         {
-            var adminClaim = (User.Claims.SingleOrDefault(c => c.Type == "admin").Value ?? "false");
+            var adminClaim = (User.Claims.SingleOrDefault(c => c.Type == "admin")?.Value ?? "false");
             if (string.Equals(adminClaim, "false", StringComparison.OrdinalIgnoreCase))
             {
                 return Forbid();
             }
+
+            var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value ?? "-1");
+            var user = await _dbContext.Users.FindAsync(userIdClaim);
 
             if ((request.RouteInstanceIds == null || !request.RouteInstanceIds.Any()) &&
                 (request.RouteIds == null || !request.RouteIds.Any()))
@@ -48,8 +52,6 @@ namespace OV_DB.Controllers
                     .ThenInclude(r => r.RouteType)
                 .Include(ri => ri.Route)
                     .ThenInclude(r => r.Regions)
-                        .ThenInclude(rg => rg.ParentRegion)
-                            .ThenInclude(pr => pr.ParentRegion)
                 .Include(ri => ri.RouteInstanceProperties);
 
             if (request.RouteIds != null && request.RouteIds.Any())
@@ -140,7 +142,7 @@ namespace OV_DB.Controllers
                 }
                 else
                 {
-                    end = start.AddHours(1); // Default duration?
+                    end = start; // Default duration?
                 }
 
                 // 3. Flags/Stations
@@ -296,9 +298,18 @@ namespace OV_DB.Controllers
                 }
 
                 // Tags
-                string materialType = properties.ContainsKey("Voertuig type") ? properties["Voertuig type"] :
-                                     (properties.ContainsKey("train_type") ? properties["train_type"] : "");
-                string reg = properties.ContainsKey("Voertuig nummer") ? properties["Voertuig nummer"] : "";
+                string materialKey = !string.IsNullOrEmpty(user?.TrainlogMaterialKey) ? user.TrainlogMaterialKey : "Voertuig type";
+                string regKey = !string.IsNullOrEmpty(user?.TrainlogRegistrationKey) ? user.TrainlogRegistrationKey : "Voertuig nummer";
+                string seatKey = !string.IsNullOrEmpty(user?.TrainlogSeatKey) ? user.TrainlogSeatKey : "Stoel";
+
+                string materialType = properties.ContainsKey(materialKey) ? properties[materialKey] : "";
+                if (string.IsNullOrEmpty(materialType) && string.IsNullOrEmpty(user?.TrainlogMaterialKey) && properties.ContainsKey("train_type"))
+                {
+                    materialType = properties["train_type"];
+                }
+
+                string reg = properties.ContainsKey(regKey) ? properties[regKey] : "";
+                string seat = properties.ContainsKey(seatKey) ? properties[seatKey] : "";
                 string note = "";
 
                 // Create Row Object
@@ -308,15 +319,15 @@ namespace OV_DB.Controllers
                     Username = "ovdb_export",
                     OriginStation = origin,
                     DestinationStation = destination,
-                    StartDatetime = start.ToString("yyyy-MM-dd HH:mm:ss"),
-                    EndDatetime = end.ToString("yyyy-MM-dd HH:mm:ss"),
+                    StartDatetime = start==end? start.ToString("yyyy-MM-dd"): start.ToString("yyyy-MM-dd HH:mm:ss"),
+                    EndDatetime = start == end ? start.ToString("yyyy-MM-dd") : end.ToString("yyyy-MM-dd HH:mm:ss"),
                     EstimatedTripDuration = duration.ToString("F0"),
                     ManualTripDuration = "",
                     TripLength = lengthMeters.ToString("F0"),
                     Operator = route.OperatingCompany ?? "",
                     Countries = countriesJson,
-                    UtcStartDatetime = start.ToUniversalTime().ToString("yyyy-MM-dd HH:mm:ss"),
-                    UtcEndDatetime = end.ToUniversalTime().ToString("yyyy-MM-dd HH:mm:ss"),
+                    UtcStartDatetime = start == end ? start.ToString("yyyy-MM-dd"):start.ToUniversalTime().ToString("yyyy-MM-dd HH:mm:ss"),
+                    UtcEndDatetime = start == end ? start.ToString("yyyy-MM-dd"):end.ToUniversalTime().ToString("yyyy-MM-dd HH:mm:ss"),
                     LineName = route.LineNumber ?? "",
                     Created = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
                     LastModified = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
@@ -329,7 +340,6 @@ namespace OV_DB.Controllers
                     Price = "",
                     Currency = "",
                     PurchasingDate = "",
-                    Visibility = "public",
                     Path = encodedPath
                 });
             }
@@ -347,7 +357,7 @@ namespace OV_DB.Controllers
         {
             // Find region containing point with a flag
             var match = regions.FirstOrDefault(r => !string.IsNullOrEmpty(r.FlagEmoji) && r.Geometry != null && r.Geometry.Contains(point));
-            return match?.FlagEmoji ?? "";
+            return match?.FlagEmoji ?? "🇺🇳";
         }
 
         private string AppendFlag(string flag, string name)
@@ -359,68 +369,5 @@ namespace OV_DB.Controllers
             return name;
         }
 
-        public class TrainlogExportRow
-        {
-            [Name("uid")]
-            public string Uid { get; set; }
-            [Name("username")]
-            public string Username { get; set; }
-            [Name("origin_station")]
-            public string OriginStation { get; set; }
-            [Name("destination_station")]
-            public string DestinationStation { get; set; }
-            [Name("start_datetime")]
-            public string StartDatetime { get; set; }
-            [Name("end_datetime")]
-            public string EndDatetime { get; set; }
-            [Name("estimated_trip_duration")]
-            public string EstimatedTripDuration { get; set; }
-            [Name("manual_trip_duration")]
-            public string ManualTripDuration { get; set; }
-            [Name("trip_length")]
-            public string TripLength { get; set; }
-            [Name("operator")]
-            public string Operator { get; set; }
-            [Name("countries")]
-            public string Countries { get; set; }
-            [Name("utc_start_datetime")]
-            public string UtcStartDatetime { get; set; }
-            [Name("utc_end_datetime")]
-            public string UtcEndDatetime { get; set; }
-            [Name("line_name")]
-            public string LineName { get; set; }
-            [Name("created")]
-            public string Created { get; set; }
-            [Name("last_modified")]
-            public string LastModified { get; set; }
-            [Name("type")]
-            public string Type { get; set; }
-            [Name("material_type")]
-            public string MaterialType { get; set; }
-            [Name("seat")]
-            public string Seat { get; set; }
-            [Name("reg")]
-            public string Reg { get; set; }
-            [Name("waypoints")]
-            public string Waypoints { get; set; }
-            [Name("notes")]
-            public string Notes { get; set; }
-            [Name("price")]
-            public string Price { get; set; }
-            [Name("currency")]
-            public string Currency { get; set; }
-            [Name("purchasing_date")]
-            public string PurchasingDate { get; set; }
-            [Name("visibility")]
-            public string Visibility { get; set; }
-            [Name("path")]
-            public string Path { get; set; }
-        }
-
-        public class ExportRequest
-        {
-            public List<int> RouteInstanceIds { get; set; }
-            public List<int> RouteIds { get; set; }
-        }
     }
 }

@@ -49,7 +49,10 @@ namespace OV_DB.Controllers
                 Email = user.Email,
                 PreferredLanguage = user.PreferredLanguage?.ToLanguageCode(),
                 TelegramUserId = user.TelegramUserId,
-                HasTraewelling = !string.IsNullOrWhiteSpace(user.TrawellingAccessToken)
+                HasTraewelling = !string.IsNullOrWhiteSpace(user.TrawellingAccessToken),
+                TrainlogMaterialKey = user.TrainlogMaterialKey,
+                TrainlogRegistrationKey = user.TrainlogRegistrationKey,
+                TrainlogSeatKey = user.TrainlogSeatKey
             });
         }
 
@@ -80,6 +83,9 @@ namespace OV_DB.Controllers
                 ? LanguageHelper.FromLanguageCode(updateProfile.PreferredLanguage) 
                 : null;
             user.TelegramUserId = updateProfile.TelegramUserId;
+            user.TrainlogMaterialKey = updateProfile.TrainlogMaterialKey;
+            user.TrainlogRegistrationKey = updateProfile.TrainlogRegistrationKey;
+            user.TrainlogSeatKey = updateProfile.TrainlogSeatKey;
 
             DatabaseContext.Update(user);
             await DatabaseContext.SaveChangesAsync();

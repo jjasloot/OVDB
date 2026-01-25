@@ -38,6 +38,30 @@
             <mat-icon matSuffix>telegram</mat-icon>
           </mat-form-field>
 
+          <!-- Trainlog Settings -->
+          <div class="trainlog-settings">
+            <h3>{{ 'PROFILE.TRAINLOG_SETTINGS' | translate }}</h3>
+            <p class="settings-hint">{{ 'PROFILE.TRAINLOG_SETTINGS_HINT' | translate }}</p>
+
+            <mat-form-field>
+              <mat-label>{{ 'PROFILE.TRAINLOG_MATERIAL_KEY' | translate }}</mat-label>
+              <input matInput formControlName="trainlogMaterialKey" placeholder="material_type">
+              <mat-icon matSuffix>train</mat-icon>
+            </mat-form-field>
+
+            <mat-form-field>
+              <mat-label>{{ 'PROFILE.TRAINLOG_REGISTRATION_KEY' | translate }}</mat-label>
+              <input matInput formControlName="trainlogRegistrationKey" placeholder="reg">
+              <mat-icon matSuffix>numbers</mat-icon>
+            </mat-form-field>
+
+            <mat-form-field>
+              <mat-label>{{ 'PROFILE.TRAINLOG_SEAT_KEY' | translate }}</mat-label>
+              <input matInput formControlName="trainlogSeatKey" placeholder="seat">
+              <mat-icon matSuffix>event_seat</mat-icon>
+            </mat-form-field>
+          </div>
+
           <!-- Telegram Bot Explanation -->
           <div class="telegram-info">
             <mat-icon>info</mat-icon>

@@ -19,7 +19,7 @@ namespace OV_DB.Models
 
     public class RouteInstancePropertyDTO
     {
-        public int? RouteInstancePropertyId { get; set; }
+        public long? RouteInstancePropertyId { get; set; }
         public string Key { get; set; }
         public string Value { get; set; }
         public bool? Bool { get; set; }

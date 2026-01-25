@@ -333,6 +333,11 @@
     "TRAEWELLING_DISCONNECTED_SUCCESSFULLY": "Träwelling account succesvol ontkoppeld",
     "TRAEWELLING_ERROR_CONNECTING": "Fout bij verbinden met Träwelling",
     "TRAEWELLING_ERROR_DISCONNECTING": "Fout bij ontkoppelen van Träwelling",
+    "TRAINLOG_SETTINGS": "Trainlog Export Instellingen",
+    "TRAINLOG_SETTINGS_HINT": "Stel in welke eigenschapssleutels gebruikt moeten worden voor export naar Trainlog. Laat leeg voor standaardwaarden.",
+    "TRAINLOG_MATERIAL_KEY": "Sleutel voor Materieel Type",
+    "TRAINLOG_REGISTRATION_KEY": "Sleutel voor Registratie",
+    "TRAINLOG_SEAT_KEY": "Sleutel voor Stoel",
     "ACTIVE_SESSIONS": "Actieve sessies",
     "SESSIONS_EXPLANATION": "Dit zijn je huidige ingelogde sessies. Je kunt de toegang van elk apparaat op elk moment intrekken.",
     "LOADING_SESSIONS": "Sessies laden...",
@@ -438,6 +443,10 @@
     "LINE": "Lijn",
     "START_TIME": "Vertrek",
     "END_TIME": "Aankomst",
-    "DESCRIPTION": "Beschrijving"
+    "DESCRIPTION": "Beschrijving",
+    "ROUTESLIST.EXPORTTOTRAINLOG": "Exporteer selectie voor Trainlog",
+    "ROUTESLIST.SHOWROUTES": "Toon routes",
+    "ROUTESLIST.SHOWINSTANCES": "Toon ritten"
+
   }
 }

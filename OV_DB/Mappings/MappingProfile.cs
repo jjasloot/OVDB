@@ -37,6 +37,18 @@ namespace OV_DB.Mappings
 
             CreateMap<RouteInstance, RouteInstanceDTO>()
                 .ForMember(dest => dest.AverageSpeedKmh, ops => ops.MapFrom(ri => ri.GetAverageSpeedKmh()));
+
+            CreateMap<RouteInstance, RouteInstanceListDTO>()
+                .IncludeBase<RouteInstance, RouteInstanceDTO>()
+                .ForMember(dest => dest.RouteName, ops => ops.MapFrom(ri => ri.Route.Name))
+                .ForMember(dest => dest.RouteDescription, ops => ops.MapFrom(ri => ri.Route.Description))
+                .ForMember(dest => dest.RouteType, ops => ops.MapFrom(ri => ri.Route.RouteType.Name))
+                .ForMember(dest => dest.RouteTypeColour, ops => ops.MapFrom(ri => ri.Route.RouteType.Colour))
+                .ForMember(dest => dest.From, ops => ops.MapFrom(ri => ri.Route.From))
+                .ForMember(dest => dest.To, ops => ops.MapFrom(ri => ri.Route.To))
+                .ForMember(dest => dest.Distance, ops => ops.MapFrom(ri => ri.Route.OverrideDistance ?? ri.Route.CalculatedDistance))
+                .ForMember(dest => dest.RouteOverrideColour, ops => ops.MapFrom(ri => ri.Route.OverrideColour));
+
             
             CreateMap<RouteInstanceProperty, RouteInstancePropertyDTO>();
             

@@ -111,6 +111,7 @@
   </mat-expansion-panel>
   }
   <div class="buttons">
+    {{form.invalid  }}
     <button mat-raised-button color="primary" type="submit" (click)="onSubmit(form.value, false)"
       [disabled]="form.invalid">
       {{ "SAVE" | translate }}

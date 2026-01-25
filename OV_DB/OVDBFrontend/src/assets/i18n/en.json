@@ -34,6 +34,9 @@
   "ROUTESLIST.NAME": "Name",
   "ROUTESLIST.OPERATOR": "Operator",
   "ROUTESLIST.DATE": "Date",
+  "ROUTESLIST.TIME": "Time",
+  "ROUTESLIST.SHOWINSTANCES": "Show trips",
+  "ROUTESLIST.SHOWROUTES": "Show routes",
   "ROUTESLIST.MAPS": "Maps",
   "ROUTESLIST.TYPE": "Type",
   "ROUTESLIST.EXPORT": "Export",
@@ -332,6 +335,11 @@
     "TRAEWELLING_DISCONNECTED_SUCCESSFULLY": "Träwelling account disconnected successfully",
     "TRAEWELLING_ERROR_CONNECTING": "Error connecting to Träwelling",
     "TRAEWELLING_ERROR_DISCONNECTING": "Error disconnecting from Träwelling",
+    "TRAINLOG_SETTINGS": "Trainlog Export Settings",
+    "TRAINLOG_SETTINGS_HINT": "Configure which property keys to use for exporting data to Trainlog. Leave blank to use defaults.",
+    "TRAINLOG_MATERIAL_KEY": "Material Type Key",
+    "TRAINLOG_REGISTRATION_KEY": "Registration Key",
+    "TRAINLOG_SEAT_KEY": "Seat Key",
     "ACTIVE_SESSIONS": "Active sessions",
     "SESSIONS_EXPLANATION": "These are your currently active login sessions. You can revoke access from any device at any time.",
     "LOADING_SESSIONS": "Loading sessions...",
@@ -437,6 +445,9 @@
     "LINE": "Line",
     "START_TIME": "Departure",
     "END_TIME": "Arrival",
-    "DESCRIPTION": "Description"
+    "DESCRIPTION": "Description",
+    "ROUTESLIST.EXPORTTOTRAINLOG": "Export selection for Trainlog",
+    "ROUTESLIST.SHOWROUTES": "Show routes",
+    "ROUTESLIST.SHOWINSTANCES": "Show trips"
   }
 }

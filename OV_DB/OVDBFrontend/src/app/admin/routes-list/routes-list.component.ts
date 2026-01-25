@@ -4,6 +4,7 @@ import { Route } from "src/app/models/route.model";
 import { Router } from "@angular/router";
 import { MatPaginator } from "@angular/material/paginator";
 import { RoutesDataSource } from "../data-sources/routes-data-source";
+import { RouteInstancesDataSource } from "../data-sources/route-instances-data-source";
 import { AuthenticationService } from "src/app/services/authentication.service";
 import {
   tap,
@@ -67,6 +68,7 @@ import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
     MatPaginator,
     AsyncPipe,
     DatePipe,
+    DecimalPipe,
     TranslateModule,
   ]
 })
@@ -98,6 +100,11 @@ export class RoutesListComponent implements OnInit, AfterViewInit {
   ];
   dataSource: RoutesDataSource;
   selectedRoutes: number[] = [];
+  
+  showInstances = false;
+  instancesDataSource: RouteInstancesDataSource;
+  selectedInstanceIds: number[] = [];
+  displayedInstanceColumns: string[] = ["select", "date", "time", "name", "type", "from", "to", "distance"];
 
   readonly paginator = viewChild(MatPaginator);
   readonly sort = viewChild(MatSort);
@@ -112,6 +119,7 @@ export class RoutesListComponent implements OnInit, AfterViewInit {
 
   ngOnInit() {
     this.dataSource = new RoutesDataSource(this.apiService);
+    this.instancesDataSource = new RouteInstancesDataSource(this.apiService);
     this.loading = true;
     this.restrictColumnsOnWidth();
     
@@ -261,6 +269,15 @@ export class RoutesListComponent implements OnInit, AfterViewInit {
   }
 
   loadRoutesPage() {
+    if (this.showInstances) {
+      return this.instancesDataSource.loadInstances(
+        this.paginator().pageIndex * this.paginator().pageSize,
+        this.paginator().pageSize,
+        this.sort().active,
+        this.sort().direction === "desc",
+        this.filterValue
+      );
+    }
     return this.dataSource.loadRoutes(
       this.paginator().pageIndex * this.paginator().pageSize,
       this.paginator().pageSize,
@@ -338,6 +355,7 @@ export class RoutesListComponent implements OnInit, AfterViewInit {
 
   clearSelection() {
     this.selectedRoutes = [];
+    this.selectedInstanceIds = [];
   }
 
   getDistance(route: Route) {
@@ -374,9 +392,54 @@ export class RoutesListComponent implements OnInit, AfterViewInit {
   }
 
   exportToTrainlog() {
-    this.apiService.exportToTrainlog(this.selectedRoutes).subscribe((data) => {
-      saveAs(data, "trainlog_export.csv");
-    });
+    if (this.showInstances) {
+      this.apiService.exportInstancesToTrainlog(this.selectedInstanceIds).subscribe((data) => {
+        saveAs(data, "trainlog_export.csv");
+      });
+    } else {
+      this.apiService.exportToTrainlog(this.selectedRoutes).subscribe((data) => {
+        saveAs(data, "trainlog_export.csv");
+      });
+    }
+  }
+
+  toggleShowInstances() {
+    this.showInstances = !this.showInstances;
+    this.paginator().pageIndex = 0;
+    this.selectedRoutes = [];
+    this.selectedInstanceIds = [];
+    
+    if (this.showInstances) {
+        this.displayedColumns = this.displayedInstanceColumns;
+    } else {
+        this.restrictColumnsOnWidth();
+    }
+    
+    this.loading = true;
+    (this.loadRoutesPage() as Observable<any>).subscribe(
+        (data) => {
+            this.count = data.count;
+            this.loading = false;
+        },
+        (err) => {
+            console.error(err);
+            this.loading = false;
+        }
+    );
+  }
+
+  isInstanceChecked(instance: any) {
+    return this.selectedInstanceIds.includes(instance.routeInstanceId);
+  }
+
+  toggleInstance(instance: any, event: MatCheckboxChange) {
+    if (event.checked) {
+      this.selectedInstanceIds.push(instance.routeInstanceId);
+    } else {
+      this.selectedInstanceIds = this.selectedInstanceIds.filter(
+        (id) => id !== instance.routeInstanceId
+      );
+    }
   }
 
   getSpeedDisplay(route: Route): string {

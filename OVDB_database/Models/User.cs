@@ -41,6 +41,14 @@ namespace OVDB_database.Models
         public DateTime? TrawellingTokenExpiresAt { get; set; }
         public string TrawellingUsername { get; set; }
         
+        // Trainlog Export Mapping
+        [MaxLength(100)]
+        public string TrainlogMaterialKey { get; set; }
+        [MaxLength(100)]
+        public string TrainlogRegistrationKey { get; set; }
+        [MaxLength(100)]
+        public string TrainlogSeatKey { get; set; }
+
         /// <summary>
         /// Collection of active refresh tokens for this user (supports multiple sessions)
         /// </summary>

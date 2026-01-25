@@ -8,34 +8,45 @@
     <input matInput placeholder="{{ 'ROUTESLIST.SEARCH' | translate }}" #input />
   </mat-form-field>
   <div class="buttons desktop">
-    <button mat-raised-button color="primary" (click)="editMultiple()" [disabled]="selectedRoutes.length === 0">
+    <button mat-raised-button color="primary" (click)="editMultiple()"
+      [disabled]="showInstances || selectedRoutes.length === 0">
       {{ selectedRoutes.length }} {{ "ROUTESLIST.SELECTED" | translate }}
     </button>
-    <button mat-stroked-button (click)="clearSelection()" [disabled]="selectedRoutes.length === 0">
+    <button mat-stroked-button (click)="clearSelection()"
+      [disabled]="(!showInstances && selectedRoutes.length === 0) || (showInstances && selectedInstanceIds.length === 0)">
       {{ "ROUTESLIST.DESELECT" | translate }}
     </button>
-    @if(selectedRoutes.length==0){
+    @if(!showInstances && selectedRoutes.length==0){
     <button mat-stroked-button (click)="exportAll()">
       {{ "ROUTESLIST.EXPORTALL" | translate }}
     </button>
-    } @else{
+    } @else if (!showInstances) {
     <button mat-stroked-button (click)="exportSet()">
       {{ "ROUTESLIST.EXPORTSET" | translate }}
     </button>
     }
-    @if(isAdmin && selectedRoutes.length > 0){
+    @if(isAdmin && ((!showInstances && selectedRoutes.length > 0) || (showInstances && selectedInstanceIds.length >
+    0))){
     <button mat-stroked-button (click)="exportToTrainlog()" color="accent">
       {{ "ROUTESLIST.EXPORTTOTRAINLOG" | translate }}
     </button>
     }
+    <button mat-stroked-button (click)="toggleShowInstances()">
+      {{ (showInstances ? ("ROUTESLIST.SHOWROUTES" | translate) : ("ROUTESLIST.SHOWINSTANCES" | translate)) }}
+    </button>
   </div>
-  <table mat-table [dataSource]="dataSource" matSort matSortActive="date" matSortDirection="desc" matSortDisableClear>
+  <table mat-table [dataSource]="showInstances ? instancesDataSource : dataSource" matSort matSortActive="date"
+    matSortDirection="desc" matSortDisableClear>
     <ng-container matColumnDef="select">
-      <th mat-header-cell *matHeaderCellDef mat-sort-header>
+      <th mat-header-cell *matHeaderCellDef>
         {{ "ROUTESLIST.SELECT" | translate }}
       </th>
       <td mat-cell *matCellDef="let element">
+        @if(!showInstances){
         <mat-checkbox [checked]="isChecked(element)" (change)="toggle(element, $event)"></mat-checkbox>
+        } @else {
+        <mat-checkbox [checked]="isInstanceChecked(element)" (change)="toggleInstance(element, $event)"></mat-checkbox>
+        }
       </td>
     </ng-container>
     <ng-container matColumnDef="name">
@@ -43,7 +54,7 @@
         {{ "ROUTESLIST.NAME" | translate }}
       </th>
       <td mat-cell *matCellDef="let element">
-        <b>{{ element.name }} </b>
+        <b>{{ element.name || element.routeName }} </b>
       </td>
     </ng-container>
     <ng-container matColumnDef="operator">
@@ -53,7 +64,8 @@
       </th>
       <td mat-cell *matCellDef="let element">
         @for (operatorId of element.operatorIds; track operatorId) {
-        <img style="max-height: 1rem; max-width: 2rem; background:white;padding:4px; border-radius: 2px;" [src]="getOperatorLogo(operatorId) | async" />
+        <img style="max-height: 1rem; max-width: 2rem; background:white;padding:4px; border-radius: 2px;"
+          [src]="getOperatorLogo(operatorId) | async" />
         }
       </td>
     </ng-container>
@@ -64,7 +76,7 @@
       </th>
       <td mat-cell *matCellDef="let element">
         {{
-        element.firstDateTime
+        (element.firstDateTime || element.date)
         | date : "mediumDate" : undefined : currentLocale
         }}
       </td>
@@ -99,7 +111,7 @@
         {{ "ROUTESLIST.TYPE" | translate }}
       </th>
       <td mat-cell *matCellDef="let element">
-        @if (element.routeType) {
+        @if (element.routeType && element.routeType.colour) {
         <mat-chip-listbox class="desktop">
           <mat-chip-option [color]="element.routeType.colour" [style.background]="element.routeType.colour"
             [selectable]="false">
@@ -107,13 +119,57 @@
           </mat-chip-option>
         </mat-chip-listbox>
         }
-        @if (element.routeType) {
+        @if (element.routeType && element.routeType.colour) {
         <mat-chip-listbox class="mobile">
           <mat-chip-option [color]="element.routeType.colour" [matTooltip]="name(element.routeType)"
             [style.background]="element.routeType.colour" [selectable]="false">
           </mat-chip-option>
         </mat-chip-listbox>
         }
+        @if (element.routeTypeColour) {
+        <mat-chip-listbox>
+          <mat-chip-option [color]="element.routeTypeColour" [style.background]="element.routeTypeColour"
+            [selectable]="false">
+            {{ element.routeType }}
+          </mat-chip-option>
+        </mat-chip-listbox>
+        }
+      </td>
+    </ng-container>
+
+    <ng-container matColumnDef="time">
+      <th mat-header-cell *matHeaderCellDef>
+        {{ "ROUTESLIST.TIME" | translate }}
+      </th>
+      <td mat-cell *matCellDef="let element">
+        {{ element.startTime | date : "shortTime" }}
+      </td>
+    </ng-container>
+
+    <ng-container matColumnDef="from">
+      <th mat-header-cell *matHeaderCellDef>
+        {{ "FROM" | translate }}
+      </th>
+      <td mat-cell *matCellDef="let element">
+        {{ element.from }}
+      </td>
+    </ng-container>
+
+    <ng-container matColumnDef="to">
+      <th mat-header-cell *matHeaderCellDef>
+        {{ "TO" | translate }}
+      </th>
+      <td mat-cell *matCellDef="let element">
+        {{ element.to }}
+      </td>
+    </ng-container>
+
+    <ng-container matColumnDef="distance">
+      <th mat-header-cell *matHeaderCellDef>
+        {{ "ROUTES.DISTANCE" | translate }}
+      </th>
+      <td mat-cell *matCellDef="let element">
+        {{ element.distance | number : "1.0-0" }} km
       </td>
     </ng-container>
 

@@ -82,7 +82,10 @@ export class ProfileComponent implements OnInit {
   constructor() {
     this.profileForm = this.formBuilder.group({
       preferredLanguage: ['', Validators.required],
-      telegramUserId: [null]
+      telegramUserId: [null],
+      trainlogMaterialKey: [''],
+      trainlogRegistrationKey: [''],
+      trainlogSeatKey: ['']
     });
 
     this.passwordForm = this.formBuilder.group({
@@ -113,7 +116,10 @@ export class ProfileComponent implements OnInit {
         this.userProfile = profile;
         this.profileForm.patchValue({
           preferredLanguage: profile.preferredLanguage || '',
-          telegramUserId: profile.telegramUserId || null
+          telegramUserId: profile.telegramUserId || null,
+          trainlogMaterialKey: profile.trainlogMaterialKey || '',
+          trainlogRegistrationKey: profile.trainlogRegistrationKey || '',
+          trainlogSeatKey: profile.trainlogSeatKey || ''
         });
         this.loading = false;
       },
@@ -130,7 +136,10 @@ export class ProfileComponent implements OnInit {
       this.savingProfile = true;
       const updateProfile: UpdateProfile = {
         preferredLanguage: this.profileForm.value.preferredLanguage,
-        telegramUserId: this.profileForm.value.telegramUserId
+        telegramUserId: this.profileForm.value.telegramUserId,
+        trainlogMaterialKey: this.profileForm.value.trainlogMaterialKey,
+        trainlogRegistrationKey: this.profileForm.value.trainlogRegistrationKey,
+        trainlogSeatKey: this.profileForm.value.trainlogSeatKey
       };
 
       this.apiService.updateUserProfile(updateProfile).subscribe({

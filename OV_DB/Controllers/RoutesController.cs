@@ -122,6 +122,70 @@ namespace OV_DB.Controllers
 
         }
 
+        [HttpGet("instances/list")]
+        public async Task<ActionResult<RouteInstanceListResponseDTO>> GetRouteInstances([FromQuery] int? start, [FromQuery] int? count, [FromQuery] string sortColumn, [FromQuery] bool? descending, [FromQuery] string filter, CancellationToken cancellationToken)
+        {
+            var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value ?? "-1");
+            if (userIdClaim < 0)
+            {
+                return Forbid();
+            }
+            var originalQuery = _context.RouteInstances
+                .Include(r => r.Route)
+                .ThenInclude(r => r.RouteType)
+                .Where(r => r.Route.RouteMaps.Any(rm => rm.Map.UserId == userIdClaim));
+
+            if (!string.IsNullOrWhiteSpace(filter))
+            {
+                originalQuery = originalQuery.Where(r => EF.Functions.Like(r.Route.Name, "%" + filter + "%") || EF.Functions.Like(r.Route.Description, "%" + filter + "%") || EF.Functions.Like(r.Route.From, "%" + filter + "%") || EF.Functions.Like(r.Route.To, "%" + filter + "%"));
+            }
+
+            var query = originalQuery.ProjectTo<RouteInstanceListDTO>(_mapper.ConfigurationProvider);
+            
+            if (!string.IsNullOrWhiteSpace(sortColumn))
+            {
+                if (sortColumn == "name")
+                {
+                    if (descending.GetValueOrDefault(false))
+                        query = query.OrderByDescending(r => r.RouteName);
+                    else
+                        query = query.OrderBy(r => r.RouteName);
+                }
+                if (sortColumn == "date")
+                {
+                    if (descending.GetValueOrDefault(false))
+                        query = query.OrderByDescending(r => r.Date).ThenByDescending(r => r.StartTime);
+                    else
+                        query = query.OrderBy(r => r.Date).ThenBy(r => r.StartTime);
+                }
+                if (sortColumn == "type")
+                {
+                    if (descending.GetValueOrDefault(false))
+                        query = query.OrderByDescending(r => r.RouteType);
+                    else
+                        query = query.OrderBy(r => r.RouteType);
+                }
+            }
+            else
+            {
+                query = query.OrderByDescending(r => r.Date).ThenByDescending(r => r.StartTime);
+            }
+
+            var total = await query.CountAsync(cancellationToken);
+            if (start.HasValue)
+                query = query.Skip(start.Value);
+            if (count.HasValue)
+                query = query.Take(count.Value);
+
+            var list = await query.ToListAsync(cancellationToken);
+
+            return new RouteInstanceListResponseDTO
+            {
+                Count = total,
+                Instances = list
+            };
+        }
+
 
         [HttpGet("missingInfo")]
         public async Task<ActionResult<IEnumerable<RouteDTO>>> GetRoutesWithMissingInfo()
