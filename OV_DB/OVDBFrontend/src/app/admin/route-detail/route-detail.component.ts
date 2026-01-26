@@ -81,6 +81,7 @@ export class RouteDetailComponent implements OnInit {
   form: UntypedFormGroup;
   types = signal<RouteType[]>([]);
   countries = signal<Country[]>([]);
+  allMaps = signal<Map[]>([]); // Store all maps unfiltered
   maps = signal<Map[]>([]);
   activeOperators = signal<number[]>([]);
   logo = signal<string | null>(null);
@@ -129,6 +130,7 @@ export class RouteDetailComponent implements OnInit {
     this.apiService.getMaps()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((maps) => {
+        this.allMaps.set(maps);
         this.maps.set(maps.filter(m => !m.completed));
       });
     this.activatedRoute.paramMap
@@ -163,6 +165,11 @@ export class RouteDetailComponent implements OnInit {
       }
       this.colour.set(data.overrideColour);
       this.selectedMaps = data.routeMaps.map((r) => r.mapId);
+      
+      // Update maps list to include any completed maps that are already linked to this route
+      const allMaps = this.allMaps();
+      this.maps.set(allMaps.filter(m => !m.completed || this.selectedMaps.includes(m.mapId)));
+      
       this.form.patchValue(data);
       if (data.routeInstancesCount > 1) {
         this.form.controls.firstDateTime.disable();

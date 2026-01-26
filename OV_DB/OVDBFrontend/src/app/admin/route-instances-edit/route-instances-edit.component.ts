@@ -166,8 +166,10 @@ export class RouteInstancesEditComponent implements OnInit {
       this.updateSuggestions('');
     });
     this.apiService.getMaps().subscribe(data => {
-      this.maps.set(data.filter(m => !m.completed));
-    })
+      // Include maps that are either not completed OR already linked to this route instance
+      const linkedMapIds = this.selectedMaps();
+      this.maps.set(data.filter(m => !m.completed || linkedMapIds.includes(m.mapId)));
+    });
   }
 
   onTimeModeChange() {
