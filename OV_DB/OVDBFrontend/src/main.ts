@@ -1,4 +1,4 @@
-import { enableProdMode, importProvidersFrom, LOCALE_ID } from "@angular/core";
+import { enableProdMode, importProvidersFrom, LOCALE_ID, provideZoneChangeDetection } from "@angular/core";
 import { environment } from "./environments/environment";
 import {
   MatMomentDateModule,
@@ -167,6 +167,7 @@ bootstrapApplication(AppComponent, {
     provideHttpClient(withInterceptorsFromDi()),
     provideAnimations(),
     provideRouter(routes),
-    provideCharts(withDefaultRegisterables())
+    provideCharts(withDefaultRegisterables()),
+    provideZoneChangeDetection(),
   ],
 }).catch((err) => console.error(err));
