@@ -169,7 +169,7 @@ export class RouteInstancesEditComponent implements OnInit {
       // Include maps that are either not completed OR already linked to this route instance
       const linkedMapIds = this.selectedMaps();
       this.maps.set(data.filter(m => !m.completed || linkedMapIds.includes(m.mapId)));
-    })
+    });
   }
 
   onTimeModeChange() {
