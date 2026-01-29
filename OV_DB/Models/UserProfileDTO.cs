@@ -10,5 +10,6 @@
         public string TrainlogRegistrationKey { get; set; }
         public string TrainlogPlatformKey { get; set; }
         public string TrainlogSeatKey { get; set; }
+        public bool EnableTrainlogExport { get; set; }
     }
 }

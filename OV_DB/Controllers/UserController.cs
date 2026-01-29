@@ -52,7 +52,8 @@ namespace OV_DB.Controllers
                 HasTraewelling = !string.IsNullOrWhiteSpace(user.TrawellingAccessToken),
                 TrainlogMaterialKey = user.TrainlogMaterialKey,
                 TrainlogRegistrationKey = user.TrainlogRegistrationKey,
-                TrainlogSeatKey = user.TrainlogSeatKey
+                TrainlogSeatKey = user.TrainlogSeatKey,
+                EnableTrainlogExport = user.EnableTrainlogExport
             });
         }
 
@@ -72,15 +73,15 @@ namespace OV_DB.Controllers
             }
 
             // Validate language preference if provided
-            if (updateProfile.PreferredLanguage != null && 
-                updateProfile.PreferredLanguage != "en" && 
+            if (updateProfile.PreferredLanguage != null &&
+                updateProfile.PreferredLanguage != "en" &&
                 updateProfile.PreferredLanguage != "nl")
             {
                 return BadRequest("Invalid language preference. Must be 'en', 'nl', or null.");
             }
 
-            user.PreferredLanguage = updateProfile.PreferredLanguage != null 
-                ? LanguageHelper.FromLanguageCode(updateProfile.PreferredLanguage) 
+            user.PreferredLanguage = updateProfile.PreferredLanguage != null
+                ? LanguageHelper.FromLanguageCode(updateProfile.PreferredLanguage)
                 : null;
             user.TelegramUserId = updateProfile.TelegramUserId;
             user.TrainlogMaterialKey = updateProfile.TrainlogMaterialKey;
@@ -151,7 +152,7 @@ namespace OV_DB.Controllers
                 return NotFound();
             }
             return Ok(map.MapGuid);
-        } 
+        }
 
         [HttpGet("station-link/{name}")]
         [AllowAnonymous]

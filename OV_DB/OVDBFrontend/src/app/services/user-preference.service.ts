@@ -11,6 +11,7 @@ export class UserPreferenceService {
   private apiService = inject(ApiService);
   private translationService = inject(TranslationService);
   hasTraewelling = signal(false);
+  enableTrainlogExport = signal(false);
 
   applyUserLanguagePreference(): void {
     // Only fetch profile if we have a valid token
@@ -22,6 +23,7 @@ export class UserPreferenceService {
             this.translationService.language = profile.preferredLanguage as 'nl' | 'en';
           }
           this.hasTraewelling.set(profile.hasTraewelling ?? false);
+          this.enableTrainlogExport.set(profile.enableTrainlogExport ?? false);
         },
         error: (error) => {
           // Silently fail - if profile can't be fetched, just use browser language
@@ -29,5 +31,13 @@ export class UserPreferenceService {
         }
       });
     }
+  }
+
+  constructor() {
+    this.authService.isLoggedIn$.subscribe((loggedIn) => {
+      if (loggedIn) {
+        this.applyUserLanguagePreference();
+      }
+    });
   }
 }

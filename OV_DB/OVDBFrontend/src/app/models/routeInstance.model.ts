@@ -16,3 +16,4 @@ export interface RouteInstance {
 export interface RouteInstanceMaps {
   mapId: number;
 }
+

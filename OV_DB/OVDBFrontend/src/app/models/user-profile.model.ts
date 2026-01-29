@@ -6,6 +6,7 @@ export interface UserProfile {
   trainlogMaterialKey: string;
   trainlogRegistrationKey: string;
   trainlogSeatKey: string;
+  enableTrainlogExport:boolean;
 }
 
 export interface UpdateProfile {

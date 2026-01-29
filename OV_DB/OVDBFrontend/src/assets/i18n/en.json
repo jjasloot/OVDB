@@ -336,7 +336,7 @@
     "TRAEWELLING_ERROR_CONNECTING": "Error connecting to Träwelling",
     "TRAEWELLING_ERROR_DISCONNECTING": "Error disconnecting from Träwelling",
     "TRAINLOG_SETTINGS": "Trainlog Export Settings",
-    "TRAINLOG_SETTINGS_HINT": "Configure which property keys to use for exporting data to Trainlog. Leave blank to use defaults.",
+    "TRAINLOG_SETTINGS_HINT": "Configure which property keys to use for exporting data to Trainlog. Leave blank to not map.",
     "TRAINLOG_MATERIAL_KEY": "Material Type Key",
     "TRAINLOG_REGISTRATION_KEY": "Registration Key",
     "TRAINLOG_SEAT_KEY": "Seat Key",

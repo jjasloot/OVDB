@@ -30,7 +30,8 @@ export class RouteInstancesDataSource implements DataSource<RouteInstanceListDTO
     filter = ""
   ): Observable<RouteInstanceListResponseDTO> {
     this.loadingSubject.next(true);
-
+    if(isNaN(start)) start = 0;
+    if(isNaN(count)) count = 10;
     return this.apiService
       .getAllRouteInstances(start, count, column, descending, filter)
       .pipe(

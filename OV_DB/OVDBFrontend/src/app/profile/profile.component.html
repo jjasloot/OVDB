@@ -1,262 +1,262 @@
 <div class="profile-container">
   @if (loading) {
-    <div class="loading-container">
-      <mat-spinner></mat-spinner>
-    </div>
+  <div class="loading-container">
+    <mat-spinner></mat-spinner>
+  </div>
   } @else {
-    <h1>{{ 'PROFILE.TITLE' | translate }}</h1>
+  <h1>{{ 'PROFILE.TITLE' | translate }}</h1>
 
-    <!-- Profile Settings Card -->
-    <mat-card class="profile-card">
-      <mat-card-header>
-        <mat-card-title>{{ 'PROFILE.GENERAL_SETTINGS' | translate }}</mat-card-title>
-      </mat-card-header>
-      <mat-card-content>
-        <form [formGroup]="profileForm" (ngSubmit)="saveProfile()">
-          <!-- Email (readonly) -->
+  <!-- Profile Settings Card -->
+  <mat-card class="profile-card">
+    <mat-card-header>
+      <mat-card-title>{{ 'PROFILE.GENERAL_SETTINGS' | translate }}</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <form [formGroup]="profileForm" (ngSubmit)="saveProfile()">
+        <!-- Email (readonly) -->
+        <mat-form-field>
+          <mat-label>{{ 'PROFILE.EMAIL' | translate }}</mat-label>
+          <input matInput [value]="userProfile?.email" readonly>
+          <mat-icon matSuffix>email</mat-icon>
+        </mat-form-field>
+
+        <!-- Language Preference -->
+        <mat-form-field>
+          <mat-label>{{ 'PROFILE.PREFERRED_LANGUAGE' | translate }}</mat-label>
+          <mat-select formControlName="preferredLanguage">
+            @for (language of languages; track language.value) {
+            <mat-option [value]="language.value">{{ language.label }}</mat-option>
+            }
+          </mat-select>
+          <mat-icon matSuffix>language</mat-icon>
+        </mat-form-field>
+
+        <!-- Telegram User ID -->
+        <mat-form-field>
+          <mat-label>{{ 'PROFILE.TELEGRAM_USER_ID' | translate }}</mat-label>
+          <input matInput type="number" formControlName="telegramUserId" placeholder="">
+          <mat-icon matSuffix>telegram</mat-icon>
+        </mat-form-field>
+
+        @if(enableTrainlogExport()){
+        <!-- Trainlog Settings -->
+        <div class="trainlog-settings">
+          <h3>{{ 'PROFILE.TRAINLOG_SETTINGS' | translate }}</h3>
+          <p class="settings-hint">{{ 'PROFILE.TRAINLOG_SETTINGS_HINT' | translate }}</p>
+
           <mat-form-field>
-            <mat-label>{{ 'PROFILE.EMAIL' | translate }}</mat-label>
-            <input matInput [value]="userProfile?.email" readonly>
-            <mat-icon matSuffix>email</mat-icon>
+            <mat-label>{{ 'PROFILE.TRAINLOG_MATERIAL_KEY' | translate }}</mat-label>
+            <input matInput formControlName="trainlogMaterialKey" placeholder="material_type">
+            <mat-icon matSuffix>train</mat-icon>
           </mat-form-field>
 
-          <!-- Language Preference -->
           <mat-form-field>
-            <mat-label>{{ 'PROFILE.PREFERRED_LANGUAGE' | translate }}</mat-label>
-            <mat-select formControlName="preferredLanguage">
-              @for (language of languages; track language.value) {
-                <mat-option [value]="language.value">{{ language.label }}</mat-option>
-              }
-            </mat-select>
-            <mat-icon matSuffix>language</mat-icon>
+            <mat-label>{{ 'PROFILE.TRAINLOG_REGISTRATION_KEY' | translate }}</mat-label>
+            <input matInput formControlName="trainlogRegistrationKey" placeholder="reg">
+            <mat-icon matSuffix>numbers</mat-icon>
           </mat-form-field>
 
-          <!-- Telegram User ID -->
           <mat-form-field>
-            <mat-label>{{ 'PROFILE.TELEGRAM_USER_ID' | translate }}</mat-label>
-            <input matInput type="number" formControlName="telegramUserId" placeholder="">
-            <mat-icon matSuffix>telegram</mat-icon>
+            <mat-label>{{ 'PROFILE.TRAINLOG_SEAT_KEY' | translate }}</mat-label>
+            <input matInput formControlName="trainlogSeatKey" placeholder="seat">
+            <mat-icon matSuffix>event_seat</mat-icon>
           </mat-form-field>
+        </div>
+        }
 
-          <!-- Trainlog Settings -->
-          <div class="trainlog-settings">
-            <h3>{{ 'PROFILE.TRAINLOG_SETTINGS' | translate }}</h3>
-            <p class="settings-hint">{{ 'PROFILE.TRAINLOG_SETTINGS_HINT' | translate }}</p>
-
-            <mat-form-field>
-              <mat-label>{{ 'PROFILE.TRAINLOG_MATERIAL_KEY' | translate }}</mat-label>
-              <input matInput formControlName="trainlogMaterialKey" placeholder="material_type">
-              <mat-icon matSuffix>train</mat-icon>
-            </mat-form-field>
-
-            <mat-form-field>
-              <mat-label>{{ 'PROFILE.TRAINLOG_REGISTRATION_KEY' | translate }}</mat-label>
-              <input matInput formControlName="trainlogRegistrationKey" placeholder="reg">
-              <mat-icon matSuffix>numbers</mat-icon>
-            </mat-form-field>
-
-            <mat-form-field>
-              <mat-label>{{ 'PROFILE.TRAINLOG_SEAT_KEY' | translate }}</mat-label>
-              <input matInput formControlName="trainlogSeatKey" placeholder="seat">
-              <mat-icon matSuffix>event_seat</mat-icon>
-            </mat-form-field>
+        <!-- Telegram Bot Explanation -->
+        <div class="telegram-info">
+          <mat-icon>info</mat-icon>
+          <div class="telegram-text">
+            <p>{{ 'PROFILE.TELEGRAM_EXPLANATION' | translate }}</p>
+            <p>
+              {{ 'PROFILE.TELEGRAM_BOT_INFO' | translate }}
+              <a href="https://t.me/ovdb_bot" target="_blank" rel="noopener noreferrer">&#64;ovdb_bot</a>
+            </p>
           </div>
+        </div>
 
-          <!-- Telegram Bot Explanation -->
-          <div class="telegram-info">
-            <mat-icon>info</mat-icon>
-            <div class="telegram-text">
-              <p>{{ 'PROFILE.TELEGRAM_EXPLANATION' | translate }}</p>
-              <p>
-                {{ 'PROFILE.TELEGRAM_BOT_INFO' | translate }} 
-                <a href="https://t.me/ovdb_bot" target="_blank" rel="noopener noreferrer">&#64;ovdb_bot</a>
-              </p>
-            </div>
-          </div>
-
-          <div class="form-actions">
-            <button mat-raised-button color="primary" type="submit" [disabled]="!profileForm.valid || savingProfile">
-              @if (savingProfile) {
-                <mat-spinner diameter="20"></mat-spinner>
-              } @else {
-                <mat-icon>save</mat-icon>
-              }
-              {{ 'PROFILE.SAVE_PROFILE' | translate }}
-            </button>
-          </div>
-        </form>
-      </mat-card-content>
-    </mat-card>
-
-    <!-- Träwelling Integration Card -->
-    <mat-card class="traewelling-card">
-      <mat-card-header>
-        <mat-card-title>{{ 'PROFILE.TRAEWELLING_INTEGRATION' | translate }}</mat-card-title>
-      </mat-card-header>
-      <mat-card-content>
-        @if (trawellingLoading) {
-          <div class="loading-container">
-            <mat-spinner diameter="24"></mat-spinner>
-            <span>{{ 'TRAEWELLING.LOADING_TRIPS' | translate }}</span>
-          </div>
-        } @else {
-          <div class="traewelling-info">
-            <mat-icon>train</mat-icon>
-            <div class="traewelling-text">
-              <p>{{ 'PROFILE.TRAEWELLING_EXPLANATION' | translate }}</p>
-              
-              @if (trawellingStatus?.connected) {
-                <div class="traewelling-connected">
-                  <p>
-                    <strong>{{ 'PROFILE.TRAEWELLING_CONNECTED' | translate }}:</strong> 
-                    {{ trawellingStatus.user?.displayName || trawellingStatus.user?.username }}
-                  </p>
-                </div>
-              } @else {
-                <p class="traewelling-not-connected">{{ 'PROFILE.TRAEWELLING_NOT_CONNECTED' | translate }}</p>
-              }
-            </div>
-          </div>
-
-          <div class="traewelling-actions">
-            @if (trawellingStatus?.connected) {
-              <button mat-raised-button color="primary" (click)="viewTrawellingTrips()">
-                <mat-icon>list</mat-icon>
-                {{ 'PROFILE.TRAEWELLING_VIEW_TRIPS' | translate }}
-              </button>
-              
-              <button mat-stroked-button color="warn" (click)="disconnectTraewelling()" [disabled]="trawellingDisconnecting">
-                @if (trawellingDisconnecting) {
-                  <mat-spinner diameter="20"></mat-spinner>
-                } @else {
-                  <mat-icon>link_off</mat-icon>
-                }
-                {{ 'PROFILE.TRAEWELLING_DISCONNECT' | translate }}
-              </button>
+        <div class="form-actions">
+          <button mat-raised-button color="primary" type="submit" [disabled]="!profileForm.valid || savingProfile">
+            @if (savingProfile) {
+            <mat-spinner diameter="20"></mat-spinner>
             } @else {
-              <button mat-raised-button color="accent" (click)="connectTraewelling()" [disabled]="trawellingConnecting">
-                @if (trawellingConnecting) {
-                  <mat-spinner diameter="20"></mat-spinner>
-                } @else {
-                  <mat-icon>link</mat-icon>
-                }
-                {{ 'PROFILE.TRAEWELLING_CONNECT' | translate }}
-              </button>
+            <mat-icon>save</mat-icon>
             }
-          </div>
-        }
-      </mat-card-content>
-    </mat-card>
+            {{ 'PROFILE.SAVE_PROFILE' | translate }}
+          </button>
+        </div>
+      </form>
+    </mat-card-content>
+  </mat-card>
 
-    <!-- Active Sessions Card -->
-    <mat-card class="sessions-card">
-      <mat-card-header>
-        <mat-card-title>{{ 'PROFILE.ACTIVE_SESSIONS' | translate }}</mat-card-title>
-      </mat-card-header>
-      <mat-card-content>
-        @if (sessionsLoading) {
-          <div class="loading-container">
-            <mat-spinner diameter="24"></mat-spinner>
-            <span>{{ 'PROFILE.LOADING_SESSIONS' | translate }}</span>
-          </div>
-        } @else {
-          <div class="sessions-info">
-            <mat-icon>devices</mat-icon>
-            <div class="sessions-text">
-              <p>{{ 'PROFILE.SESSIONS_EXPLANATION' | translate }}</p>
-            </div>
-          </div>
+  <!-- Träwelling Integration Card -->
+  <mat-card class="traewelling-card">
+    <mat-card-header>
+      <mat-card-title>{{ 'PROFILE.TRAEWELLING_INTEGRATION' | translate }}</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      @if (trawellingLoading) {
+      <div class="loading-container">
+        <mat-spinner diameter="24"></mat-spinner>
+        <span>{{ 'TRAEWELLING.LOADING_TRIPS' | translate }}</span>
+      </div>
+      } @else {
+      <div class="traewelling-info">
+        <mat-icon>train</mat-icon>
+        <div class="traewelling-text">
+          <p>{{ 'PROFILE.TRAEWELLING_EXPLANATION' | translate }}</p>
 
-          @if (sessions.length === 0) {
-            <p class="no-sessions">{{ 'PROFILE.NO_ACTIVE_SESSIONS' | translate }}</p>
+          @if (trawellingStatus?.connected) {
+          <div class="traewelling-connected">
+            <p>
+              <strong>{{ 'PROFILE.TRAEWELLING_CONNECTED' | translate }}:</strong>
+              {{ trawellingStatus.user?.displayName || trawellingStatus.user?.username }}
+            </p>
+          </div>
           } @else {
-            <mat-list>
-              @for (session of sessions; track session.id) {
-                <mat-list-item>
-                  <mat-icon matListItemIcon style="margin-top: 11px;">
-                    @if (isCurrentSession(session)) {
-                      computer
-                    } @else {
-                      devices_other
-                    }
-                  </mat-icon>
-                  <div matListItemTitle>
-                    {{ parseUserAgent(session.deviceInfo) }}
-                    @if (isCurrentSession(session)) {
-                      <span class="current-session-badge">{{ 'PROFILE.CURRENT_SESSION' | translate }}</span>
-                    }
-                  </div>
-                  <div matListItemLine>
-                    <span class="session-created">{{ 'PROFILE.CREATED' | translate }}: {{ formatDate(session.createdAt) }} - {{ 'PROFILE.EXPIRES' | translate }}: {{ formatDate(session.expiresAt) }}</span>
-                  </div>
-                  <button mat-icon-button 
-                          color="warn" 
-                          (click)="revokeSession(session.id)" 
-                          [disabled]="revokingSessionId === session.id"
-                          matListItemMeta>
-                    @if (revokingSessionId === session.id) {
-                      <mat-spinner diameter="20"></mat-spinner>
-                    } @else {
-                      <mat-icon>delete</mat-icon>
-                    }
-                  </button>
-                </mat-list-item>
-                @if (!$last) {
-                  <mat-divider></mat-divider>
-                }
-              }
-            </mat-list>
+          <p class="traewelling-not-connected">{{ 'PROFILE.TRAEWELLING_NOT_CONNECTED' | translate }}</p>
           }
+        </div>
+      </div>
+
+      <div class="traewelling-actions">
+        @if (trawellingStatus?.connected) {
+        <button mat-raised-button color="primary" (click)="viewTrawellingTrips()">
+          <mat-icon>list</mat-icon>
+          {{ 'PROFILE.TRAEWELLING_VIEW_TRIPS' | translate }}
+        </button>
+
+        <button mat-stroked-button color="warn" (click)="disconnectTraewelling()" [disabled]="trawellingDisconnecting">
+          @if (trawellingDisconnecting) {
+          <mat-spinner diameter="20"></mat-spinner>
+          } @else {
+          <mat-icon>link_off</mat-icon>
+          }
+          {{ 'PROFILE.TRAEWELLING_DISCONNECT' | translate }}
+        </button>
+        } @else {
+        <button mat-raised-button color="accent" (click)="connectTraewelling()" [disabled]="trawellingConnecting">
+          @if (trawellingConnecting) {
+          <mat-spinner diameter="20"></mat-spinner>
+          } @else {
+          <mat-icon>link</mat-icon>
+          }
+          {{ 'PROFILE.TRAEWELLING_CONNECT' | translate }}
+        </button>
         }
-      </mat-card-content>
-    </mat-card>
+      </div>
+      }
+    </mat-card-content>
+  </mat-card>
 
-    <!-- Password Change Card -->
-    <mat-card class="password-card">
-      <mat-card-header>
-        <mat-card-title>{{ 'PROFILE.CHANGE_PASSWORD' | translate }}</mat-card-title>
-      </mat-card-header>
-      <mat-card-content>
-        <form [formGroup]="passwordForm" (ngSubmit)="changePassword()">
-          <!-- Current Password -->
-          <mat-form-field>
-            <mat-label>{{ 'PROFILE.CURRENT_PASSWORD' | translate }}</mat-label>
-            <input matInput type="password" formControlName="currentPassword">
-            <mat-icon matSuffix>lock</mat-icon>
-          </mat-form-field>
+  <!-- Active Sessions Card -->
+  <mat-card class="sessions-card">
+    <mat-card-header>
+      <mat-card-title>{{ 'PROFILE.ACTIVE_SESSIONS' | translate }}</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      @if (sessionsLoading) {
+      <div class="loading-container">
+        <mat-spinner diameter="24"></mat-spinner>
+        <span>{{ 'PROFILE.LOADING_SESSIONS' | translate }}</span>
+      </div>
+      } @else {
+      <div class="sessions-info">
+        <mat-icon>devices</mat-icon>
+        <div class="sessions-text">
+          <p>{{ 'PROFILE.SESSIONS_EXPLANATION' | translate }}</p>
+        </div>
+      </div>
 
-          <!-- New Password -->
-          <mat-form-field>
-            <mat-label>{{ 'PROFILE.NEW_PASSWORD' | translate }}</mat-label>
-            <input matInput type="password" formControlName="newPassword">
-            <mat-icon matSuffix>lock_open</mat-icon>
-            @if (passwordForm.get('newPassword')?.hasError('minlength') && passwordForm.get('newPassword')?.touched) {
-              <mat-error>{{ 'PROFILE.PASSWORD_MIN_LENGTH' | translate }}</mat-error>
+      @if (sessions.length === 0) {
+      <p class="no-sessions">{{ 'PROFILE.NO_ACTIVE_SESSIONS' | translate }}</p>
+      } @else {
+      <mat-list>
+        @for (session of sessions; track session.id) {
+        <mat-list-item>
+          <mat-icon matListItemIcon style="margin-top: 11px;">
+            @if (isCurrentSession(session)) {
+            computer
+            } @else {
+            devices_other
             }
-          </mat-form-field>
-
-          <!-- Confirm Password -->
-          <mat-form-field>
-            <mat-label>{{ 'PROFILE.CONFIRM_PASSWORD' | translate }}</mat-label>
-            <input matInput type="password" formControlName="confirmPassword">
-            <mat-icon matSuffix>lock_outline</mat-icon>
-            @if (passwordForm.hasError('passwordMismatch') && passwordForm.get('confirmPassword')?.touched) {
-              <mat-error>{{ 'PROFILE.PASSWORDS_DO_NOT_MATCH' | translate }}</mat-error>
+          </mat-icon>
+          <div matListItemTitle>
+            {{ parseUserAgent(session.deviceInfo) }}
+            @if (isCurrentSession(session)) {
+            <span class="current-session-badge">{{ 'PROFILE.CURRENT_SESSION' | translate }}</span>
             }
-          </mat-form-field>
-
-          <div class="form-actions">
-            <button mat-raised-button color="accent" type="submit" [disabled]="!passwordForm.valid || changingPassword">
-              @if (changingPassword) {
-                <mat-spinner diameter="20"></mat-spinner>
-              } @else {
-                <mat-icon>security</mat-icon>
-              }
-              {{ 'PROFILE.CHANGE_PASSWORD' | translate }}
-            </button>
           </div>
-        </form>
-      </mat-card-content>
-    </mat-card>
+          <div matListItemLine>
+            <span class="session-created">{{ 'PROFILE.CREATED' | translate }}: {{ formatDate(session.createdAt) }} - {{
+              'PROFILE.EXPIRES' | translate }}: {{ formatDate(session.expiresAt) }}</span>
+          </div>
+          <button mat-icon-button color="warn" (click)="revokeSession(session.id)"
+            [disabled]="revokingSessionId === session.id" matListItemMeta>
+            @if (revokingSessionId === session.id) {
+            <mat-spinner diameter="20"></mat-spinner>
+            } @else {
+            <mat-icon>delete</mat-icon>
+            }
+          </button>
+        </mat-list-item>
+        @if (!$last) {
+        <mat-divider></mat-divider>
+        }
+        }
+      </mat-list>
+      }
+      }
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Password Change Card -->
+  <mat-card class="password-card">
+    <mat-card-header>
+      <mat-card-title>{{ 'PROFILE.CHANGE_PASSWORD' | translate }}</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <form [formGroup]="passwordForm" (ngSubmit)="changePassword()">
+        <!-- Current Password -->
+        <mat-form-field>
+          <mat-label>{{ 'PROFILE.CURRENT_PASSWORD' | translate }}</mat-label>
+          <input matInput type="password" formControlName="currentPassword">
+          <mat-icon matSuffix>lock</mat-icon>
+        </mat-form-field>
+
+        <!-- New Password -->
+        <mat-form-field>
+          <mat-label>{{ 'PROFILE.NEW_PASSWORD' | translate }}</mat-label>
+          <input matInput type="password" formControlName="newPassword">
+          <mat-icon matSuffix>lock_open</mat-icon>
+          @if (passwordForm.get('newPassword')?.hasError('minlength') && passwordForm.get('newPassword')?.touched) {
+          <mat-error>{{ 'PROFILE.PASSWORD_MIN_LENGTH' | translate }}</mat-error>
+          }
+        </mat-form-field>
+
+        <!-- Confirm Password -->
+        <mat-form-field>
+          <mat-label>{{ 'PROFILE.CONFIRM_PASSWORD' | translate }}</mat-label>
+          <input matInput type="password" formControlName="confirmPassword">
+          <mat-icon matSuffix>lock_outline</mat-icon>
+          @if (passwordForm.hasError('passwordMismatch') && passwordForm.get('confirmPassword')?.touched) {
+          <mat-error>{{ 'PROFILE.PASSWORDS_DO_NOT_MATCH' | translate }}</mat-error>
+          }
+        </mat-form-field>
+
+        <div class="form-actions">
+          <button mat-raised-button color="accent" type="submit" [disabled]="!passwordForm.valid || changingPassword">
+            @if (changingPassword) {
+            <mat-spinner diameter="20"></mat-spinner>
+            } @else {
+            <mat-icon>security</mat-icon>
+            }
+            {{ 'PROFILE.CHANGE_PASSWORD' | translate }}
+          </button>
+        </div>
+      </form>
+    </mat-card-content>
+  </mat-card>
   }
 </div>

@@ -11,6 +11,7 @@ import { RegistrationComponent } from "./registration/registration.component";
 import { LinkComponent } from "./link/link.component";
 import { MapsListComponent } from "./admin/maps-list/maps-list.component";
 import { RoutesListComponent } from "./admin/routes-list/routes-list.component";
+import { RouteInstancesListComponent } from "./admin/route-instances-list/route-instances-list.component";
 import { RouteAddComponent } from "./admin/route-add/route-add.component";
 import { CountriesComponent } from "./admin/countries/countries.component";
 import { RouteTypesComponent } from "./admin/route-types/route-types.component";
@@ -72,6 +73,7 @@ export const routes: Routes = [
           { path: "", pathMatch: "full", redirectTo: "maps" },
           { path: "maps", component: MapsListComponent },
           { path: "routes", component: RoutesListComponent },
+          { path: "route-instances", component: RouteInstancesListComponent },
           { path: "routes/:routeId", component: RouteDetailComponent },
           {
             path: "routes/instances/:routeId",

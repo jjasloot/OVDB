@@ -334,7 +334,7 @@
     "TRAEWELLING_ERROR_CONNECTING": "Fout bij verbinden met Träwelling",
     "TRAEWELLING_ERROR_DISCONNECTING": "Fout bij ontkoppelen van Träwelling",
     "TRAINLOG_SETTINGS": "Trainlog Export Instellingen",
-    "TRAINLOG_SETTINGS_HINT": "Stel in welke eigenschapssleutels gebruikt moeten worden voor export naar Trainlog. Laat leeg voor standaardwaarden.",
+    "TRAINLOG_SETTINGS_HINT": "Stel in welke eigenschapssleutels gebruikt moeten worden voor export naar Trainlog. Laat leeg om niet te mappen.",
     "TRAINLOG_MATERIAL_KEY": "Sleutel voor Materieel Type",
     "TRAINLOG_REGISTRATION_KEY": "Sleutel voor Registratie",
     "TRAINLOG_SEAT_KEY": "Sleutel voor Stoel",
@@ -443,10 +443,10 @@
     "LINE": "Lijn",
     "START_TIME": "Vertrek",
     "END_TIME": "Aankomst",
-    "DESCRIPTION": "Beschrijving",
-    "ROUTESLIST.EXPORTTOTRAINLOG": "Exporteer selectie voor Trainlog",
-    "ROUTESLIST.SHOWROUTES": "Toon routes",
-    "ROUTESLIST.SHOWINSTANCES": "Toon ritten"
-
-  }
+    "DESCRIPTION": "Beschrijving"
+  },
+  "ROUTESLIST.EXPORTTOTRAINLOG": "Exporteer selectie voor Trainlog",
+  "ROUTESLIST.SHOWROUTES": "Toon routes",
+  "ROUTESLIST.SHOWINSTANCES": "Toon ritten"
+  
 }

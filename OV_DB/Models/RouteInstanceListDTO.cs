@@ -6,7 +6,7 @@ namespace OV_DB.Models
     {
         public string RouteName { get; set; }
         public string RouteDescription { get; set; }
-        public string RouteType { get; set; }
+        public RouteTypeDTO RouteType { get; set; }
         public string RouteTypeColour { get; set; }
         public string From { get; set; }
         public string To { get; set; }
@@ -18,5 +18,11 @@ namespace OV_DB.Models
     {
         public int Count { get; set; }
         public List<RouteInstanceListDTO> Instances { get; set; }
+    }
+
+    public class RouteTypeDTO
+    {
+        public string Name { get; set; }
+        public string NameNL { get; set; }
     }
 }

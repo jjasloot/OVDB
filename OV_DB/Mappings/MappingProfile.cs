@@ -16,11 +16,11 @@ namespace OV_DB.Mappings
             CreateMap<OVDB_database.Models.Route, RouteDTO>()
                 .ForMember(dest => dest.FirstDateTime, ops => ops.MapFrom(r => r.RouteInstances.OrderByDescending(d => d.Date).FirstOrDefault().Date))
                 .ForMember(dest => dest.RouteInstancesCount, ops => ops.MapFrom(r => r.RouteInstances.Count))
-                .ForMember(dest => dest.MinAverageSpeedKmh, ops => ops.MapFrom(r => 
+                .ForMember(dest => dest.MinAverageSpeedKmh, ops => ops.MapFrom(r =>
                     r.RouteInstances.Where(ri => ri.DurationHours.HasValue && ri.DurationHours > 0)
-                    .Any() ? 
+                    .Any() ?
                     r.RouteInstances.Where(ri => ri.DurationHours.HasValue && ri.DurationHours > 0)
-                    .Select(ri => (ri.Route.OverrideDistance??ri.Route.CalculatedDistance) / ri.DurationHours)
+                    .Select(ri => (ri.Route.OverrideDistance ?? ri.Route.CalculatedDistance) / ri.DurationHours)
                     .Min() : (double?)null
                 ))
                 .ForMember(dest => dest.MaxAverageSpeedKmh, ops => ops.MapFrom(r =>
@@ -42,16 +42,17 @@ namespace OV_DB.Mappings
                 .IncludeBase<RouteInstance, RouteInstanceDTO>()
                 .ForMember(dest => dest.RouteName, ops => ops.MapFrom(ri => ri.Route.Name))
                 .ForMember(dest => dest.RouteDescription, ops => ops.MapFrom(ri => ri.Route.Description))
-                .ForMember(dest => dest.RouteType, ops => ops.MapFrom(ri => ri.Route.RouteType.Name))
+                .ForMember(dest => dest.RouteType, ops => ops.MapFrom(ri => ri.Route.RouteType))
                 .ForMember(dest => dest.RouteTypeColour, ops => ops.MapFrom(ri => ri.Route.RouteType.Colour))
                 .ForMember(dest => dest.From, ops => ops.MapFrom(ri => ri.Route.From))
                 .ForMember(dest => dest.To, ops => ops.MapFrom(ri => ri.Route.To))
                 .ForMember(dest => dest.Distance, ops => ops.MapFrom(ri => ri.Route.OverrideDistance ?? ri.Route.CalculatedDistance))
-                .ForMember(dest => dest.RouteOverrideColour, ops => ops.MapFrom(ri => ri.Route.OverrideColour));
+                .ForMember(dest => dest.RouteOverrideColour, ops => ops.MapFrom(ri => ri.Route.OverrideColour))
+                .ForMember(dest => dest.Share, ops => ops.MapFrom(ri => ri.Route.Share));
 
-            
+
             CreateMap<RouteInstanceProperty, RouteInstancePropertyDTO>();
-            
+
             CreateMap<RouteInstanceMap, RouteInstanceMapDTO>()
                 .ForMember(dest => dest.Name, ops => ops.MapFrom(rim => rim.Map.Name))
                 .ForMember(dest => dest.NameNL, ops => ops.MapFrom(rim => rim.Map.NameNL));
@@ -72,6 +73,8 @@ namespace OV_DB.Mappings
                 .ForMember(dest => dest.UserEmail, ops => ops.MapFrom(src => src.User.Email));
 
             CreateMap<Operator, OperatorDTO>();
+
+            CreateMap<RouteType, RouteTypeDTO>();
         }
     }
 }

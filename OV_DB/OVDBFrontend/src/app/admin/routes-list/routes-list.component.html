@@ -9,44 +9,31 @@
   </mat-form-field>
   <div class="buttons desktop">
     <button mat-raised-button color="primary" (click)="editMultiple()"
-      [disabled]="showInstances || selectedRoutes.length === 0">
+      [disabled]="selectedRoutes.length === 0">
       {{ selectedRoutes.length }} {{ "ROUTESLIST.SELECTED" | translate }}
     </button>
     <button mat-stroked-button (click)="clearSelection()"
-      [disabled]="(!showInstances && selectedRoutes.length === 0) || (showInstances && selectedInstanceIds.length === 0)">
+      [disabled]="selectedRoutes.length === 0">
       {{ "ROUTESLIST.DESELECT" | translate }}
     </button>
-    @if(!showInstances && selectedRoutes.length==0){
+    @if(selectedRoutes.length==0){
     <button mat-stroked-button (click)="exportAll()">
       {{ "ROUTESLIST.EXPORTALL" | translate }}
     </button>
-    } @else if (!showInstances) {
+    } @else {
     <button mat-stroked-button (click)="exportSet()">
       {{ "ROUTESLIST.EXPORTSET" | translate }}
     </button>
     }
-    @if(isAdmin && ((!showInstances && selectedRoutes.length > 0) || (showInstances && selectedInstanceIds.length >
-    0))){
-    <button mat-stroked-button (click)="exportToTrainlog()" color="accent">
-      {{ "ROUTESLIST.EXPORTTOTRAINLOG" | translate }}
-    </button>
-    }
-    <button mat-stroked-button (click)="toggleShowInstances()">
-      {{ (showInstances ? ("ROUTESLIST.SHOWROUTES" | translate) : ("ROUTESLIST.SHOWINSTANCES" | translate)) }}
-    </button>
   </div>
-  <table mat-table [dataSource]="showInstances ? instancesDataSource : dataSource" matSort matSortActive="date"
+  <table mat-table [dataSource]="dataSource" matSort matSortActive="date"
     matSortDirection="desc" matSortDisableClear>
     <ng-container matColumnDef="select">
       <th mat-header-cell *matHeaderCellDef>
         {{ "ROUTESLIST.SELECT" | translate }}
       </th>
       <td mat-cell *matCellDef="let element">
-        @if(!showInstances){
         <mat-checkbox [checked]="isChecked(element)" (change)="toggle(element, $event)"></mat-checkbox>
-        } @else {
-        <mat-checkbox [checked]="isInstanceChecked(element)" (change)="toggleInstance(element, $event)"></mat-checkbox>
-        }
       </td>
     </ng-container>
     <ng-container matColumnDef="name">
@@ -130,48 +117,14 @@
         <mat-chip-listbox>
           <mat-chip-option [color]="element.routeTypeColour" [style.background]="element.routeTypeColour"
             [selectable]="false">
-            {{ element.routeType }}
+            {{ name(element.routeType) }}
           </mat-chip-option>
         </mat-chip-listbox>
         }
       </td>
     </ng-container>
 
-    <ng-container matColumnDef="time">
-      <th mat-header-cell *matHeaderCellDef>
-        {{ "ROUTESLIST.TIME" | translate }}
-      </th>
-      <td mat-cell *matCellDef="let element">
-        {{ element.startTime | date : "shortTime" }}
-      </td>
-    </ng-container>
 
-    <ng-container matColumnDef="from">
-      <th mat-header-cell *matHeaderCellDef>
-        {{ "FROM" | translate }}
-      </th>
-      <td mat-cell *matCellDef="let element">
-        {{ element.from }}
-      </td>
-    </ng-container>
-
-    <ng-container matColumnDef="to">
-      <th mat-header-cell *matHeaderCellDef>
-        {{ "TO" | translate }}
-      </th>
-      <td mat-cell *matCellDef="let element">
-        {{ element.to }}
-      </td>
-    </ng-container>
-
-    <ng-container matColumnDef="distance">
-      <th mat-header-cell *matHeaderCellDef>
-        {{ "ROUTES.DISTANCE" | translate }}
-      </th>
-      <td mat-cell *matCellDef="let element">
-        {{ element.distance | number : "1.0-0" }} km
-      </td>
-    </ng-container>
 
     <ng-container matColumnDef="edit" stickyEnd>
       <th mat-header-cell *matHeaderCellDef></th>
@@ -197,19 +150,26 @@
     <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
   </table>
 
-  <mat-paginator [length]="count" [pageSize]="10" [pageSizeOptions]="[10, 20, 50]" [showFirstLastButtons]="true">
+  <mat-paginator [length]="count" [pageSize]="10" [pageSizeOptions]="[10, 20, 50, 100]" [showFirstLastButtons]="true">
   </mat-paginator>
   <div class="buttons">
-    <button mat-raised-button color="primary" (click)="editMultiple()" [disabled]="selectedRoutes.length === 0">
+    <button mat-raised-button color="primary" (click)="editMultiple()"
+      [disabled]="selectedRoutes.length === 0">
       {{ selectedRoutes.length }} {{ "ROUTESLIST.SELECTED" | translate }}
     </button>
-    <button mat-stroked-button (click)="clearSelection()" [disabled]="selectedRoutes.length === 0">
+    <button mat-stroked-button (click)="clearSelection()"
+      [disabled]="selectedRoutes.length === 0">
       {{ "ROUTESLIST.DESELECT" | translate }}
     </button>
-
+    @if(selectedRoutes.length==0){
     <button mat-stroked-button (click)="exportAll()">
       {{ "ROUTESLIST.EXPORTALL" | translate }}
     </button>
+    } @else {
+    <button mat-stroked-button (click)="exportSet()">
+      {{ "ROUTESLIST.EXPORTSET" | translate }}
+    </button>
+    }
   </div>
 </div>
 
