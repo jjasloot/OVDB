@@ -4,6 +4,7 @@ export interface Region {
   nameNL: string;
   originalName: string;
   osmRelationId: number;
+  isoCode?: string;
   subRegions: Region[];
 }
 

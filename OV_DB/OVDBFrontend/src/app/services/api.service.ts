@@ -21,6 +21,7 @@ import { MapDataDTO } from "../models/map-data.model";
 import { RegionOperators } from "../models/region-operators.model";
 import { RegionStat } from "../models/region.model";
 import { UserProfile, UpdateProfile, ChangePassword } from "../models/user-profile.model";
+import { RouteInstanceListResponseDTO } from "../models/routeInstanceList.model";
 import { 
   TrawellingConnectionStatus, 
   TrawellingConnectResponse, 
@@ -201,6 +202,33 @@ export class ApiService {
     });
   }
 
+  getAllRouteInstances(
+    start?: number,
+    count?: number,
+    column?: string,
+    order?: boolean,
+    filter?: string
+  ): Observable<RouteInstanceListResponseDTO> {
+    let params = new HttpParams();
+    if (start !== undefined && count !== undefined) {
+      params = params
+        .set("start", start.toString())
+        .set("count", count.toString());
+    }
+    if (column !== undefined) {
+      params = params.set("sortColumn", column.toString());
+      if (order !== undefined) {
+        params = params.set("descending", order.toString());
+      }
+    }
+    if (filter !== undefined) {
+      params = params.set("filter", filter);
+    }
+    return this.httpClient.get<RouteInstanceListResponseDTO>(environment.backend + "api/routes/instances/list", {
+      params,
+    });
+  }
+
   getRoutes(
     filter: string,
     guid: string,
@@ -304,6 +332,22 @@ export class ApiService {
       params,
       responseType: "blob",
     });
+  }
+
+  exportToTrainlog(routeIds: number[]) {
+    return this.httpClient.post(
+      environment.backend + "api/export/Trainlog",
+      { routeIds: routeIds },
+      { responseType: "blob" }
+    );
+  }
+
+  exportInstancesToTrainlog(routeInstanceIds: number[]) {
+    return this.httpClient.post(
+      environment.backend + "api/export/Trainlog",
+      { routeInstanceIds: routeInstanceIds },
+      { responseType: "blob" }
+    );
   }
 
   updateRouteTypeOrder(newOrder: number[]): Observable<any> {

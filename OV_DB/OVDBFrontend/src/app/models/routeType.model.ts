@@ -3,4 +3,6 @@ export interface RouteType {
     name: string;
     nameNL: string;
     colour: string;
+    isTrain: boolean;
+    trainlogType: string;
 }

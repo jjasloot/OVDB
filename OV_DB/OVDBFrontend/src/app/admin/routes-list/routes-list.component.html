@@ -8,25 +8,28 @@
     <input matInput placeholder="{{ 'ROUTESLIST.SEARCH' | translate }}" #input />
   </mat-form-field>
   <div class="buttons desktop">
-    <button mat-raised-button color="primary" (click)="editMultiple()" [disabled]="selectedRoutes.length === 0">
+    <button mat-raised-button color="primary" (click)="editMultiple()"
+      [disabled]="selectedRoutes.length === 0">
       {{ selectedRoutes.length }} {{ "ROUTESLIST.SELECTED" | translate }}
     </button>
-    <button mat-stroked-button (click)="clearSelection()" [disabled]="selectedRoutes.length === 0">
+    <button mat-stroked-button (click)="clearSelection()"
+      [disabled]="selectedRoutes.length === 0">
       {{ "ROUTESLIST.DESELECT" | translate }}
     </button>
     @if(selectedRoutes.length==0){
     <button mat-stroked-button (click)="exportAll()">
       {{ "ROUTESLIST.EXPORTALL" | translate }}
     </button>
-    } @else{
+    } @else {
     <button mat-stroked-button (click)="exportSet()">
       {{ "ROUTESLIST.EXPORTSET" | translate }}
     </button>
     }
   </div>
-  <table mat-table [dataSource]="dataSource" matSort matSortActive="date" matSortDirection="desc" matSortDisableClear>
+  <table mat-table [dataSource]="dataSource" matSort matSortActive="date"
+    matSortDirection="desc" matSortDisableClear>
     <ng-container matColumnDef="select">
-      <th mat-header-cell *matHeaderCellDef mat-sort-header>
+      <th mat-header-cell *matHeaderCellDef>
         {{ "ROUTESLIST.SELECT" | translate }}
       </th>
       <td mat-cell *matCellDef="let element">
@@ -38,7 +41,7 @@
         {{ "ROUTESLIST.NAME" | translate }}
       </th>
       <td mat-cell *matCellDef="let element">
-        <b>{{ element.name }} </b>
+        <b>{{ element.name || element.routeName }} </b>
       </td>
     </ng-container>
     <ng-container matColumnDef="operator">
@@ -48,7 +51,8 @@
       </th>
       <td mat-cell *matCellDef="let element">
         @for (operatorId of element.operatorIds; track operatorId) {
-        <img style="max-height: 1rem; max-width: 2rem; background:white;padding:4px; border-radius: 2px;" [src]="getOperatorLogo(operatorId) | async" />
+        <img style="max-height: 1rem; max-width: 2rem; background:white;padding:4px; border-radius: 2px;"
+          [src]="getOperatorLogo(operatorId) | async" />
         }
       </td>
     </ng-container>
@@ -59,7 +63,7 @@
       </th>
       <td mat-cell *matCellDef="let element">
         {{
-        element.firstDateTime
+        (element.firstDateTime || element.date)
         | date : "mediumDate" : undefined : currentLocale
         }}
       </td>
@@ -94,7 +98,7 @@
         {{ "ROUTESLIST.TYPE" | translate }}
       </th>
       <td mat-cell *matCellDef="let element">
-        @if (element.routeType) {
+        @if (element.routeType && element.routeType.colour) {
         <mat-chip-listbox class="desktop">
           <mat-chip-option [color]="element.routeType.colour" [style.background]="element.routeType.colour"
             [selectable]="false">
@@ -102,15 +106,25 @@
           </mat-chip-option>
         </mat-chip-listbox>
         }
-        @if (element.routeType) {
+        @if (element.routeType && element.routeType.colour) {
         <mat-chip-listbox class="mobile">
           <mat-chip-option [color]="element.routeType.colour" [matTooltip]="name(element.routeType)"
             [style.background]="element.routeType.colour" [selectable]="false">
           </mat-chip-option>
         </mat-chip-listbox>
         }
+        @if (element.routeTypeColour) {
+        <mat-chip-listbox>
+          <mat-chip-option [color]="element.routeTypeColour" [style.background]="element.routeTypeColour"
+            [selectable]="false">
+            {{ name(element.routeType) }}
+          </mat-chip-option>
+        </mat-chip-listbox>
+        }
       </td>
     </ng-container>
+
+
 
     <ng-container matColumnDef="edit" stickyEnd>
       <th mat-header-cell *matHeaderCellDef></th>
@@ -136,19 +150,26 @@
     <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
   </table>
 
-  <mat-paginator [length]="count" [pageSize]="10" [pageSizeOptions]="[10, 20, 50]" [showFirstLastButtons]="true">
+  <mat-paginator [length]="count" [pageSize]="10" [pageSizeOptions]="[10, 20, 50, 100]" [showFirstLastButtons]="true">
   </mat-paginator>
   <div class="buttons">
-    <button mat-raised-button color="primary" (click)="editMultiple()" [disabled]="selectedRoutes.length === 0">
+    <button mat-raised-button color="primary" (click)="editMultiple()"
+      [disabled]="selectedRoutes.length === 0">
       {{ selectedRoutes.length }} {{ "ROUTESLIST.SELECTED" | translate }}
     </button>
-    <button mat-stroked-button (click)="clearSelection()" [disabled]="selectedRoutes.length === 0">
+    <button mat-stroked-button (click)="clearSelection()"
+      [disabled]="selectedRoutes.length === 0">
       {{ "ROUTESLIST.DESELECT" | translate }}
     </button>
-
+    @if(selectedRoutes.length==0){
     <button mat-stroked-button (click)="exportAll()">
       {{ "ROUTESLIST.EXPORTALL" | translate }}
     </button>
+    } @else {
+    <button mat-stroked-button (click)="exportSet()">
+      {{ "ROUTESLIST.EXPORTSET" | translate }}
+    </button>
+    }
   </div>
 </div>
 

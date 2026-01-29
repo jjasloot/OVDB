@@ -1,4 +1,4 @@
-import { Component, DestroyRef, OnInit, inject } from '@angular/core';
+import { Component, DestroyRef, OnInit, computed, inject } from '@angular/core';
 import { UntypedFormBuilder, UntypedFormGroup, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { ApiService } from '../services/api.service';
 import { UserProfile, UpdateProfile, ChangePassword } from '../models/user-profile.model';
@@ -25,20 +25,20 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
   templateUrl: './profile.component.html',
   styleUrls: ['./profile.component.scss'],
   imports: [
-    FormsModule, 
-    ReactiveFormsModule, 
-    MatFormField, 
-    MatLabel, 
+    FormsModule,
+    ReactiveFormsModule,
+    MatFormField,
+    MatLabel,
     MatError,
-    MatInput, 
-    MatButton, 
-    MatSelect, 
-    MatOption, 
-    MatCard, 
-    MatCardContent, 
-    MatCardHeader, 
-    MatCardTitle, 
-    MatProgressSpinner, 
+    MatInput,
+    MatButton,
+    MatSelect,
+    MatOption,
+    MatCard,
+    MatCardContent,
+    MatCardHeader,
+    MatCardTitle,
+    MatProgressSpinner,
     MatIcon,
     MatList,
     MatListItem,
@@ -79,10 +79,15 @@ export class ProfileComponent implements OnInit {
     { value: 'nl', label: 'Nederlands' }
   ];
 
+  enableTrainlogExport = computed(() => this.userPreferenceService.enableTrainlogExport());
+
   constructor() {
     this.profileForm = this.formBuilder.group({
       preferredLanguage: ['', Validators.required],
-      telegramUserId: [null]
+      telegramUserId: [null],
+      trainlogMaterialKey: [''],
+      trainlogRegistrationKey: [''],
+      trainlogSeatKey: ['']
     });
 
     this.passwordForm = this.formBuilder.group({
@@ -113,7 +118,10 @@ export class ProfileComponent implements OnInit {
         this.userProfile = profile;
         this.profileForm.patchValue({
           preferredLanguage: profile.preferredLanguage || '',
-          telegramUserId: profile.telegramUserId || null
+          telegramUserId: profile.telegramUserId || null,
+          trainlogMaterialKey: profile.trainlogMaterialKey || '',
+          trainlogRegistrationKey: profile.trainlogRegistrationKey || '',
+          trainlogSeatKey: profile.trainlogSeatKey || ''
         });
         this.loading = false;
       },
@@ -130,14 +138,17 @@ export class ProfileComponent implements OnInit {
       this.savingProfile = true;
       const updateProfile: UpdateProfile = {
         preferredLanguage: this.profileForm.value.preferredLanguage,
-        telegramUserId: this.profileForm.value.telegramUserId
+        telegramUserId: this.profileForm.value.telegramUserId,
+        trainlogMaterialKey: this.profileForm.value.trainlogMaterialKey,
+        trainlogRegistrationKey: this.profileForm.value.trainlogRegistrationKey,
+        trainlogSeatKey: this.profileForm.value.trainlogSeatKey
       };
 
       this.apiService.updateUserProfile(updateProfile).subscribe({
         next: () => {
           this.showMessage('PROFILE.SAVED_SUCCESSFULLY');
           this.savingProfile = false;
-          
+
           // Update language if changed
           if (updateProfile.preferredLanguage !== this.translationService.language) {
             this.translationService.language = updateProfile.preferredLanguage as 'nl' | 'en';
@@ -204,13 +215,13 @@ export class ProfileComponent implements OnInit {
       next: (response) => {
         // Open the authorization URL in a new window
         const authWindow = window.open(response.authorizationUrl, '_blank', 'width=600,height=700');
-        
+
         // Listen for messages from the popup
         const messageListener = (event: MessageEvent) => {
           if (event.origin !== window.location.origin) {
             return; // Ignore messages from other origins
           }
-          
+
           if (event.data.type === 'oauth-success') {
             window.removeEventListener('message', messageListener);
             this.stopPolling();
@@ -224,9 +235,9 @@ export class ProfileComponent implements OnInit {
             this.showMessage('PROFILE.TRAEWELLING_ERROR_CONNECTING');
           }
         };
-        
+
         window.addEventListener('message', messageListener);
-        
+
         // Fallback: Poll for the window to be closed (in case postMessage fails)
         this.pollingIntervalId = window.setInterval(() => {
           if (authWindow?.closed) {
@@ -325,7 +336,7 @@ export class ProfileComponent implements OnInit {
     // Parse browser
     let browser = 'Unknown Browser';
     let browserVersion = '';
-    
+
     if (userAgent.includes('Firefox/')) {
       const match = userAgent.match(/Firefox\/([\d.]+)/);
       browser = 'Firefox';
@@ -374,7 +385,7 @@ export class ProfileComponent implements OnInit {
     // Format the result
     const versionStr = browserVersion ? ` ${browserVersion.split('.')[0]}` : '';
     const result = os ? `${browser}${versionStr} on ${os}` : `${browser}${versionStr}`;
-    
+
     return result;
   }
 

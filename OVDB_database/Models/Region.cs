@@ -20,4 +20,5 @@ public class Region
     public ICollection<Operator> OperatorsRunningTrains { get; set; } = [];
     public ICollection<Operator> OperatorsRestrictedToRegion { get; set; } = [];
     public string? FlagEmoji { get; set; }
+    public string? IsoCode { get; set; }
 }

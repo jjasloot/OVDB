@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using NetTopologySuite.Geometries;
 using OVDB_database.Database;
@@ -12,9 +13,11 @@ using OVDB_database.Database;
 namespace OVDB_database.Migrations
 {
     [DbContext(typeof(OVDBDatabaseContext))]
-    partial class OVDBDatabaseContextModelSnapshot : ModelSnapshot
+    [Migration("20260123193513_AddTrainlogTypeToRouteType")]
+    partial class AddTrainlogTypeToRouteType
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -192,9 +195,6 @@ namespace OVDB_database.Migrations
 
                     b.Property<MultiPolygon>("Geometry")
                         .HasColumnType("multipolygon");
-
-                    b.Property<string>("IsoCode")
-                        .HasColumnType("longtext");
 
                     b.Property<string>("Name")
                         .HasColumnType("longtext");
@@ -760,9 +760,6 @@ namespace OVDB_database.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("varchar(256)");
 
-                    b.Property<bool>("EnableTrainlogExport")
-                        .HasColumnType("tinyint(1)");
-
                     b.Property<Guid>("Guid")
                         .HasColumnType("char(36)");
 
@@ -785,18 +782,6 @@ namespace OVDB_database.Migrations
 
                     b.Property<long?>("TelegramUserId")
                         .HasColumnType("bigint");
-
-                    b.Property<string>("TrainlogMaterialKey")
-                        .HasMaxLength(100)
-                        .HasColumnType("varchar(100)");
-
-                    b.Property<string>("TrainlogRegistrationKey")
-                        .HasMaxLength(100)
-                        .HasColumnType("varchar(100)");
-
-                    b.Property<string>("TrainlogSeatKey")
-                        .HasMaxLength(100)
-                        .HasColumnType("varchar(100)");
 
                     b.Property<string>("TrawellingAccessToken")
                         .HasColumnType("longtext");

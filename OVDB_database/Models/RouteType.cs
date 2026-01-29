@@ -24,6 +24,7 @@ namespace OVDB_database.Models
         public List<Route> Routes { get; set; }
         [JsonProperty]
         public bool IsTrain { get; set; }
-
+        [JsonProperty]
+        public string TrainlogType { get; set; }
     }
 }

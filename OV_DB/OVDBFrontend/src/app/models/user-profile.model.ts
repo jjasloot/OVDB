@@ -3,11 +3,18 @@ export interface UserProfile {
   preferredLanguage: string | null;
   telegramUserId: number | null;
   hasTraewelling: boolean | null;
+  trainlogMaterialKey: string;
+  trainlogRegistrationKey: string;
+  trainlogSeatKey: string;
+  enableTrainlogExport:boolean;
 }
 
 export interface UpdateProfile {
   preferredLanguage: string | null;
   telegramUserId: number | null;
+  trainlogMaterialKey: string;
+  trainlogRegistrationKey: string;
+  trainlogSeatKey: string;
 }
 
 export interface ChangePassword {

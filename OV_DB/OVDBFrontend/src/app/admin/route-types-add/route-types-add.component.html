@@ -23,6 +23,19 @@
   <mat-checkbox [(ngModel)]="isTrain">{{
     "ADDTYPE.ISTRAIN" | translate
   }}</mat-checkbox>
+  <mat-form-field style="width: 100%">
+    <mat-label>Trainlog Type</mat-label>
+    <mat-select [(ngModel)]="trainlogType">
+      <mat-option value="train">Train</mat-option>
+      <mat-option value="bus">Bus</mat-option>
+      <mat-option value="tram">Tram</mat-option>
+      <mat-option value="subway">Subway</mat-option>
+      <mat-option value="ferry">Ferry</mat-option>
+      <mat-option value="flight">Flight</mat-option>
+      <mat-option value="car">Car</mat-option>
+      <mat-option value="mixed">Mixed</mat-option>
+    </mat-select>
+  </mat-form-field>
   {{ error }}
 </div>
 <div mat-dialog-actions>

@@ -30,6 +30,7 @@ export class RoutesComponent implements OnInit {
   menuEffect = effect(() => {
     this.language();
     this.userPreferenceService.hasTraewelling();
+    this.userPreferenceService.hasTraewelling
     const navLinks = [
       {
         label: this.translateService.instant("ADMINPAGES.MAPS"),
@@ -46,38 +47,46 @@ export class RoutesComponent implements OnInit {
         link: "/admin/routes",
         index: 2,
       },
+
       {
         label: this.translateService.instant("ADMINPAGES.ADDROUTE"),
         link: "/admin/addRoute",
-        index: 3,
+        index: 4,
       },
       {
         label: this.translateService.instant("ADMINPAGES.WIZARD"),
         link: "/admin/wizard",
-        index: 4,
-      },
-      {
-        label: this.translateService.instant(
-          "ADMINPAGES.ROUTESMISSINGINFORMATION"
-        ),
-        link: "/admin/missingData",
         index: 5,
       },
+      // {
+      //   label: this.translateService.instant(
+      //     "ADMINPAGES.ROUTESMISSINGINFORMATION"
+      //   ),
+      //   link: "/admin/missingData",
+      //   index: 6,
+      // },
       {
         label: this.translateService.instant("ADMINPAGES.TYPES"),
         link: "/admin/types",
-        index: 7,
+        index: 6,
       },
     ];
+    if (this.userPreferenceService.enableTrainlogExport()) {
+      navLinks.push({
+        label: this.translateService.instant("ROUTES.INSTANCES"),
+        link: "/admin/route-instances",
+        index: 3,
+      });
+    }
     if (this.userPreferenceService.hasTraewelling()) {
       navLinks.push({
         label: this.translateService.instant("ADMINPAGES.TRAEWELLING"),
         link: "/admin/traewelling",
-        index: 6,
+        index: 7,
       });
     }
 
-    this.navLinks.set(navLinks);
+    this.navLinks.set(navLinks.sort((a, b) => a.index - b.index));
   });
 
   ngOnInit(): void {

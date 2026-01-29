@@ -10,6 +10,7 @@ public class RegionDTO
     public string NameNL { get; set; } = null!;
     public string OriginalName { get; set; } = null!;
     public long OsmRelationId { get; set; }
+    public string? IsoCode { get; set; }
     public IEnumerable<RegionDTO> SubRegions { get; set; } = [];
 }
 
@@ -28,5 +29,6 @@ public class RegionIntermediate
     public string NameNL { get; set; } = null!;
     public string OriginalName { get; set; } = null!;
     public long OsmRelationId { get; set; }
+    public string? IsoCode { get; set; }
     public int? ParentRegionId { get; set; }
 }

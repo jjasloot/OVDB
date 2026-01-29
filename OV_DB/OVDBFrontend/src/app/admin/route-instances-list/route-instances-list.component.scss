@@ -1,0 +1,125 @@
+.spinner-container {
+    height: 100px;
+    width: 100px;
+    left: calc(50% - 50px);
+    top: 200px;
+    position: fixed;
+}
+
+/* TODO(mdc-migration): The following rule targets internal classes of tabs that may no longer apply for the MDC version. */
+mat-table {
+    min-height: 300px;
+    background-color: var(--app-table-background);
+    color: var(--app-text-color);
+}
+
+.mat-column-date {
+    max-width: 100px;
+}
+
+.mat-column-edit{
+    max-width: 64px;
+}
+.mat-column-type {
+    max-width: 40px;
+}
+
+.mat-column-from,
+.mat-column-distance,
+.mat-column-to {
+    max-width: 0;
+}
+
+.mat-column-name {
+    flex: 3
+}
+
+button:not(.mat-mdc-fab) {
+    margin: 0 8px;
+}
+
+.container {
+    padding: 8px;
+    background-color: var(--app-background-color);
+    color: var(--app-text-color);
+
+    .mat-elevation-z8 {
+        background-color: var(--app-surface-color);
+        box-shadow: 0 2px 8px var(--app-shadow-color);
+    }
+}
+
+.buttons {
+    display: flex;
+    flex-direction: column;
+
+    button {
+        margin-bottom: 8px;
+    }
+
+    button:last-child {
+        margin-bottom: 0;
+    }
+}
+
+.filter {
+    display: block;
+    padding: 0 8px;
+
+    .mat-mdc-form-field {
+        width: 100%;
+
+        .mat-mdc-text-field-wrapper {
+            background-color: var(--app-input-background);
+        }
+
+        input {
+            color: var(--app-text-color);
+        }
+    }
+}
+
+.desktop {
+    display: none;
+}
+
+.mobile {
+    display: unset;
+}
+
+@media (min-width:600px) {
+    .desktop {
+        display: unset;
+    }
+
+    .mobile {
+        display: none;
+    }
+
+    .mat-column-type {
+        max-width: 200px;
+    }
+
+    .mat-column-edit {
+        max-width: 230px;
+    }
+
+    .mat-column-from,
+    .mat-column-distance,
+    .mat-column-to {
+        max-width: unset;
+    }
+
+    .buttons {
+        flex-direction: row;
+
+        button {
+            margin-bottom: 0;
+        }
+    }
+
+    .filter {
+        padding: 12px;
+        margin-left: 12px;
+    }
+}

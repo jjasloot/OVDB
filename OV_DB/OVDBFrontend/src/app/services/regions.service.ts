@@ -24,6 +24,13 @@ export class RegionsService {
     );
   }
 
+  updateRegion(region: Region) {
+    return this.httpClient.put<void>(
+      environment.backend + "api/regions/" + region.id,
+      region
+    );
+  }
+
   getMapsRegions(mapGuid: string) {
     return this.httpClient.get<Region[]>(
       environment.backend + "api/regions/map/" + mapGuid

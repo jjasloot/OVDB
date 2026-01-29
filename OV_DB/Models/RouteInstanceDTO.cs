@@ -8,6 +8,7 @@ namespace OV_DB.Models
     {
         public int RouteInstanceId { get; set; }
         public int RouteId { get; set; }
+        public Guid Share { get; set; }
         public DateTime Date { get; set; }
         public DateTime? StartTime { get; set; }
         public DateTime? EndTime { get; set; }
@@ -19,7 +20,7 @@ namespace OV_DB.Models
 
     public class RouteInstancePropertyDTO
     {
-        public int? RouteInstancePropertyId { get; set; }
+        public long? RouteInstancePropertyId { get; set; }
         public string Key { get; set; }
         public string Value { get; set; }
         public bool? Bool { get; set; }

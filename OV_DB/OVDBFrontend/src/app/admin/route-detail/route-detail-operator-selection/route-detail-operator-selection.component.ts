@@ -21,23 +21,23 @@ import { AsyncPipe } from "@angular/common";
 import { TranslateModule } from "@ngx-translate/core";
 
 @Component({
-    selector: "app-route-detail-operator-selection",
-    templateUrl: "./route-detail-operator-selection.component.html",
-    styleUrl: "./route-detail-operator-selection.component.scss",
-    changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [
-        MatFormField,
-        MatLabel,
-        MatInput,
-        FormsModule,
-        MatAutocompleteTrigger,
-        ReactiveFormsModule,
-        MatHint,
-        MatAutocomplete,
-        MatOption,
-        AsyncPipe,
-        TranslateModule,
-    ]
+  selector: "app-route-detail-operator-selection",
+  templateUrl: "./route-detail-operator-selection.component.html",
+  styleUrl: "./route-detail-operator-selection.component.scss",
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [
+    MatFormField,
+    MatLabel,
+    MatInput,
+    FormsModule,
+    MatAutocompleteTrigger,
+    ReactiveFormsModule,
+    MatHint,
+    MatAutocomplete,
+    MatOption,
+    AsyncPipe,
+    TranslateModule,
+  ]
 })
 export class RouteDetailOperatorSelectionComponent implements OnInit {
   formField = input.required<FormControl<string>>();
@@ -67,6 +67,10 @@ export class RouteDetailOperatorSelectionComponent implements OnInit {
       },
     });
     this.formField().valueChanges.subscribe(() => {
+      if (this.formField().value == null) {
+        this.otherSelectedOperators.set(null);
+        return;
+      }
       this.otherSelectedOperators.set(
         this.formField().value.substring(
           0,
@@ -81,6 +85,10 @@ export class RouteDetailOperatorSelectionComponent implements OnInit {
       });
 
     this.formField().valueChanges.subscribe(() => {
+      if (this.formField().value == null) {
+        this.filteredOperators.set(this.operators());
+        return;
+      }
       const lastOperator = this.formField().value.split(";").pop().trim();
       if (lastOperator.length < 3) {
         this.filteredOperators.set(
@@ -100,6 +108,10 @@ export class RouteDetailOperatorSelectionComponent implements OnInit {
   }
 
   operatorSelected() {
+    if (!this.formField().value) {
+      this.selectedOperators.set([]);
+      return;
+    }
     const operators = (this.formField().value as string).split(";");
     const operatorIds: number[] = [];
     operators.forEach((o) => {

@@ -9,6 +9,9 @@ import { MatIcon } from "@angular/material/icon";
 import { SignalRService } from "src/app/services/signal-r.service";
 import { MatChip } from "@angular/material/chips";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
+import { MatFormField, MatLabel } from "@angular/material/form-field";
+import { MatInput } from "@angular/material/input";
+import { FormsModule } from "@angular/forms";
 
 @Component({
   selector: "app-administrator-regions",
@@ -23,7 +26,11 @@ import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
     MatIcon,
     MatCardContent,
     MatFabButton,
-    MatChip
+    MatChip,
+    MatFormField,
+    MatLabel,
+    MatInput,
+    FormsModule
   ]
 })
 export class AdministratorRegionsComponent implements OnInit {
@@ -87,6 +94,17 @@ export class AdministratorRegionsComponent implements OnInit {
       error: (err) => {
         alert(JSON.stringify(err));
       },
+    });
+  }
+
+  saveRegion(region: Region) {
+    this.regionsService.updateRegion(region).subscribe({
+      next: () => {
+        // Optional: show snackbar or notification
+      },
+      error: (err) => {
+        alert("Failed to update region: " + JSON.stringify(err));
+      }
     });
   }
 }
