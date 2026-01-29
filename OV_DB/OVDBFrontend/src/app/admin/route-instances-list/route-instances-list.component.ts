@@ -8,6 +8,7 @@ import {
   tap,
   debounceTime,
   distinctUntilChanged,
+  switchMap,
 } from "rxjs/operators";
 import { merge, fromEvent, Subject } from "rxjs";
 import { MatSort, MatSortHeader } from "@angular/material/sort";
@@ -33,6 +34,7 @@ import { RoutesListBottomsheetComponent } from "../routes-list/routes-list-botto
 import { RoutesListActions } from "src/app/models/routes-list-actions.enum";
 import { RouteInstanceListDTO } from "src/app/models/routeInstanceList.model";
 import { MatBottomSheet } from "@angular/material/bottom-sheet";
+import { TableState } from "src/app/models/table-state.model";
 
 @Component({
   selector: "app-route-instances-list",
@@ -76,6 +78,7 @@ export class RouteInstancesListComponent implements OnInit, AfterViewInit {
   private dialog = inject(MatDialog);
   private destroyRef = inject(DestroyRef);
   private bottomSheet = inject(MatBottomSheet);
+  private tableStateService = inject(TableStateService);
   private readonly TABLE_ID = 'route-instances-list';
 
   instancesDataSource: RouteInstancesDataSource;
@@ -87,26 +90,106 @@ export class RouteInstancesListComponent implements OnInit, AfterViewInit {
   readonly input = viewChild<ElementRef>("input");
   count: number;
   loading: boolean = true;
-   filter$ = new Subject<void>();
+  filter$ = new Subject<void>();
 
   ngOnInit() {
     this.instancesDataSource = new RouteInstancesDataSource(this.apiService);
     this.currentLocale = this.translationService.dateLocale;
-    this.loadInstancesPage().subscribe((data) => {
+    // Restore saved table state
+    this.restoreTableState();
+
+    // Load instances with restored state or defaults
+    const pageIndex = this.restoredState?.pageIndex ?? 0;
+    const pageSize = this.restoredState?.pageSize ?? 10;
+    const sortActive = this.restoredState?.sortActive ?? 'date';
+    const sortDirection = this.restoredState?.sortDirection ?? 'desc';
+    const filter = this.restoredState?.filter ?? '';
+
+    this.instancesDataSource.loadInstances(
+      pageIndex * pageSize,
+      pageSize,
+      sortActive,
+      sortDirection === 'desc',
+      filter
+    ).subscribe((data) => {
       this.count = data.count;
       this.loading = false;
+      this.hasInitialized = true;
     });
   }
+  private hasInitialized = false;
+  private restoredState: TableState | null = null;
+
+  private restoreTableState(): void {
+    const savedState = this.tableStateService.getTableState(this.TABLE_ID, {
+      defaultPageSize: 10,
+      defaultSortActive: 'date',
+      defaultSortDirection: 'desc'
+    });
+
+    this.restoredState = savedState;
+  }
+
+
+  private applyRestoredState(): void {
+    if (this.restoredState) {
+      // Apply pagination state
+      if (this.paginator()) {
+        this.paginator().pageIndex = this.restoredState.pageIndex;
+        this.paginator().pageSize = this.restoredState.pageSize;
+      }
+
+      // Apply sorting state
+      if (this.sort()) {
+        this.sort().active = this.restoredState.sortActive;
+        this.sort().direction = this.restoredState.sortDirection;
+      }
+
+      // Apply filter state
+      if (this.input() && this.restoredState.filter) {
+        this.input().nativeElement.value = this.restoredState.filter;
+      }
+
+      this.restoredState = null; // Clear the restored state after applying
+    }
+  }
+
+  private saveCurrentTableState(): void {
+    if (!this.paginator() || !this.sort()) return;
+
+    const currentState = this.tableStateService.getCurrentState(
+      this.paginator().pageIndex,
+      this.paginator().pageSize,
+      this.sort().active,
+      this.sort().direction,
+      this.filterValue
+    );
+
+    this.tableStateService.saveTableState(this.TABLE_ID, currentState);
+  }
+
 
   ngAfterViewInit() {
-    this.sort().sortChange.subscribe(() => (this.paginator().pageIndex = 0));
+    this.applyRestoredState();
+    this.sort().sortChange.subscribe(() => { this.paginator().pageIndex = 0; this.saveCurrentTableState(); });
 
     merge(this.sort().sortChange, this.paginator().page, this.filter$)
       .pipe(
+        tap(() => {
+          this.loading = true;
+          if (this.hasInitialized) {
+            this.saveCurrentTableState();
+          }
+        }),
         takeUntilDestroyed(this.destroyRef),
-        tap(() => this.loadInstancesPage())
+        switchMap(() => this.loadInstancesPage())
       )
-      .subscribe();
+      .subscribe({
+        next: (routes) => {
+          this.count = routes.count;
+          this.hasInitialized = true;
+        },
+      });
 
     fromEvent(this.input().nativeElement, "keyup")
       .pipe(
@@ -173,6 +256,7 @@ export class RouteInstancesListComponent implements OnInit, AfterViewInit {
     dialogRef.afterClosed().subscribe(result => {
       if (result) {
         this.loadInstancesPage();
+        this.saveCurrentTableState();
       }
     });
   }
