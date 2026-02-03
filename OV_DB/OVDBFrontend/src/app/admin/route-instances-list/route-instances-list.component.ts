@@ -238,7 +238,7 @@ export class RouteInstancesListComponent implements OnInit, AfterViewInit {
 
   exportToTrainlog() {
     if (this.selectedInstanceIds.length > 0) {
-      this.apiService.exportToTrainlog(this.selectedInstanceIds).subscribe((data) => {
+      this.apiService.exportInstancesToTrainlog(this.selectedInstanceIds).subscribe((data) => {
         saveAs(data, "trainlog_export.csv");
       });
     }
