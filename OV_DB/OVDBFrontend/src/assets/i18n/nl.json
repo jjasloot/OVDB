@@ -349,7 +349,19 @@
     "EXPIRES": "Verloopt",
     "CONFIRM_REVOKE_SESSION": "Weet je zeker dat je deze sessie wilt intrekken? Het apparaat wordt uitgelogd.",
     "SESSION_REVOKED_SUCCESSFULLY": "Sessie succesvol ingetrokken",
-    "ERROR_REVOKING_SESSION": "Fout bij intrekken sessie"
+    "ERROR_REVOKING_SESSION": "Fout bij intrekken sessie",
+    "TRAEWELLING_TAG_MAPPING": "Träwelling Tag Mapping",
+    "TAG_MAPPING_DESCRIPTION": "Koppel Träwelling tags aan je voorkeurs OVDB tag namen. Dit zal automatisch tags hernoemen bij het importeren van reizen vanuit Träwelling.",
+    "TRAEWELLING_TAG": "Träwelling Tag",
+    "OVDB_TAG": "OVDB Tag Naam",
+    "ADD_MAPPING": "Mapping Toevoegen",
+    "CURRENT_MAPPINGS": "Huidige Mappings",
+    "NO_TAG_MAPPINGS": "Nog geen tag mappings geconfigureerd. Voeg een mapping toe om te beginnen.",
+    "CLICK_TO_REMOVE": "Klik om deze mapping te verwijderen",
+    "TAG_MAPPING_TIP": "Tips voor Tag Mapping:",
+    "TAG_MAPPING_TIP_1": "Träwelling tags volgen het formaat 'trwl:tagnaam'. Selecteer uit de standaard tags of typ je eigen.",
+    "TAG_MAPPING_TIP_2": "OVDB tags zijn je aangepaste property namen. Je kunt elke eerder gebruikte tag gebruiken of nieuwe maken.",
+    "TAG_MAPPING_TIP_3": "Mappings worden automatisch toegepast tijdens het importeren. Je kunt ze op elk moment bijwerken."
   },
   "TRAEWELLING": {
     "TITLE": "Träwelling koppeling",

@@ -1,0 +1,105 @@
+<div class="tag-mapping-container">
+  <div class="mapping-header">
+    <p class="mapping-description">
+      {{ 'PROFILE.TAG_MAPPING_DESCRIPTION' | translate }}
+    </p>
+  </div>
+
+  <!-- Add New Mapping Form -->
+  <div class="add-mapping-form">
+    <div class="form-row">
+      <!-- Traewelling Tag Input -->
+      <mat-form-field class="from-tag-field">
+        <mat-label>{{ 'PROFILE.TRAEWELLING_TAG' | translate }}</mat-label>
+        <input
+          matInput
+          [(ngModel)]="newFromTag"
+          (input)="onFromTagInputChange(newFromTag)"
+          [matAutocomplete]="autoTraewelling"
+          placeholder="trwl:vehicle_number">
+        <mat-icon matSuffix>label</mat-icon>
+        <mat-autocomplete #autoTraewelling="matAutocomplete" (optionSelected)="selectTraewellingTag($event.option.value)">
+          @for (tag of filteredTraewellingTags(); track tag) {
+            <mat-option [value]="tag">
+              <span class="tag-option">
+                <strong>{{ tag }}</strong>
+                <span class="tag-label">{{ getTraewellingTagLabel(tag) }}</span>
+              </span>
+            </mat-option>
+          }
+        </mat-autocomplete>
+      </mat-form-field>
+
+      <mat-icon class="arrow-icon">arrow_forward</mat-icon>
+
+      <!-- OVDB Tag Input -->
+      <mat-form-field class="to-tag-field">
+        <mat-label>{{ 'PROFILE.OVDB_TAG' | translate }}</mat-label>
+        <input
+          matInput
+          [(ngModel)]="newToTag"
+          (input)="onToTagInputChange(newToTag)"
+          [matAutocomplete]="autoOvdb"
+          placeholder="registration">
+        <mat-icon matSuffix>label_important</mat-icon>
+        <mat-autocomplete #autoOvdb="matAutocomplete" (optionSelected)="selectOvdbTag($event.option.value)">
+          @for (tag of filteredOvdbTags(); track tag) {
+            <mat-option [value]="tag">{{ tag }}</mat-option>
+          }
+        </mat-autocomplete>
+      </mat-form-field>
+
+      <!-- Add Button -->
+      <button
+        mat-raised-button
+        color="primary"
+        (click)="addMapping()"
+        [disabled]="!newFromTag.trim() || !newToTag.trim()"
+        class="add-button">
+        <mat-icon>add</mat-icon>
+        {{ 'PROFILE.ADD_MAPPING' | translate }}
+      </button>
+    </div>
+  </div>
+
+  <!-- Current Mappings List -->
+  <div class="mappings-list">
+    @if (mappings.length === 0) {
+      <div class="no-mappings">
+        <mat-icon>info</mat-icon>
+        <p>{{ 'PROFILE.NO_TAG_MAPPINGS' | translate }}</p>
+      </div>
+    } @else {
+      <div class="mappings-header">
+        <h4>{{ 'PROFILE.CURRENT_MAPPINGS' | translate }} ({{ mappings.length }})</h4>
+      </div>
+      <mat-chip-listbox class="mapping-chips">
+        @for (mapping of mappings; track $index) {
+          <mat-chip-option class="mapping-chip" [matTooltip]="'PROFILE.CLICK_TO_REMOVE' | translate">
+            <div class="chip-content">
+              <span class="from-tag">{{ mapping.fromTag }}</span>
+              <mat-icon class="chip-arrow">arrow_forward</mat-icon>
+              <span class="to-tag">{{ mapping.toTag }}</span>
+            </div>
+            <button matChipRemove (click)="removeMapping($index)" aria-label="Remove mapping">
+              <mat-icon>cancel</mat-icon>
+            </button>
+          </mat-chip-option>
+        }
+      </mat-chip-listbox>
+    }
+  </div>
+
+  <!-- Info Section -->
+  <div class="mapping-info">
+    <mat-icon>tips_and_updates</mat-icon>
+    <div class="info-text">
+      <p><strong>{{ 'PROFILE.TAG_MAPPING_TIP' | translate }}</strong></p>
+      <ul>
+        <li>{{ 'PROFILE.TAG_MAPPING_TIP_1' | translate }}</li>
+        <li>{{ 'PROFILE.TAG_MAPPING_TIP_2' | translate }}</li>
+        <li>{{ 'PROFILE.TAG_MAPPING_TIP_3' | translate }}</li>
+      </ul>
+    </div>
+  </div>
+</div>

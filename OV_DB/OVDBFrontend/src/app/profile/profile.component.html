@@ -150,6 +150,22 @@
     </mat-card-content>
   </mat-card>
 
+  <!-- Träwelling Tag Mapping Card -->
+  @if (trawellingStatus?.connected) {
+  <mat-card class="tag-mapping-card">
+    <mat-card-header>
+      <mat-card-title>{{ 'PROFILE.TRAEWELLING_TAG_MAPPING' | translate }}</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <app-tag-mapping
+        [mappings]="tagMappings()"
+        [availableOvdbTags]="availableOvdbTags()"
+        (mappingsChange)="onTagMappingsChange($event)">
+      </app-tag-mapping>
+    </mat-card-content>
+  </mat-card>
+  }
+
   <!-- Active Sessions Card -->
   <mat-card class="sessions-card">
     <mat-card-header>

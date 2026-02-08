@@ -786,6 +786,9 @@ namespace OVDB_database.Migrations
                     b.Property<long?>("TelegramUserId")
                         .HasColumnType("bigint");
 
+                    b.Property<string>("TraewellingTagMappings")
+                        .HasColumnType("longtext");
+
                     b.Property<string>("TrainlogMaterialKey")
                         .HasMaxLength(100)
                         .HasColumnType("varchar(100)");

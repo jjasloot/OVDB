@@ -50,6 +50,13 @@ namespace OVDB_database.Models
         [MaxLength(100)]
         public string TrainlogSeatKey { get; set; }
 
+        // Traewelling Tag Mappings (JSON serialized)
+        /// <summary>
+        /// JSON serialized list of tag mappings from Traewelling tags to custom OVDB tag names
+        /// Format: [{"fromTag":"trwl:vehicle_number","toTag":"registration"},{"fromTag":"trwl:seat","toTag":"seat"}]
+        /// </summary>
+        public string TraewellingTagMappings { get; set; }
+
         /// <summary>
         /// Collection of active refresh tokens for this user (supports multiple sessions)
         /// </summary>

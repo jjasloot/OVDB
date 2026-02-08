@@ -351,7 +351,19 @@
     "EXPIRES": "Expires",
     "CONFIRM_REVOKE_SESSION": "Are you sure you want to revoke this session? The device will be logged out.",
     "SESSION_REVOKED_SUCCESSFULLY": "Session revoked successfully",
-    "ERROR_REVOKING_SESSION": "Error revoking session"
+    "ERROR_REVOKING_SESSION": "Error revoking session",
+    "TRAEWELLING_TAG_MAPPING": "Träwelling Tag Mapping",
+    "TAG_MAPPING_DESCRIPTION": "Map Träwelling tags to your preferred OVDB tag names. This will automatically rename tags when importing trips from Träwelling.",
+    "TRAEWELLING_TAG": "Träwelling Tag",
+    "OVDB_TAG": "OVDB Tag Name",
+    "ADD_MAPPING": "Add Mapping",
+    "CURRENT_MAPPINGS": "Current Mappings",
+    "NO_TAG_MAPPINGS": "No tag mappings configured yet. Add a mapping to get started.",
+    "CLICK_TO_REMOVE": "Click to remove this mapping",
+    "TAG_MAPPING_TIP": "Tips for Tag Mapping:",
+    "TAG_MAPPING_TIP_1": "Traewelling tags follow the format 'trwl:tagname'. Select from the standard tags or type your own.",
+    "TAG_MAPPING_TIP_2": "OVDB tags are your custom property names. You can use any previously used tag or create new ones.",
+    "TAG_MAPPING_TIP_3": "Mappings are applied automatically during import. You can update them anytime."
   },
   "TRAEWELLING": {
     "TITLE": "Träwelling connection",
