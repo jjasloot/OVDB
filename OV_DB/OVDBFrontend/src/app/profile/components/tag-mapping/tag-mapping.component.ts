@@ -6,7 +6,6 @@ import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
-import { MatChipsModule } from '@angular/material/chips';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -27,7 +26,6 @@ import { TrawellingService } from '../../../traewelling/services/traewelling.ser
     MatButtonModule,
     MatIconModule,
     MatAutocompleteModule,
-    MatChipsModule,
     MatTooltipModule,
     MatProgressSpinnerModule,
     TranslateModule
@@ -128,20 +126,8 @@ export class TagMappingComponent {
     this.isSaving.set(true);
     
     try {
-      // Get current profile
-      const profile = await this.apiService.getUserProfile().toPromise();
-      
-      // Update with new mappings
-      const updateProfile = {
-        preferredLanguage: profile.preferredLanguage,
-        telegramUserId: profile.telegramUserId,
-        trainlogMaterialKey: profile.trainlogMaterialKey,
-        trainlogRegistrationKey: profile.trainlogRegistrationKey,
-        trainlogSeatKey: profile.trainlogSeatKey,
-        traewellingTagMappings: [...this.mappings]
-      };
-
-      await this.apiService.updateUserProfile(updateProfile).toPromise();
+      // Use dedicated tag mappings endpoint
+      await this.apiService.updateTagMappings([...this.mappings]).toPromise();
       
       // Clear the traewelling service tag mappings cache
       this.trawellingService.clearTagMappingsCache();

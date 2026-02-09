@@ -161,6 +161,37 @@ namespace OV_DB.Controllers
             return Ok();
         }
 
+        [HttpPut("tag-mappings")]
+        public async Task<ActionResult> UpdateTagMappingsAsync([FromBody] List<TraewellingTagMappingDTO> tagMappings)
+        {
+            var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value ?? "-1");
+            if (userIdClaim < 0)
+            {
+                return Forbid();
+            }
+
+            var user = await DatabaseContext.Users.FindAsync(userIdClaim);
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            // Serialize tag mappings to JSON
+            if (tagMappings != null)
+            {
+                user.TraewellingTagMappings = JsonSerializer.Serialize(tagMappings);
+            }
+            else
+            {
+                user.TraewellingTagMappings = null;
+            }
+
+            DatabaseContext.Update(user);
+            await DatabaseContext.SaveChangesAsync();
+
+            return Ok();
+        }
+
         [HttpGet("maps")]
         public async Task<ActionResult<List<Map>>> GetMapsAsync()
         {

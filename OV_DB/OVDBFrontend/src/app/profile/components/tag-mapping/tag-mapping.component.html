@@ -87,25 +87,25 @@
         <h3>{{ 'PROFILE.CURRENT_MAPPINGS' | translate }}</h3>
         <span class="mappings-count">{{ mappings.length }} {{ mappings.length === 1 ? ('PROFILE.MAPPING' | translate) : ('PROFILE.MAPPINGS' | translate) }}</span>
       </div>
-      <mat-chip-listbox class="mapping-chips">
+      <div class="mapping-chips">
         @for (mapping of mappings; track $index) {
-          <mat-chip-option class="mapping-chip" [disabled]="isSaving()">
+          <div class="mapping-chip">
             <div class="chip-content">
               <span class="from-tag">{{ mapping.fromTag }}</span>
               <mat-icon class="chip-arrow">arrow_forward</mat-icon>
               <span class="to-tag">{{ mapping.toTag }}</span>
             </div>
             <button 
-              matChipRemove 
+              class="chip-remove"
               (click)="removeMapping($index)" 
               [disabled]="isSaving()"
               [matTooltip]="'PROFILE.REMOVE_MAPPING' | translate"
               aria-label="Remove mapping">
               <mat-icon>cancel</mat-icon>
             </button>
-          </mat-chip-option>
+          </div>
         }
-      </mat-chip-listbox>
+      </div>
     }
   </div>
 
