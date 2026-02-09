@@ -26,9 +26,7 @@
           (input)="onFromTagInputChange(newFromTag)"
           (keydown.enter)="addMapping()"
           [matAutocomplete]="autoTraewelling"
-          placeholder="trwl:vehicle_number"
           [disabled]="isSaving()">
-        <mat-icon matSuffix>label</mat-icon>
         <mat-autocomplete #autoTraewelling="matAutocomplete" (optionSelected)="selectTraewellingTag($event.option.value)">
           @for (tag of filteredTraewellingTags(); track tag) {
             <mat-option [value]="tag">
@@ -52,9 +50,7 @@
           (input)="onToTagInputChange(newToTag)"
           (keydown.enter)="addMapping()"
           [matAutocomplete]="autoOvdb"
-          placeholder="registration"
           [disabled]="isSaving()">
-        <mat-icon matSuffix>label_important</mat-icon>
         <mat-autocomplete #autoOvdb="matAutocomplete" (optionSelected)="selectOvdbTag($event.option.value)">
           @for (tag of filteredOvdbTags(); track tag) {
             <mat-option [value]="tag">{{ tag }}</mat-option>
@@ -72,6 +68,15 @@
         <mat-icon>add</mat-icon>
         {{ 'PROFILE.ADD_MAPPING' | translate }}
       </button>
+    </div>
+  </div>
+
+    <!-- Info Section -->
+  <div class="mapping-info">
+    <mat-icon>lightbulb</mat-icon>
+    <div class="info-text">
+      <p><strong>{{ 'PROFILE.TAG_MAPPING_HOW_IT_WORKS' | translate }}</strong></p>
+      <p>{{ 'PROFILE.TAG_MAPPING_EXPLANATION' | translate }}</p>
     </div>
   </div>
 
@@ -107,14 +112,5 @@
         }
       </div>
     }
-  </div>
-
-  <!-- Info Section -->
-  <div class="mapping-info">
-    <mat-icon>lightbulb</mat-icon>
-    <div class="info-text">
-      <p><strong>{{ 'PROFILE.TAG_MAPPING_HOW_IT_WORKS' | translate }}</strong></p>
-      <p>{{ 'PROFILE.TAG_MAPPING_EXPLANATION' | translate }}</p>
-    </div>
   </div>
 </div>
