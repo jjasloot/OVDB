@@ -8,9 +8,13 @@ OVDB_database/bin/
 private_vars.txt
 OV_DB/Properties/launchSettings.json
 OV_DB/appsettings.Development.json
+OV_DB/bin/
+OV_DB/obj/
 bin/Debug/net9.0/
 **/bin/Debug/net9.0/
 **/bin\Debug/net9.0/
+**/bin/
+**/obj/
 TestTimeZones/bin/
 /OV_DB.Tests/obj
 /OV_DB.Tests/bin
