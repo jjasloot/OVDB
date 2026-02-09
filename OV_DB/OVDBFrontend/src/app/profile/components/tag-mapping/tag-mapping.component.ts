@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, signal, computed } from '@angular/core';
+import { Component, Input, Output, EventEmitter, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -8,9 +8,13 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { TranslateModule } from '@ngx-translate/core';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { TraewellingTagMapping } from '../../../models/user-profile.model';
 import { STANDARD_TRAEWELLING_TAGS, TRAEWELLING_TAG_LABELS } from '../../../constants/traewelling-tags.constants';
+import { ApiService } from '../../../services/api.service';
+import { TrawellingService } from '../../../traewelling/services/traewelling.service';
 
 @Component({
   selector: 'app-tag-mapping',
@@ -25,6 +29,7 @@ import { STANDARD_TRAEWELLING_TAGS, TRAEWELLING_TAG_LABELS } from '../../../cons
     MatAutocompleteModule,
     MatChipsModule,
     MatTooltipModule,
+    MatProgressSpinnerModule,
     TranslateModule
   ],
   templateUrl: './tag-mapping.component.html',
@@ -34,6 +39,13 @@ export class TagMappingComponent {
   @Input() mappings: TraewellingTagMapping[] = [];
   @Input() availableOvdbTags: string[] = [];
   @Output() mappingsChange = new EventEmitter<TraewellingTagMapping[]>();
+
+  private apiService = inject(ApiService);
+  private snackBar = inject(MatSnackBar);
+  private translateService = inject(TranslateService);
+  private trawellingService = inject(TrawellingService);
+
+  isSaving = signal(false);
 
   // New mapping being added
   newFromTag = '';
@@ -77,7 +89,7 @@ export class TagMappingComponent {
     this.toTagInput.set(value);
   }
 
-  addMapping() {
+  async addMapping() {
     if (!this.newFromTag.trim() || !this.newToTag.trim()) {
       return;
     }
@@ -95,19 +107,61 @@ export class TagMappingComponent {
       });
     }
 
-    // Emit changes
-    this.mappingsChange.emit([...this.mappings]);
-
     // Clear inputs
     this.newFromTag = '';
     this.newToTag = '';
     this.fromTagInput.set('');
     this.toTagInput.set('');
+
+    // Auto-save
+    await this.saveMappings();
   }
 
-  removeMapping(index: number) {
+  async removeMapping(index: number) {
     this.mappings.splice(index, 1);
-    this.mappingsChange.emit([...this.mappings]);
+    
+    // Auto-save
+    await this.saveMappings();
+  }
+
+  private async saveMappings() {
+    this.isSaving.set(true);
+    
+    try {
+      // Get current profile
+      const profile = await this.apiService.getUserProfile().toPromise();
+      
+      // Update with new mappings
+      const updateProfile = {
+        preferredLanguage: profile.preferredLanguage,
+        telegramUserId: profile.telegramUserId,
+        trainlogMaterialKey: profile.trainlogMaterialKey,
+        trainlogRegistrationKey: profile.trainlogRegistrationKey,
+        trainlogSeatKey: profile.trainlogSeatKey,
+        traewellingTagMappings: [...this.mappings]
+      };
+
+      await this.apiService.updateUserProfile(updateProfile).toPromise();
+      
+      // Clear the traewelling service tag mappings cache
+      this.trawellingService.clearTagMappingsCache();
+      
+      // Emit changes
+      this.mappingsChange.emit([...this.mappings]);
+      
+      // Show success message
+      const message = await this.translateService.get('PROFILE.TAG_MAPPING_SAVED').toPromise();
+      this.snackBar.open(message, '', { duration: 2000 });
+      
+    } catch (error) {
+      console.error('Error saving tag mappings:', error);
+      const message = await this.translateService.get('PROFILE.TAG_MAPPING_ERROR').toPromise();
+      this.snackBar.open(message, '', { duration: 4000 });
+      
+      // Revert changes on error would require keeping previous state
+    } finally {
+      this.isSaving.set(false);
+    }
   }
 
   getTraewellingTagLabel(tag: string): string {

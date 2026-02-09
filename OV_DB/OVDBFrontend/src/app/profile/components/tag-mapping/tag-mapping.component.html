@@ -1,4 +1,12 @@
 <div class="tag-mapping-container">
+  <!-- Saving indicator -->
+  @if (isSaving()) {
+    <div class="saving-indicator">
+      <mat-spinner diameter="16"></mat-spinner>
+      <span>{{ 'PROFILE.SAVING' | translate }}</span>
+    </div>
+  }
+
   <div class="mapping-header">
     <p class="mapping-description">
       {{ 'PROFILE.TAG_MAPPING_DESCRIPTION' | translate }}
@@ -7,6 +15,7 @@
 
   <!-- Add New Mapping Form -->
   <div class="add-mapping-form">
+    <h3 class="form-title">{{ 'PROFILE.ADD_NEW_MAPPING' | translate }}</h3>
     <div class="form-row">
       <!-- Traewelling Tag Input -->
       <mat-form-field class="from-tag-field">
@@ -15,8 +24,10 @@
           matInput
           [(ngModel)]="newFromTag"
           (input)="onFromTagInputChange(newFromTag)"
+          (keydown.enter)="addMapping()"
           [matAutocomplete]="autoTraewelling"
-          placeholder="trwl:vehicle_number">
+          placeholder="trwl:vehicle_number"
+          [disabled]="isSaving()">
         <mat-icon matSuffix>label</mat-icon>
         <mat-autocomplete #autoTraewelling="matAutocomplete" (optionSelected)="selectTraewellingTag($event.option.value)">
           @for (tag of filteredTraewellingTags(); track tag) {
@@ -39,8 +50,10 @@
           matInput
           [(ngModel)]="newToTag"
           (input)="onToTagInputChange(newToTag)"
+          (keydown.enter)="addMapping()"
           [matAutocomplete]="autoOvdb"
-          placeholder="registration">
+          placeholder="registration"
+          [disabled]="isSaving()">
         <mat-icon matSuffix>label_important</mat-icon>
         <mat-autocomplete #autoOvdb="matAutocomplete" (optionSelected)="selectOvdbTag($event.option.value)">
           @for (tag of filteredOvdbTags(); track tag) {
@@ -54,7 +67,7 @@
         mat-raised-button
         color="primary"
         (click)="addMapping()"
-        [disabled]="!newFromTag.trim() || !newToTag.trim()"
+        [disabled]="!newFromTag.trim() || !newToTag.trim() || isSaving()"
         class="add-button">
         <mat-icon>add</mat-icon>
         {{ 'PROFILE.ADD_MAPPING' | translate }}
@@ -71,17 +84,23 @@
       </div>
     } @else {
       <div class="mappings-header">
-        <h4>{{ 'PROFILE.CURRENT_MAPPINGS' | translate }} ({{ mappings.length }})</h4>
+        <h3>{{ 'PROFILE.CURRENT_MAPPINGS' | translate }}</h3>
+        <span class="mappings-count">{{ mappings.length }} {{ mappings.length === 1 ? ('PROFILE.MAPPING' | translate) : ('PROFILE.MAPPINGS' | translate) }}</span>
       </div>
       <mat-chip-listbox class="mapping-chips">
         @for (mapping of mappings; track $index) {
-          <mat-chip-option class="mapping-chip" [matTooltip]="'PROFILE.CLICK_TO_REMOVE' | translate">
+          <mat-chip-option class="mapping-chip" [disabled]="isSaving()">
             <div class="chip-content">
               <span class="from-tag">{{ mapping.fromTag }}</span>
               <mat-icon class="chip-arrow">arrow_forward</mat-icon>
               <span class="to-tag">{{ mapping.toTag }}</span>
             </div>
-            <button matChipRemove (click)="removeMapping($index)" aria-label="Remove mapping">
+            <button 
+              matChipRemove 
+              (click)="removeMapping($index)" 
+              [disabled]="isSaving()"
+              [matTooltip]="'PROFILE.REMOVE_MAPPING' | translate"
+              aria-label="Remove mapping">
               <mat-icon>cancel</mat-icon>
             </button>
           </mat-chip-option>
@@ -92,14 +111,10 @@
 
   <!-- Info Section -->
   <div class="mapping-info">
-    <mat-icon>tips_and_updates</mat-icon>
+    <mat-icon>lightbulb</mat-icon>
     <div class="info-text">
-      <p><strong>{{ 'PROFILE.TAG_MAPPING_TIP' | translate }}</strong></p>
-      <ul>
-        <li>{{ 'PROFILE.TAG_MAPPING_TIP_1' | translate }}</li>
-        <li>{{ 'PROFILE.TAG_MAPPING_TIP_2' | translate }}</li>
-        <li>{{ 'PROFILE.TAG_MAPPING_TIP_3' | translate }}</li>
-      </ul>
+      <p><strong>{{ 'PROFILE.TAG_MAPPING_HOW_IT_WORKS' | translate }}</strong></p>
+      <p>{{ 'PROFILE.TAG_MAPPING_EXPLANATION' | translate }}</p>
     </div>
   </div>
 </div>
