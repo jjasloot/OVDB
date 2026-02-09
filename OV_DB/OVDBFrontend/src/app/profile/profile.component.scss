@@ -20,6 +20,8 @@
 .profile-card,
 .password-card,
 .traewelling-card,
+.trainlog-card,
+.tag-mapping-card,
 .sessions-card {
   margin-bottom: 30px;
 
@@ -38,6 +40,13 @@
     width: 100%;
     margin-bottom: 16px;
   }
+}
+
+.settings-hint {
+  color: rgba(0, 0, 0, 0.6);
+  font-size: 0.95rem;
+  margin: 0 0 16px 0;
+  line-height: 1.5;
 }
 
 .telegram-info {
