@@ -213,7 +213,7 @@ export class RouteSearchDialogComponent implements OnInit {
 
     this.isCreating = true;
 
-    const tripContext = this.trawellingService.getTripContextForRouteCreation(this.data.trip);
+    const tripContext = await this.trawellingService.getTripContextForRouteCreation(this.data.trip);
     sessionStorage.setItem('traewellingTripContext', JSON.stringify(tripContext));
     console.log(this.data.trip, this.selectedRoute);
     // Close dialog and navigate

@@ -20,6 +20,8 @@
 .profile-card,
 .password-card,
 .traewelling-card,
+.trainlog-card,
+.tag-mapping-card,
 .sessions-card {
   margin-bottom: 30px;
 
@@ -38,6 +40,13 @@
     width: 100%;
     margin-bottom: 16px;
   }
+}
+
+.settings-hint {
+  color: rgba(0, 0, 0, 0.6);
+  font-size: 0.95rem;
+  margin: 0 0 16px 0;
+  line-height: 1.5;
 }
 
 .telegram-info {
@@ -253,6 +262,88 @@
 
     button {
       margin-right: 0;
+    }
+  }
+}
+
+.section-divider {
+  margin: 24px 0;
+}
+
+@media (prefers-color-scheme: dark) {
+  .profile-container {
+    h1 {
+      color: rgba(255, 255, 255, 0.87);
+    }
+  }
+
+  .profile-card,
+  .password-card,
+  .traewelling-card,
+  .trainlog-card,
+  .tag-mapping-card,
+  .sessions-card {
+    
+    mat-card-header {
+      background-color: rgba(0, 0, 0, 0.85);
+      
+      mat-card-title {
+        color: rgba(255, 255, 255, 0.87);
+      }
+    }
+  }
+
+  .settings-hint {
+    color: rgba(255, 255, 255, 0.6);
+  }
+
+  .telegram-info {
+    background-color: rgba(33, 150, 243, 0.1);
+    
+    .telegram-text p {
+      color: rgba(255, 255, 255, 0.87);
+    }
+  }
+
+  .traewelling-info {
+    background-color: rgba(76, 175, 80, 0.1);
+    
+    .traewelling-text {
+      p {
+        color: rgba(255, 255, 255, 0.87);
+      }
+
+      .traewelling-connected {
+         background-color: rgba(76, 175, 80, 0.2);
+         p {
+            color: rgba(255, 255, 255, 0.87);
+         }
+      }
+      
+      .traewelling-not-connected {
+        color: rgba(255, 255, 255, 0.6);
+      }
+    }
+  }
+
+  .sessions-info {
+    background-color: rgba(255, 152, 0, 0.1);
+
+    .sessions-text p {
+      color: rgba(255, 255, 255, 0.87);
+    }
+  }
+  
+  .loading-container span,
+  .no-sessions {
+    color: rgba(255, 255, 255, 0.6);
+  }
+
+  .sessions-card mat-list-item {
+    .session-created,
+    .session-last-used,
+    .session-expires {
+      color: rgba(255, 255, 255, 0.6);
     }
   }
 }

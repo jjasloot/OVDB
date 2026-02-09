@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -44,6 +45,25 @@ namespace OV_DB.Controllers
                 return NotFound();
             }
 
+            // Deserialize tag mappings from JSON
+            List<TraewellingTagMappingDTO> tagMappings = null;
+            if (!string.IsNullOrWhiteSpace(user.TraewellingTagMappings))
+            {
+                try
+                {
+                    tagMappings = JsonSerializer.Deserialize<List<TraewellingTagMappingDTO>>(user.TraewellingTagMappings);
+                }
+                catch
+                {
+                    // If deserialization fails, return empty list
+                    tagMappings = new List<TraewellingTagMappingDTO>();
+                }
+            }
+            else
+            {
+                tagMappings = new List<TraewellingTagMappingDTO>();
+            }
+
             return Ok(new UserProfileDTO
             {
                 Email = user.Email,
@@ -53,7 +73,8 @@ namespace OV_DB.Controllers
                 TrainlogMaterialKey = user.TrainlogMaterialKey,
                 TrainlogRegistrationKey = user.TrainlogRegistrationKey,
                 TrainlogSeatKey = user.TrainlogSeatKey,
-                EnableTrainlogExport = user.EnableTrainlogExport
+                EnableTrainlogExport = user.EnableTrainlogExport,
+                TraewellingTagMappings = tagMappings
             });
         }
 
@@ -87,6 +108,16 @@ namespace OV_DB.Controllers
             user.TrainlogMaterialKey = updateProfile.TrainlogMaterialKey;
             user.TrainlogRegistrationKey = updateProfile.TrainlogRegistrationKey;
             user.TrainlogSeatKey = updateProfile.TrainlogSeatKey;
+
+            // Serialize tag mappings to JSON
+            if (updateProfile.TraewellingTagMappings != null)
+            {
+                user.TraewellingTagMappings = JsonSerializer.Serialize(updateProfile.TraewellingTagMappings);
+            }
+            else
+            {
+                user.TraewellingTagMappings = null;
+            }
 
             DatabaseContext.Update(user);
             await DatabaseContext.SaveChangesAsync();
@@ -124,6 +155,37 @@ namespace OV_DB.Controllers
 
             // Update password
             user.Password = passwordHasher.HashPassword(user, changePassword.NewPassword);
+            DatabaseContext.Update(user);
+            await DatabaseContext.SaveChangesAsync();
+
+            return Ok();
+        }
+
+        [HttpPut("tag-mappings")]
+        public async Task<ActionResult> UpdateTagMappingsAsync([FromBody] List<TraewellingTagMappingDTO> tagMappings)
+        {
+            var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value ?? "-1");
+            if (userIdClaim < 0)
+            {
+                return Forbid();
+            }
+
+            var user = await DatabaseContext.Users.FindAsync(userIdClaim);
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            // Serialize tag mappings to JSON
+            if (tagMappings != null)
+            {
+                user.TraewellingTagMappings = JsonSerializer.Serialize(tagMappings);
+            }
+            else
+            {
+                user.TraewellingTagMappings = null;
+            }
+
             DatabaseContext.Update(user);
             await DatabaseContext.SaveChangesAsync();
 

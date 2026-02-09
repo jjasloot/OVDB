@@ -1,4 +1,6 @@
-﻿namespace OV_DB.Models
+﻿using System.Collections.Generic;
+
+namespace OV_DB.Models
 {
     public class UserProfileDTO
     {
@@ -11,5 +13,6 @@
         public string TrainlogPlatformKey { get; set; }
         public string TrainlogSeatKey { get; set; }
         public bool EnableTrainlogExport { get; set; }
+        public List<TraewellingTagMappingDTO> TraewellingTagMappings { get; set; }
     }
 }

@@ -17,15 +17,21 @@ import {
   TrawellingTransportCategory,
   RoutesListResponse
 } from '../../models/traewelling.model';
+import { TraewellingTagMapping } from '../../models/user-profile.model';
+import { ApiService } from '../../services/api.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class TrawellingService {
   private http = inject(HttpClient);
+  private apiService = inject(ApiService);
 
   private readonly baseUrl = `${environment.backend}api/Traewelling`;
   private readonly routesUrl = `${environment.backend}api/routes`;
+
+  // Cache for tag mappings to avoid repeated API calls
+  private tagMappingsCache: TraewellingTagMapping[] | null = null;
 
   // Connection management
   async getConnectionStatus(): Promise<TrawellingConnectionStatus> {
@@ -85,7 +91,21 @@ export class TrawellingService {
   }
 
   // Trip context extraction for route creation workflows
-  getTripContextForRouteCreation(trip: TrawellingTrip): TrawellingTripContext {
+  async getTripContextForRouteCreation(trip: TrawellingTrip): Promise<TrawellingTripContext> {
+    // Get tag mappings if not cached
+    if (this.tagMappingsCache === null) {
+      try {
+        const profile = await this.apiService.getUserProfile().pipe(first()).toPromise();
+        this.tagMappingsCache = profile?.traewellingTagMappings || [];
+      } catch (error) {
+        console.error('Error loading tag mappings:', error);
+        this.tagMappingsCache = [];
+      }
+    }
+
+    // Apply tag mappings to trip tags
+    const mappedTags = this.applyTagMappings(trip.tags, this.tagMappingsCache);
+
     return {
       tripId: trip.id,
       originName: trip.transport.origin.name,
@@ -98,9 +118,32 @@ export class TrawellingService {
       distance: trip.transport.distance,
       duration: trip.transport.duration,
       description: trip.body,
-      tags: trip.tags,
+      tags: mappedTags,
       date: trip.createdAt
     };
+  }
+
+  // Apply tag mappings to a list of tags
+  private applyTagMappings(tags: { key: string; value: string }[], mappings: TraewellingTagMapping[]): { key: string; value: string }[] {
+    if (!mappings || mappings.length === 0) {
+      return tags;
+    }
+
+    return tags.map(tag => {
+      const mapping = mappings.find(m => m.fromTag === tag.key);
+      if (mapping) {
+        return {
+          key: mapping.toTag,
+          value: tag.value
+        };
+      }
+      return tag;
+    });
+  }
+
+  // Clear the tag mappings cache (call when user updates their mappings)
+  clearTagMappingsCache(): void {
+    this.tagMappingsCache = null;
   }
 
   // Material icon mapping for transport categories

@@ -1,3 +1,8 @@
+export interface TraewellingTagMapping {
+  fromTag: string;
+  toTag: string;
+}
+
 export interface UserProfile {
   email: string;
   preferredLanguage: string | null;
@@ -6,7 +11,8 @@ export interface UserProfile {
   trainlogMaterialKey: string;
   trainlogRegistrationKey: string;
   trainlogSeatKey: string;
-  enableTrainlogExport:boolean;
+  enableTrainlogExport: boolean;
+  traewellingTagMappings: TraewellingTagMapping[];
 }
 
 export interface UpdateProfile {
@@ -15,6 +21,7 @@ export interface UpdateProfile {
   trainlogMaterialKey: string;
   trainlogRegistrationKey: string;
   trainlogSeatKey: string;
+  traewellingTagMappings: TraewellingTagMapping[];
 }
 
 export interface ChangePassword {

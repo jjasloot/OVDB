@@ -1,0 +1,116 @@
+<div class="tag-mapping-container">
+  <!-- Saving indicator -->
+  @if (isSaving()) {
+    <div class="saving-indicator">
+      <mat-spinner diameter="16"></mat-spinner>
+      <span>{{ 'PROFILE.SAVING' | translate }}</span>
+    </div>
+  }
+
+  <div class="mapping-header">
+    <p class="mapping-description">
+      {{ 'PROFILE.TAG_MAPPING_DESCRIPTION' | translate }}
+    </p>
+  </div>
+
+  <!-- Add New Mapping Form -->
+  <div class="add-mapping-form">
+    <h3 class="form-title">{{ 'PROFILE.ADD_NEW_MAPPING' | translate }}</h3>
+    <div class="form-row">
+      <!-- Traewelling Tag Input -->
+      <mat-form-field class="from-tag-field">
+        <mat-label>{{ 'PROFILE.TRAEWELLING_TAG' | translate }}</mat-label>
+        <input
+          matInput
+          [(ngModel)]="newFromTag"
+          (input)="onFromTagInputChange(newFromTag)"
+          (keydown.enter)="addMapping()"
+          [matAutocomplete]="autoTraewelling"
+          [disabled]="isSaving()">
+        <mat-autocomplete #autoTraewelling="matAutocomplete" (optionSelected)="selectTraewellingTag($event.option.value)">
+          @for (tag of filteredTraewellingTags(); track tag) {
+            <mat-option [value]="tag">
+              <span class="tag-option">
+                <strong>{{ tag }}</strong>
+                <span class="tag-label">{{ getTraewellingTagLabel(tag) }}</span>
+              </span>
+            </mat-option>
+          }
+        </mat-autocomplete>
+      </mat-form-field>
+
+      <mat-icon class="arrow-icon">arrow_forward</mat-icon>
+
+      <!-- OVDB Tag Input -->
+      <mat-form-field class="to-tag-field">
+        <mat-label>{{ 'PROFILE.OVDB_TAG' | translate }}</mat-label>
+        <input
+          matInput
+          [(ngModel)]="newToTag"
+          (input)="onToTagInputChange(newToTag)"
+          (keydown.enter)="addMapping()"
+          [matAutocomplete]="autoOvdb"
+          [disabled]="isSaving()">
+        <mat-autocomplete #autoOvdb="matAutocomplete" (optionSelected)="selectOvdbTag($event.option.value)">
+          @for (tag of filteredOvdbTags(); track tag) {
+            <mat-option [value]="tag">{{ tag }}</mat-option>
+          }
+        </mat-autocomplete>
+      </mat-form-field>
+
+      <!-- Add Button -->
+      <button
+        mat-raised-button
+        color="primary"
+        (click)="addMapping()"
+        [disabled]="!newFromTag.trim() || !newToTag.trim() || isSaving()"
+        class="add-button">
+        <mat-icon>add</mat-icon>
+        {{ 'PROFILE.ADD_MAPPING' | translate }}
+      </button>
+    </div>
+  </div>
+
+    <!-- Info Section -->
+  <div class="mapping-info">
+    <mat-icon>lightbulb</mat-icon>
+    <div class="info-text">
+      <p><strong>{{ 'PROFILE.TAG_MAPPING_HOW_IT_WORKS' | translate }}</strong></p>
+      <p>{{ 'PROFILE.TAG_MAPPING_EXPLANATION' | translate }}</p>
+    </div>
+  </div>
+
+  <!-- Current Mappings List -->
+  <div class="mappings-list">
+    @if (mappings.length === 0) {
+      <div class="no-mappings">
+        <mat-icon>info</mat-icon>
+        <p>{{ 'PROFILE.NO_TAG_MAPPINGS' | translate }}</p>
+      </div>
+    } @else {
+      <div class="mappings-header">
+        <h3>{{ 'PROFILE.CURRENT_MAPPINGS' | translate }}</h3>
+        <span class="mappings-count">{{ mappings.length }} {{ mappings.length === 1 ? ('PROFILE.MAPPING' | translate) : ('PROFILE.MAPPINGS' | translate) }}</span>
+      </div>
+      <div class="mapping-chips">
+        @for (mapping of mappings; track $index) {
+          <div class="mapping-chip">
+            <div class="chip-content">
+              <span class="from-tag">{{ mapping.fromTag }}</span>
+              <mat-icon class="chip-arrow">arrow_forward</mat-icon>
+              <span class="to-tag">{{ mapping.toTag }}</span>
+            </div>
+            <button 
+              class="chip-remove"
+              (click)="removeMapping($index)" 
+              [disabled]="isSaving()"
+              [matTooltip]="'PROFILE.REMOVE_MAPPING' | translate"
+              aria-label="Remove mapping">
+              <mat-icon>cancel</mat-icon>
+            </button>
+          </div>
+        }
+      </div>
+    }
+  </div>
+</div>

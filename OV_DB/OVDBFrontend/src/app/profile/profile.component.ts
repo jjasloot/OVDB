@@ -1,7 +1,7 @@
-import { Component, DestroyRef, OnInit, computed, inject } from '@angular/core';
+import { Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
 import { UntypedFormBuilder, UntypedFormGroup, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { ApiService } from '../services/api.service';
-import { UserProfile, UpdateProfile, ChangePassword } from '../models/user-profile.model';
+import { UserProfile, UpdateProfile, ChangePassword, TraewellingTagMapping } from '../models/user-profile.model';
 import { TrawellingConnectionStatus } from '../models/traewelling.model';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
@@ -19,6 +19,8 @@ import { MatDivider } from '@angular/material/divider';
 import { Router } from '@angular/router';
 import { AuthenticationService } from '../services/authentication.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { TagMappingComponent } from './components/tag-mapping/tag-mapping.component';
+import { TrawellingService } from '../traewelling/services/traewelling.service';
 
 @Component({
   selector: 'app-profile',
@@ -45,7 +47,8 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
     MatListItemTitle,
     MatListItemLine,
     MatDivider,
-    TranslateModule
+    TranslateModule,
+    TagMappingComponent
   ]
 })
 export class ProfileComponent implements OnInit {
@@ -58,6 +61,7 @@ export class ProfileComponent implements OnInit {
   private router = inject(Router);
   private authService = inject(AuthenticationService);
   private destroyRef = inject(DestroyRef);
+  private trawellingService = inject(TrawellingService);
 
   profileForm: UntypedFormGroup;
   passwordForm: UntypedFormGroup;
@@ -73,6 +77,10 @@ export class ProfileComponent implements OnInit {
   sessionsLoading = false;
   revokingSessionId: number | null = null;
   private pollingIntervalId: number | null = null;
+
+  // Tag mappings
+  tagMappings = signal<TraewellingTagMapping[]>([]);
+  availableOvdbTags = signal<string[]>([]);
 
   languages = [
     { value: 'en', label: 'English' },
@@ -103,6 +111,7 @@ export class ProfileComponent implements OnInit {
     this.loadProfile();
     this.loadTrawellingStatus();
     this.loadSessions();
+    this.loadAvailableOvdbTags();
   }
 
   passwordMatchValidator(group: UntypedFormGroup) {
@@ -123,6 +132,8 @@ export class ProfileComponent implements OnInit {
           trainlogRegistrationKey: profile.trainlogRegistrationKey || '',
           trainlogSeatKey: profile.trainlogSeatKey || ''
         });
+        // Load tag mappings
+        this.tagMappings.set(profile.traewellingTagMappings || []);
         this.loading = false;
       },
       error: (error) => {
@@ -141,13 +152,17 @@ export class ProfileComponent implements OnInit {
         telegramUserId: this.profileForm.value.telegramUserId,
         trainlogMaterialKey: this.profileForm.value.trainlogMaterialKey,
         trainlogRegistrationKey: this.profileForm.value.trainlogRegistrationKey,
-        trainlogSeatKey: this.profileForm.value.trainlogSeatKey
+        trainlogSeatKey: this.profileForm.value.trainlogSeatKey,
+        traewellingTagMappings: this.tagMappings()
       };
 
       this.apiService.updateUserProfile(updateProfile).subscribe({
         next: () => {
           this.showMessage('PROFILE.SAVED_SUCCESSFULLY');
           this.savingProfile = false;
+
+          // Clear the traewelling service tag mappings cache
+          this.trawellingService.clearTagMappingsCache();
 
           // Update language if changed
           if (updateProfile.preferredLanguage !== this.translationService.language) {
@@ -394,5 +409,20 @@ export class ProfileComponent implements OnInit {
       window.clearInterval(this.pollingIntervalId);
       this.pollingIntervalId = null;
     }
+  }
+
+  loadAvailableOvdbTags(): void {
+    this.apiService.getAutocompleteForTags().subscribe({
+      next: (tags) => {
+        this.availableOvdbTags.set(tags);
+      },
+      error: (error) => {
+        console.error('Error loading available OVDB tags:', error);
+      }
+    });
+  }
+
+  onTagMappingsChange(mappings: TraewellingTagMapping[]): void {
+    this.tagMappings.set(mappings);
   }
 }

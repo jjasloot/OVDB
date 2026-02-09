@@ -96,8 +96,8 @@ export class TripCardComponent {
   }
 
 
-  createRouteViaWizard() {
-    const tripContext = this.trawellingService.getTripContextForRouteCreation(this.trip);
+  async createRouteViaWizard() {
+    const tripContext = await this.trawellingService.getTripContextForRouteCreation(this.trip);
     // Store context in session storage for the wizard to pick up
     sessionStorage.setItem('traewellingTripContext', JSON.stringify(tripContext));
     this.router.navigate(['/admin/wizard'], {
@@ -107,8 +107,8 @@ export class TripCardComponent {
     });
   }
 
-  createRouteViaGPX() {
-    const tripContext = this.trawellingService.getTripContextForRouteCreation(this.trip);
+  async createRouteViaGPX() {
+    const tripContext = await this.trawellingService.getTripContextForRouteCreation(this.trip);
     // Store context in session storage for the GPX upload to pick up
     sessionStorage.setItem('traewellingTripContext', JSON.stringify(tripContext));
     this.router.navigate(['/admin/addRoute'], {
