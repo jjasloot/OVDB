@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
@@ -11,15 +12,20 @@ using OVDB_database.Models;
 using Microsoft.EntityFrameworkCore;
 using Telegram.Bot.Types.ReplyMarkups;
 using OV_DB.Models;
+using System.Runtime.CompilerServices;
+
+[assembly: InternalsVisibleTo("OV_DB.Tests")]
 
 namespace OV_DB.Services
 {
     public class TelegramBotService
     {
-        private readonly TelegramBotClient _botClient;
+        private const int TelegramMaxMessageLength = 4096;
+        private readonly ITelegramBotClient _botClient;
         private readonly OVDBDatabaseContext _dbContext;
+        private readonly ILogger<TelegramBotService> _logger;
 
-        public TelegramBotService(IConfiguration configuration, OVDBDatabaseContext dbContext)
+        public TelegramBotService(IConfiguration configuration, OVDBDatabaseContext dbContext, ILogger<TelegramBotService> logger)
         {
             var token = configuration["TelegramBotToken"];
             if (!string.IsNullOrWhiteSpace(token))
@@ -27,12 +33,26 @@ namespace OV_DB.Services
                 _botClient = new TelegramBotClient(token);
             }
             _dbContext = dbContext;
+            _logger = logger;
+        }
+
+        internal TelegramBotService(ITelegramBotClient botClient, OVDBDatabaseContext dbContext, ILogger<TelegramBotService> logger = null)
+        {
+            _botClient = botClient;
+            _dbContext = dbContext;
+            _logger = logger;
         }
 
         public async Task SendMessageToAdminsAsync(string message)
         {
             if (_botClient == null)
                 return;
+
+            if (string.IsNullOrWhiteSpace(message))
+                return;
+
+            if (message.Length > TelegramMaxMessageLength)
+                message = message[..TelegramMaxMessageLength];
 
             var adminTelegramIds = await _dbContext.Users
                 .Where(u => u.IsAdmin && u.TelegramUserId.HasValue)
@@ -41,7 +61,14 @@ namespace OV_DB.Services
 
             foreach (var telegramId in adminTelegramIds)
             {
-                await _botClient.SendMessage(telegramId, message);
+                try
+                {
+                    await _botClient.SendMessage(telegramId, message);
+                }
+                catch (Exception ex)
+                {
+                    _logger?.LogError(ex, "Failed to send Telegram message to admin {TelegramId}", telegramId);
+                }
             }
         }
 

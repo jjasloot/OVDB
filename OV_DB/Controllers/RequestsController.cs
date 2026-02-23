@@ -79,16 +79,19 @@ public class RequestsController(OVDBDatabaseContext dbContext, IMapper mapper, T
             Created = DateTime.Now
         };
 
+        var userEmail = await dbContext.Users.Where(u => u.Id == userIdClaim).Select(u => u.Email).FirstOrDefaultAsync() ?? userIdClaim.ToString();
         dbContext.Requests.Add(newRequest);
         await dbContext.SaveChangesAsync();
-        var userEmail = await dbContext.Users.Where(u => u.Id == userIdClaim).Select(u => u.Email).FirstOrDefaultAsync() ?? userIdClaim.ToString();
-        try
+        if (!string.IsNullOrWhiteSpace(createRequest.Message))
         {
-            await telegramBotService.SendMessageToAdminsAsync($"New message received from {userEmail}:\n{createRequest.Message}");
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Failed to send Telegram notification for new request from user {UserId}", userIdClaim);
+            try
+            {
+                await telegramBotService.SendMessageToAdminsAsync($"New message received from {userEmail}:\n{createRequest.Message}");
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Failed to send Telegram notification for new request from user {UserId}", userIdClaim);
+            }
         }
         return Ok();
     }
