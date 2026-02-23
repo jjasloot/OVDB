@@ -3,7 +3,9 @@ using AutoMapper.QueryableExtensions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using OV_DB.Models;
+using OV_DB.Services;
 using OVDB_database.Database;
 using OVDB_database.Models;
 using System;
@@ -15,7 +17,7 @@ using System.Threading.Tasks;
 namespace OV_DB.Controllers;
 [Route("api/[controller]")]
 [ApiController]
-public class RequestsController(OVDBDatabaseContext dbContext, IMapper mapper) : ControllerBase
+public class RequestsController(OVDBDatabaseContext dbContext, IMapper mapper, TelegramBotService telegramBotService, ILogger<RequestsController> logger) : ControllerBase
 {
     [HttpGet]
     public async Task<IActionResult> GetUserRequests()
@@ -77,8 +79,20 @@ public class RequestsController(OVDBDatabaseContext dbContext, IMapper mapper) :
             Created = DateTime.Now
         };
 
+        var userEmail = await dbContext.Users.Where(u => u.Id == userIdClaim).Select(u => u.Email).FirstOrDefaultAsync() ?? userIdClaim.ToString();
         dbContext.Requests.Add(newRequest);
         await dbContext.SaveChangesAsync();
+        if (!string.IsNullOrWhiteSpace(createRequest.Message))
+        {
+            try
+            {
+                await telegramBotService.SendMessageToAdminsAsync($"New message received from {userEmail}:\n{createRequest.Message}");
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Failed to send Telegram notification for new request from user {UserId}", userIdClaim);
+            }
+        }
         return Ok();
     }
 
