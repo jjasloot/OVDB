@@ -185,7 +185,7 @@ export class RouteSearchDialogComponent implements OnInit {
     });
 
     // Initialize search with trip origin/destination
-    this.searchQuery = this.data.trip.transport.origin.name;
+    this.searchQuery = this.data.trip.transport.origin.name + ' '+ this.data.trip.transport.destination.name;
     this.onSearchInput();
   }
 

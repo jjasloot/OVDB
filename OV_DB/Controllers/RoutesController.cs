@@ -58,9 +58,16 @@ namespace OV_DB.Controllers
                 .Include(r => r.RouteType)
                 .Where(r => r.RouteMaps.Any(rm => rm.Map.UserId == userIdClaim));
 
-            if (!string.IsNullOrWhiteSpace(filter))
+            var words = filter?.Split(' ', StringSplitOptions.RemoveEmptyEntries & StringSplitOptions.TrimEntries) ?? [];
+
+            foreach (var word in words)
             {
-                originalQuery = originalQuery.Where(r => EF.Functions.Like(r.Name, "%" + filter + "%"));
+                var searchWord = word;
+                originalQuery = originalQuery.Where(r =>
+                    EF.Functions.Like(r.Name, "%" + searchWord + "%") ||
+                    EF.Functions.Like(r.Description, "%" + searchWord + "%") ||
+                    EF.Functions.Like(r.From, "%" + searchWord + "%") ||
+                    EF.Functions.Like(r.To, "%" + searchWord + "%"));
             }
             var query = originalQuery.ProjectTo<RouteDTO>(_mapper.ConfigurationProvider);
             if (!string.IsNullOrWhiteSpace(sortColumn))
@@ -135,13 +142,21 @@ namespace OV_DB.Controllers
                 .ThenInclude(r => r.RouteType)
                 .Where(r => r.Route.RouteMaps.Any(rm => rm.Map.UserId == userIdClaim));
 
-            if (!string.IsNullOrWhiteSpace(filter))
+            var words = filter?.Split(' ', StringSplitOptions.RemoveEmptyEntries & StringSplitOptions.TrimEntries) ?? [];
+
+            foreach (var word in words)
             {
-                originalQuery = originalQuery.Where(r => EF.Functions.Like(r.Route.Name, "%" + filter + "%") || EF.Functions.Like(r.Route.Description, "%" + filter + "%") || EF.Functions.Like(r.Route.From, "%" + filter + "%") || EF.Functions.Like(r.Route.To, "%" + filter + "%"));
+                var searchWord = word;
+                originalQuery = originalQuery.Where(r =>
+                    EF.Functions.Like(r.Route.Name, "%" + searchWord + "%") ||
+                    EF.Functions.Like(r.Route.Description, "%" + searchWord + "%") ||
+                    EF.Functions.Like(r.Route.From, "%" + searchWord + "%") ||
+                    EF.Functions.Like(r.Route.To, "%" + searchWord + "%"));
             }
 
+
             var query = originalQuery.ProjectTo<RouteInstanceListDTO>(_mapper.ConfigurationProvider);
-            
+
             if (!string.IsNullOrWhiteSpace(sortColumn))
             {
                 if (sortColumn == "name")
@@ -513,7 +528,7 @@ namespace OV_DB.Controllers
                     {
                         route.To = extendedData.Single(d => d.Name == "to").Value;
                     }
-                    
+
                     if (extendedData.Any(d => d.Name == "maps"))
                     {
                         route.RouteMaps = new List<RouteMap>();
@@ -729,7 +744,7 @@ namespace OV_DB.Controllers
                 foreach (var route in routes)
                 {
 
-                    var zipArchiveEntry = archive.CreateEntry(route.Name+".gpx", CompressionLevel.Fastest);
+                    var zipArchiveEntry = archive.CreateEntry(route.Name + ".gpx", CompressionLevel.Fastest);
                     using (var zipStream = zipArchiveEntry.Open())
                     {
                         WriteRouteToStreamAsGPX(route.Name, route.LineString, zipStream);
@@ -1037,13 +1052,13 @@ namespace OV_DB.Controllers
                     current.Date = update.Date;
                     current.StartTime = update.StartTime;
                     current.EndTime = update.EndTime;
-                    
+
                     // Calculate and store duration if both start and end times are provided
                     if (current.StartTime.HasValue && current.EndTime.HasValue)
                     {
                         current.DurationHours = _timezoneService.CalculateDurationInHours(
-                            current.StartTime.Value, 
-                            current.EndTime.Value, 
+                            current.StartTime.Value,
+                            current.EndTime.Value,
                             route.LineString);
                     }
                     else
@@ -1094,15 +1109,15 @@ namespace OV_DB.Controllers
                     Date = update.Date,
                     StartTime = update.StartTime,
                     EndTime = update.EndTime,
-                    TrawellingStatusId=update.TraewellingStatusId
+                    TrawellingStatusId = update.TraewellingStatusId
                 };
-                
+
                 // Calculate and store duration if both start and end times are provided
                 if (newInstance.StartTime.HasValue && newInstance.EndTime.HasValue)
                 {
                     newInstance.DurationHours = _timezoneService.CalculateDurationInHours(
-                        newInstance.StartTime.Value, 
-                        newInstance.EndTime.Value, 
+                        newInstance.StartTime.Value,
+                        newInstance.EndTime.Value,
                         route.LineString);
                 }
 
