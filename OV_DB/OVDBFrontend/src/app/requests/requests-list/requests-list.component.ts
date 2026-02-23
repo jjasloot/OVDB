@@ -37,6 +37,9 @@ export class RequestsListComponent implements OnInit {
   }
 
   sendRequest() {
+    if(!this.newRequest || this.newRequest.trim() === "") {
+      return;
+    }
     this.requestsService.addNewRequest({ message: this.newRequest }).subscribe({
       next: () => {
         this.newRequest = "";
