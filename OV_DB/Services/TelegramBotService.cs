@@ -21,12 +21,34 @@ namespace OV_DB.Services
 
         public TelegramBotService(IConfiguration configuration, OVDBDatabaseContext dbContext)
         {
-            _botClient = new TelegramBotClient(configuration["TelegramBotToken"]);
+            var token = configuration["TelegramBotToken"];
+            if (!string.IsNullOrWhiteSpace(token))
+            {
+                _botClient = new TelegramBotClient(token);
+            }
             _dbContext = dbContext;
+        }
+
+        public async Task SendMessageToAdminsAsync(string message)
+        {
+            if (_botClient == null)
+                return;
+
+            var adminTelegramIds = await _dbContext.Users
+                .Where(u => u.IsAdmin && u.TelegramUserId.HasValue)
+                .Select(u => u.TelegramUserId.Value)
+                .ToListAsync();
+
+            foreach (var telegramId in adminTelegramIds)
+            {
+                await _botClient.SendMessage(telegramId, message);
+            }
         }
 
         public async Task HandleUpdateAsync(Update update)
         {
+            if (_botClient == null)
+                return;
             if (update.Type == UpdateType.Message && update.Message.Type is MessageType.Location or MessageType.Venue)
             {
                 await HandleLocationMessageAsync(update.Message);
