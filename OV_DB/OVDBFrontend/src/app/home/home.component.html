@@ -27,7 +27,7 @@
     <div>
       @if (maps().length > 0 || stationMaps().length > 0) {
       <mat-list>
-        @for (map of maps(); track map) {
+        @for (map of maps(); track map.mapId) {
         <mat-list-item>
           <div style="
               display: flex;
@@ -62,7 +62,7 @@
           </div>
         </mat-list-item>
         }
-        @for (map of stationMaps(); track map) {
+        @for (map of stationMaps(); track map.id) {
         <mat-list-item>
           <div style="
               display: flex;

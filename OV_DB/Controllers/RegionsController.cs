@@ -246,73 +246,14 @@ namespace OV_DB.Controllers
         public async Task<ActionResult<IEnumerable<RegionDTO>>> GetAll()
         {
             var regions = await _context.Regions.OrderBy(r => r.Name).ProjectTo<RegionIntermediate>(mapper.ConfigurationProvider).ToListAsync();
-
-
-            var mappedRegions = regions.Where(r => r.ParentRegionId == null).Select(r => new RegionDTO
-            {
-                Id = r.Id,
-
-                Name = r.Name,
-                NameNL = r.NameNL,
-                OriginalName = r.OriginalName,
-                OsmRelationId = r.OsmRelationId,
-                IsoCode = r.IsoCode,
-                SubRegions = regions.Where(c => c.ParentRegionId == r.Id).Select(c => new RegionDTO
-                {
-                    Id = c.Id,
-                    Name = c.Name,
-                    NameNL = c.NameNL,
-                    OriginalName = c.OriginalName,
-                    OsmRelationId = c.OsmRelationId,
-                    IsoCode = c.IsoCode,
-                    SubRegions = regions.Where(sc => sc.ParentRegionId == c.Id).Select(sc => new RegionDTO
-                    {
-                        Id = sc.Id,
-                        Name = sc.Name,
-                        NameNL = sc.NameNL,
-                        OriginalName = sc.OriginalName,
-                        OsmRelationId = sc.OsmRelationId,
-                        IsoCode = sc.IsoCode
-                    })
-                })
-            });
-            return Ok(mappedRegions);
+            return Ok(BuildHierarchy(regions));
         }
 
         [HttpGet("withStations")]
         public async Task<ActionResult<IEnumerable<RegionDTO>>> GetAllWithStations()
         {
             var regions = await _context.Regions.Where(r => r.Stations.Any()).OrderBy(r => r.Name).ProjectTo<RegionIntermediate>(mapper.ConfigurationProvider).ToListAsync();
-
-            var mappedRegions = regions.Where(r => r.ParentRegionId == null).Select(r => new RegionDTO
-            {
-                Id = r.Id,
-
-                Name = r.Name,
-                NameNL = r.NameNL,
-                OriginalName = r.OriginalName,
-                OsmRelationId = r.OsmRelationId,
-                IsoCode = r.IsoCode,
-                SubRegions = regions.Where(c => c.ParentRegionId == r.Id).Select(c => new RegionDTO
-                {
-                    Id = c.Id,
-                    Name = c.Name,
-                    NameNL = c.NameNL,
-                    OriginalName = c.OriginalName,
-                    OsmRelationId = c.OsmRelationId,
-                    IsoCode = c.IsoCode,
-                    SubRegions = regions.Where(sc => sc.ParentRegionId == c.Id).Select(sc => new RegionDTO
-                    {
-                        Id = sc.Id,
-                        Name = sc.Name,
-                        NameNL = sc.NameNL,
-                        OriginalName = sc.OriginalName,
-                        OsmRelationId = sc.OsmRelationId,
-                        IsoCode = sc.IsoCode
-                    })
-                })
-            });
-            return Ok(mappedRegions);
+            return Ok(BuildHierarchy(regions));
         }
 
         [HttpGet("map/{mapGuid}")]
@@ -370,6 +311,38 @@ namespace OV_DB.Controllers
             return Ok(mappedRegions);
         }
 
+        private static IEnumerable<RegionDTO> BuildHierarchy(IEnumerable<RegionIntermediate> regions)
+        {
+            var list = regions.ToList();
+            return list.Where(r => r.ParentRegionId == null).Select(r => new RegionDTO
+            {
+                Id = r.Id,
+                Name = r.Name,
+                NameNL = r.NameNL,
+                OriginalName = r.OriginalName,
+                OsmRelationId = r.OsmRelationId,
+                IsoCode = r.IsoCode,
+                SubRegions = list.Where(c => c.ParentRegionId == r.Id).Select(c => new RegionDTO
+                {
+                    Id = c.Id,
+                    Name = c.Name,
+                    NameNL = c.NameNL,
+                    OriginalName = c.OriginalName,
+                    OsmRelationId = c.OsmRelationId,
+                    IsoCode = c.IsoCode,
+                    SubRegions = list.Where(sc => sc.ParentRegionId == c.Id).Select(sc => new RegionDTO
+                    {
+                        Id = sc.Id,
+                        Name = sc.Name,
+                        NameNL = sc.NameNL,
+                        OriginalName = sc.OriginalName,
+                        OsmRelationId = sc.OsmRelationId,
+                        IsoCode = sc.IsoCode
+                    })
+                })
+            });
+        }
+
         [HttpGet("refreshAll")]
         public async Task<IActionResult> RefreshAll()
         {
@@ -378,7 +351,7 @@ namespace OV_DB.Controllers
             {
                 return Forbid();
             }
-            var regions = _context.Regions.AsNoTracking().ToList();
+            var regions = await _context.Regions.AsNoTracking().ToListAsync();
 
             foreach (var region in regions)
             {

@@ -5,7 +5,7 @@
   <div class="container">
     @if (data.length > 0) {
       <mat-list>
-        @for (map of data; track map) {
+        @for (map of data; track map.mapId) {
           <mat-list-item>
             <div style="display: flex;align-items: center;">
               <h4 mat-line>

@@ -48,7 +48,7 @@ namespace OV_DB.Services
             using var dbContext = scope.ServiceProvider.GetService<OVDBDatabaseContext>();
             var routeRegionsService = scope.ServiceProvider.GetService<IRouteRegionsService>();
 
-            var routes = dbContext.Routes.Where(r => !r.Regions.Any()).Include(r=>r.Regions).ToList();
+            var routes = await dbContext.Routes.Where(r => !r.Regions.Any()).ToListAsync();
             var totalRoutes = routes.Count;
             var processedRoutes = 0;
             var progress = 0;

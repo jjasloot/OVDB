@@ -18,6 +18,7 @@ export class SignalRService {
     }
     const connection = new HubConnectionBuilder()
       .withUrl(environment.backend + "mapGenerationHub")
+      .withAutomaticReconnect()
       .build();
     connection
       .start()

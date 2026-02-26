@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from "@angular/core";
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, OnInit, inject } from "@angular/core";
 import { Map } from "src/app/models/map.model";
 import { ApiService } from "src/app/services/api.service";
 import { Router } from "@angular/router";
@@ -18,11 +18,13 @@ import { MatTooltip } from "@angular/material/tooltip";
 import { MatIcon } from "@angular/material/icon";
 import { CdkCopyToClipboard } from "@angular/cdk/clipboard";
 import { LowerCasePipe } from "@angular/common";
+import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 
 @Component({
   selector: "app-maps-list",
   templateUrl: "./maps-list.component.html",
   styleUrls: ["./maps-list.component.scss"],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     MatProgressSpinner,
     MatList,
@@ -43,6 +45,8 @@ export class MapsListComponent implements OnInit {
   private translateService = inject(TranslateService);
   private dataUpdateService = inject(DataUpdateService);
   private bottomSheet = inject(MatBottomSheet);
+  private destroyRef = inject(DestroyRef);
+  private cdr = inject(ChangeDetectorRef);
 
   data: Map[];
   loading = false;
@@ -53,9 +57,10 @@ export class MapsListComponent implements OnInit {
 
   private loadData() {
     this.loading = true;
-    this.apiService.getMaps().subscribe((data) => {
+    this.apiService.getMaps().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((data) => {
       this.data = data;
       this.loading = false;
+      this.cdr.markForCheck();
     });
   }
 

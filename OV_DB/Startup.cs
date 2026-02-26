@@ -123,7 +123,16 @@ namespace OV_DB
                 });
 
             // Add response caching
-            services.AddResponseCompression();
+            services.AddResponseCompression(options =>
+            {
+                options.EnableForHttps = true; // Required — default is false, so HTTPS responses are not compressed
+                options.Providers.Add<Microsoft.AspNetCore.ResponseCompression.BrotliCompressionProvider>();
+                options.Providers.Add<Microsoft.AspNetCore.ResponseCompression.GzipCompressionProvider>();
+            });
+            services.Configure<Microsoft.AspNetCore.ResponseCompression.BrotliCompressionProviderOptions>(options =>
+                options.Level = System.IO.Compression.CompressionLevel.Fastest);
+            services.Configure<Microsoft.AspNetCore.ResponseCompression.GzipCompressionProviderOptions>(options =>
+                options.Level = System.IO.Compression.CompressionLevel.Optimal);
 
             services.AddSpaStaticFiles(configuration =>
             {

@@ -1,4 +1,4 @@
-import { Component, DestroyRef, OnInit, AfterViewInit, ElementRef, HostListener, viewChild, inject } from "@angular/core";
+import { Component, ChangeDetectionStrategy, DestroyRef, OnInit, AfterViewInit, ElementRef, HostListener, viewChild, inject } from "@angular/core";
 import { ApiService } from "src/app/services/api.service";
 import { Route } from "src/app/models/route.model";
 import { Router } from "@angular/router";
@@ -41,6 +41,7 @@ import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
   selector: "app-routes-list",
   templateUrl: "./routes-list.component.html",
   styleUrls: ["./routes-list.component.scss"],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     MatProgressSpinner,
     MatFormField,

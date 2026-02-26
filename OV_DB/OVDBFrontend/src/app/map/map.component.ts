@@ -495,16 +495,6 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     this.includeLineColours = option.includeLineColours;
     this.limitToSelectedArea = option.limitToSelectedAreas;
     this.active.set(option.name);
-    if (
-      this.limitToSelectedArea &&
-      this.selectedRegion.length > 0 &&
-      !this.signalRService.connected
-    ) {
-      this.signalRService.connect();
-    }
-    if (!this.limitToSelectedArea && this.signalRService.connected) {
-      this.signalRService.disconnect();
-    }
     this.getRoutes$.next(this.getFilter());
     this.setApplicableFilter();
   }
