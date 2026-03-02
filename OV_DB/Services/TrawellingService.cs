@@ -1049,7 +1049,7 @@ namespace OV_DB.Services
                     .Where(ri => ri.TrawellingStatusId.HasValue &&
                                  ri.StartTime.HasValue &&
                                  !ri.ScheduledStartTime.HasValue)
-                    .Where(ri=>ri.RouteInstanceMaps.Any(rim => rim.Map.UserId == user.Id) || ri.Route.RouteMaps.Any(rm => rm.Map.UserId == user.Id)) 
+                    .Where(ri => ri.RouteInstanceMaps.Any(rim => rim.Map.UserId == user.Id) || ri.Route.RouteMaps.Any(rm => rm.Map.UserId == user.Id))
                     .ToListAsync();
 
                 found = instances.Count;
@@ -1075,6 +1075,7 @@ namespace OV_DB.Services
                         _logger.LogError(ex, "Error backfilling scheduled times for RouteInstance {Id}", instance.RouteInstanceId);
                         failed++;
                     }
+                    await _dbContext.SaveChangesAsync();
                 }
 
                 await _dbContext.SaveChangesAsync();
@@ -1094,6 +1095,11 @@ namespace OV_DB.Services
             {
                 var response = await request();
                 UpdateRateLimitInfo(response);
+
+                if (_rateLimitRemaining < 10)
+                {
+                    await Task.Delay(1000 * 10);
+                }
 
                 if (response.StatusCode != System.Net.HttpStatusCode.TooManyRequests &&
                     response.StatusCode != System.Net.HttpStatusCode.ServiceUnavailable)
