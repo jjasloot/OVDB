@@ -22,6 +22,19 @@ mat-form-field {
     flex-wrap: wrap;
 }
 
+.delayed-row {
+    display: flex;
+    align-items: center;
+    margin-block: 8px;
+}
+
+.scheduled-times-row {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-top: 4px;
+}
+
 .time-row {
     display: flex;
     gap: 8px;

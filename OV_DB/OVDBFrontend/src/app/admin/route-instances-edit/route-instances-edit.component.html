@@ -63,31 +63,31 @@
               </mat-select>
             </mat-form-field>
           </div>
-
-          <!-- Delayed toggle -->
-          <div class="delayed-toggle">
-            <mat-slide-toggle [(ngModel)]="isDelayed" (change)="onDelayedChange()">
-              {{'ROUTEINSTANCESEDIT.DELAYED'|translate}}
-            </mat-slide-toggle>
-          </div>
-
-          @if (isDelayed()) {
-            <!-- Scheduled times (shown only when delayed) -->
-            <div class="scheduled-times-row">
-              <mat-form-field appearance="outline" class="time-field">
-                <mat-label>{{'ROUTEINSTANCESEDIT.SCHEDULED_DEPARTURE'|translate}}</mat-label>
-                <input matInput type="time" [(ngModel)]="scheduledStartTimeOnly">
-                <mat-icon matSuffix>schedule</mat-icon>
-              </mat-form-field>
-
-              <mat-form-field appearance="outline" class="time-field">
-                <mat-label>{{'ROUTEINSTANCESEDIT.SCHEDULED_ARRIVAL'|translate}}</mat-label>
-                <input matInput type="time" [(ngModel)]="scheduledEndTimeOnly">
-                <mat-icon matSuffix>schedule</mat-icon>
-              </mat-form-field>
-            </div>
-          }
         </div>
+
+        <!-- Delayed toggle on its own row -->
+        <div class="delayed-row">
+          <mat-slide-toggle [(ngModel)]="isDelayed" (change)="onDelayedChange()">
+            {{'ROUTEINSTANCESEDIT.DELAYED'|translate}}
+          </mat-slide-toggle>
+        </div>
+
+        @if (isDelayed()) {
+          <!-- Scheduled times on their own row -->
+          <div class="scheduled-times-row">
+            <mat-form-field appearance="outline" class="time-field">
+              <mat-label>{{'ROUTEINSTANCESEDIT.SCHEDULED_DEPARTURE'|translate}}</mat-label>
+              <input matInput type="time" [(ngModel)]="scheduledStartTimeOnly">
+              <mat-icon matSuffix>schedule</mat-icon>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="time-field">
+              <mat-label>{{'ROUTEINSTANCESEDIT.SCHEDULED_ARRIVAL'|translate}}</mat-label>
+              <input matInput type="time" [(ngModel)]="scheduledEndTimeOnly">
+              <mat-icon matSuffix>schedule</mat-icon>
+            </mat-form-field>
+          </div>
+        }
       }
     </mat-card-content>
   </mat-card>

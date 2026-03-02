@@ -311,19 +311,8 @@ namespace OV_DB.Services
                         await Task.Delay(1000);
                     }
 
-                    var response = await _httpClient.GetAsync($"{_baseUrl}/user/{user.TrawellingUsername}/statuses?page={currentPage}");
-
-                    // Update rate limit tracking
-                    UpdateRateLimitInfo(response);
-
-                    // Check for rate limiting and implement backoff
-                    if (response.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
-                    {
-                        _logger.LogWarning("Rate limit hit for user {UserId}. Implementing backoff.", user.Id);
-                        await Task.Delay(TimeSpan.FromMinutes(1)); // Simple backoff - wait 1 minute
-                        response = await _httpClient.GetAsync($"{_baseUrl}/user/{user.TrawellingUsername}/statuses?page={currentPage}");
-                        UpdateRateLimitInfo(response);
-                    }
+                    var response = await ExecuteWithExponentialBackoffAsync(() =>
+                        _httpClient.GetAsync($"{_baseUrl}/user/{user.TrawellingUsername}/statuses?page={currentPage}"));
 
                     if (!response.IsSuccessStatusCode)
                     {
@@ -468,19 +457,8 @@ namespace OV_DB.Services
                 _httpClient.DefaultRequestHeaders.Clear();
                 _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {user.TrawellingAccessToken}");
 
-                var response = await _httpClient.GetAsync($"{_baseUrl}/stations/{stationId}");
-
-                // Update rate limit tracking
-                UpdateRateLimitInfo(response);
-
-                // Check for rate limiting and implement backoff
-                if (response.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
-                {
-                    _logger.LogWarning("Rate limit hit when fetching station {StationId}. Implementing backoff.", stationId);
-                    await Task.Delay(TimeSpan.FromMinutes(1));
-                    response = await _httpClient.GetAsync($"{_baseUrl}/stations/{stationId}");
-                    UpdateRateLimitInfo(response);
-                }
+                var response = await ExecuteWithExponentialBackoffAsync(() =>
+                    _httpClient.GetAsync($"{_baseUrl}/stations/{stationId}"));
 
                 if (!response.IsSuccessStatusCode)
                 {
@@ -890,10 +868,8 @@ namespace OV_DB.Services
                 _httpClient.DefaultRequestHeaders.Authorization =
                     new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", user.TrawellingAccessToken);
 
-                var response = await _httpClient.GetAsync($"{_baseUrl}/status/{statusId}");
-
-                // Update rate limit tracking
-                UpdateRateLimitInfo(response);
+                var response = await ExecuteWithExponentialBackoffAsync(() =>
+                    _httpClient.GetAsync($"{_baseUrl}/status/{statusId}"));
 
                 response.EnsureSuccessStatusCode();
 
@@ -1073,6 +1049,7 @@ namespace OV_DB.Services
                     .Where(ri => ri.TrawellingStatusId.HasValue &&
                                  ri.StartTime.HasValue &&
                                  !ri.ScheduledStartTime.HasValue)
+                    .Where(ri=>ri.RouteInstanceMaps.Any(rim => rim.Map.UserId == user.Id) || ri.Route.RouteMaps.Any(rm => rm.Map.UserId == user.Id)) 
                     .ToListAsync();
 
                 found = instances.Count;
@@ -1108,6 +1085,44 @@ namespace OV_DB.Services
             }
 
             return (found, updated, failed);
+        }
+
+        private async Task<HttpResponseMessage> ExecuteWithExponentialBackoffAsync(Func<Task<HttpResponseMessage>> request, int maxRetries = 5)
+        {
+            int attempt = 0;
+            while (true)
+            {
+                var response = await request();
+                UpdateRateLimitInfo(response);
+
+                if (response.StatusCode != System.Net.HttpStatusCode.TooManyRequests &&
+                    response.StatusCode != System.Net.HttpStatusCode.ServiceUnavailable)
+                    return response;
+
+                if (attempt >= maxRetries)
+                {
+                    _logger.LogWarning("Träwelling API rate limited after {MaxRetries} retries, giving up.", maxRetries);
+                    return response;
+                }
+
+                // Honour Retry-After header if present, else use exponential backoff
+                TimeSpan delay;
+                if (response.Headers.TryGetValues("Retry-After", out var retryAfterValues) &&
+                    int.TryParse(retryAfterValues.FirstOrDefault(), out var retryAfterSeconds))
+                {
+                    delay = TimeSpan.FromSeconds(retryAfterSeconds);
+                }
+                else
+                {
+                    delay = TimeSpan.FromSeconds(Math.Pow(2, attempt)); // 1s, 2s, 4s, 8s, 16s
+                }
+
+                _logger.LogWarning("Träwelling API returned {StatusCode}. Retrying in {Delay}s (attempt {Attempt}/{MaxRetries}).",
+                    (int)response.StatusCode, delay.TotalSeconds, attempt + 1, maxRetries);
+
+                await Task.Delay(delay);
+                attempt++;
+            }
         }
 
         private void UpdateRateLimitInfo(HttpResponseMessage response)
