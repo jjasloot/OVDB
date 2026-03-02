@@ -694,9 +694,21 @@ namespace OV_DB.Services
                     updated = true;
                 }
 
+                if (!bestMatch.ScheduledStartTime.HasValue && status.Train.Origin.DeparturePlanned.HasValue)
+                {
+                    bestMatch.ScheduledStartTime = status.Train.Origin.DeparturePlanned.Value.DateTime;
+                    updated = true;
+                }
+
                 if (!bestMatch.EndTime.HasValue && status.Train.Destination.Arrival.HasValue)
                 {
                     bestMatch.EndTime = status.Train.Destination.Arrival.Value.DateTime;
+                    updated = true;
+                }
+
+                if (!bestMatch.ScheduledEndTime.HasValue && status.Train.Destination.ArrivalPlanned.HasValue)
+                {
+                    bestMatch.ScheduledEndTime = status.Train.Destination.ArrivalPlanned.Value.DateTime;
                     updated = true;
                 }
 
@@ -831,6 +843,8 @@ namespace OV_DB.Services
 
                     routeInstance.EndTime = statusData.Transport.Destination.ArrivalReal ?? statusData.Transport.Destination.ArrivalScheduled;
 
+                    routeInstance.ScheduledStartTime = statusData.Transport.Origin.DepartureScheduled;
+                    routeInstance.ScheduledEndTime = statusData.Transport.Destination.ArrivalScheduled;
 
                     if (routeInstance.StartTime.HasValue && routeInstance.EndTime.HasValue)
                     {
@@ -1044,6 +1058,56 @@ namespace OV_DB.Services
                     Cancelled = stopover.Cancelled
                 };
             }
+        }
+
+        public async Task<(int found, int updated, int failed)> BackfillScheduledTimesAsync(User user)
+        {
+            var found = 0;
+            var updated = 0;
+            var failed = 0;
+
+            try
+            {
+                var instances = await _dbContext.RouteInstances
+                    .Include(ri => ri.Route)
+                    .Where(ri => ri.TrawellingStatusId.HasValue &&
+                                 ri.StartTime.HasValue &&
+                                 !ri.ScheduledStartTime.HasValue)
+                    .ToListAsync();
+
+                found = instances.Count;
+                _logger.LogInformation("Backfilling scheduled times for {Count} RouteInstances", found);
+
+                foreach (var instance in instances)
+                {
+                    try
+                    {
+                        var statusData = await GetStatusAsync(user, instance.TrawellingStatusId.Value);
+                        if (statusData?.Transport?.Origin == null || statusData.Transport.Destination == null)
+                        {
+                            failed++;
+                            continue;
+                        }
+
+                        instance.ScheduledStartTime = statusData.Transport.Origin.DepartureScheduled;
+                        instance.ScheduledEndTime = statusData.Transport.Destination.ArrivalScheduled;
+                        updated++;
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Error backfilling scheduled times for RouteInstance {Id}", instance.RouteInstanceId);
+                        failed++;
+                    }
+                }
+
+                await _dbContext.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error during scheduled times backfill for user {UserId}", user.Id);
+            }
+
+            return (found, updated, failed);
         }
 
         private void UpdateRateLimitInfo(HttpResponseMessage response)

@@ -95,5 +95,12 @@ namespace OV_DB.Services
         /// <param name="routeInstanceId">Existing OVDB RouteInstance ID</param>
         /// <returns>Updated RouteInstance or null if failed</returns>
         Task<RouteInstance> LinkStatusToRouteInstanceAsync(User user, int statusId, int routeInstanceId);
+
+        /// <summary>
+        /// Backfill scheduled (planned) departure and arrival times for existing trips imported from Träwelling
+        /// </summary>
+        /// <param name="user">User whose trips to backfill</param>
+        /// <returns>Counts of (found, updated, failed) trips</returns>
+        Task<(int found, int updated, int failed)> BackfillScheduledTimesAsync(User user);
     }
 }

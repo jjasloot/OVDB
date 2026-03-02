@@ -435,6 +435,34 @@ namespace OV_DB.Controllers
             }
         }
 
+        /// <summary>
+        /// Backfill scheduled (planned) departure/arrival times for existing Träwelling-imported trips
+        /// </summary>
+        [HttpPost("backfill-scheduled")]
+        public async Task<IActionResult> BackfillScheduledTimes()
+        {
+            try
+            {
+                var userId = GetCurrentUserId();
+                if (!userId.HasValue)
+                    return Unauthorized();
+
+                var user = await _dbContext.Users.FindAsync(userId.Value);
+                if (user == null)
+                    return NotFound("User not found");
+
+                var (found, updated, failed) = await _trawellingService.BackfillScheduledTimesAsync(user);
+
+                return Ok(new { found, updated, failed });
+            }
+            catch (Exception ex)
+            {
+                var userId = GetCurrentUserId();
+                _logger.LogError(ex, "Error backfilling scheduled times for user {UserId}", userId);
+                return StatusCode(500, "Error backfilling scheduled times");
+            }
+        }
+
         private int? GetCurrentUserId()
         {
             var userIdClaim = User.Claims.FirstOrDefault(x => x.Type == ClaimTypes.NameIdentifier);

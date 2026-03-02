@@ -36,7 +36,9 @@ namespace OV_DB.Mappings
                 .IncludeBase<OVDB_database.Models.Route, RouteDTO>();
 
             CreateMap<RouteInstance, RouteInstanceDTO>()
-                .ForMember(dest => dest.AverageSpeedKmh, ops => ops.MapFrom(ri => ri.GetAverageSpeedKmh()));
+                .ForMember(dest => dest.AverageSpeedKmh, ops => ops.MapFrom(ri => ri.GetAverageSpeedKmh()))
+                .ForMember(dest => dest.DepartureDelayMinutes, ops => ops.MapFrom(ri => ri.DepartureDelayMinutes))
+                .ForMember(dest => dest.ArrivalDelayMinutes, ops => ops.MapFrom(ri => ri.ArrivalDelayMinutes));
 
             CreateMap<RouteInstance, RouteInstanceListDTO>()
                 .IncludeBase<RouteInstance, RouteInstanceDTO>()

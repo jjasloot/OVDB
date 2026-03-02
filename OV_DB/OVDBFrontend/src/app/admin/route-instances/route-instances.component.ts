@@ -17,6 +17,7 @@ import { MatList, MatListItem } from "@angular/material/list";
 import { MatButton, MatFabButton } from "@angular/material/button";
 import { MatProgressSpinner } from "@angular/material/progress-spinner";
 import { MatIcon } from "@angular/material/icon";
+import { MatCard, MatCardContent, MatCardHeader, MatCardTitle } from "@angular/material/card";
 import { TrawellingTripContext } from "src/app/models/traewelling.model";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 
@@ -34,6 +35,10 @@ import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
     MatProgressSpinner,
     MatFabButton,
     MatIcon,
+    MatCard,
+    MatCardContent,
+    MatCardHeader,
+    MatCardTitle,
     DatePipe,
     TranslateModule,
   ],
@@ -61,6 +66,34 @@ export class RouteInstancesComponent implements OnInit {
       return [];
     }
     return r.routeInstances;
+  });
+
+  punctualityStats = computed(() => {
+    const instancesWithDelay = this.instances().filter(
+      i => i.arrivalDelayMinutes !== null && i.arrivalDelayMinutes !== undefined
+    );
+    if (instancesWithDelay.length < 2) return null;
+
+    const delays = instancesWithDelay.map(i => i.arrivalDelayMinutes!);
+    const onTimeCount = delays.filter(d => Math.abs(d) <= 5).length;
+    const avgArrival = delays.reduce((a, b) => a + b, 0) / delays.length;
+    const worstArrival = Math.max(...delays);
+
+    const departureInstances = this.instances().filter(
+      i => i.departureDelayMinutes !== null && i.departureDelayMinutes !== undefined
+    );
+    const depDelays = departureInstances.map(i => i.departureDelayMinutes!);
+    const avgDeparture = depDelays.length > 0 ? depDelays.reduce((a, b) => a + b, 0) / depDelays.length : null;
+    const worstDeparture = depDelays.length > 0 ? Math.max(...depDelays) : null;
+
+    return {
+      total: instancesWithDelay.length,
+      onTimePercent: Math.round((onTimeCount / instancesWithDelay.length) * 100),
+      avgArrivalDelay: Math.round(avgArrival),
+      worstArrivalDelay: Math.round(worstArrival),
+      avgDepartureDelay: avgDeparture !== null ? Math.round(avgDeparture) : null,
+      worstDepartureDelay: worstDeparture !== null ? Math.round(worstDeparture) : null,
+    };
   });
 
   ngOnInit(): void {
@@ -153,6 +186,28 @@ export class RouteInstancesComponent implements OnInit {
     } else {
       return `${minutes}m`;
     }
+  }
+
+  getDepartureDelay(instance: RouteInstance): number | null {
+    return instance.departureDelayMinutes ?? null;
+  }
+
+  getArrivalDelay(instance: RouteInstance): number | null {
+    return instance.arrivalDelayMinutes ?? null;
+  }
+
+  formatDelay(minutes: number | null): string {
+    if (minutes === null) return null;
+    const rounded = Math.round(minutes);
+    if (rounded === 0) return 'On time';
+    return rounded > 0 ? `+${rounded} min` : `${rounded} min`;
+  }
+
+  delayClass(minutes: number | null): string {
+    if (minutes === null) return '';
+    const rounded = Math.round(minutes);
+    if (Math.abs(rounded) <= 1) return 'delay-ontime';
+    return rounded > 0 ? 'delay-late' : 'delay-early';
   }
 
   edit(instance: RouteInstance) {

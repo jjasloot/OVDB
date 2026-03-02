@@ -73,6 +73,8 @@ export class ProfileComponent implements OnInit {
   trawellingLoading = false;
   trawellingConnecting = false;
   trawellingDisconnecting = false;
+  backfillingScheduled = false;
+  backfillResult: { updated: number; found: number; failed: number } | null = null;
   sessions: any[] = [];
   sessionsLoading = false;
   revokingSessionId: number | null = null;
@@ -292,6 +294,20 @@ export class ProfileComponent implements OnInit {
 
   viewTrawellingTrips(): void {
     this.router.navigate(['/admin/traewelling']);
+  }
+
+  backfillScheduledTimes(): void {
+    this.backfillingScheduled = true;
+    this.backfillResult = null;
+    this.apiService.backfillScheduledTimes().subscribe({
+      next: (result) => {
+        this.backfillResult = result;
+        this.backfillingScheduled = false;
+      },
+      error: () => {
+        this.backfillingScheduled = false;
+      }
+    });
   }
 
   loadSessions(): void {

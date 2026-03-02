@@ -649,4 +649,11 @@ export class ApiService {
       request
     );
   }
+
+  backfillScheduledTimes(): Observable<{ found: number; updated: number; failed: number }> {
+    return this.httpClient.post<{ found: number; updated: number; failed: number }>(
+      environment.backend + "api/traewelling/backfill-scheduled",
+      {}
+    );
+  }
 }

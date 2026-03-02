@@ -1052,6 +1052,8 @@ namespace OV_DB.Controllers
                     current.Date = update.Date;
                     current.StartTime = update.StartTime;
                     current.EndTime = update.EndTime;
+                    current.ScheduledStartTime = update.ScheduledStartTime;
+                    current.ScheduledEndTime = update.ScheduledEndTime;
 
                     // Calculate and store duration if both start and end times are provided
                     if (current.StartTime.HasValue && current.EndTime.HasValue)
@@ -1109,6 +1111,8 @@ namespace OV_DB.Controllers
                     Date = update.Date,
                     StartTime = update.StartTime,
                     EndTime = update.EndTime,
+                    ScheduledStartTime = update.ScheduledStartTime,
+                    ScheduledEndTime = update.ScheduledEndTime,
                     TrawellingStatusId = update.TraewellingStatusId
                 };
 

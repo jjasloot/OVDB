@@ -21,6 +21,8 @@ namespace OV_DB.Models
         public string To { get; set; }
         public DateTime? StartTime { get; set; }
         public DateTime? EndTime { get; set; }
+        public DateTime? ScheduledStartTime { get; set; }
+        public DateTime? ScheduledEndTime { get; set; }
         public double Distance { get; set; }
         public List<RouteInstanceProperty> ExtraInfo { get; set; } = new List<RouteInstanceProperty>();
         public double? Duration { get; set; }

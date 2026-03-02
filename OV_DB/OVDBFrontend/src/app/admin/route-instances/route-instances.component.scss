@@ -13,6 +13,70 @@ mat-expansion-panel {
     font-size: 0.9em;
 }
 
+.punctuality-card {
+    margin: 0 8px 16px;
+
+    .stats-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+        margin-bottom: 8px;
+    }
+
+    .stat-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        min-width: 80px;
+    }
+
+    .stat-value {
+        font-size: 1.4em;
+        font-weight: 600;
+        color: #2e7d32;
+
+        &.ontime { color: #2e7d32; }
+        &.delayed { color: #e65100; }
+    }
+
+    .stat-label {
+        font-size: 0.75em;
+        color: #666;
+        text-align: center;
+    }
+
+    .stat-note {
+        font-size: 0.8em;
+        color: #999;
+    }
+}
+
+
+.delay-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.8em;
+    font-weight: 500;
+    margin-left: 8px;
+
+    &.delay-ontime {
+        background-color: #e8f5e9;
+        color: #2e7d32;
+    }
+
+    &.delay-late {
+        background-color: #fff3e0;
+        color: #e65100;
+    }
+
+    &.delay-early {
+        background-color: #e0f7fa;
+        color: #00695c;
+    }
+}
+
+
 .add {
     position: fixed;
     bottom: 50px;

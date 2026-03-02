@@ -13,6 +13,8 @@ namespace OV_DB.Models
         public DateTime Date { get; set; }
         public DateTime? StartTime { get; set; }
         public DateTime? EndTime { get; set; }
+        public DateTime? ScheduledStartTime { get; set; }
+        public DateTime? ScheduledEndTime { get; set; }
         public List<RouteInstancePropertyUpdate> RouteInstanceProperties { get; set; }
         public List<RouteInstanceMap> RouteInstanceMaps { get; set; }
         public int? TraewellingStatusId { get; set; }

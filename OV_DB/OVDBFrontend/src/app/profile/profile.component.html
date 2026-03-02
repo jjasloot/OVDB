@@ -143,6 +143,18 @@
           {{ 'PROFILE.TRAEWELLING_VIEW_TRIPS' | translate }}
         </button>
 
+        <button mat-stroked-button (click)="backfillScheduledTimes()" [disabled]="backfillingScheduled">
+          @if (backfillingScheduled) {
+          <mat-spinner diameter="20"></mat-spinner>
+          } @else {
+          <mat-icon>schedule</mat-icon>
+          }
+          {{ 'PROFILE.TRAEWELLING_BACKFILL_SCHEDULED' | translate }}
+        </button>
+        @if (backfillResult) {
+        <span class="backfill-result">{{ 'PROFILE.TRAEWELLING_BACKFILL_RESULT' | translate : backfillResult }}</span>
+        }
+
         <button mat-stroked-button color="warn" (click)="disconnectTraewelling()" [disabled]="trawellingDisconnecting">
           @if (trawellingDisconnecting) {
           <mat-spinner diameter="20"></mat-spinner>

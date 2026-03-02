@@ -6,6 +6,10 @@ export interface RouteInstance {
   date: string;
   startTime?: string;
   endTime?: string;
+  scheduledStartTime?: string;
+  scheduledEndTime?: string;
+  departureDelayMinutes?: number;
+  arrivalDelayMinutes?: number;
   durationHours?: number;
   averageSpeedKmh?: number;
   routeInstanceProperties: RouteInstanceProperty[];

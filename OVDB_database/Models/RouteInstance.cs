@@ -20,6 +20,14 @@ namespace OVDB_database.Models
         public DateTime? StartTime { get; set; }
         public DateTime? EndTime { get; set; }
         /// <summary>
+        /// Scheduled (planned) departure time for this trip instance
+        /// </summary>
+        public DateTime? ScheduledStartTime { get; set; }
+        /// <summary>
+        /// Scheduled (planned) arrival time for this trip instance
+        /// </summary>
+        public DateTime? ScheduledEndTime { get; set; }
+        /// <summary>
         /// Duration of the trip in hours (calculated and stored to avoid timezone computations)
         /// </summary>
         public double? DurationHours { get; set; }
@@ -30,6 +38,22 @@ namespace OVDB_database.Models
         /// Link to Träwelling status ID for imported trips
         /// </summary>
         public int? TrawellingStatusId { get; set; }
+
+        /// <summary>
+        /// Departure delay in minutes (positive = late, negative = early). Null if scheduled or actual departure time is missing.
+        /// </summary>
+        public double? DepartureDelayMinutes =>
+            StartTime.HasValue && ScheduledStartTime.HasValue
+                ? (StartTime.Value - ScheduledStartTime.Value).TotalMinutes
+                : null;
+
+        /// <summary>
+        /// Arrival delay in minutes (positive = late, negative = early). Null if scheduled or actual arrival time is missing.
+        /// </summary>
+        public double? ArrivalDelayMinutes =>
+            EndTime.HasValue && ScheduledEndTime.HasValue
+                ? (EndTime.Value - ScheduledEndTime.Value).TotalMinutes
+                : null;
 
         /// <summary>
         /// Calculates the average speed in km/h based on stored duration

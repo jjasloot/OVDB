@@ -12,6 +12,10 @@ namespace OV_DB.Models
         public DateTime Date { get; set; }
         public DateTime? StartTime { get; set; }
         public DateTime? EndTime { get; set; }
+        public DateTime? ScheduledStartTime { get; set; }
+        public DateTime? ScheduledEndTime { get; set; }
+        public double? DepartureDelayMinutes { get; set; }
+        public double? ArrivalDelayMinutes { get; set; }
         public double? DurationHours { get; set; }
         public double? AverageSpeedKmh { get; set; }
         public List<RouteInstancePropertyDTO> RouteInstanceProperties { get; set; }

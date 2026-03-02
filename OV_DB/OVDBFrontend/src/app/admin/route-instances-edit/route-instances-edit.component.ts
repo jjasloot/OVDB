@@ -43,6 +43,7 @@ export class RouteInstancesEditComponent implements OnInit {
   maps = signal<Map[]>([]);
   selectedMaps = signal<number[]>([]);
   useDetailedTime = signal(false);
+  isDelayed = signal(false);
   traewellingTripData: TrawellingTripContext | null = null;
   endTimeDayOffset = signal(0); // Number of days to add to end time (0-7)
 
@@ -99,7 +100,12 @@ export class RouteInstancesEditComponent implements OnInit {
     const combinedDate = new Date(baseDate.getFullYear(), baseDate.getMonth(), baseDate.getDate(), hours, minutes);
     this.instance.startTime = this.formatDateTimeLocal(combinedDate);
     console.log(combinedDate);
-    
+
+    // Keep scheduled = actual when not delayed
+    if (!this.isDelayed()) {
+      this.instance.scheduledStartTime = this.instance.startTime;
+    }
+
     // Auto-detect if we need day offset when start time changes
     this.autoDetectDayOffset();
   }
@@ -121,9 +127,49 @@ export class RouteInstancesEditComponent implements OnInit {
     // Add day offset to the base date
     const combinedDate = new Date(baseDate.getFullYear(), baseDate.getMonth(), baseDate.getDate() + this.endTimeDayOffset(), hours, minutes);
     this.instance.endTime = this.formatDateTimeLocal(combinedDate);
-    
+
+    // Keep scheduled = actual when not delayed
+    if (!this.isDelayed()) {
+      this.instance.scheduledEndTime = this.instance.endTime;
+    }
+
     // Auto-detect if we need day offset when end time < start time
     this.autoDetectDayOffset();
+  }
+
+  get scheduledStartTimeOnly(): string {
+    if (!this.instance.scheduledStartTime) return '';
+    const date = new Date(this.instance.scheduledStartTime);
+    return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+  }
+
+  set scheduledStartTimeOnly(value: string) {
+    if (!value) {
+      this.instance.scheduledStartTime = undefined;
+      return;
+    }
+    const baseDate = this.instance.date ? new Date(this.instance.date) : new Date();
+    const [hours, minutes] = value.split(':').map(num => parseInt(num, 10));
+    const combinedDate = new Date(baseDate.getFullYear(), baseDate.getMonth(), baseDate.getDate(), hours, minutes);
+    this.instance.scheduledStartTime = this.formatDateTimeLocal(combinedDate);
+  }
+
+  get scheduledEndTimeOnly(): string {
+    if (!this.instance.scheduledEndTime) return '';
+    const date = new Date(this.instance.scheduledEndTime);
+    return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+  }
+
+  set scheduledEndTimeOnly(value: string) {
+    if (!value) {
+      this.instance.scheduledEndTime = undefined;
+      return;
+    }
+    const baseDate = this.instance.date ? new Date(this.instance.date) : new Date();
+    const [hours, minutes] = value.split(':').map(num => parseInt(num, 10));
+    // Use same day offset as endTime
+    const combinedDate = new Date(baseDate.getFullYear(), baseDate.getMonth(), baseDate.getDate() + this.endTimeDayOffset(), hours, minutes);
+    this.instance.scheduledEndTime = this.formatDateTimeLocal(combinedDate);
   }
 
   private formatDateTimeLocal(date: Date): string {
@@ -157,7 +203,21 @@ export class RouteInstancesEditComponent implements OnInit {
   ngOnInit() {
     // Check if the instance already has time information
     this.useDetailedTime.set(!!(this.instance.startTime || this.instance.endTime));
-    
+
+    // Detect if existing trip has scheduled times that differ from actual times
+    const hasScheduled = !!(this.instance.scheduledStartTime || this.instance.scheduledEndTime);
+    const scheduledDiffersFromActual = hasScheduled && (
+      this.instance.scheduledStartTime !== this.instance.startTime ||
+      this.instance.scheduledEndTime !== this.instance.endTime
+    );
+    this.isDelayed.set(scheduledDiffersFromActual);
+
+    // If times exist but no scheduled times yet, default scheduled = actual
+    if (this.useDetailedTime() && !hasScheduled) {
+      this.instance.scheduledStartTime = this.instance.startTime;
+      this.instance.scheduledEndTime = this.instance.endTime;
+    }
+
     // Calculate initial day offset based on existing times
     this.calculateExistingDayOffset();
 
@@ -177,6 +237,25 @@ export class RouteInstancesEditComponent implements OnInit {
       // Switching to date-only mode, clear time information
       this.instance.startTime = undefined;
       this.instance.endTime = undefined;
+      this.instance.scheduledStartTime = undefined;
+      this.instance.scheduledEndTime = undefined;
+      this.isDelayed.set(false);
+    }
+  }
+
+  onDelayedChange() {
+    if (this.isDelayed()) {
+      // Pre-fill scheduled with current actual times if not already set
+      if (!this.instance.scheduledStartTime) {
+        this.instance.scheduledStartTime = this.instance.startTime;
+      }
+      if (!this.instance.scheduledEndTime) {
+        this.instance.scheduledEndTime = this.instance.endTime;
+      }
+    } else {
+      // Reset scheduled to actual times
+      this.instance.scheduledStartTime = this.instance.startTime;
+      this.instance.scheduledEndTime = this.instance.endTime;
     }
   }
 

@@ -57,6 +57,8 @@ namespace OV_DB.Controllers
                     To = ri.Route.To,
                     StartTime = ri.StartTime,
                     EndTime = ri.EndTime,
+                    ScheduledStartTime = ri.ScheduledStartTime,
+                    ScheduledEndTime = ri.ScheduledEndTime,
                     Type = ri.Route.RouteType.Name,
                     TypeNL = ri.Route.RouteType.NameNL,
                     Distance = ri.Route.OverrideDistance.HasValue ? ri.Route.OverrideDistance.Value : ri.Route.CalculatedDistance,
@@ -76,10 +78,14 @@ namespace OV_DB.Controllers
                 ws.Cell(row, 6).Value = "Tot";
                 ws.Cell(row, 7).Value = "Vertrektijd";
                 ws.Cell(row, 8).Value = "Aankomsttijd";
-                ws.Cell(row, 9).Value = "Duur (uren)";
-                ws.Cell(row, 10).Value = "Afstand (km)";
-                ws.Cell(row, 11).Value = "Naam";
-                ws.Cell(row, 12).Value = "Opmerking";
+                ws.Cell(row, 9).Value = "Geplande vertrek";
+                ws.Cell(row, 10).Value = "Geplande aankomst";
+                ws.Cell(row, 11).Value = "Vertrekvertraging (min)";
+                ws.Cell(row, 12).Value = "Aankomstvertraging (min)";
+                ws.Cell(row, 13).Value = "Duur (uren)";
+                ws.Cell(row, 14).Value = "Afstand (km)";
+                ws.Cell(row, 15).Value = "Naam";
+                ws.Cell(row, 16).Value = "Opmerking";
             }
             else
             {
@@ -91,12 +97,16 @@ namespace OV_DB.Controllers
                 ws.Cell(row, 6).Value = "To";
                 ws.Cell(row, 7).Value = "Departure";
                 ws.Cell(row, 8).Value = "Arrival";
-                ws.Cell(row, 9).Value = "Duration (hours)";
-                ws.Cell(row, 10).Value = "Distance (km)";
-                ws.Cell(row, 11).Value = "Name";
-                ws.Cell(row, 12).Value = "Remarks";
+                ws.Cell(row, 9).Value = "Scheduled departure";
+                ws.Cell(row, 10).Value = "Scheduled arrival";
+                ws.Cell(row, 11).Value = "Departure delay (min)";
+                ws.Cell(row, 12).Value = "Arrival delay (min)";
+                ws.Cell(row, 13).Value = "Duration (hours)";
+                ws.Cell(row, 14).Value = "Distance (km)";
+                ws.Cell(row, 15).Value = "Name";
+                ws.Cell(row, 16).Value = "Remarks";
             }
-            var column = 13;
+            var column = 17;
             extraInfo.ForEach(key =>
             {
                 ws.Cell(row, column).Value = key;
@@ -125,14 +135,22 @@ namespace OV_DB.Controllers
                 ws.Cell(row, 6).Value = route.To;
                 ws.Cell(row, 7).Value = route.StartTime;
                 ws.Cell(row, 8).Value = route.EndTime;
-                ws.Cell(row, 9).Value = route.Duration.HasValue ? Math.Floor(route.Duration.Value) + ":" + (route.Duration.Value * 60) % 60 : "";
-                ws.Cell(row, 10).Value = Math.Round(route.Distance, 2);
-                ws.Cell(row, 11).Value = (!english && !string.IsNullOrWhiteSpace(route.NameNL)) ? route.NameNL : route.Name;
-                ws.Cell(row, 12).Value = (!english && !string.IsNullOrWhiteSpace(route.DescriptionNL)) ? route.DescriptionNL : route.Description;
+                ws.Cell(row, 9).Value = route.ScheduledStartTime;
+                ws.Cell(row, 10).Value = route.ScheduledEndTime;
+                ws.Cell(row, 11).Value = route.StartTime.HasValue && route.ScheduledStartTime.HasValue
+                    ? (ClosedXML.Excel.XLCellValue)Math.Round((route.StartTime.Value - route.ScheduledStartTime.Value).TotalMinutes, 1)
+                    : (ClosedXML.Excel.XLCellValue)"";
+                ws.Cell(row, 12).Value = route.EndTime.HasValue && route.ScheduledEndTime.HasValue
+                    ? (ClosedXML.Excel.XLCellValue)Math.Round((route.EndTime.Value - route.ScheduledEndTime.Value).TotalMinutes, 1)
+                    : (ClosedXML.Excel.XLCellValue)"";
+                ws.Cell(row, 13).Value = route.Duration.HasValue ? Math.Floor(route.Duration.Value) + ":" + (route.Duration.Value * 60) % 60 : "";
+                ws.Cell(row, 14).Value = Math.Round(route.Distance, 2);
+                ws.Cell(row, 15).Value = (!english && !string.IsNullOrWhiteSpace(route.NameNL)) ? route.NameNL : route.Name;
+                ws.Cell(row, 16).Value = (!english && !string.IsNullOrWhiteSpace(route.DescriptionNL)) ? route.DescriptionNL : route.Description;
                 route.ExtraInfo.ForEach(ri =>
                 {
                     var key = ri.Key;
-                    var index = 13 + extraInfo.IndexOf(key);
+                    var index = 17 + extraInfo.IndexOf(key);
                     if (ri.Bool != null)
                     {
                         if (english)
