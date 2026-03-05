@@ -470,10 +470,23 @@
     "LINE": "Lijn",
     "START_TIME": "Vertrek",
     "END_TIME": "Aankomst",
-    "DESCRIPTION": "Beschrijving"
+    "DESCRIPTION": "Beschrijving",
+    "WEBHOOK_TITLE": "Webhook configuratie",
+    "WEBHOOK_SUBTITLE": "Automatisch ritten importeren via Träwelling webhooks",
+    "WEBHOOK_DESCRIPTION": "Registreer deze webhook in Träwelling om reizen automatisch te importeren en bij te werken. Wanneer je incheckt op Träwelling, probeert OVDB de rit te koppelen aan een bestaande route.",
+    "WEBHOOK_SHOW": "Webhook configuratie tonen",
+    "WEBHOOK_HIDE": "Webhook configuratie verbergen",
+    "WEBHOOK_URL": "Webhook URL",
+    "WEBHOOK_SECRET": "Webhook geheim (ondertekeningssleutel)",
+    "WEBHOOK_EVENTS": "Te abonneren gebeurtenissen",
+    "WEBHOOK_HINT": "Registreer de webhook in je Träwelling-accountinstellingen onder API > Webhooks. Gebruik de URL hierboven en plak het geheim als ondertekeningssleutel.",
+    "COPY": "Kopiëren naar klembord",
+    "COPIED_URL": "Webhook URL gekopieerd!",
+    "COPIED_SECRET": "Webhook geheim gekopieerd!",
+    "SHOW_SECRET": "Geheim tonen",
+    "HIDE_SECRET": "Geheim verbergen"
   },
   "ROUTESLIST.EXPORTTOTRAINLOG": "Exporteer selectie voor Trainlog",
   "ROUTESLIST.SHOWROUTES": "Toon routes",
   "ROUTESLIST.SHOWINSTANCES": "Toon ritten"
-  
 }

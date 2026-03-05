@@ -192,3 +192,10 @@ export interface TrawellingTripContext {
   tags: TrawellingTag[];
   date: string;
 }
+
+// Webhook configuration
+export interface TrawellingWebhookInfo {
+  webhookUrl: string;
+  secret: string;
+  events: string[];
+}

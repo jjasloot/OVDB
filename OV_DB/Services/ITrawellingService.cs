@@ -102,5 +102,31 @@ namespace OV_DB.Services
         /// <param name="user">User whose trips to backfill</param>
         /// <returns>Counts of (found, updated, failed) trips</returns>
         Task<(int found, int updated, int failed)> BackfillScheduledTimesAsync(User user);
+
+        /// <summary>
+        /// Get or generate a webhook secret for the user.
+        /// The secret is used to sign/verify incoming Träwelling webhook payloads (HMAC-SHA256).
+        /// </summary>
+        /// <param name="userId">OVDB User ID</param>
+        /// <returns>The webhook secret string, or null if the user was not found</returns>
+        Task<string> GetOrGenerateWebhookSecretAsync(int userId);
+
+        /// <summary>
+        /// Process a Träwelling checkin_create webhook event.
+        /// Attempts to auto-link the new checkin to a matching existing RouteInstance.
+        /// </summary>
+        Task ProcessWebhookCheckinCreateAsync(User user, TrawellingStatus status);
+
+        /// <summary>
+        /// Process a Träwelling checkin_update webhook event.
+        /// Updates timing data on the RouteInstance linked to this status, if one exists.
+        /// </summary>
+        Task ProcessWebhookCheckinUpdateAsync(User user, TrawellingStatus status);
+
+        /// <summary>
+        /// Process a Träwelling checkin_delete webhook event.
+        /// Removes the TrawellingStatusId link from any RouteInstance linked to this status.
+        /// </summary>
+        Task ProcessWebhookCheckinDeleteAsync(User user, int statusId);
     }
 }

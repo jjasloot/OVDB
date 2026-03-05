@@ -5,12 +5,14 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { TranslateModule } from '@ngx-translate/core';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { TrawellingService } from './services/traewelling.service';
 import {
   TrawellingConnectionStatus,
   TrawellingTripsResponse,
-  TrawellingTrip
+  TrawellingTrip,
+  TrawellingWebhookInfo
 } from '../models/traewelling.model';
 import { TripCardComponent } from './components/trip-card/trip-card.component';
 
@@ -23,6 +25,7 @@ import { TripCardComponent } from './components/trip-card/trip-card.component';
     MatButtonModule,
     MatIconModule,
     MatProgressSpinnerModule,
+    MatTooltipModule,
     TranslateModule,
     TripCardComponent
   ],
@@ -32,6 +35,7 @@ import { TripCardComponent } from './components/trip-card/trip-card.component';
 export class TrawellingComponent implements OnInit {
   private trawellingService = inject(TrawellingService);
   private snackBar = inject(MatSnackBar);
+  private translate = inject(TranslateService);
 
   connectionStatus: TrawellingConnectionStatus | null = null;
   trips: TrawellingTrip[] = [];
@@ -39,6 +43,10 @@ export class TrawellingComponent implements OnInit {
   isLoadingMore = false;
   hasMorePages = false;
   currentPage = 1;
+
+  webhookInfo: TrawellingWebhookInfo | null = null;
+  isLoadingWebhook = false;
+  showWebhookSecret = false;
 
   async ngOnInit() {
     await this.loadConnectionStatus();
@@ -50,6 +58,35 @@ export class TrawellingComponent implements OnInit {
 
   removeTrip(tripId: number): void {
     this.trips = this.trips.filter(trip => trip.id !== tripId);
+  }
+
+  async loadWebhookInfo() {
+    if (this.webhookInfo) {
+      this.webhookInfo = null;
+      return;
+    }
+    this.isLoadingWebhook = true;
+    try {
+      this.webhookInfo = await this.trawellingService.getWebhookInfo();
+    } catch (error) {
+      this.snackBar.open(this.translate.instant('TRAEWELLING.WEBHOOK_TITLE'), 'Close', { duration: 5000 });
+    } finally {
+      this.isLoadingWebhook = false;
+    }
+  }
+
+  copyWebhookUrl() {
+    if (!this.webhookInfo) return;
+    navigator.clipboard.writeText(this.webhookInfo.webhookUrl).then(() => {
+      this.snackBar.open(this.translate.instant('TRAEWELLING.COPIED_URL'), 'Close', { duration: 2000 });
+    });
+  }
+
+  copyWebhookSecret() {
+    if (!this.webhookInfo) return;
+    navigator.clipboard.writeText(this.webhookInfo.secret).then(() => {
+      this.snackBar.open(this.translate.instant('TRAEWELLING.COPIED_SECRET'), 'Close', { duration: 2000 });
+    });
   }
 
   private async loadConnectionStatus() {

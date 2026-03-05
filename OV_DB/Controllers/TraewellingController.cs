@@ -3,13 +3,17 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using OV_DB.Models;
 using OV_DB.Services;
 using OVDB_database.Database;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Security.Claims;
+using System.Security.Cryptography;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace OV_DB.Controllers
@@ -472,5 +476,124 @@ namespace OV_DB.Controllers
             }
             return null;
         }
-    }
+
+        /// <summary>
+        /// Get webhook configuration info: URL and secret to register in Träwelling.
+        /// Generates a new webhook secret if none exists for the user.
+        /// </summary>
+        [HttpGet("webhook-info")]
+        public async Task<IActionResult> GetWebhookInfo()
+        {
+            try
+            {
+                var userId = GetCurrentUserId();
+                if (!userId.HasValue)
+                    return Unauthorized();
+
+                var user = await _dbContext.Users.FindAsync(userId.Value);
+                if (user == null)
+                    return NotFound("User not found");
+
+                var secret = await _trawellingService.GetOrGenerateWebhookSecretAsync(userId.Value);
+                if (secret == null)
+                    return StatusCode(500, "Error generating webhook secret");
+
+                var webhookUrl = $"{Request.Scheme}://{Request.Host}/api/Traewelling/webhook/{user.Guid}";
+
+                return Ok(new TrawellingWebhookInfo
+                {
+                    WebhookUrl = webhookUrl,
+                    Secret = secret,
+                    Events = new[] { "checkin_create", "checkin_update", "checkin_delete" }
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting webhook info");
+                return StatusCode(500, "Error retrieving webhook info");
+            }
+        }
+
+        /// <summary>
+        /// Receive a webhook event from Träwelling (anonymous, secured via HMAC-SHA256 signature).
+        /// The URL path includes the user GUID to identify which OVDB user this webhook belongs to.
+        /// </summary>
+        [HttpPost("webhook/{userGuid}")]
+        [AllowAnonymous]
+        public async Task<IActionResult> ReceiveWebhook(Guid userGuid)
+        {
+            try
+            {
+                // Find user by GUID
+                var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.Guid == userGuid);
+                if (user == null)
+                    return NotFound();
+
+                if (string.IsNullOrEmpty(user.TrawellingWebhookSecret))
+                    return Unauthorized("Webhook not configured for this user");
+
+                // Read raw request body for HMAC verification
+                Request.EnableBuffering();
+                string body;
+                using (var reader = new StreamReader(Request.Body, Encoding.UTF8, leaveOpen: true))
+                {
+                    body = await reader.ReadToEndAsync();
+                }
+                Request.Body.Position = 0;
+
+                // Verify HMAC-SHA256 signature from 'Signature' header
+                if (!Request.Headers.TryGetValue("Signature", out var signatureHeader))
+                {
+                    _logger.LogWarning("Webhook received for user {UserGuid} without Signature header", userGuid);
+                    return Unauthorized("Missing signature");
+                }
+
+                var expectedSignature = ComputeHmacSha256(body, user.TrawellingWebhookSecret);
+                if (!string.Equals(expectedSignature, signatureHeader.ToString(), StringComparison.OrdinalIgnoreCase))
+                {
+                    _logger.LogWarning("Invalid webhook signature for user {UserGuid}", userGuid);
+                    return Unauthorized("Invalid signature");
+                }
+
+                // Parse and process the webhook payload
+                var payload = JsonConvert.DeserializeObject<TrawellingWebhookPayload>(body);
+                if (payload == null)
+                    return BadRequest("Invalid payload");
+
+                _logger.LogInformation("Received Träwelling webhook event {Event} for user {UserId}", payload.Event, user.Id);
+
+                switch (payload.Event)
+                {
+                    case "checkin_create":
+                        await _trawellingService.ProcessWebhookCheckinCreateAsync(user, payload.Status);
+                        break;
+                    case "checkin_update":
+                        await _trawellingService.ProcessWebhookCheckinUpdateAsync(user, payload.Status);
+                        break;
+                    case "checkin_delete":
+                        if (payload.Status != null)
+                            await _trawellingService.ProcessWebhookCheckinDeleteAsync(user, payload.Status.Id);
+                        break;
+                    default:
+                        _logger.LogInformation("Unhandled Träwelling webhook event type: {Event}", payload.Event);
+                        break;
+                }
+
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error processing Träwelling webhook for user {UserGuid}", userGuid);
+                return StatusCode(500, "Error processing webhook");
+            }
+        }
+
+        private static string ComputeHmacSha256(string body, string secret)
+        {
+            var keyBytes = Encoding.UTF8.GetBytes(secret);
+            var bodyBytes = Encoding.UTF8.GetBytes(body);
+            using var hmac = new HMACSHA256(keyBytes);
+            var hashBytes = hmac.ComputeHash(bodyBytes);
+            return Convert.ToHexString(hashBytes).ToLower();
+        }    }
 }
