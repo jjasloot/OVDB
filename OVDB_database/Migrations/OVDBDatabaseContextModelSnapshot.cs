@@ -819,6 +819,9 @@ namespace OVDB_database.Migrations
                     b.Property<string>("TrawellingUsername")
                         .HasColumnType("longtext");
 
+                    b.Property<string>("TrawellingWebhookSecret")
+                        .HasColumnType("longtext");
+
                     b.HasKey("Id");
 
                     b.HasIndex("Email")

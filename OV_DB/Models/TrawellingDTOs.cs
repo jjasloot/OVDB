@@ -635,6 +635,23 @@ namespace OV_DB.Models
         public string Message { get; set; }
     }
 
+    // Webhook support
+    public class TrawellingWebhookPayload
+    {
+        [JsonProperty("event")]
+        public string Event { get; set; }
+
+        [JsonProperty("status")]
+        public TrawellingStatus Status { get; set; }
+    }
+
+    public class TrawellingWebhookInfo
+    {
+        public string WebhookUrl { get; set; }
+        public string Secret { get; set; }
+        public string[] Events { get; set; }
+    }
+
     public class TrawellingStats
     {
         public int TotalTrips { get; set; }

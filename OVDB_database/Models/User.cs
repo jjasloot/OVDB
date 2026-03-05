@@ -58,6 +58,12 @@ namespace OVDB_database.Models
         public string TraewellingTagMappings { get; set; }
 
         /// <summary>
+        /// Secret used to verify incoming Träwelling webhook requests (HMAC-SHA256 signing key).
+        /// Also used as a per-user token in the webhook URL path.
+        /// </summary>
+        public string TrawellingWebhookSecret { get; set; }
+
+        /// <summary>
         /// Collection of active refresh tokens for this user (supports multiple sessions)
         /// </summary>
         public List<RefreshToken> RefreshTokens { get; set; }

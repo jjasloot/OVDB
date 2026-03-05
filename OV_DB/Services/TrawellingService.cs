@@ -10,6 +10,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using System.Web;
@@ -1086,6 +1087,198 @@ namespace OV_DB.Services
             }
 
             return (found, updated, failed);
+        }
+
+        public async Task<string> GetOrGenerateWebhookSecretAsync(int userId)
+        {
+            try
+            {
+                var user = await _dbContext.Users.FindAsync(userId);
+                if (user == null)
+                    return null;
+
+                if (!string.IsNullOrEmpty(user.TrawellingWebhookSecret))
+                    return user.TrawellingWebhookSecret;
+
+                user.TrawellingWebhookSecret = GenerateWebhookSecret();
+                await _dbContext.SaveChangesAsync();
+                _logger.LogInformation("Generated new webhook secret for user {UserId}", userId);
+                return user.TrawellingWebhookSecret;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error generating webhook secret for user {UserId}", userId);
+                return null;
+            }
+        }
+
+        private static string GenerateWebhookSecret()
+        {
+            var bytes = new byte[32];
+            using var rng = System.Security.Cryptography.RandomNumberGenerator.Create();
+            rng.GetBytes(bytes);
+            return Convert.ToHexString(bytes).ToLower();
+        }
+
+        public async Task ProcessWebhookCheckinCreateAsync(User user, TrawellingStatus status)
+        {
+            try
+            {
+                if (status == null)
+                    return;
+
+                // Check if this status is already linked to a RouteInstance
+                var existing = await _dbContext.RouteInstances
+                    .FirstOrDefaultAsync(ri => ri.TrawellingStatusId == status.Id);
+
+                if (existing != null)
+                {
+                    _logger.LogInformation("Webhook checkin_create: status {StatusId} already linked to RouteInstance {RouteInstanceId}, skipping",
+                        status.Id, existing.RouteInstanceId);
+                    return;
+                }
+
+                // Also cache the status data for later use
+                _memoryCache.Set("TraewellingStatus|" + status.Id, status, TimeSpan.FromMinutes(30));
+
+                // Try to auto-link to an existing RouteInstance
+                var linked = await UpdateExistingRouteInstanceWithTrawellingDataAsync(user, status);
+                if (linked)
+                {
+                    _logger.LogInformation("Webhook checkin_create: auto-linked status {StatusId} to a RouteInstance", status.Id);
+                }
+                else
+                {
+                    _logger.LogInformation("Webhook checkin_create: no matching RouteInstance found for status {StatusId}, available for manual import", status.Id);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error processing webhook checkin_create for status {StatusId}", status?.Id);
+            }
+        }
+
+        public async Task ProcessWebhookCheckinUpdateAsync(User user, TrawellingStatus status)
+        {
+            try
+            {
+                if (status == null)
+                    return;
+
+                // Update cache
+                _memoryCache.Remove("TraewellingStatus|" + status.Id);
+                _memoryCache.Remove("TrawellingTrip|" + status.Id);
+                _memoryCache.Set("TraewellingStatus|" + status.Id, status, TimeSpan.FromMinutes(30));
+
+                // Find any RouteInstance linked to this status
+                var routeInstance = await _dbContext.RouteInstances
+                    .Include(ri => ri.Route)
+                    .FirstOrDefaultAsync(ri => ri.TrawellingStatusId == status.Id);
+
+                if (routeInstance == null)
+                {
+                    _logger.LogInformation("Webhook checkin_update: no RouteInstance linked to status {StatusId}", status.Id);
+                    return;
+                }
+
+                var updated = false;
+
+                // Update actual times
+                if (status.Train?.Origin?.Departure.HasValue == true)
+                {
+                    var newStartTime = (status.Train.ManualDeparture ?? status.Train.Origin.Departure).Value.DateTime;
+                    if (routeInstance.StartTime != newStartTime)
+                    {
+                        routeInstance.StartTime = newStartTime;
+                        updated = true;
+                    }
+                }
+
+                if (status.Train?.Destination?.Arrival.HasValue == true)
+                {
+                    var newEndTime = (status.Train.ManualArrival ?? status.Train.Destination.Arrival).Value.DateTime;
+                    if (routeInstance.EndTime != newEndTime)
+                    {
+                        routeInstance.EndTime = newEndTime;
+                        updated = true;
+                    }
+                }
+
+                // Update scheduled times
+                if (status.Train?.Origin?.DeparturePlanned.HasValue == true)
+                {
+                    var newScheduledStart = status.Train.Origin.DeparturePlanned.Value.DateTime;
+                    if (routeInstance.ScheduledStartTime != newScheduledStart)
+                    {
+                        routeInstance.ScheduledStartTime = newScheduledStart;
+                        updated = true;
+                    }
+                }
+
+                if (status.Train?.Destination?.ArrivalPlanned.HasValue == true)
+                {
+                    var newScheduledEnd = status.Train.Destination.ArrivalPlanned.Value.DateTime;
+                    if (routeInstance.ScheduledEndTime != newScheduledEnd)
+                    {
+                        routeInstance.ScheduledEndTime = newScheduledEnd;
+                        updated = true;
+                    }
+                }
+
+                // Recalculate duration if times changed
+                if (updated && routeInstance.StartTime.HasValue && routeInstance.EndTime.HasValue)
+                {
+                    routeInstance.DurationHours = _timezoneService.CalculateDurationInHours(
+                        routeInstance.StartTime.Value,
+                        routeInstance.EndTime.Value,
+                        routeInstance.Route?.LineString);
+                }
+
+                if (updated)
+                {
+                    await _dbContext.SaveChangesAsync();
+                    _logger.LogInformation("Webhook checkin_update: updated RouteInstance {RouteInstanceId} for status {StatusId}",
+                        routeInstance.RouteInstanceId, status.Id);
+                }
+                else
+                {
+                    _logger.LogDebug("Webhook checkin_update: no timing changes for RouteInstance {RouteInstanceId}", routeInstance.RouteInstanceId);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error processing webhook checkin_update for status {StatusId}", status?.Id);
+            }
+        }
+
+        public async Task ProcessWebhookCheckinDeleteAsync(User user, int statusId)
+        {
+            try
+            {
+                // Remove cached data
+                _memoryCache.Remove("TraewellingStatus|" + statusId);
+                _memoryCache.Remove("TrawellingTrip|" + statusId);
+
+                // Find and unlink any RouteInstance linked to this status
+                var routeInstance = await _dbContext.RouteInstances
+                    .FirstOrDefaultAsync(ri => ri.TrawellingStatusId == statusId);
+
+                if (routeInstance == null)
+                {
+                    _logger.LogInformation("Webhook checkin_delete: no RouteInstance linked to status {StatusId}", statusId);
+                    return;
+                }
+
+                routeInstance.TrawellingStatusId = null;
+                await _dbContext.SaveChangesAsync();
+
+                _logger.LogInformation("Webhook checkin_delete: unlinked RouteInstance {RouteInstanceId} from deleted status {StatusId}",
+                    routeInstance.RouteInstanceId, statusId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error processing webhook checkin_delete for status {StatusId}", statusId);
+            }
         }
 
         private async Task<HttpResponseMessage> ExecuteWithExponentialBackoffAsync(Func<Task<HttpResponseMessage>> request, int maxRetries = 5)

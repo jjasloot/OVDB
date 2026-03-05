@@ -100,6 +100,75 @@
   }
 }
 
+.webhook-card {
+  margin-bottom: 16px;
+
+  mat-card-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+}
+
+.webhook-details {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.webhook-field {
+  label {
+    display: block;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    margin-bottom: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+}
+
+.webhook-value-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.webhook-value {
+  font-family: monospace;
+  font-size: 13px;
+  background: rgba(0, 0, 0, 0.06);
+  padding: 4px 8px;
+  border-radius: 4px;
+  word-break: break-all;
+  flex: 1;
+}
+
+.webhook-events {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.webhook-event-chip {
+  font-family: monospace;
+  font-size: 12px;
+  background: rgba(63, 81, 181, 0.1);
+  color: #3f51b5;
+  padding: 2px 8px;
+  border-radius: 12px;
+}
+
+.webhook-hint {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin: 0;
+  font-style: italic;
+}
+
 // Light theme colors
 :root {
   --text-primary: rgba(0, 0, 0, 0.87);

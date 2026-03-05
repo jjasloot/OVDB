@@ -475,6 +475,20 @@
     "DESCRIPTION": "Description",
     "ROUTESLIST.EXPORTTOTRAINLOG": "Export selection for Trainlog",
     "ROUTESLIST.SHOWROUTES": "Show routes",
-    "ROUTESLIST.SHOWINSTANCES": "Show trips"
+    "ROUTESLIST.SHOWINSTANCES": "Show trips",
+    "WEBHOOK_TITLE": "Webhook configuration",
+    "WEBHOOK_SUBTITLE": "Automatic trip import via Träwelling webhooks",
+    "WEBHOOK_DESCRIPTION": "Register this webhook in Träwelling to automatically import and update trips. When you check in on Träwelling, OVDB will attempt to match the trip to an existing route.",
+    "WEBHOOK_SHOW": "Show webhook configuration",
+    "WEBHOOK_HIDE": "Hide webhook configuration",
+    "WEBHOOK_URL": "Webhook URL",
+    "WEBHOOK_SECRET": "Webhook secret (signing key)",
+    "WEBHOOK_EVENTS": "Events to subscribe",
+    "WEBHOOK_HINT": "Register the webhook in your Träwelling account settings under API > Webhooks. Use the URL above and paste the secret as the signing key.",
+    "COPY": "Copy to clipboard",
+    "COPIED_URL": "Webhook URL copied!",
+    "COPIED_SECRET": "Webhook secret copied!",
+    "SHOW_SECRET": "Show secret",
+    "HIDE_SECRET": "Hide secret"
   }
 }

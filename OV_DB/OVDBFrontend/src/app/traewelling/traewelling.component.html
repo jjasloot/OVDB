@@ -17,6 +17,71 @@
     <mat-card-content></mat-card-content>
   </mat-card>
 
+  <!-- Webhook Configuration Card -->
+  @if (connectionStatus?.connected) {
+  <mat-card class="webhook-card">
+    <mat-card-header>
+      <mat-card-title>
+        <mat-icon>webhook</mat-icon>
+        {{ 'TRAEWELLING.WEBHOOK_TITLE' | translate }}
+      </mat-card-title>
+      <mat-card-subtitle>{{ 'TRAEWELLING.WEBHOOK_SUBTITLE' | translate }}</mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>
+      <p>{{ 'TRAEWELLING.WEBHOOK_DESCRIPTION' | translate }}</p>
+      <button mat-stroked-button color="primary" (click)="loadWebhookInfo()" [disabled]="isLoadingWebhook">
+        @if (isLoadingWebhook) {
+          <mat-spinner diameter="16" style="margin-right: 8px;"></mat-spinner>
+        } @else {
+          <mat-icon>{{ webhookInfo ? 'expand_less' : 'expand_more' }}</mat-icon>
+        }
+        {{ (webhookInfo ? 'TRAEWELLING.WEBHOOK_HIDE' : 'TRAEWELLING.WEBHOOK_SHOW') | translate }}
+      </button>
+
+      @if (webhookInfo) {
+      <div class="webhook-details">
+        <div class="webhook-field">
+          <label>{{ 'TRAEWELLING.WEBHOOK_URL' | translate }}</label>
+          <div class="webhook-value-row">
+            <code class="webhook-value">{{ webhookInfo.webhookUrl }}</code>
+            <button mat-icon-button
+              [matTooltip]="'TRAEWELLING.COPY' | translate"
+              (click)="copyWebhookUrl()">
+              <mat-icon>content_copy</mat-icon>
+            </button>
+          </div>
+        </div>
+        <div class="webhook-field">
+          <label>{{ 'TRAEWELLING.WEBHOOK_SECRET' | translate }}</label>
+          <div class="webhook-value-row">
+            <code class="webhook-value">{{ showWebhookSecret ? webhookInfo.secret : '••••••••••••••••••••••••••••••••' }}</code>
+            <button mat-icon-button
+              [matTooltip]="(showWebhookSecret ? 'TRAEWELLING.HIDE_SECRET' : 'TRAEWELLING.SHOW_SECRET') | translate"
+              (click)="showWebhookSecret = !showWebhookSecret">
+              <mat-icon>{{ showWebhookSecret ? 'visibility_off' : 'visibility' }}</mat-icon>
+            </button>
+            <button mat-icon-button
+              [matTooltip]="'TRAEWELLING.COPY' | translate"
+              (click)="copyWebhookSecret()">
+              <mat-icon>content_copy</mat-icon>
+            </button>
+          </div>
+        </div>
+        <div class="webhook-field">
+          <label>{{ 'TRAEWELLING.WEBHOOK_EVENTS' | translate }}</label>
+          <div class="webhook-events">
+            @for (event of webhookInfo.events; track event) {
+              <code class="webhook-event-chip">{{ event }}</code>
+            }
+          </div>
+        </div>
+        <p class="webhook-hint">{{ 'TRAEWELLING.WEBHOOK_HINT' | translate }}</p>
+      </div>
+      }
+    </mat-card-content>
+  </mat-card>
+  }
+
   <!-- Loading State -->
   @if(isLoading){
   <div class="loading-container">
