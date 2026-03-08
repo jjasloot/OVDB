@@ -6,7 +6,8 @@ import {
   circleMarker,
   LeafletEvent,
   MarkerClusterGroup,
-  tileLayer
+  tileLayer,
+  markerClusterGroup
 } from "leaflet";
 import 'leaflet.markercluster';
 import { ApiService } from "src/app/services/api.service";
@@ -109,7 +110,7 @@ export class StationMapComponent implements OnInit {
       name: text.name,
       nameNL: text.nameNL,
     });
-    const markers = window.L.markerClusterGroup({
+    const markers = markerClusterGroup({
       iconCreateFunction: (cluster) => {
         return divIcon({
           html: "<b>" + cluster.getChildCount() + "</b>",
