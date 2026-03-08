@@ -55,8 +55,13 @@ namespace OV_DB.Models
         public string Currency { get; set; }
         [Name("purchasing_date")]
         public string PurchasingDate { get; set; }
+        [Name("departure_delay")]
+        public string DepartureDelay { get; set; }
+        [Name("arrival_delay")]
+        public string ArrivalDelay { get; set; }
         [Name("path")]
         public string Path { get; set; }
+
     }
 
     public class ExportRequest

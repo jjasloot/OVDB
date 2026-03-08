@@ -71,13 +71,11 @@ export class RoutesComponent implements OnInit {
         index: 6,
       },
     ];
-    if (this.userPreferenceService.enableTrainlogExport()) {
-      navLinks.push({
-        label: this.translateService.instant("ROUTES.INSTANCES"),
-        link: "/admin/route-instances",
-        index: 3,
-      });
-    }
+    navLinks.push({
+      label: this.translateService.instant("ROUTES.INSTANCES"),
+      link: "/admin/route-instances",
+      index: 3,
+    });
     if (this.userPreferenceService.hasTraewelling()) {
       navLinks.push({
         label: this.translateService.instant("ADMINPAGES.TRAEWELLING"),

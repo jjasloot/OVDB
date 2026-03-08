@@ -11,9 +11,14 @@
         <button mat-stroked-button (click)="clearSelection()" [disabled]="selectedInstanceIds.length === 0">
             {{ "ROUTESLIST.DESELECT" | translate }}
         </button>
-        <button mat-stroked-button (click)="exportToTrainlog()" color="accent" [disabled]="!selectedInstanceIds.length">
+        @if(hasTrainlogExport()) {
+        <button mat-stroked-button (click)="exportToTrainlog()" color="accent" [disabled]="!selectedInstanceIds.length || exportingTrainlog">
+            @if (exportingTrainlog) {
+              <mat-spinner diameter="18" style="display:inline-block;vertical-align:middle;margin-right:6px"></mat-spinner>
+            }
             {{ "ROUTESLIST.EXPORTTOTRAINLOG" | translate }}
         </button>
+        }
     </div>
     <table mat-table [dataSource]="instancesDataSource" matSort matSortActive="date" matSortDirection="desc"
         matSortDisableClear>
@@ -45,6 +50,18 @@
             </th>
             <td mat-cell *matCellDef="let element">
                 {{ element.startTime | date : "shortTime" }} - {{ element.endTime | date : "shortTime" }}
+            </td>
+        </ng-container>
+
+        <ng-container matColumnDef="delay">
+            <th mat-header-cell *matHeaderCellDef>
+                {{ "ROUTEINSTANCES.DELAY" | translate }}
+            </th>
+            <td mat-cell *matCellDef="let element">
+                @if (getArrivalDelay(element) !== null) {
+                <span class="delay-badge"
+                    [class]="delayClass(getArrivalDelay(element))">{{ formatDelay(getArrivalDelay(element)) }}</span>
+                }
             </td>
         </ng-container>
 
@@ -127,8 +144,13 @@
         <button mat-stroked-button (click)="clearSelection()" [disabled]="selectedInstanceIds.length === 0">
             {{ "ROUTESLIST.DESELECT" | translate }}
         </button>
-        <button mat-stroked-button (click)="exportToTrainlog()" color="accent" [disabled]="!selectedInstanceIds.length">
+        @if(hasTrainlogExport()) {
+        <button mat-stroked-button (click)="exportToTrainlog()" color="accent" [disabled]="!selectedInstanceIds.length || exportingTrainlog">
+            @if (exportingTrainlog) {
+              <mat-spinner diameter="18" style="display:inline-block;vertical-align:middle;margin-right:6px"></mat-spinner>
+            }
             {{ "ROUTESLIST.EXPORTTOTRAINLOG" | translate }}
         </button>
+        }
     </div>
 </div>

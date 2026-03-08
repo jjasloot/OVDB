@@ -199,7 +199,7 @@ export class RouteInstancesComponent implements OnInit {
   formatDelay(minutes: number | null): string {
     if (minutes === null) return null;
     const rounded = Math.round(minutes);
-    if (rounded === 0) return 'On time';
+    if (rounded === 0) return '+0 min';
     return rounded > 0 ? `+${rounded} min` : `${rounded} min`;
   }
 
@@ -284,6 +284,8 @@ export class RouteInstancesComponent implements OnInit {
       newInstance.date = tripData!.date ? new Date(tripData!.date).toISOString().split('T')[0] : undefined;
       newInstance.startTime = tripData!.departureTime;
       newInstance.endTime = tripData!.arrivalTime;
+      newInstance.scheduledStartTime = tripData!.scheduledDepartureTime;
+      newInstance.scheduledEndTime = tripData!.scheduledArrivalTime;
       newInstance.traewellingStatusId = tripData!.tripId;
       // Add tags as properties
       if (tripData!.tags && tripData!.tags.length > 0) {

@@ -11,5 +11,6 @@ namespace OV_DB.Models
         public string TrainlogPlatformKey { get; set; }
         public string TrainlogSeatKey { get; set; }
         public List<TraewellingTagMappingDTO> TraewellingTagMappings { get; set; }
+        public List<TrainlogOperatorMappingDTO> TrainlogOperatorMappings { get; set; }
     }
 }

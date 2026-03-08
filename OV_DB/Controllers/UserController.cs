@@ -55,13 +55,30 @@ namespace OV_DB.Controllers
                 }
                 catch
                 {
-                    // If deserialization fails, return empty list
                     tagMappings = new List<TraewellingTagMappingDTO>();
                 }
             }
             else
             {
                 tagMappings = new List<TraewellingTagMappingDTO>();
+            }
+
+            // Deserialize operator mappings from JSON
+            List<TrainlogOperatorMappingDTO> operatorMappings = null;
+            if (!string.IsNullOrWhiteSpace(user.TrainlogOperatorMappings))
+            {
+                try
+                {
+                    operatorMappings = JsonSerializer.Deserialize<List<TrainlogOperatorMappingDTO>>(user.TrainlogOperatorMappings);
+                }
+                catch
+                {
+                    operatorMappings = new List<TrainlogOperatorMappingDTO>();
+                }
+            }
+            else
+            {
+                operatorMappings = new List<TrainlogOperatorMappingDTO>();
             }
 
             return Ok(new UserProfileDTO
@@ -74,7 +91,8 @@ namespace OV_DB.Controllers
                 TrainlogRegistrationKey = user.TrainlogRegistrationKey,
                 TrainlogSeatKey = user.TrainlogSeatKey,
                 EnableTrainlogExport = user.EnableTrainlogExport,
-                TraewellingTagMappings = tagMappings
+                TraewellingTagMappings = tagMappings,
+                TrainlogOperatorMappings = operatorMappings
             });
         }
 
@@ -117,6 +135,16 @@ namespace OV_DB.Controllers
             else
             {
                 user.TraewellingTagMappings = null;
+            }
+
+            // Serialize operator mappings to JSON
+            if (updateProfile.TrainlogOperatorMappings != null)
+            {
+                user.TrainlogOperatorMappings = JsonSerializer.Serialize(updateProfile.TrainlogOperatorMappings);
+            }
+            else
+            {
+                user.TrainlogOperatorMappings = null;
             }
 
             DatabaseContext.Update(user);
@@ -185,6 +213,31 @@ namespace OV_DB.Controllers
             {
                 user.TraewellingTagMappings = null;
             }
+
+            DatabaseContext.Update(user);
+            await DatabaseContext.SaveChangesAsync();
+
+            return Ok();
+        }
+
+        [HttpPut("operator-mappings")]
+        public async Task<ActionResult> UpdateOperatorMappingsAsync([FromBody] List<TrainlogOperatorMappingDTO> operatorMappings)
+        {
+            var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value ?? "-1");
+            if (userIdClaim < 0)
+            {
+                return Forbid();
+            }
+
+            var user = await DatabaseContext.Users.FindAsync(userIdClaim);
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            user.TrainlogOperatorMappings = operatorMappings != null
+                ? JsonSerializer.Serialize(operatorMappings)
+                : null;
 
             DatabaseContext.Update(user);
             await DatabaseContext.SaveChangesAsync();

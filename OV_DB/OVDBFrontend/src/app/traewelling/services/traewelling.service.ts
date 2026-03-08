@@ -112,6 +112,8 @@ export class TrawellingService {
       destinationName: trip.transport.destination.name,
       departureTime: trip.transport.origin.departureReal || trip.transport.origin.departureScheduled,
       arrivalTime: trip.transport.destination.arrivalReal || trip.transport.destination.arrivalScheduled,
+      scheduledDepartureTime: trip.transport.origin.departureScheduled,
+      scheduledArrivalTime: trip.transport.destination.arrivalScheduled,
       transportCategory: trip.transport.category,
       lineNumber: trip.transport.lineName,
       journeyNumber: trip.transport.journeyNumber,

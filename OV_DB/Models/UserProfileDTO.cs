@@ -2,6 +2,12 @@
 
 namespace OV_DB.Models
 {
+    public class TrainlogOperatorMappingDTO
+    {
+        public string OvdbOperator { get; set; }
+        public string TrainlogOperator { get; set; }
+    }
+
     public class UserProfileDTO
     {
         public string Email { get; set; }
@@ -14,5 +20,6 @@ namespace OV_DB.Models
         public string TrainlogSeatKey { get; set; }
         public bool EnableTrainlogExport { get; set; }
         public List<TraewellingTagMappingDTO> TraewellingTagMappings { get; set; }
+        public List<TrainlogOperatorMappingDTO> TrainlogOperatorMappings { get; set; }
     }
 }

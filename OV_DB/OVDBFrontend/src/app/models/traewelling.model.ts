@@ -183,6 +183,8 @@ export interface TrawellingTripContext {
   destinationName: string;
   departureTime?: string;
   arrivalTime?: string;
+  scheduledDepartureTime?: string;
+  scheduledArrivalTime?: string;
   transportCategory: TrawellingTransportCategory;
   lineNumber: string;
   journeyNumber?: string;

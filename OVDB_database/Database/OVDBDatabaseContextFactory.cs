@@ -10,7 +10,7 @@ namespace OVDB_database.Database
     {
         // Using a simpler connection string that doesn't require remote database access
         // This is only used for generating migrations at design time
-        private const string ConnectionString = "Server=localhost;Database=ovdb;Uid=root;";
+        private const string ConnectionString = "Server=192.168.178.30;Port=3307;Database=ovdb;Uid=ovdb;Pwd=4R2a&bzB^JPi&A^f4XaG*EI^Rvx@#J;";
 
         public OVDBDatabaseContext CreateDbContext(string[] args)
         {

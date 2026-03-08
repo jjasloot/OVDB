@@ -3,6 +3,11 @@ export interface TraewellingTagMapping {
   toTag: string;
 }
 
+export interface TrainlogOperatorMapping {
+  ovdbOperator: string;
+  trainlogOperator: string;
+}
+
 export interface UserProfile {
   email: string;
   preferredLanguage: string | null;
@@ -13,6 +18,7 @@ export interface UserProfile {
   trainlogSeatKey: string;
   enableTrainlogExport: boolean;
   traewellingTagMappings: TraewellingTagMapping[];
+  trainlogOperatorMappings: TrainlogOperatorMapping[];
 }
 
 export interface UpdateProfile {
@@ -22,6 +28,7 @@ export interface UpdateProfile {
   trainlogRegistrationKey: string;
   trainlogSeatKey: string;
   traewellingTagMappings: TraewellingTagMapping[];
+  trainlogOperatorMappings: TrainlogOperatorMapping[];
 }
 
 export interface ChangePassword {

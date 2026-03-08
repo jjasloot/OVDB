@@ -58,6 +58,12 @@ namespace OVDB_database.Models
         public string TraewellingTagMappings { get; set; }
 
         /// <summary>
+        /// JSON serialized list of operator name mappings from OVDB operator names to Trainlog operator names
+        /// Format: [{"ovdbOperator":"NS","trainlogOperator":"Nederlandse Spoorwegen"}]
+        /// </summary>
+        public string TrainlogOperatorMappings { get; set; }
+
+        /// <summary>
         /// Collection of active refresh tokens for this user (supports multiple sessions)
         /// </summary>
         public List<RefreshToken> RefreshTokens { get; set; }

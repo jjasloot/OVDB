@@ -1,5 +1,5 @@
 mat-form-field {
-    width: 80%;
+    width: 100%;
 }
 
 .full-width {
@@ -16,10 +16,31 @@ mat-form-field {
     align-items: center;
 }
 
+// CSS Grid layout: mobile-first
+// Row 1: date (full width)
+// Row 2: start time (full width)
+// Row 3: end time | day offset (narrow)
 .time-inputs-row {
-    display: flex;
-    gap: 16px;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: 1fr 80px;
+    column-gap: 8px;
+    align-items: start;
+}
+
+.date-field {
+    grid-column: 1 / -1;
+}
+
+.start-time-field {
+    grid-column: 1 / -1;
+}
+
+.end-time-field {
+    grid-column: 1;
+}
+
+.day-offset-field {
+    grid-column: 2;
 }
 
 .delayed-row {
@@ -28,40 +49,11 @@ mat-form-field {
     margin-block: 8px;
 }
 
+// Stacked on mobile, side-by-side on wider screens
 .scheduled-times-row {
-    display: flex;
-    gap: 16px;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: 1fr;
     margin-top: 4px;
-}
-
-.time-row {
-    display: flex;
-    gap: 8px;
-    flex: 1;
-    min-width: 200px;
-    align-items: flex-start;
-}
-
-.day-offset-selector {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
-
-.day-offset-field {
-    width: 90px !important;
-    min-width: 90px;
-}
-
-.date-field {
-    flex: 2;
-    min-width: 200px;
-}
-
-.time-field {
-    flex: 1;
-    min-width: 140px;
 }
 
 .mat-column-buttons,
@@ -70,28 +62,31 @@ mat-form-field {
 }
 
 .mdc-data-table__cell,
-.mdc-data-table__header-cell{
-  padding:0 !important
+.mdc-data-table__header-cell {
+    padding: 4px 0 !important;
 }
 
-// Mobile improvements
-@media (max-width: 600px) {
-  mat-form-field {
-    width: 100%;
-  }
+// Give each table row's form-fields a bit more breathing room
+mat-cell mat-form-field,
+mat-footer-cell mat-form-field {
+    margin-bottom: 4px;
+}
 
-  .time-inputs-row {
-    flex-direction: column;
-  }
+@media (min-width: 600px) {
+    // All four fields on a single row: date (wider) | start | end | day
+    .time-inputs-row {
+        grid-template-columns: 2fr 1fr 1fr 80px;
+        column-gap: 16px;
+    }
 
-  .date-field,
-  .time-field {
-    flex: 1 1 100%;
-  }
+    .date-field       { grid-column: 1; grid-row: 1; }
+    .start-time-field { grid-column: 2; grid-row: 1; }
+    .end-time-field   { grid-column: 3; grid-row: 1; }
+    .day-offset-field { grid-column: 4; grid-row: 1; }
 
-  // Improve touch targets for dropdowns
-  mat-select,
-  mat-autocomplete {
-    min-height: 44px; // iOS recommended touch target
-  }
+    // Scheduled departure + arrival side by side
+    .scheduled-times-row {
+        grid-template-columns: 1fr 1fr;
+        column-gap: 16px;
+    }
 }

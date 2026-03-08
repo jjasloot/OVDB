@@ -19,11 +19,10 @@ import { MatIcon } from '@angular/material/icon';
 import { MatCheckbox } from '@angular/material/checkbox';
 import { MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle } from '@angular/material/expansion';
 import { MatSelectionList, MatListOption } from '@angular/material/list';
-import { AsyncPipe } from '@angular/common';
 import { TranslateModule } from '@ngx-translate/core';
 import { MatCard, MatCardContent, MatCardHeader, MatCardTitle } from '@angular/material/card';
 import { MatSlideToggle } from '@angular/material/slide-toggle';
-import moment, { Moment } from 'moment';
+import { Moment } from 'moment';
 import { TrawellingContextCardComponent } from '../../traewelling/context-card/traewelling-context-card.component';
 import { MatCell, MatCellDef, MatColumnDef, MatFooterCell, MatFooterCellDef, MatFooterRow, MatFooterRowDef, MatHeaderCell, MatHeaderCellDef, MatHeaderRow, MatHeaderRowDef, MatRow, MatRowDef, MatTable } from '@angular/material/table';
 import { TrawellingTripContext } from 'src/app/models/traewelling.model';
@@ -43,7 +42,7 @@ export class RouteInstancesEditComponent implements OnInit {
   maps = signal<Map[]>([]);
   selectedMaps = signal<number[]>([]);
   useDetailedTime = signal(false);
-  isDelayed = signal(false);
+  enterScheduledTimes = signal(false);
   traewellingTripData: TrawellingTripContext | null = null;
   endTimeDayOffset = signal(0); // Number of days to add to end time (0-7)
 
@@ -93,7 +92,6 @@ export class RouteInstancesEditComponent implements OnInit {
       this.instance.startTime = undefined;
       return;
     }
-    console.log(value);
 
     const baseDate = this.instance.date ? new Date(this.instance.date) : new Date();
     const [hours, minutes] = value.split(':').map(num => parseInt(num, 10));
@@ -102,7 +100,7 @@ export class RouteInstancesEditComponent implements OnInit {
     console.log(combinedDate);
 
     // Keep scheduled = actual when not delayed
-    if (!this.isDelayed()) {
+    if (!this.enterScheduledTimes()) {
       this.instance.scheduledStartTime = this.instance.startTime;
     }
 
@@ -129,7 +127,7 @@ export class RouteInstancesEditComponent implements OnInit {
     this.instance.endTime = this.formatDateTimeLocal(combinedDate);
 
     // Keep scheduled = actual when not delayed
-    if (!this.isDelayed()) {
+    if (!this.enterScheduledTimes()) {
       this.instance.scheduledEndTime = this.instance.endTime;
     }
 
@@ -206,17 +204,8 @@ export class RouteInstancesEditComponent implements OnInit {
 
     // Detect if existing trip has scheduled times that differ from actual times
     const hasScheduled = !!(this.instance.scheduledStartTime || this.instance.scheduledEndTime);
-    const scheduledDiffersFromActual = hasScheduled && (
-      this.instance.scheduledStartTime !== this.instance.startTime ||
-      this.instance.scheduledEndTime !== this.instance.endTime
-    );
-    this.isDelayed.set(scheduledDiffersFromActual);
-
-    // If times exist but no scheduled times yet, default scheduled = actual
-    if (this.useDetailedTime() && !hasScheduled) {
-      this.instance.scheduledStartTime = this.instance.startTime;
-      this.instance.scheduledEndTime = this.instance.endTime;
-    }
+    this.enterScheduledTimes.set(hasScheduled);
+    console.log('Existing times:', { startTime: this.instance.startTime, endTime: this.instance.endTime, scheduledStartTime: this.instance.scheduledStartTime, scheduledEndTime: this.instance.scheduledEndTime });
 
     // Calculate initial day offset based on existing times
     this.calculateExistingDayOffset();
@@ -239,12 +228,12 @@ export class RouteInstancesEditComponent implements OnInit {
       this.instance.endTime = undefined;
       this.instance.scheduledStartTime = undefined;
       this.instance.scheduledEndTime = undefined;
-      this.isDelayed.set(false);
+      this.enterScheduledTimes.set(false);
     }
   }
 
-  onDelayedChange() {
-    if (this.isDelayed()) {
+  onScheduledTimesChange() {
+    if (this.enterScheduledTimes()) {
       // Pre-fill scheduled with current actual times if not already set
       if (!this.instance.scheduledStartTime) {
         this.instance.scheduledStartTime = this.instance.startTime;

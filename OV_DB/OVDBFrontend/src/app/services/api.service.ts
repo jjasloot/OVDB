@@ -20,7 +20,7 @@ import { StationAdminProperties } from "../models/stationAdminProperties.model";
 import { MapDataDTO } from "../models/map-data.model";
 import { RegionOperators } from "../models/region-operators.model";
 import { RegionStat } from "../models/region.model";
-import { UserProfile, UpdateProfile, ChangePassword, TraewellingTagMapping } from "../models/user-profile.model";
+import { UserProfile, UpdateProfile, ChangePassword, TraewellingTagMapping, TrainlogOperatorMapping } from "../models/user-profile.model";
 import { RouteInstanceListResponseDTO } from "../models/routeInstanceList.model";
 import { 
   TrawellingConnectionStatus, 
@@ -582,6 +582,19 @@ export class ApiService {
     return this.httpClient.put(
       environment.backend + "api/user/tag-mappings",
       mappings
+    );
+  }
+
+  updateOperatorMappings(mappings: TrainlogOperatorMapping[]): Observable<any> {
+    return this.httpClient.put(
+      environment.backend + "api/user/operator-mappings",
+      mappings
+    );
+  }
+
+  getDistinctOperators(): Observable<string[]> {
+    return this.httpClient.get<string[]>(
+      environment.backend + "api/routes/operators/autocomplete"
     );
   }
 

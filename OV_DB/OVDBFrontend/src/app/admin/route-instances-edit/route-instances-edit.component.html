@@ -17,7 +17,7 @@
         </mat-slide-toggle>
       </div>
       
-      @if (!useDetailedTime) {
+      @if (!useDetailedTime()) {
         <!-- Date only mode -->
         <mat-form-field appearance="outline" class="full-width">
           <mat-label>{{'ROUTEINSTANCESEDIT.DATE'|translate}}</mat-label>
@@ -34,45 +34,43 @@
             <mat-datepicker-toggle matSuffix [for]="pickerDateDetailed"></mat-datepicker-toggle>
             <mat-datepicker #pickerDateDetailed></mat-datepicker>
           </mat-form-field>
-          
-          <mat-form-field appearance="outline" class="time-field">
+
+          <mat-form-field appearance="outline" class="start-time-field">
             <mat-label>{{'ROUTEINSTANCESEDIT.STARTTIME'|translate}}</mat-label>
             <input matInput type="time" [(ngModel)]="startTimeOnly">
             <mat-icon matSuffix>access_time</mat-icon>
           </mat-form-field>
-          
-          <div class="time-row">
-            <mat-form-field appearance="outline" class="time-field">
-              <mat-label>{{'ROUTEINSTANCESEDIT.ENDTIME'|translate}}</mat-label>
-              <input matInput type="time" [(ngModel)]="endTimeOnly">
-              <mat-icon matSuffix>access_time</mat-icon>
-            </mat-form-field>
-            
-            <mat-form-field appearance="outline" class="day-offset-field">
-              <mat-label>{{'ROUTEINSTANCESEDIT.DAYOFFSET'|translate}}</mat-label>
-              <mat-select [(ngModel)]="endTimeDayOffset" (selectionChange)="setEndTimeDayOffset($event.value)">
-                @for (offset of dayOffsetOptions(); track offset) {
-                  <mat-option [value]="offset">
-                    @if (offset === 0) {
-                      0
-                    } @else {
-                      +{{offset}}
-                    }
-                  </mat-option>
-                }
-              </mat-select>
-            </mat-form-field>
-          </div>
+
+          <mat-form-field appearance="outline" class="end-time-field">
+            <mat-label>{{'ROUTEINSTANCESEDIT.ENDTIME'|translate}}</mat-label>
+            <input matInput type="time" [(ngModel)]="endTimeOnly">
+            <mat-icon matSuffix>access_time</mat-icon>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="day-offset-field">
+            <mat-label>{{'ROUTEINSTANCESEDIT.DAYOFFSET'|translate}}</mat-label>
+            <mat-select [(ngModel)]="endTimeDayOffset" (selectionChange)="setEndTimeDayOffset($event.value)">
+              @for (offset of dayOffsetOptions(); track offset) {
+                <mat-option [value]="offset">
+                  @if (offset === 0) {
+                    0
+                  } @else {
+                    +{{offset}}
+                  }
+                </mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
         </div>
 
         <!-- Delayed toggle on its own row -->
         <div class="delayed-row">
-          <mat-slide-toggle [(ngModel)]="isDelayed" (change)="onDelayedChange()">
-            {{'ROUTEINSTANCESEDIT.DELAYED'|translate}}
+          <mat-slide-toggle [(ngModel)]="enterScheduledTimes" (change)="onScheduledTimesChange()">
+            {{'ROUTEINSTANCESEDIT.TRIP_SCHEDULED_TIMES'|translate}}
           </mat-slide-toggle>
         </div>
 
-        @if (isDelayed()) {
+        @if (enterScheduledTimes()) {
           <!-- Scheduled times on their own row -->
           <div class="scheduled-times-row">
             <mat-form-field appearance="outline" class="time-field">

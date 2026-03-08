@@ -91,6 +91,15 @@
           <mat-icon matSuffix>event_seat</mat-icon>
         </mat-form-field>
 
+        @if (enableTrainlogExport()) {
+        <h4>{{ 'PROFILE.TRAINLOG_OPERATOR_MAPPINGS' | translate }}</h4>
+        <app-operator-mapping
+          [mappings]="operatorMappings()"
+          [availableOperators]="availableOperators()"
+          (mappingsChange)="onOperatorMappingsChange($event)">
+        </app-operator-mapping>
+        }
+
         <div class="form-actions">
           <button mat-raised-button color="primary" type="submit" [disabled]="!profileForm.valid || savingProfile">
             @if (savingProfile) {

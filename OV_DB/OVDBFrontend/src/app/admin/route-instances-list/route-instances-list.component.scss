@@ -34,6 +34,33 @@ mat-table {
     flex: 3
 }
 
+.mat-column-delay {
+    max-width: 100px;
+}
+
+.delay-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.8em;
+    font-weight: 500;
+
+    &.delay-ontime {
+        background-color: #e8f5e9;
+        color: #2e7d32;
+    }
+
+    &.delay-late {
+        background-color: #fff3e0;
+        color: #e65100;
+    }
+
+    &.delay-early {
+        background-color: #e0f7fa;
+        color: #00695c;
+    }
+}
+
 button:not(.mat-mdc-fab) {
     margin: 0 8px;
 }

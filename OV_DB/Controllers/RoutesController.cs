@@ -1186,6 +1186,24 @@ namespace OV_DB.Controllers
             return Ok(tags);
         }
 
+        [HttpGet("operators/autocomplete")]
+        public async Task<ActionResult<IEnumerable<string>>> AutocompleteOperators()
+        {
+            var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value ?? "-1");
+            if (userIdClaim < 0)
+            {
+                return Forbid();
+            }
+            var operators = await _context.Routes
+                .Where(r => r.RouteMaps.Any(rm => rm.Map.UserId == userIdClaim))
+                .Where(r => !string.IsNullOrWhiteSpace(r.OperatingCompany))
+                .Select(r => r.OperatingCompany)
+                .Distinct()
+                .OrderBy(o => o)
+                .ToListAsync();
+            return Ok(operators);
+        }
+
         [HttpPatch("{id:int}/assignRegions")]
         public async Task<IActionResult> AssignRegionsToRouteAsync(int id, [FromServices] IRouteRegionsService routeRegionsService)
         {

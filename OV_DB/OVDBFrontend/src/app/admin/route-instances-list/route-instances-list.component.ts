@@ -1,4 +1,4 @@
-import { Component, DestroyRef, OnInit, AfterViewInit, ElementRef, HostListener, viewChild, inject } from "@angular/core";
+import { Component, DestroyRef, OnInit, AfterViewInit, ElementRef, HostListener, viewChild, inject, computed } from "@angular/core";
 import { ApiService } from "src/app/services/api.service";
 import { Router } from "@angular/router";
 import { MatPaginator } from "@angular/material/paginator";
@@ -35,6 +35,7 @@ import { RoutesListActions } from "src/app/models/routes-list-actions.enum";
 import { RouteInstanceListDTO } from "src/app/models/routeInstanceList.model";
 import { MatBottomSheet } from "@angular/material/bottom-sheet";
 import { TableState } from "src/app/models/table-state.model";
+import { UserPreferenceService } from "src/app/services/user-preference.service";
 
 @Component({
   selector: "app-route-instances-list",
@@ -79,11 +80,12 @@ export class RouteInstancesListComponent implements OnInit, AfterViewInit {
   private destroyRef = inject(DestroyRef);
   private bottomSheet = inject(MatBottomSheet);
   private tableStateService = inject(TableStateService);
+  private userPreferenceService = inject(UserPreferenceService);
   private readonly TABLE_ID = 'route-instances-list';
 
   instancesDataSource: RouteInstancesDataSource;
   selectedInstanceIds: number[] = [];
-  displayedColumns: string[] = ["select", "date", "time", "name", "type", "from", "to", "distance", "edit"];
+  displayedColumns: string[] = ["select", "date", "time", "delay", "name", "type", "from", "to", "distance", "edit"];
 
   readonly paginator = viewChild(MatPaginator);
   readonly sort = viewChild(MatSort);
@@ -91,6 +93,9 @@ export class RouteInstancesListComponent implements OnInit, AfterViewInit {
   count: number;
   loading: boolean = true;
   filter$ = new Subject<void>();
+
+  hasTrainlogExport = computed(() => this.userPreferenceService.enableTrainlogExport());
+  exportingTrainlog = false;
 
   ngOnInit() {
     this.instancesDataSource = new RouteInstancesDataSource(this.apiService);
@@ -238,8 +243,15 @@ export class RouteInstancesListComponent implements OnInit, AfterViewInit {
 
   exportToTrainlog() {
     if (this.selectedInstanceIds.length > 0) {
-      this.apiService.exportInstancesToTrainlog(this.selectedInstanceIds).subscribe((data) => {
-        saveAs(data, "trainlog_export.csv");
+      this.exportingTrainlog = true;
+      this.apiService.exportInstancesToTrainlog(this.selectedInstanceIds).subscribe({
+        next: (data) => {
+          saveAs(data, "trainlog_export.csv");
+          this.exportingTrainlog = false;
+        },
+        error: () => {
+          this.exportingTrainlog = false;
+        }
       });
     }
   }
@@ -259,6 +271,24 @@ export class RouteInstancesListComponent implements OnInit, AfterViewInit {
         this.saveCurrentTableState();
       }
     });
+  }
+
+  getArrivalDelay(element: RouteInstanceListDTO): number | null {
+    return element.arrivalDelayMinutes ?? null;
+  }
+
+  formatDelay(minutes: number | null): string {
+    if (minutes === null) return null;
+    const rounded = Math.round(minutes);
+    if (rounded === 0) return '+0 min';
+    return rounded > 0 ? `+${rounded} min` : `${rounded} min`;
+  }
+
+  delayClass(minutes: number | null): string {
+    if (minutes === null) return '';
+    const rounded = Math.round(minutes);
+    if (Math.abs(rounded) <= 1) return 'delay-ontime';
+    return rounded > 0 ? 'delay-late' : 'delay-early';
   }
 
   getOperatorLogo(operatorId: number) {

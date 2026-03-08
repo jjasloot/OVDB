@@ -65,6 +65,25 @@ namespace OV_DB.Controllers
 
             var instances = await query.ToListAsync();
 
+            // Load operator mappings for this user
+            var operatorMappingDict = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            if (!string.IsNullOrWhiteSpace(user?.TrainlogOperatorMappings))
+            {
+                try
+                {
+                    var mappings = System.Text.Json.JsonSerializer.Deserialize<List<OV_DB.Models.TrainlogOperatorMappingDTO>>(user.TrainlogOperatorMappings);
+                    if (mappings != null)
+                    {
+                        foreach (var m in mappings)
+                        {
+                            if (!string.IsNullOrWhiteSpace(m.OvdbOperator))
+                                operatorMappingDict[m.OvdbOperator] = m.TrainlogOperator ?? m.OvdbOperator;
+                        }
+                    }
+                }
+                catch { }
+            }
+
             var records = new List<TrainlogExportRow>();
             var stationFlags = new Dictionary<string, string>(); // Cache for station flags
 
@@ -107,16 +126,10 @@ namespace OV_DB.Controllers
 
                 if (instance.StartTime.HasValue)
                 {
-                    // StartTime and EndTime are typically just times on 0001-01-01, but sometimes full dates?
-                    // Check if StartTime year is 1. If so, combine with instance.Date.
                     if (instance.StartTime.Value.Year == 1)
-                    {
                         start = instance.Date.Date.Add(instance.StartTime.Value.TimeOfDay);
-                    }
                     else
-                    {
                         start = instance.StartTime.Value;
-                    }
                 }
                 else
                 {
@@ -126,24 +139,50 @@ namespace OV_DB.Controllers
                 if (instance.EndTime.HasValue)
                 {
                     if (instance.EndTime.Value.Year == 1)
-                    {
                         end = instance.Date.Date.Add(instance.EndTime.Value.TimeOfDay);
-                    }
                     else
-                    {
                         end = instance.EndTime.Value;
-                    }
 
-                    // Handle overnight trips
                     if (end < start)
-                    {
                         end = end.AddDays(1);
-                    }
                 }
                 else
                 {
-                    end = start; // Default duration?
+                    end = start;
                 }
+
+                // Scheduled times (used for start_datetime/end_datetime when available)
+                DateTime? scheduledStart = null;
+                DateTime? scheduledEnd = null;
+
+                if (instance.ScheduledStartTime.HasValue)
+                {
+                    scheduledStart = instance.ScheduledStartTime.Value.Year == 1
+                        ? instance.Date.Date.Add(instance.ScheduledStartTime.Value.TimeOfDay)
+                        : instance.ScheduledStartTime.Value;
+                }
+
+                if (instance.ScheduledEndTime.HasValue)
+                {
+                    var raw = instance.ScheduledEndTime.Value.Year == 1
+                        ? instance.Date.Date.Add(instance.ScheduledEndTime.Value.TimeOfDay)
+                        : instance.ScheduledEndTime.Value;
+                    if (raw < (scheduledStart ?? start))
+                        raw = raw.AddDays(1);
+                    scheduledEnd = raw;
+                }
+
+                // Delay in seconds (actual - scheduled, negative = early)
+                string departureDelay = scheduledStart.HasValue && instance.StartTime.HasValue
+                    ? ((int)Math.Round((start - scheduledStart.Value).TotalSeconds)).ToString()
+                    : "";
+                string arrivalDelay = scheduledEnd.HasValue && instance.EndTime.HasValue
+                    ? ((int)Math.Round((end - scheduledEnd.Value).TotalSeconds)).ToString()
+                    : "";
+
+                // If scheduled times are available, use them for start_datetime/end_datetime
+                DateTime exportStart = scheduledStart ?? start;
+                DateTime exportEnd = scheduledEnd ?? end;
 
                 // 3. Flags/Stations
                 string fromFlag = "";
@@ -319,15 +358,17 @@ namespace OV_DB.Controllers
                     Username = "ovdb_export",
                     OriginStation = origin,
                     DestinationStation = destination,
-                    StartDatetime = start==end? start.ToString("yyyy-MM-dd"): start.ToString("yyyy-MM-dd HH:mm:ss"),
-                    EndDatetime = start == end ? start.ToString("yyyy-MM-dd") : end.ToString("yyyy-MM-dd HH:mm:ss"),
+                    StartDatetime = exportStart == exportEnd ? exportStart.ToString("yyyy-MM-dd") : exportStart.ToString("yyyy-MM-dd HH:mm:ss"),
+                    EndDatetime = exportStart == exportEnd ? exportStart.ToString("yyyy-MM-dd") : exportEnd.ToString("yyyy-MM-dd HH:mm:ss"),
                     EstimatedTripDuration = duration.ToString("F0"),
                     ManualTripDuration = "",
                     TripLength = lengthMeters.ToString("F0"),
-                    Operator = route.OperatingCompany ?? "",
+                    Operator = operatorMappingDict.TryGetValue(route.OperatingCompany ?? "", out var mappedOperator)
+                        ? mappedOperator
+                        : route.OperatingCompany ?? "",
                     Countries = countriesJson,
-                    UtcStartDatetime = start == end ? start.ToString("yyyy-MM-dd"):start.ToUniversalTime().ToString("yyyy-MM-dd HH:mm:ss"),
-                    UtcEndDatetime = start == end ? start.ToString("yyyy-MM-dd"):end.ToUniversalTime().ToString("yyyy-MM-dd HH:mm:ss"),
+                    UtcStartDatetime = exportStart == exportEnd ? exportStart.ToString("yyyy-MM-dd") : exportStart.ToUniversalTime().ToString("yyyy-MM-dd HH:mm:ss"),
+                    UtcEndDatetime = exportStart == exportEnd ? exportStart.ToString("yyyy-MM-dd") : exportEnd.ToUniversalTime().ToString("yyyy-MM-dd HH:mm:ss"),
                     LineName = route.LineNumber ?? "",
                     Created = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
                     LastModified = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
@@ -340,7 +381,9 @@ namespace OV_DB.Controllers
                     Price = "",
                     Currency = "",
                     PurchasingDate = "",
-                    Path = encodedPath
+                    Path = encodedPath,
+                    DepartureDelay = departureDelay,
+                    ArrivalDelay = arrivalDelay
                 });
             }
 

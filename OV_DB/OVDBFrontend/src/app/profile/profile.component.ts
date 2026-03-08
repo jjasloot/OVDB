@@ -1,7 +1,7 @@
 import { Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
 import { UntypedFormBuilder, UntypedFormGroup, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { ApiService } from '../services/api.service';
-import { UserProfile, UpdateProfile, ChangePassword, TraewellingTagMapping } from '../models/user-profile.model';
+import { UserProfile, UpdateProfile, ChangePassword, TraewellingTagMapping, TrainlogOperatorMapping } from '../models/user-profile.model';
 import { TrawellingConnectionStatus } from '../models/traewelling.model';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
@@ -20,6 +20,7 @@ import { Router } from '@angular/router';
 import { AuthenticationService } from '../services/authentication.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { TagMappingComponent } from './components/tag-mapping/tag-mapping.component';
+import { OperatorMappingComponent } from './components/operator-mapping/operator-mapping.component';
 import { TrawellingService } from '../traewelling/services/traewelling.service';
 
 @Component({
@@ -48,7 +49,8 @@ import { TrawellingService } from '../traewelling/services/traewelling.service';
     MatListItemLine,
     MatDivider,
     TranslateModule,
-    TagMappingComponent
+    TagMappingComponent,
+    OperatorMappingComponent
   ]
 })
 export class ProfileComponent implements OnInit {
@@ -84,6 +86,10 @@ export class ProfileComponent implements OnInit {
   tagMappings = signal<TraewellingTagMapping[]>([]);
   availableOvdbTags = signal<string[]>([]);
 
+  // Operator mappings
+  operatorMappings = signal<TrainlogOperatorMapping[]>([]);
+  availableOperators = signal<string[]>([]);
+
   languages = [
     { value: 'en', label: 'English' },
     { value: 'nl', label: 'Nederlands' }
@@ -114,6 +120,7 @@ export class ProfileComponent implements OnInit {
     this.loadTrawellingStatus();
     this.loadSessions();
     this.loadAvailableOvdbTags();
+    this.loadDistinctOperators();
   }
 
   passwordMatchValidator(group: UntypedFormGroup) {
@@ -136,6 +143,8 @@ export class ProfileComponent implements OnInit {
         });
         // Load tag mappings
         this.tagMappings.set(profile.traewellingTagMappings || []);
+        // Load operator mappings
+        this.operatorMappings.set(profile.trainlogOperatorMappings || []);
         this.loading = false;
       },
       error: (error) => {
@@ -155,7 +164,8 @@ export class ProfileComponent implements OnInit {
         trainlogMaterialKey: this.profileForm.value.trainlogMaterialKey,
         trainlogRegistrationKey: this.profileForm.value.trainlogRegistrationKey,
         trainlogSeatKey: this.profileForm.value.trainlogSeatKey,
-        traewellingTagMappings: this.tagMappings()
+        traewellingTagMappings: this.tagMappings(),
+        trainlogOperatorMappings: this.operatorMappings()
       };
 
       this.apiService.updateUserProfile(updateProfile).subscribe({
@@ -438,7 +448,22 @@ export class ProfileComponent implements OnInit {
     });
   }
 
+  loadDistinctOperators(): void {
+    this.apiService.getDistinctOperators().subscribe({
+      next: (operators) => {
+        this.availableOperators.set(operators);
+      },
+      error: (error) => {
+        console.error('Error loading distinct operators:', error);
+      }
+    });
+  }
+
   onTagMappingsChange(mappings: TraewellingTagMapping[]): void {
     this.tagMappings.set(mappings);
+  }
+
+  onOperatorMappingsChange(mappings: TrainlogOperatorMapping[]): void {
+    this.operatorMappings.set(mappings);
   }
 }
