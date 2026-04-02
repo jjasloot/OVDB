@@ -9,7 +9,6 @@ import {
 import { MatCheckboxChange, MatCheckbox } from "@angular/material/checkbox";
 import { LatLngBounds, LatLng, divIcon, circleMarker } from "leaflet";
 import { tileLayer } from "leaflet";
-import 'leaflet.markercluster';
 import { Region } from "src/app/models/region.model";
 import { StationAdminProperties } from "src/app/models/stationAdminProperties.model";
 import { ApiService } from "src/app/services/api.service";
@@ -27,10 +26,10 @@ import { FormsModule } from "@angular/forms";
 import { MatIcon } from "@angular/material/icon";
 import { MatSelect } from "@angular/material/select";
 import { MatOption } from "@angular/material/core";
-import { LeafletMarkerClusterModule } from "@bluehalo/ngx-leaflet-markercluster";
 import { SignalRService } from "src/app/services/signal-r.service";
 import { MatChip } from "@angular/material/chips";
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { createMarkerClusterGroup } from "src/app/leaflet-markercluster-loader";
 @Component({
   selector: "app-admin-stations-map",
   templateUrl: "./admin-stations-map.component.html",
@@ -53,7 +52,6 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
     MatIcon,
     MatSelect,
     MatOption,
-    LeafletMarkerClusterModule,
     MatChip,
     KeyValuePipe,
   ]
@@ -172,30 +170,7 @@ export class AdminStationsMapComponent implements OnInit {
       .getStationsAdminMap(this.selectedRegions)
       .toPromise();
     const parent = this;
-    const leaflet = (window as any).L as {
-      markerClusterGroup?: (options?: unknown) => any;
-      MarkerClusterGroup?: new (options?: unknown) => any;
-    };
-    const markers = leaflet.markerClusterGroup
-      ? leaflet.markerClusterGroup({
-          iconCreateFunction: (cluster) => {
-            return divIcon({
-              html: "<b>" + cluster.getChildCount() + "</b>",
-              className: cluster
-                .getAllChildMarkers()
-                .every((r) => r.feature.properties.visited)
-                ? "green"
-                : cluster
-                  .getAllChildMarkers()
-                  .every((r) => !r.feature.properties.visited)
-                  ? "red"
-                  : "orange",
-            });
-          },
-          disableClusteringAtZoom: 10,
-          maxClusterRadius: 40,
-        })
-      : new leaflet.MarkerClusterGroup({
+    const markers = await createMarkerClusterGroup({
       iconCreateFunction: (cluster) => {
         return divIcon({
           html: "<b>" + cluster.getChildCount() + "</b>",

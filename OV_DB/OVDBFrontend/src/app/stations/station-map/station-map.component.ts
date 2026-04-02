@@ -7,13 +7,12 @@ import {
   LeafletEvent,
   tileLayer
 } from "leaflet";
-import 'leaflet.markercluster';
 import { ApiService } from "src/app/services/api.service";
 import { TranslationService } from "src/app/services/translation.service";
 import { LeafletModule } from "@bluehalo/ngx-leaflet";
 import { NgClass } from "@angular/common";
 import { MatProgressSpinner } from "@angular/material/progress-spinner";
-import { LeafletMarkerClusterModule } from "@bluehalo/ngx-leaflet-markercluster";
+import { createMarkerClusterGroup } from "src/app/leaflet-markercluster-loader";
 
 @Component({
     selector: "app-station-map",
@@ -23,7 +22,6 @@ import { LeafletMarkerClusterModule } from "@bluehalo/ngx-leaflet-markercluster"
         LeafletModule,
         NgClass,
         MatProgressSpinner,
-        LeafletMarkerClusterModule,
     ]
 })
 export class StationMapComponent implements OnInit {
@@ -102,36 +100,13 @@ export class StationMapComponent implements OnInit {
 
     const text = await this.apiService.getStationMap(this.guid()).toPromise();
     const parent = this;
-    const leaflet = (window as any).L as {
-      markerClusterGroup?: (options?: unknown) => any;
-      MarkerClusterGroup?: new (options?: unknown) => any;
-    };
     this.total.set(text.total);
     this.visited.set(text.visited);
     this.names.set({
       name: text.name,
       nameNL: text.nameNL,
     });
-    const markers = leaflet.markerClusterGroup
-      ? leaflet.markerClusterGroup({
-          iconCreateFunction: (cluster) => {
-            return divIcon({
-              html: "<b>" + cluster.getChildCount() + "</b>",
-              className: cluster
-                .getAllChildMarkers()
-                .every((r) => r.feature.properties.visited)
-                ? "green"
-                : cluster
-                    .getAllChildMarkers()
-                    .every((r) => !r.feature.properties.visited)
-                ? "red"
-                : "orange",
-            });
-          },
-          disableClusteringAtZoom: 10,
-          maxClusterRadius: 40,
-        })
-      : new leaflet.MarkerClusterGroup({
+    const markers = await createMarkerClusterGroup({
       iconCreateFunction: (cluster) => {
         return divIcon({
           html: "<b>" + cluster.getChildCount() + "</b>",

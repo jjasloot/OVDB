@@ -51,7 +51,6 @@ import { DragDropModule } from "@angular/cdk/drag-drop";
 import { MatAutocompleteModule } from "@angular/material/autocomplete";
 import { MatBottomSheetModule } from "@angular/material/bottom-sheet";
 import { MatCardModule } from "@angular/material/card";
-import { LeafletMarkerClusterModule } from "@bluehalo/ngx-leaflet-markercluster";
 import { AppComponent } from "./app/app.component";
 import { TranslateHttpLoader } from "@ngx-translate/http-loader";
 import localeNl from "@angular/common/locales/nl";
@@ -138,8 +137,7 @@ bootstrapApplication(AppComponent, {
       }),
       MatAutocompleteModule,
       MatBottomSheetModule,
-      MatCardModule,
-      LeafletMarkerClusterModule
+      MatCardModule
     ),
     { provide: DateAdapter, useClass: DynamicMomentDateAdapter, deps: [MAT_DATE_LOCALE, TranslationService] },
     { provide: MAT_DATE_FORMATS, useValue: MAT_MOMENT_DATE_FORMATS },

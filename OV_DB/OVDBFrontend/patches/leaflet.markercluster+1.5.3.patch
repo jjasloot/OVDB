@@ -1,0 +1,19 @@
+diff --git a/node_modules/leaflet.markercluster/dist/leaflet.markercluster-src.js b/node_modules/leaflet.markercluster/dist/leaflet.markercluster-src.js
+index 93a5b90..f66a47f 100644
+--- a/node_modules/leaflet.markercluster/dist/leaflet.markercluster-src.js
++++ b/node_modules/leaflet.markercluster/dist/leaflet.markercluster-src.js
+@@ -5,10 +5,10 @@
+  * (c) 2012-2017, Dave Leaver, smartrak
+  */
+ (function (global, factory) {
+-	typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
+-	typeof define === 'function' && define.amd ? define(['exports'], factory) :
+-	(global = global || self, factory((global.Leaflet = global.Leaflet || {}, global.Leaflet.markercluster = {})));
+-}(this, function (exports) { 'use strict';
++	typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, require('leaflet')) :
++	typeof define === 'function' && define.amd ? define(['exports', 'leaflet'], factory) :
++	(global = global || self, factory((global.Leaflet = global.Leaflet || {}, global.Leaflet.markercluster = {}), global.L || global.Leaflet));
++}(this, function (exports, L) { 'use strict';
+ 
+ 	/*
+ 	 * L.MarkerClusterGroup extends L.FeatureGroup by clustering the markers contained within
