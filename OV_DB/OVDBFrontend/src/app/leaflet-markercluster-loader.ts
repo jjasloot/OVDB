@@ -10,11 +10,24 @@ let leafletMarkerClusterPromise: Promise<LeafletWithMarkerCluster> | undefined;
 export async function loadLeafletMarkerCluster(): Promise<LeafletWithMarkerCluster> {
   if (!leafletMarkerClusterPromise) {
     leafletMarkerClusterPromise = (async () => {
-      const leaflet = (await import("leaflet")) as LeafletWithMarkerCluster;
-      (window as Window & typeof globalThis & { L?: LeafletWithMarkerCluster }).L = leaflet;
+      await import("leaflet");
       await import("leaflet.markercluster");
 
-      if (!leaflet.markerClusterGroup && !leaflet.MarkerClusterGroup) {
+      const leaflet = (
+        window as Window &
+          typeof globalThis & {
+            L?: LeafletWithMarkerCluster;
+            Leaflet?: LeafletWithMarkerCluster;
+          }
+      ).L ?? (
+        window as Window &
+          typeof globalThis & {
+            L?: LeafletWithMarkerCluster;
+            Leaflet?: LeafletWithMarkerCluster;
+          }
+      ).Leaflet;
+
+      if (!leaflet?.markerClusterGroup && !leaflet?.MarkerClusterGroup) {
         throw new Error("Leaflet.markercluster failed to initialize.");
       }
 
