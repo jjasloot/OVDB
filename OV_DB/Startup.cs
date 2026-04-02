@@ -1,4 +1,3 @@
-using AutoMapper;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -13,7 +12,6 @@ using Microsoft.OData.ModelBuilder;
 using Microsoft.AspNetCore.OData;
 using Microsoft.OpenApi.Models;
 using Newtonsoft.Json;
-using OV_DB.Mappings;
 using OVDB_database.Database;
 using OVDB_database.Models;
 using System;
@@ -43,13 +41,6 @@ namespace OV_DB
             {
                 options.AllowSynchronousIO = true;
             });
-            var mappingConfig = new MapperConfiguration(mc =>
-            {
-                mc.AddProfile(new MappingProfile());
-            });
-
-            var mapper = mappingConfig.CreateMapper();
-            services.AddSingleton(mapper);
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "Toegangspassen_backend", Version = "v1" });

@@ -1,6 +1,4 @@
-﻿using AutoMapper;
-using AutoMapper.QueryableExtensions;
-using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -17,7 +15,7 @@ using System.Threading.Tasks;
 namespace OV_DB.Controllers;
 [Route("api/[controller]")]
 [ApiController]
-public class RequestsController(OVDBDatabaseContext dbContext, IMapper mapper, TelegramBotService telegramBotService, ILogger<RequestsController> logger) : ControllerBase
+public class RequestsController(OVDBDatabaseContext dbContext, TelegramBotService telegramBotService, ILogger<RequestsController> logger) : ControllerBase
 {
     [HttpGet]
     public async Task<IActionResult> GetUserRequests()
@@ -29,7 +27,14 @@ public class RequestsController(OVDBDatabaseContext dbContext, IMapper mapper, T
         }
 
         var requests = await dbContext.Requests.Where(r => r.UserId == userIdClaim).OrderByDescending(r => r.Created).ToListAsync();
-        var responseList = mapper.Map<List<RequestForUserDTO>>(requests);
+        var responseList = requests.Select(r => new RequestForUserDTO
+        {
+            Id = r.Id,
+            Message = r.Message,
+            Created = r.Created,
+            Response = r.Response,
+            Responded = r.Responded
+        }).ToList();
 
         foreach (var request in requests.Where(r => !string.IsNullOrWhiteSpace(r.Response) && !r.ResponseRead))
         {
@@ -51,7 +56,16 @@ public class RequestsController(OVDBDatabaseContext dbContext, IMapper mapper, T
         }
 
         var requests = await dbContext.Requests.OrderByDescending(r => r.Created).Include(r => r.User).ToListAsync();
-        var responseList = mapper.Map<List<RequestForAdminDTO>>(requests);
+        var responseList = requests.Select(r => new RequestForAdminDTO
+        {
+            Id = r.Id,
+            Message = r.Message,
+            Created = r.Created,
+            Response = r.Response,
+            Responded = r.Responded,
+            UserId = r.UserId,
+            UserEmail = r.User?.Email
+        }).ToList();
 
         foreach (var request in requests.Where(r => !string.IsNullOrWhiteSpace(r.Response) && !r.ResponseRead))
         {
