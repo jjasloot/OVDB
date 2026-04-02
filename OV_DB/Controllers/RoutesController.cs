@@ -152,44 +152,42 @@ namespace OV_DB.Controllers
             }
 
 
-            var query = originalQuery.SelectToRouteInstanceListDTO();
-
             if (!string.IsNullOrWhiteSpace(sortColumn))
             {
                 if (sortColumn == "name")
                 {
-                    if (descending.GetValueOrDefault(false))
-                        query = query.OrderByDescending(r => r.RouteName);
-                    else
-                        query = query.OrderBy(r => r.RouteName);
+                    originalQuery = descending.GetValueOrDefault(false)
+                        ? originalQuery.OrderByDescending(r => r.Route.Name)
+                        : originalQuery.OrderBy(r => r.Route.Name);
                 }
                 if (sortColumn == "date")
                 {
-                    if (descending.GetValueOrDefault(false))
-                        query = query.OrderByDescending(r => r.Date).ThenByDescending(r => r.StartTime);
-                    else
-                        query = query.OrderBy(r => r.Date).ThenBy(r => r.StartTime);
+                    originalQuery = descending.GetValueOrDefault(false)
+                        ? originalQuery.OrderByDescending(r => r.Date).ThenByDescending(r => r.StartTime)
+                        : originalQuery.OrderBy(r => r.Date).ThenBy(r => r.StartTime);
                 }
                 if (sortColumn == "type")
                 {
-                    if (descending.GetValueOrDefault(false))
-                        query = query.OrderByDescending(r => r.RouteType);
-                    else
-                        query = query.OrderBy(r => r.RouteType);
+                    originalQuery = descending.GetValueOrDefault(false)
+                        ? originalQuery.OrderByDescending(r => r.Route.RouteType.Name)
+                        : originalQuery.OrderBy(r => r.Route.RouteType.Name);
                 }
             }
             else
             {
-                query = query.OrderByDescending(r => r.Date).ThenByDescending(r => r.StartTime);
+                originalQuery = originalQuery.OrderByDescending(r => r.Date).ThenByDescending(r => r.StartTime);
             }
 
-            var total = await query.CountAsync(cancellationToken);
-            if (start.HasValue)
-                query = query.Skip(start.Value);
-            if (count.HasValue)
-                query = query.Take(count.Value);
+            var total = await originalQuery.CountAsync(cancellationToken);
 
-            var list = await query.ToListAsync(cancellationToken);
+            IQueryable<RouteInstance> pagedQuery = originalQuery;
+            if (start.HasValue)
+                pagedQuery = pagedQuery.Skip(start.Value);
+            if (count.HasValue)
+                pagedQuery = pagedQuery.Take(count.Value);
+
+            var list = (await pagedQuery.SelectToRouteInstanceListDTO().ToListAsync(cancellationToken))
+                .ComputeDelayFields();
 
             return new RouteInstanceListResponseDTO
             {

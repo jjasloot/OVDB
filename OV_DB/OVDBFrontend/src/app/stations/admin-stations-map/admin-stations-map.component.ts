@@ -9,6 +9,7 @@ import {
 import { MatCheckboxChange, MatCheckbox } from "@angular/material/checkbox";
 import { LatLngBounds, LatLng, markerClusterGroup, divIcon, circleMarker } from "leaflet";
 import { tileLayer } from "leaflet";
+import 'leaflet.markercluster';
 import { Region } from "src/app/models/region.model";
 import { StationAdminProperties } from "src/app/models/stationAdminProperties.model";
 import { ApiService } from "src/app/services/api.service";

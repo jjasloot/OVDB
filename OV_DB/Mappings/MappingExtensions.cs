@@ -1,6 +1,7 @@
 using OV_DB.Models;
 using OVDB_database.Models;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace OV_DB.Mappings
@@ -65,12 +66,8 @@ namespace OV_DB.Mappings
                 EndTime = ri.EndTime,
                 ScheduledStartTime = ri.ScheduledStartTime,
                 ScheduledEndTime = ri.ScheduledEndTime,
-                DepartureDelayMinutes = ri.StartTime.HasValue && ri.ScheduledStartTime.HasValue
-                    ? (double?)(ri.StartTime.Value - ri.ScheduledStartTime.Value).TotalMinutes
-                    : null,
-                ArrivalDelayMinutes = ri.EndTime.HasValue && ri.ScheduledEndTime.HasValue
-                    ? (double?)(ri.EndTime.Value - ri.ScheduledEndTime.Value).TotalMinutes
-                    : null,
+                DepartureDelayMinutes = null, // computed in C# after materialization via ComputeDelayFields()
+                ArrivalDelayMinutes = null,    // computed in C# after materialization via ComputeDelayFields()
                 DurationHours = ri.DurationHours,
                 AverageSpeedKmh = ri.DurationHours.HasValue && ri.DurationHours > 0
                     ? (ri.Route.OverrideDistance ?? ri.Route.CalculatedDistance) / ri.DurationHours.Value
@@ -102,6 +99,20 @@ namespace OV_DB.Mappings
                 RouteOverrideColour = ri.Route.OverrideColour,
                 Share = ri.Route.Share
             });
+        }
+
+        public static List<RouteInstanceListDTO> ComputeDelayFields(this List<RouteInstanceListDTO> dtos)
+        {
+            foreach (var dto in dtos)
+            {
+                dto.DepartureDelayMinutes = dto.StartTime.HasValue && dto.ScheduledStartTime.HasValue
+                    ? (double?)(dto.StartTime.Value - dto.ScheduledStartTime.Value).TotalMinutes
+                    : null;
+                dto.ArrivalDelayMinutes = dto.EndTime.HasValue && dto.ScheduledEndTime.HasValue
+                    ? (double?)(dto.EndTime.Value - dto.ScheduledEndTime.Value).TotalMinutes
+                    : null;
+            }
+            return dtos;
         }
 
         public static RouteWithInstancesDTO MapToRouteWithInstancesDTO(OVDB_database.Models.Route route)

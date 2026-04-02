@@ -4,15 +4,17 @@ This document explains how the table state persistence feature works and how to 
 
 ## Overview
 
-The `TableStateService` automatically preserves pagination, sorting, and filtering state for mat-tables when users navigate away and return. State is persisted in localStorage across browser sessions.
+The `TableStateService` preserves pagination, sorting, and filtering state per browser history entry. The service restores that state only when Angular reports a `popstate` navigation, so table state returns on browser back or forward, while fresh router navigations and page reloads start with defaults.
 
 ## Features
 
 - **Pagination**: Preserves current page index and page size
 - **Sorting**: Preserves active sort column and direction (asc/desc)
 - **Filtering**: Preserves search filter text
-- **Cross-session persistence**: State survives browser refreshes and sessions
-- **Error handling**: Graceful fallback when localStorage is unavailable
+- **History-aware restore**: State comes back only when revisiting the same history entry
+- **Fresh navigation reset**: New navigations to the route start from defaults unless the new entry also stores state
+- **Reload-safe behavior**: A page refresh does not restore the previous table state
+- **Error handling**: Graceful fallback when the History API state is unavailable
 
 ## Usage
 
@@ -152,10 +154,10 @@ See `src/app/admin/routes-list/routes-list.component.ts` for a complete working 
 #### Methods
 
 - `saveTableState(tableId: string, state: TableState): void`
-  - Saves table state to localStorage
+  - Saves table state to the current history entry
   
 - `getTableState(tableId: string, config?: TableStateConfig): TableState`
-  - Retrieves table state from localStorage with default fallbacks
+  - Retrieves table state from the current history entry when navigation was triggered by browser back or forward
   
 - `clearTableState(tableId: string): void`
   - Removes saved table state
@@ -187,16 +189,21 @@ interface TableStateConfig {
 
 ## Storage Format
 
-State is stored in localStorage with keys like `ovdb_table_state_{tableId}`.
+State is stored in `history.state.ovdbTableStates` under the current browser history entry.
 
-Example stored value:
+Example history state:
 ```json
 {
-  "pageIndex": 9,
-  "pageSize": 10,
-  "sortActive": "date",
-  "sortDirection": "desc",
-  "filter": "test route"
+  "navigationId": 42,
+  "ovdbTableStates": {
+    "routes-list": {
+      "pageIndex": 9,
+      "pageSize": 10,
+      "sortActive": "date",
+      "sortDirection": "desc",
+      "filter": "test route"
+    }
+  }
 }
 ```
 
@@ -204,5 +211,6 @@ Example stored value:
 
 - State is automatically validated when loaded
 - Invalid or corrupted state falls back to defaults
-- Service handles localStorage unavailability gracefully
+- Service preserves Angular router metadata already present in `history.state`
+- State is intentionally not shared across browser sessions or fresh route navigations
 - Each table requires a unique TABLE_ID to avoid conflicts

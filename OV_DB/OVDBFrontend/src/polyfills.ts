@@ -56,3 +56,5 @@ import 'zone.js';  // Included with Angular CLI.
 // and @bluehalo/ngx-leaflet-markercluster uses window.L. Expose Leaflet globally.
 import * as L from 'leaflet';
 (window as any).L = L;
+// Must be imported AFTER window.L is set so the UMD bundle attaches to the correct L instance.
+import 'leaflet.markercluster';

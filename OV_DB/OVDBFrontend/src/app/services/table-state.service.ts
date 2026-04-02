@@ -1,46 +1,56 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
+import { NavigationStart, Router } from '@angular/router';
 import { TableState, TableStateConfig } from '../models/table-state.model';
+import { filter } from 'rxjs/operators';
 
 @Injectable({
   providedIn: 'root'
 })
 export class TableStateService {
-  private readonly STORAGE_PREFIX = 'ovdb_table_state_';
+  private readonly HISTORY_STATE_KEY = 'ovdbTableStates';
+
 
   /**
-   * Save table state to localStorage
+   * Save table state to the current browser history entry.
    * @param tableId Unique identifier for the table
    * @param state Current table state to save
    */
   saveTableState(tableId: string, state: TableState): void {
     try {
-      const storageKey = this.getStorageKey(tableId);
-      localStorage.setItem(storageKey, JSON.stringify(state));
+      const historyState = this.getCurrentHistoryState();
+      const tableStates = this.getHistoryTableStates(historyState);
+
+      this.replaceCurrentHistoryState({
+        ...historyState,
+        [this.HISTORY_STATE_KEY]: {
+          ...tableStates,
+          [tableId]: state
+        }
+      });
     } catch (error) {
-      console.warn('Failed to save table state to localStorage:', error);
+      console.warn('Failed to save table state to browser history:', error);
     }
   }
 
   /**
-   * Get table state from localStorage
+   * Get table state from the current browser history entry.
    * @param tableId Unique identifier for the table
    * @param config Optional configuration for default values
    * @returns Saved table state or default values
    */
   getTableState(tableId: string, config?: TableStateConfig): TableState {
     try {
-      const storageKey = this.getStorageKey(tableId);
-      const savedState = localStorage.getItem(storageKey);
-      
+      const historyState = this.getCurrentHistoryState();
+      const tableStates = this.getHistoryTableStates(historyState);
+      const savedState = tableStates[tableId];
+
       if (savedState) {
-        const parsedState = JSON.parse(savedState) as TableState;
-        // Validate the parsed state has all required properties
-        if (this.isValidTableState(parsedState)) {
-          return parsedState;
+        if (this.isValidTableState(savedState)) {
+          return savedState;
         }
       }
     } catch (error) {
-      console.warn('Failed to load table state from localStorage:', error);
+      console.warn('Failed to load table state from browser history:', error);
     }
 
     // Return default state if no valid saved state exists
@@ -53,10 +63,25 @@ export class TableStateService {
    */
   clearTableState(tableId: string): void {
     try {
-      const storageKey = this.getStorageKey(tableId);
-      localStorage.removeItem(storageKey);
+      const historyState = this.getCurrentHistoryState();
+      const tableStates = this.getHistoryTableStates(historyState);
+
+      if (!(tableId in tableStates)) {
+        return;
+      }
+
+      const { [tableId]: _, ...remainingTableStates } = tableStates;
+      const nextHistoryState = { ...historyState };
+
+      if (Object.keys(remainingTableStates).length === 0) {
+        delete nextHistoryState[this.HISTORY_STATE_KEY];
+      } else {
+        nextHistoryState[this.HISTORY_STATE_KEY] = remainingTableStates;
+      }
+
+      this.replaceCurrentHistoryState(nextHistoryState);
     } catch (error) {
-      console.warn('Failed to clear table state from localStorage:', error);
+      console.warn('Failed to clear table state from browser history:', error);
     }
   }
 
@@ -85,8 +110,32 @@ export class TableStateService {
     };
   }
 
-  private getStorageKey(tableId: string): string {
-    return `${this.STORAGE_PREFIX}${tableId}`;
+  private getCurrentHistoryState(): Record<string, unknown> {
+    const historyState = globalThis.history?.state;
+
+    if (typeof historyState !== 'object' || historyState === null) {
+      return {};
+    }
+
+    return historyState as Record<string, unknown>;
+  }
+
+  private getHistoryTableStates(historyState: Record<string, unknown>): Record<string, unknown> {
+    const tableStates = historyState[this.HISTORY_STATE_KEY];
+
+    if (typeof tableStates !== 'object' || tableStates === null) {
+      return {};
+    }
+
+    return tableStates as Record<string, unknown>;
+  }
+
+  private replaceCurrentHistoryState(state: Record<string, unknown>): void {
+    if (!globalThis.history || !globalThis.location) {
+      return;
+    }
+
+    globalThis.history.replaceState(state, globalThis.document?.title ?? '', globalThis.location.href);
   }
 
   private isValidTableState(state: unknown): state is TableState {
@@ -96,9 +145,9 @@ export class TableStateService {
       typeof (state as TableState).pageIndex === 'number' &&
       typeof (state as TableState).pageSize === 'number' &&
       typeof (state as TableState).sortActive === 'string' &&
-      ((state as TableState).sortDirection === 'asc' || 
-       (state as TableState).sortDirection === 'desc' || 
-       (state as TableState).sortDirection === '') &&
+      ((state as TableState).sortDirection === 'asc' ||
+        (state as TableState).sortDirection === 'desc' ||
+        (state as TableState).sortDirection === '') &&
       typeof (state as TableState).filter === 'string'
     );
   }

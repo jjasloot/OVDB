@@ -33,6 +33,7 @@ import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { RoutesListBottomsheetComponent } from "../routes-list/routes-list-bottomsheet/routes-list-bottomsheet.component";
 import { RoutesListActions } from "src/app/models/routes-list-actions.enum";
 import { RouteInstanceListDTO } from "src/app/models/routeInstanceList.model";
+import { RouteInstance } from "src/app/models/routeInstance.model";
 import { MatBottomSheet } from "@angular/material/bottom-sheet";
 import { TableState } from "src/app/models/table-state.model";
 import { UserPreferenceService } from "src/app/services/user-preference.service";
@@ -265,10 +266,14 @@ export class RouteInstancesListComponent implements OnInit, AfterViewInit {
       width: '90%',
       data: { instance: element, new: false }
     });
-    dialogRef.afterClosed().subscribe(result => {
+    dialogRef.afterClosed().subscribe((result: RouteInstance) => {
       if (result) {
-        this.loadInstancesPage();
-        this.saveCurrentTableState();
+        this.apiService.updateRouteInstance(result).pipe(
+          takeUntilDestroyed(this.destroyRef)
+        ).subscribe(() => {
+          this.loadInstancesPage().subscribe();
+          this.saveCurrentTableState();
+        });
       }
     });
   }

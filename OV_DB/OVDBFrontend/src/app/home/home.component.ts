@@ -59,7 +59,7 @@ export class HomeComponent implements OnInit {
     this.authService.isLoggedIn$.pipe(
       takeUntilDestroyed(this.destroyRef)
     ).subscribe(isLoggedIn => {
-      if (isLoggedIn && !this.maps && !this.stationMaps) {
+      if (isLoggedIn) {
         this.loadData();
       }
     });

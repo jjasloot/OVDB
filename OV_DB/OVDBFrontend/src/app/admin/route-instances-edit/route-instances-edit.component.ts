@@ -205,7 +205,6 @@ export class RouteInstancesEditComponent implements OnInit {
     // Detect if existing trip has scheduled times that differ from actual times
     const hasScheduled = !!(this.instance.scheduledStartTime || this.instance.scheduledEndTime);
     this.enterScheduledTimes.set(hasScheduled);
-    console.log('Existing times:', { startTime: this.instance.startTime, endTime: this.instance.endTime, scheduledStartTime: this.instance.scheduledStartTime, scheduledEndTime: this.instance.scheduledEndTime });
 
     // Calculate initial day offset based on existing times
     this.calculateExistingDayOffset();
@@ -271,6 +270,10 @@ export class RouteInstancesEditComponent implements OnInit {
     this.instance.routeInstanceMaps = this.selectedMaps().map(s => { return { mapId: s } });
     if (this.instance.date['_isAMomentObject']) {
       this.instance.date = (this.instance.date as unknown as Moment).format('YYYY-MM-DD');
+    }
+    if(!this.enterScheduledTimes()){
+      this.instance.scheduledStartTime = null;
+      this.instance.scheduledEndTime = null;
     }
     this.dialogRef.close(this.instance);
   }

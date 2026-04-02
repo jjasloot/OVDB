@@ -136,12 +136,17 @@ export class RouteInstancesComponent implements OnInit {
 
   private getData() {
     this.loading.set(true);
-    this.apiService.getRouteInstances(this.routeId()).subscribe((data) => {
-      this.route.set(data);
-      this.loading.set(false);
-      if (this.newRoute() && this.trawellingTripData() && data.routeInstances.length === 1) {
-        this.prefillWithTraewellingData(data.routeInstances[0]);
-        this.edit(data.routeInstances[0]);
+    this.apiService.getRouteInstances(this.routeId()).subscribe({
+      next: (data) => {
+        this.route.set(data);
+        this.loading.set(false);
+        if (this.newRoute() && this.trawellingTripData() && data.routeInstances.length === 1) {
+          this.prefillWithTraewellingData(data.routeInstances[0]);
+          this.edit(data.routeInstances[0]);
+        }
+      },
+      error: () => {
+        this.loading.set(false);
       }
     });
   }

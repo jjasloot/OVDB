@@ -38,10 +38,8 @@ export class RouteInstancesDataSource implements DataSource<RouteInstanceListDTO
         catchError(() => of({ count: -1, instances: [] })),
         tap((data) => {
           this.instancesSubject.next(data.instances);
-          if (data?.count >= 0) {
-            this.loadingSubject.next(false);
-          }
-        })
+        }),
+        finalize(() => this.loadingSubject.next(false))
       );
   }
 }
