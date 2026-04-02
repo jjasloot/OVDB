@@ -7,7 +7,7 @@ import {
   signal
 } from "@angular/core";
 import { MatCheckboxChange, MatCheckbox } from "@angular/material/checkbox";
-import { LatLngBounds, LatLng, markerClusterGroup, divIcon, circleMarker } from "leaflet";
+import { LatLngBounds, LatLng, divIcon, circleMarker } from "leaflet";
 import { tileLayer } from "leaflet";
 import 'leaflet.markercluster';
 import { Region } from "src/app/models/region.model";
@@ -172,7 +172,7 @@ export class AdminStationsMapComponent implements OnInit {
       .getStationsAdminMap(this.selectedRegions)
       .toPromise();
     const parent = this;
-    const markers = markerClusterGroup({
+    const markers = (window as any).L.markerClusterGroup({
       iconCreateFunction: (cluster) => {
         return divIcon({
           html: "<b>" + cluster.getChildCount() + "</b>",

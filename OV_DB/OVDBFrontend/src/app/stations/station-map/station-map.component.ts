@@ -5,9 +5,7 @@ import {
   divIcon,
   circleMarker,
   LeafletEvent,
-  MarkerClusterGroup,
-  tileLayer,
-  markerClusterGroup
+  tileLayer
 } from "leaflet";
 import 'leaflet.markercluster';
 import { ApiService } from "src/app/services/api.service";
@@ -110,7 +108,7 @@ export class StationMapComponent implements OnInit {
       name: text.name,
       nameNL: text.nameNL,
     });
-    const markers = markerClusterGroup({
+    const markers = (window as any).L.markerClusterGroup({
       iconCreateFunction: (cluster) => {
         return divIcon({
           html: "<b>" + cluster.getChildCount() + "</b>",
@@ -161,7 +159,7 @@ export class StationMapComponent implements OnInit {
         fillOpacity: 0.65,
         radius: 6,
       });
-      (this.layers()[0] as MarkerClusterGroup).refreshClusters();
+      (this.layers()[0] as any).refreshClusters();
       await parent.apiService
         .updateStation(
           f.propagatedFrom.feature.properties.id,
@@ -182,7 +180,7 @@ export class StationMapComponent implements OnInit {
         fillOpacity: f.propagatedFrom.feature.properties.visited ? 0.8 : 0.5,
         radius: f.propagatedFrom.feature.properties.visited ? 8 : 4,
       });
-      (this.layers()[0] as MarkerClusterGroup).refreshClusters();
+      (this.layers()[0] as any).refreshClusters();
     });
     this.layers.set([markers]);
     this.bounds = markers.getBounds();
