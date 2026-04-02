@@ -172,7 +172,30 @@ export class AdminStationsMapComponent implements OnInit {
       .getStationsAdminMap(this.selectedRegions)
       .toPromise();
     const parent = this;
-    const markers = (window as any).L.markerClusterGroup({
+    const leaflet = (window as any).L as {
+      markerClusterGroup?: (options?: unknown) => any;
+      MarkerClusterGroup?: new (options?: unknown) => any;
+    };
+    const markers = leaflet.markerClusterGroup
+      ? leaflet.markerClusterGroup({
+          iconCreateFunction: (cluster) => {
+            return divIcon({
+              html: "<b>" + cluster.getChildCount() + "</b>",
+              className: cluster
+                .getAllChildMarkers()
+                .every((r) => r.feature.properties.visited)
+                ? "green"
+                : cluster
+                  .getAllChildMarkers()
+                  .every((r) => !r.feature.properties.visited)
+                  ? "red"
+                  : "orange",
+            });
+          },
+          disableClusteringAtZoom: 10,
+          maxClusterRadius: 40,
+        })
+      : new leaflet.MarkerClusterGroup({
       iconCreateFunction: (cluster) => {
         return divIcon({
           html: "<b>" + cluster.getChildCount() + "</b>",

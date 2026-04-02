@@ -102,13 +102,36 @@ export class StationMapComponent implements OnInit {
 
     const text = await this.apiService.getStationMap(this.guid()).toPromise();
     const parent = this;
+    const leaflet = (window as any).L as {
+      markerClusterGroup?: (options?: unknown) => any;
+      MarkerClusterGroup?: new (options?: unknown) => any;
+    };
     this.total.set(text.total);
     this.visited.set(text.visited);
     this.names.set({
       name: text.name,
       nameNL: text.nameNL,
     });
-    const markers = (window as any).L.markerClusterGroup({
+    const markers = leaflet.markerClusterGroup
+      ? leaflet.markerClusterGroup({
+          iconCreateFunction: (cluster) => {
+            return divIcon({
+              html: "<b>" + cluster.getChildCount() + "</b>",
+              className: cluster
+                .getAllChildMarkers()
+                .every((r) => r.feature.properties.visited)
+                ? "green"
+                : cluster
+                    .getAllChildMarkers()
+                    .every((r) => !r.feature.properties.visited)
+                ? "red"
+                : "orange",
+            });
+          },
+          disableClusteringAtZoom: 10,
+          maxClusterRadius: 40,
+        })
+      : new leaflet.MarkerClusterGroup({
       iconCreateFunction: (cluster) => {
         return divIcon({
           html: "<b>" + cluster.getChildCount() + "</b>",

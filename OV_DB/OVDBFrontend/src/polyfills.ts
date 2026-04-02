@@ -51,9 +51,3 @@ import 'zone.js';  // Included with Angular CLI.
 /***************************************************************************************************
  * APPLICATION IMPORTS
  */
-
-// leaflet.markercluster accesses `L` as a bare global and writes markerClusterGroup onto it.
-// window.L must be set here (in polyfills, before any lazy chunk runs) so that when
-// leaflet.markercluster is side-effect-imported in a component lazy chunk, window.L is ready.
-import * as L from 'leaflet';
-(window as any).L = L;
