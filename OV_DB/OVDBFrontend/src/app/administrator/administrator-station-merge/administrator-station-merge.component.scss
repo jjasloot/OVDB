@@ -1,0 +1,177 @@
+.description {
+  color: rgba(0, 0, 0, 0.6);
+  margin-bottom: 1.25rem;
+}
+
+.country-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.country-select {
+  min-width: 240px;
+}
+
+.pair-badge {
+  display: inline-block;
+  background: #e53935;
+  color: white;
+  border-radius: 10px;
+  padding: 1px 7px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-left: 6px;
+}
+
+.pair-done {
+  color: #43a047;
+  margin-left: 6px;
+}
+
+.queue-status {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.done-label {
+  color: #43a047;
+  font-weight: 500;
+}
+
+.spinner-container {
+  display: flex;
+  justify-content: center;
+  padding: 3rem 0;
+}
+
+// Leaflet map
+.pair-map {
+  height: 340px;
+  width: 100%;
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 1rem;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+}
+
+.pair-info {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+.station-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+
+  &.right {
+    align-items: flex-end;
+    text-align: right;
+  }
+}
+
+.station-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  color: white;
+  font-weight: 700;
+  font-size: 0.85rem;
+
+  &.left-badge {
+    background: #1565c0;
+    border: 2px solid #0d47a1;
+  }
+
+  &.right-badge {
+    background: #c62828;
+    border: 2px solid #b71c1c;
+    align-self: flex-end;
+  }
+}
+
+.station-name {
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.station-detail {
+  font-size: 0.82rem;
+  color: rgba(0, 0, 0, 0.6);
+
+  &.visits {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+  }
+}
+
+.right .station-detail.visits {
+  justify-content: flex-end;
+}
+
+.osm-link {
+  font-size: 0.8rem;
+  color: #1565c0;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+
+  &:hover { text-decoration: underline; }
+}
+
+.keep-btn {
+  margin-top: 0.4rem;
+  align-self: flex-start;
+}
+
+.right .keep-btn {
+  align-self: flex-end;
+}
+
+.center-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  min-width: 100px;
+  padding-top: 30px;
+}
+
+.distance-display {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: rgba(0, 0, 0, 0.55);
+  gap: 2px;
+}
+
+.no-pairs {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #43a047;
+  font-size: 1rem;
+  margin-top: 1rem;
+}
+
+.prompt {
+  color: rgba(0, 0, 0, 0.45);
+  font-style: italic;
+  margin-top: 0.5rem;
+}

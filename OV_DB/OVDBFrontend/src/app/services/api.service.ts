@@ -33,6 +33,7 @@ import {
   LinkToRouteInstanceResponse,
   TrawellingIgnoreResponse
 } from "../models/traewelling.model";
+import { StationMergeCountry, StationMergePairsResponse } from "../models/stationMerge.model";
 
 @Injectable({
   providedIn: "root",
@@ -667,6 +668,36 @@ export class ApiService {
     return this.httpClient.post<{ found: number; updated: number; failed: number }>(
       environment.backend + "api/traewelling/backfill-scheduled",
       {}
+    );
+  }
+
+  getStationMergeCountries(): Observable<StationMergeCountry[]> {
+    return this.httpClient.get<StationMergeCountry[]>(
+      environment.backend + "api/stationMerge/countries"
+    );
+  }
+
+  getStationMergePairs(countryId: number, page = 0, pageSize = 10): Observable<StationMergePairsResponse> {
+    const params = new HttpParams()
+      .set("page", page.toString())
+      .set("pageSize", pageSize.toString());
+    return this.httpClient.get<StationMergePairsResponse>(
+      environment.backend + "api/stationMerge/pairs/" + countryId,
+      { params }
+    );
+  }
+
+  mergeStations(keepStationId: number, deleteStationId: number): Observable<any> {
+    return this.httpClient.post(
+      environment.backend + "api/stationMerge/merge",
+      { keepStationId, deleteStationId }
+    );
+  }
+
+  skipStationPair(station1Id: number, station2Id: number): Observable<any> {
+    return this.httpClient.post(
+      environment.backend + "api/stationMerge/skip",
+      { station1Id, station2Id }
     );
   }
 }

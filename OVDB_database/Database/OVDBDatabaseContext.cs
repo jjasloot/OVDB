@@ -36,6 +36,7 @@ namespace OVDB_database.Database
         public DbSet<TrawellingIgnoredStatus> TrawellingIgnoredStatuses { get; set; }
         public DbSet<TrawellingStation> TrawellingStations { get; set; }
         public DbSet<RefreshToken> RefreshTokens { get; set; }
+        public DbSet<StationMergeIgnore> StationMergeIgnores { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder options)
         {
@@ -125,6 +126,19 @@ namespace OVDB_database.Database
             modelBuilder.Entity<RouteInstanceProperty>(entity =>
             {
                 entity.HasIndex(e => new { e.RouteInstanceId, e.Key });
+            });
+            // StationMergeIgnore entity configuration
+            modelBuilder.Entity<StationMergeIgnore>(entity =>
+            {
+                entity.HasIndex(e => new { e.Station1Id, e.Station2Id }).IsUnique();
+                entity.HasOne(e => e.Station1)
+                    .WithMany()
+                    .HasForeignKey(e => e.Station1Id)
+                    .OnDelete(DeleteBehavior.Cascade);
+                entity.HasOne(e => e.Station2)
+                    .WithMany()
+                    .HasForeignKey(e => e.Station2Id)
+                    .OnDelete(DeleteBehavior.Cascade);
             });
         }
 
