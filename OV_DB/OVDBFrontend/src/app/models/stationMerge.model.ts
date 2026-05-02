@@ -15,6 +15,7 @@ export interface StationNearbyPair {
 export interface StationMergeCountry {
   countryId: number;
   countryName: string;
+  pairCount: number;
 }
 
 export interface StationMergePairsResponse {

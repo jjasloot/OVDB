@@ -4,116 +4,150 @@
   </mat-card-header>
   <mat-card-content>
     <p class="description">
-      This tool shows pairs of stations that are within 200&nbsp;m of each other.
-      For each pair you can <strong>keep the left station</strong>,
-      <strong>keep the right station</strong>, or <strong>keep both</strong>
-      (the pair will no longer appear in this queue).
+      Stations within 200&nbsp;m of each other may be duplicates. Work through the queue
+      per country: <strong>Keep L</strong> or <strong>Keep R</strong> to merge them
+      (visits transfer to the kept station, the other is hidden), or
+      <strong>Keep Both</strong> if they are legitimately different stops.
     </p>
 
-    <mat-select
-      placeholder="Select a country"
-      [ngModel]="selectedCountryId()"
-      (ngModelChange)="onCountryChange($event)"
-      class="country-select"
-    >
-      @for (country of countries(); track country.countryId) {
-        <mat-option [value]="country.countryId">{{ country.countryName }}</mat-option>
+    <!-- Country selector with pair counts -->
+    <div class="country-row">
+      <mat-select
+        placeholder="Select a country"
+        [ngModel]="selectedCountryId()"
+        (ngModelChange)="onCountryChange($event)"
+        class="country-select"
+      >
+        @for (country of countries(); track country.countryId) {
+          <mat-option [value]="country.countryId">
+            {{ country.countryName }}
+            @if (country.pairCount > 0) {
+              <span class="pair-badge">{{ country.pairCount }}</span>
+            } @else {
+              <span class="pair-done">✓</span>
+            }
+          </mat-option>
+        }
+      </mat-select>
+
+      @if (selectedCountryId()) {
+        <span class="queue-status">
+          @if (loading()) {
+            <mat-progress-spinner mode="indeterminate" diameter="20" />
+          } @else if (totalPairs() > 0) {
+            <strong>{{ totalPairs() }}</strong>&nbsp;pair(s) remaining
+          } @else {
+            <span class="done-label">All done for this country 🎉</span>
+          }
+        </span>
       }
-    </mat-select>
+    </div>
 
     @if (loading()) {
       <div class="spinner-container">
-        <mat-progress-spinner mode="indeterminate" diameter="40" />
+        <mat-progress-spinner mode="indeterminate" diameter="48" />
       </div>
     }
 
-    @if (!loading() && selectedCountryId()) {
-      <p class="pair-count">
-        {{ totalPairs() }} unreviewed pair(s) found.
-      </p>
-    }
+    @if (!loading() && currentPair()) {
+      <!-- Map showing both stations -->
+      <div
+        class="pair-map"
+        leaflet
+        [leafletOptions]="mapOptions"
+        [leafletLayers]="mapLayers()"
+        [leafletFitBounds]="mapBounds()"
+      ></div>
 
-    @if (!loading() && pairs().length === 0 && selectedCountryId()) {
-      <p class="no-pairs">No nearby duplicate stations found for this country. 🎉</p>
-    }
-
-    @for (pair of pairs(); track pair.station1Id + '-' + pair.station2Id) {
-      <div class="pair-card">
+      <!-- Station info + action buttons -->
+      <div class="pair-info">
+        <!-- Left station (L) -->
         <div class="station-col">
-          <div class="station-name">{{ pair.station1Name || '(unnamed)' }}</div>
+          <div class="station-badge left-badge">L</div>
+          <div class="station-name">{{ currentPair().station1Name || '(unnamed)' }}</div>
           <div class="station-detail">
-            <span class="label">Lat:</span> {{ pair.station1Lattitude | number:'1.5-5' }},
-            <span class="label">Lon:</span> {{ pair.station1Longitude | number:'1.5-5' }}
+            {{ currentPair().station1Lattitude | number:'1.5-5' }},
+            {{ currentPair().station1Longitude | number:'1.5-5' }}
           </div>
-          <div class="station-detail">
-            <span class="label">Visits:</span> {{ pair.station1Visits }}
+          <div class="station-detail visits">
+            <mat-icon inline>people</mat-icon> {{ currentPair().station1Visits }} visit(s)
           </div>
-          <a [href]="openInOsm(pair.station1Lattitude, pair.station1Longitude)" target="_blank" class="osm-link">
-            <mat-icon inline>map</mat-icon> View on OSM
-          </a>
-          <div class="station-actions">
-            <button
-              mat-raised-button
-              color="primary"
-              [disabled]="actionInProgress()"
-              (click)="merge(pair.station1Id, pair.station2Id)"
-              matTooltip="Keep this station, remove the right one"
-            >
-              <mat-icon>arrow_back</mat-icon> Keep Left
-            </button>
-          </div>
-        </div>
-
-        <div class="distance-col">
-          <mat-icon class="merge-icon">merge</mat-icon>
-          <div class="distance">{{ pair.distanceMeters | number:'1.0-0' }}&nbsp;m</div>
-          <button
-            mat-stroked-button
-            [disabled]="actionInProgress()"
-            (click)="skip(pair)"
-            matTooltip="These are different stations – keep both and hide from queue"
+          <a
+            [href]="openInOsm(currentPair().station1Lattitude, currentPair().station1Longitude)"
+            target="_blank"
+            class="osm-link"
           >
-            <mat-icon>check_box</mat-icon> Keep Both
+            <mat-icon inline>map</mat-icon> OSM
+          </a>
+          <button
+            mat-raised-button
+            color="primary"
+            class="keep-btn"
+            [disabled]="actionInProgress()"
+            (click)="merge(currentPair().station1Id, currentPair().station2Id)"
+            matTooltip="Keep L – hide R and transfer its visits to L"
+          >
+            <mat-icon>arrow_back</mat-icon> Keep L
           </button>
         </div>
 
+        <!-- Center actions -->
+        <div class="center-col">
+          <div class="distance-display">
+            <mat-icon>swap_horiz</mat-icon>
+            <span>{{ currentPair().distanceMeters | number:'1.0-0' }}&nbsp;m</span>
+          </div>
+          <button
+            mat-stroked-button
+            [disabled]="actionInProgress()"
+            (click)="skip(currentPair())"
+            matTooltip="These are distinct stops – remove this pair from the queue"
+          >
+            <mat-icon>done_all</mat-icon> Keep Both
+          </button>
+        </div>
+
+        <!-- Right station (R) -->
         <div class="station-col right">
-          <div class="station-name">{{ pair.station2Name || '(unnamed)' }}</div>
+          <div class="station-badge right-badge">R</div>
+          <div class="station-name">{{ currentPair().station2Name || '(unnamed)' }}</div>
           <div class="station-detail">
-            <span class="label">Lat:</span> {{ pair.station2Lattitude | number:'1.5-5' }},
-            <span class="label">Lon:</span> {{ pair.station2Longitude | number:'1.5-5' }}
+            {{ currentPair().station2Lattitude | number:'1.5-5' }},
+            {{ currentPair().station2Longitude | number:'1.5-5' }}
           </div>
-          <div class="station-detail">
-            <span class="label">Visits:</span> {{ pair.station2Visits }}
+          <div class="station-detail visits">
+            <mat-icon inline>people</mat-icon> {{ currentPair().station2Visits }} visit(s)
           </div>
-          <a [href]="openInOsm(pair.station2Lattitude, pair.station2Longitude)" target="_blank" class="osm-link">
-            <mat-icon inline>map</mat-icon> View on OSM
+          <a
+            [href]="openInOsm(currentPair().station2Lattitude, currentPair().station2Longitude)"
+            target="_blank"
+            class="osm-link"
+          >
+            <mat-icon inline>map</mat-icon> OSM
           </a>
-          <div class="station-actions right-actions">
-            <button
-              mat-raised-button
-              color="primary"
-              [disabled]="actionInProgress()"
-              (click)="merge(pair.station2Id, pair.station1Id)"
-              matTooltip="Keep this station, remove the left one"
-            >
-              Keep Right <mat-icon>arrow_forward</mat-icon>
-            </button>
-          </div>
+          <button
+            mat-raised-button
+            color="primary"
+            class="keep-btn"
+            [disabled]="actionInProgress()"
+            (click)="merge(currentPair().station2Id, currentPair().station1Id)"
+            matTooltip="Keep R – hide L and transfer its visits to R"
+          >
+            Keep R <mat-icon>arrow_forward</mat-icon>
+          </button>
         </div>
       </div>
     }
 
-    @if (!loading() && totalPairs() > pageSize) {
-      <div class="pagination">
-        <button mat-icon-button [disabled]="!hasPrevPage || actionInProgress()" (click)="prevPage()">
-          <mat-icon>chevron_left</mat-icon>
-        </button>
-        <span>Page {{ currentPage() + 1 }} of {{ Math.ceil(totalPairs() / pageSize) }}</span>
-        <button mat-icon-button [disabled]="!hasNextPage || actionInProgress()" (click)="nextPage()">
-          <mat-icon>chevron_right</mat-icon>
-        </button>
+    @if (!loading() && totalPairs() === 0 && selectedCountryId()) {
+      <div class="no-pairs">
+        <mat-icon>check_circle</mat-icon>
+        No nearby duplicate stations to review for this country.
       </div>
+    }
+
+    @if (!selectedCountryId()) {
+      <div class="prompt">Select a country above to start reviewing duplicates.</div>
     }
   </mat-card-content>
 </mat-card>

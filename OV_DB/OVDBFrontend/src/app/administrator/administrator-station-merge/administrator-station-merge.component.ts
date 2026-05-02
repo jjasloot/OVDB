@@ -2,6 +2,7 @@ import { DecimalPipe } from "@angular/common";
 import {
   ChangeDetectionStrategy,
   Component,
+  computed,
   DestroyRef,
   inject,
   OnInit,
@@ -9,13 +10,15 @@ import {
 } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { FormsModule } from "@angular/forms";
-import { MatButton, MatIconButton } from "@angular/material/button";
+import { MatButton } from "@angular/material/button";
 import { MatCard, MatCardContent, MatCardHeader, MatCardTitle } from "@angular/material/card";
 import { MatIcon } from "@angular/material/icon";
 import { MatOption } from "@angular/material/core";
 import { MatProgressSpinner } from "@angular/material/progress-spinner";
 import { MatSelect } from "@angular/material/select";
 import { MatTooltip } from "@angular/material/tooltip";
+import { LeafletModule } from "@bluehalo/ngx-leaflet";
+import { divIcon, LatLng, LatLngBounds, Layer, marker, tileLayer } from "leaflet";
 import { StationMergeCountry, StationNearbyPair } from "src/app/models/stationMerge.model";
 import { ApiService } from "src/app/services/api.service";
 
@@ -27,7 +30,6 @@ import { ApiService } from "src/app/services/api.service";
   imports: [
     FormsModule,
     MatButton,
-    MatIconButton,
     MatCard,
     MatCardContent,
     MatCardHeader,
@@ -38,21 +40,69 @@ import { ApiService } from "src/app/services/api.service";
     MatSelect,
     MatTooltip,
     DecimalPipe,
+    LeafletModule,
   ],
 })
 export class AdministratorStationMergeComponent implements OnInit {
-  protected readonly Math = Math;
   private apiService = inject(ApiService);
   private destroyRef = inject(DestroyRef);
 
   countries = signal<StationMergeCountry[]>([]);
   selectedCountryId = signal<number | null>(null);
-  pairs = signal<StationNearbyPair[]>([]);
+  currentPair = signal<StationNearbyPair | null>(null);
   totalPairs = signal<number>(0);
-  currentPage = signal<number>(0);
-  pageSize = 10;
   loading = signal<boolean>(false);
   actionInProgress = signal<boolean>(false);
+
+  // Leaflet base options (tile layer in options so it's not re-added with every pair change)
+  readonly mapOptions = {
+    layers: [
+      tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        opacity: 0.85,
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+      }),
+    ],
+    zoom: 17,
+  };
+
+  // Computed markers – update whenever currentPair changes
+  readonly mapLayers = computed<Layer[]>(() => {
+    const pair = this.currentPair();
+    if (!pair) return [];
+
+    const markerL = marker(new LatLng(pair.station1Lattitude, pair.station1Longitude), {
+      icon: divIcon({
+        html: '<div class="smerge-marker-l">L</div>',
+        className: "smerge-icon",
+        iconSize: [28, 28],
+        iconAnchor: [14, 14],
+      }),
+    }).bindTooltip(pair.station1Name || "(unnamed)", { permanent: true, direction: "top", offset: [0, -14] });
+
+    const markerR = marker(new LatLng(pair.station2Lattitude, pair.station2Longitude), {
+      icon: divIcon({
+        html: '<div class="smerge-marker-r">R</div>',
+        className: "smerge-icon",
+        iconSize: [28, 28],
+        iconAnchor: [14, 14],
+      }),
+    }).bindTooltip(pair.station2Name || "(unnamed)", { permanent: true, direction: "top", offset: [0, -14] });
+
+    return [markerL, markerR];
+  });
+
+  // Computed bounds – update whenever currentPair changes, padded for context
+  readonly mapBounds = computed<LatLngBounds>(() => {
+    const pair = this.currentPair();
+    if (!pair) {
+      return new LatLngBounds(new LatLng(50.656245, 2.92136), new LatLng(53.604563, 7.428211));
+    }
+    const bounds = new LatLngBounds(
+      new LatLng(pair.station1Lattitude, pair.station1Longitude),
+      new LatLng(pair.station2Lattitude, pair.station2Longitude)
+    );
+    return bounds.isValid() ? bounds.pad(1.5) : bounds;
+  });
 
   ngOnInit(): void {
     this.apiService
@@ -65,24 +115,32 @@ export class AdministratorStationMergeComponent implements OnInit {
 
   onCountryChange(countryId: number): void {
     this.selectedCountryId.set(countryId);
-    this.currentPage.set(0);
-    this.loadPairs();
+    this.loadCurrentPair();
   }
 
-  loadPairs(): void {
+  private loadCurrentPair(): void {
     const countryId = this.selectedCountryId();
     if (!countryId) return;
     this.loading.set(true);
     this.apiService
-      .getStationMergePairs(countryId, this.currentPage(), this.pageSize)
+      .getStationMergePairs(countryId, 0, 1)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (data) => {
-          this.pairs.set(data.pairs);
           this.totalPairs.set(data.total);
+          this.currentPair.set(data.pairs.length > 0 ? data.pairs[0] : null);
           this.loading.set(false);
         },
         error: () => this.loading.set(false),
+      });
+  }
+
+  private refreshCountries(): void {
+    this.apiService
+      .getStationMergeCountries()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((data) => {
+        this.countries.set(data);
       });
   }
 
@@ -94,7 +152,8 @@ export class AdministratorStationMergeComponent implements OnInit {
       .subscribe({
         next: () => {
           this.actionInProgress.set(false);
-          this.refreshAfterAction();
+          this.loadCurrentPair();
+          this.refreshCountries();
         },
         error: () => this.actionInProgress.set(false),
       });
@@ -108,57 +167,14 @@ export class AdministratorStationMergeComponent implements OnInit {
       .subscribe({
         next: () => {
           this.actionInProgress.set(false);
-          this.refreshAfterAction();
+          this.loadCurrentPair();
+          this.refreshCountries();
         },
         error: () => this.actionInProgress.set(false),
       });
   }
 
-  private refreshAfterAction(): void {
-    // After an action the total changes; stay on current page (or go back if empty)
-    const countryId = this.selectedCountryId();
-    if (!countryId) return;
-    this.loading.set(true);
-    this.apiService
-      .getStationMergePairs(countryId, this.currentPage(), this.pageSize)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (data) => {
-          // If page is now empty and not the first page, go back one page
-          if (data.pairs.length === 0 && this.currentPage() > 0) {
-            this.currentPage.set(this.currentPage() - 1);
-            this.loadPairs();
-          } else {
-            this.pairs.set(data.pairs);
-            this.totalPairs.set(data.total);
-            this.loading.set(false);
-          }
-        },
-        error: () => this.loading.set(false),
-      });
-  }
-
-  nextPage(): void {
-    this.currentPage.set(this.currentPage() + 1);
-    this.loadPairs();
-  }
-
-  prevPage(): void {
-    if (this.currentPage() > 0) {
-      this.currentPage.set(this.currentPage() - 1);
-      this.loadPairs();
-    }
-  }
-
-  get hasPrevPage(): boolean {
-    return this.currentPage() > 0;
-  }
-
-  get hasNextPage(): boolean {
-    return (this.currentPage() + 1) * this.pageSize < this.totalPairs();
-  }
-
   openInOsm(lat: number, lon: number): string {
-    return `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lon}&zoom=17`;
+    return `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lon}&zoom=18`;
   }
 }

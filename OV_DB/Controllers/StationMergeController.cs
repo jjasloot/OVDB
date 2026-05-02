@@ -42,24 +42,96 @@ namespace OV_DB.Controllers
         }
 
         /// <summary>
-        /// Returns all station countries that have at least two non-hidden stations, to drive the country selector.
+        /// Counts nearby pairs (within maxDistanceMeters) that are not in the ignore set.
+        /// The stations list must be pre-sorted by latitude.
+        /// </summary>
+        private static int CountNearbyPairs(
+            IList<(int Id, double Lat, double Lon)> sortedStations,
+            HashSet<(int, int)> ignoredSet,
+            double maxDistanceMeters)
+        {
+            const double BBoxDegrees = 0.003;
+            int count = 0;
+            for (int i = 0; i < sortedStations.Count; i++)
+            {
+                for (int j = i + 1; j < sortedStations.Count; j++)
+                {
+                    if (sortedStations[j].Lat - sortedStations[i].Lat > BBoxDegrees) break;
+                    if (Math.Abs(sortedStations[i].Lon - sortedStations[j].Lon) > BBoxDegrees) continue;
+
+                    var dist = HaversineDistance(
+                        sortedStations[i].Lat, sortedStations[i].Lon,
+                        sortedStations[j].Lat, sortedStations[j].Lon);
+
+                    if (dist < maxDistanceMeters)
+                    {
+                        var id1 = Math.Min(sortedStations[i].Id, sortedStations[j].Id);
+                        var id2 = Math.Max(sortedStations[i].Id, sortedStations[j].Id);
+                        if (!ignoredSet.Contains((id1, id2)))
+                            count++;
+                    }
+                }
+            }
+            return count;
+        }
+
+        /// <summary>
+        /// Returns all station countries with the number of unreviewed nearby pairs.
         /// </summary>
         [HttpGet("countries")]
         public async Task<IActionResult> GetCountries()
         {
             if (!IsAdmin()) return Forbid();
 
-            var countries = await DbContext.StationCountries
-                .Where(c => c.Stations.Any(s => !s.Hidden))
-                .OrderBy(c => c.Name)
-                .Select(c => new StationMergeCountryDTO
-                {
-                    CountryId = c.Id,
-                    CountryName = c.Name
-                })
+            var allStations = await DbContext.Stations
+                .AsNoTracking()
+                .Where(s => !s.Hidden && s.StationCountryId.HasValue)
+                .Select(s => new { s.Id, s.Lattitude, s.Longitude, CountryId = s.StationCountryId.Value })
                 .ToListAsync();
 
-            return Ok(countries);
+            if (!allStations.Any())
+                return Ok(new List<StationMergeCountryDTO>());
+
+            var stationsByCountry = allStations
+                .GroupBy(s => s.CountryId)
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.Select(s => (s.Id, s.Lattitude, s.Longitude))
+                          .OrderBy(s => s.Lattitude)
+                          .ToList());
+
+            var allStationIds = allStations.Select(s => s.Id).ToHashSet();
+            var allIgnoredPairs = await DbContext.StationMergeIgnores
+                .AsNoTracking()
+                .Where(i => allStationIds.Contains(i.Station1Id))
+                .Select(i => new { i.Station1Id, i.Station2Id })
+                .ToListAsync();
+
+            var ignoredSet = new HashSet<(int, int)>(
+                allIgnoredPairs.Select(i => (i.Station1Id, i.Station2Id)));
+
+            var countryIds = stationsByCountry.Keys.ToHashSet();
+            var countries = await DbContext.StationCountries
+                .AsNoTracking()
+                .Where(c => countryIds.Contains(c.Id))
+                .OrderBy(c => c.Name)
+                .Select(c => new { c.Id, c.Name })
+                .ToListAsync();
+
+            var result = countries.Select(c =>
+            {
+                var stations = stationsByCountry.TryGetValue(c.Id, out var s)
+                    ? s
+                    : new List<(int, double, double)>();
+                return new StationMergeCountryDTO
+                {
+                    CountryId = c.Id,
+                    CountryName = c.Name,
+                    PairCount = CountNearbyPairs(stations, ignoredSet, 200.0)
+                };
+            }).ToList();
+
+            return Ok(result);
         }
 
         /// <summary>
@@ -72,7 +144,6 @@ namespace OV_DB.Controllers
             if (!IsAdmin()) return Forbid();
 
             const double MaxDistanceMeters = 200.0;
-            // 200 m ≈ 0.0018° latitude; use a slightly larger bounding box as pre-filter
             const double BBoxDegrees = 0.003;
 
             var stations = await DbContext.Stations
@@ -98,9 +169,8 @@ namespace OV_DB.Controllers
                 .ToListAsync();
 
             var ignoredSet = new HashSet<(int, int)>(
-                ignoredPairs.Select(i => (Math.Min(i.Station1Id, i.Station2Id), Math.Max(i.Station1Id, i.Station2Id))));
+                ignoredPairs.Select(i => (i.Station1Id, i.Station2Id)));
 
-            // Sort by latitude to allow early exit in inner loop
             stations.Sort((a, b) => a.Lattitude.CompareTo(b.Lattitude));
 
             var pairs = new List<StationNearbyPairDTO>();
@@ -108,25 +178,19 @@ namespace OV_DB.Controllers
             {
                 for (int j = i + 1; j < stations.Count; j++)
                 {
-                    // Early exit: if latitude difference exceeds bounding box, no more candidates
-                    if (stations[j].Lattitude - stations[i].Lattitude > BBoxDegrees)
-                        break;
-
-                    if (Math.Abs(stations[i].Longitude - stations[j].Longitude) > BBoxDegrees)
-                        continue;
+                    if (stations[j].Lattitude - stations[i].Lattitude > BBoxDegrees) break;
+                    if (Math.Abs(stations[i].Longitude - stations[j].Longitude) > BBoxDegrees) continue;
 
                     var dist = HaversineDistance(
                         stations[i].Lattitude, stations[i].Longitude,
                         stations[j].Lattitude, stations[j].Longitude);
 
-                    if (dist >= MaxDistanceMeters)
-                        continue;
+                    if (dist >= MaxDistanceMeters) continue;
 
                     var id1 = Math.Min(stations[i].Id, stations[j].Id);
                     var id2 = Math.Max(stations[i].Id, stations[j].Id);
 
-                    if (ignoredSet.Contains((id1, id2)))
-                        continue;
+                    if (ignoredSet.Contains((id1, id2))) continue;
 
                     pairs.Add(new StationNearbyPairDTO
                     {
@@ -171,7 +235,6 @@ namespace OV_DB.Controllers
             if (keepStation == null || deleteStation == null)
                 return NotFound();
 
-            // Reassign StationVisits that don't already exist on the keep station
             var existingVisitorIds = await DbContext.StationVisits
                 .Where(sv => sv.StationId == request.KeepStationId)
                 .Select(sv => sv.UserId)
@@ -180,34 +243,23 @@ namespace OV_DB.Controllers
             foreach (var visit in deleteStation.StationVisits)
             {
                 if (!existingVisitorIds.Contains(visit.UserId))
-                {
                     visit.StationId = request.KeepStationId;
-                }
                 else
-                {
                     DbContext.StationVisits.Remove(visit);
-                }
             }
 
-            // Hide the deleted station
             deleteStation.Hidden = true;
 
-            // Record the pair as reviewed so it won't show up again
             var id1 = Math.Min(request.KeepStationId, request.DeleteStationId);
             var id2 = Math.Max(request.KeepStationId, request.DeleteStationId);
             var alreadyIgnored = await DbContext.StationMergeIgnores
                 .AnyAsync(i => i.Station1Id == id1 && i.Station2Id == id2);
             if (!alreadyIgnored)
             {
-                DbContext.StationMergeIgnores.Add(new StationMergeIgnore
-                {
-                    Station1Id = id1,
-                    Station2Id = id2
-                });
+                DbContext.StationMergeIgnores.Add(new StationMergeIgnore { Station1Id = id1, Station2Id = id2 });
             }
 
             await DbContext.SaveChangesAsync();
-
             return Ok(new { message = "Stations merged successfully." });
         }
 
@@ -227,11 +279,7 @@ namespace OV_DB.Controllers
 
             if (!alreadyIgnored)
             {
-                DbContext.StationMergeIgnores.Add(new StationMergeIgnore
-                {
-                    Station1Id = id1,
-                    Station2Id = id2
-                });
+                DbContext.StationMergeIgnores.Add(new StationMergeIgnore { Station1Id = id1, Station2Id = id2 });
                 await DbContext.SaveChangesAsync();
             }
 

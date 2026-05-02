@@ -4,5 +4,6 @@ namespace OV_DB.Models
     {
         public int CountryId { get; set; }
         public string CountryName { get; set; }
+        public int PairCount { get; set; }
     }
 }
