@@ -1,0 +1,119 @@
+<mat-card>
+  <mat-card-header>
+    <mat-card-title>Merge Duplicate Stations</mat-card-title>
+  </mat-card-header>
+  <mat-card-content>
+    <p class="description">
+      This tool shows pairs of stations that are within 200&nbsp;m of each other.
+      For each pair you can <strong>keep the left station</strong>,
+      <strong>keep the right station</strong>, or <strong>keep both</strong>
+      (the pair will no longer appear in this queue).
+    </p>
+
+    <mat-select
+      placeholder="Select a country"
+      [ngModel]="selectedCountryId()"
+      (ngModelChange)="onCountryChange($event)"
+      class="country-select"
+    >
+      @for (country of countries(); track country.countryId) {
+        <mat-option [value]="country.countryId">{{ country.countryName }}</mat-option>
+      }
+    </mat-select>
+
+    @if (loading()) {
+      <div class="spinner-container">
+        <mat-progress-spinner mode="indeterminate" diameter="40" />
+      </div>
+    }
+
+    @if (!loading() && selectedCountryId()) {
+      <p class="pair-count">
+        {{ totalPairs() }} unreviewed pair(s) found.
+      </p>
+    }
+
+    @if (!loading() && pairs().length === 0 && selectedCountryId()) {
+      <p class="no-pairs">No nearby duplicate stations found for this country. 🎉</p>
+    }
+
+    @for (pair of pairs(); track pair.station1Id + '-' + pair.station2Id) {
+      <div class="pair-card">
+        <div class="station-col">
+          <div class="station-name">{{ pair.station1Name || '(unnamed)' }}</div>
+          <div class="station-detail">
+            <span class="label">Lat:</span> {{ pair.station1Lattitude | number:'1.5-5' }},
+            <span class="label">Lon:</span> {{ pair.station1Longitude | number:'1.5-5' }}
+          </div>
+          <div class="station-detail">
+            <span class="label">Visits:</span> {{ pair.station1Visits }}
+          </div>
+          <a [href]="openInOsm(pair.station1Lattitude, pair.station1Longitude)" target="_blank" class="osm-link">
+            <mat-icon inline>map</mat-icon> View on OSM
+          </a>
+          <div class="station-actions">
+            <button
+              mat-raised-button
+              color="primary"
+              [disabled]="actionInProgress()"
+              (click)="merge(pair.station1Id, pair.station2Id)"
+              matTooltip="Keep this station, remove the right one"
+            >
+              <mat-icon>arrow_back</mat-icon> Keep Left
+            </button>
+          </div>
+        </div>
+
+        <div class="distance-col">
+          <mat-icon class="merge-icon">merge</mat-icon>
+          <div class="distance">{{ pair.distanceMeters | number:'1.0-0' }}&nbsp;m</div>
+          <button
+            mat-stroked-button
+            [disabled]="actionInProgress()"
+            (click)="skip(pair)"
+            matTooltip="These are different stations – keep both and hide from queue"
+          >
+            <mat-icon>check_box</mat-icon> Keep Both
+          </button>
+        </div>
+
+        <div class="station-col right">
+          <div class="station-name">{{ pair.station2Name || '(unnamed)' }}</div>
+          <div class="station-detail">
+            <span class="label">Lat:</span> {{ pair.station2Lattitude | number:'1.5-5' }},
+            <span class="label">Lon:</span> {{ pair.station2Longitude | number:'1.5-5' }}
+          </div>
+          <div class="station-detail">
+            <span class="label">Visits:</span> {{ pair.station2Visits }}
+          </div>
+          <a [href]="openInOsm(pair.station2Lattitude, pair.station2Longitude)" target="_blank" class="osm-link">
+            <mat-icon inline>map</mat-icon> View on OSM
+          </a>
+          <div class="station-actions right-actions">
+            <button
+              mat-raised-button
+              color="primary"
+              [disabled]="actionInProgress()"
+              (click)="merge(pair.station2Id, pair.station1Id)"
+              matTooltip="Keep this station, remove the left one"
+            >
+              Keep Right <mat-icon>arrow_forward</mat-icon>
+            </button>
+          </div>
+        </div>
+      </div>
+    }
+
+    @if (!loading() && totalPairs() > pageSize) {
+      <div class="pagination">
+        <button mat-icon-button [disabled]="!hasPrevPage || actionInProgress()" (click)="prevPage()">
+          <mat-icon>chevron_left</mat-icon>
+        </button>
+        <span>Page {{ currentPage() + 1 }} of {{ Math.ceil(totalPairs() / pageSize) }}</span>
+        <button mat-icon-button [disabled]="!hasNextPage || actionInProgress()" (click)="nextPage()">
+          <mat-icon>chevron_right</mat-icon>
+        </button>
+      </div>
+    }
+  </mat-card-content>
+</mat-card>

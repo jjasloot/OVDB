@@ -1,0 +1,116 @@
+.description {
+  margin-bottom: 1rem;
+  color: rgba(0, 0, 0, 0.6);
+}
+
+.country-select {
+  min-width: 240px;
+  margin-bottom: 1rem;
+}
+
+.spinner-container {
+  display: flex;
+  justify-content: center;
+  padding: 2rem 0;
+}
+
+.pair-count {
+  color: rgba(0, 0, 0, 0.6);
+  margin-bottom: 0.5rem;
+}
+
+.no-pairs {
+  margin-top: 1rem;
+  font-style: italic;
+  color: rgba(0, 0, 0, 0.5);
+}
+
+.pair-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  background: #fafafa;
+}
+
+.station-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+
+  &.right {
+    align-items: flex-end;
+    text-align: right;
+  }
+}
+
+.station-name {
+  font-weight: 500;
+  font-size: 1rem;
+}
+
+.station-detail {
+  font-size: 0.85rem;
+  color: rgba(0, 0, 0, 0.6);
+}
+
+.label {
+  font-weight: 500;
+}
+
+.osm-link {
+  font-size: 0.8rem;
+  color: #1565c0;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+
+  .right & {
+    justify-content: flex-end;
+  }
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.station-actions {
+  margin-top: 0.5rem;
+
+  &.right-actions {
+    align-self: flex-end;
+  }
+}
+
+.distance-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-width: 110px;
+}
+
+.merge-icon {
+  font-size: 2rem;
+  color: rgba(0, 0, 0, 0.3);
+}
+
+.distance {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: rgba(0, 0, 0, 0.6);
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
