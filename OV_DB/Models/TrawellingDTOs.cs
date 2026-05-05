@@ -222,7 +222,7 @@ namespace OV_DB.Models
         public string LineName { get; set; }
 
         [JsonProperty("journeyNumber")]
-        public int? JourneyNumber { get; set; }
+        public long? JourneyNumber { get; set; }
 
         [JsonProperty("manualJourneyNumber")]
         public string ManualJourneyNumber { get; set; }
