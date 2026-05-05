@@ -4,23 +4,23 @@
   </mat-card-header>
   <mat-card-content>
     <p class="description">
-      Stations within 200&nbsp;m of each other may be duplicates. Work through the queue
-      per country: <strong>Keep L</strong> or <strong>Keep R</strong> to merge them
+      Stations within 500&nbsp;m of each other may be duplicates. Work through the queue
+      per region: <strong>Keep L</strong> or <strong>Keep R</strong> to merge them
       (visits transfer to the kept station, the other is hidden), or
       <strong>Keep Both</strong> if they are legitimately different stops.
     </p>
 
-    <!-- Country selector with pair counts -->
+    <!-- Region selector with pair counts -->
     <div class="country-row">
       <mat-select
-        placeholder="Select a country"
-        [ngModel]="selectedCountryId()"
-        (ngModelChange)="onCountryChange($event)"
+        placeholder="Select a region"
+        [ngModel]="selectedRegionId()"
+        (ngModelChange)="onRegionChange($event)"
         class="country-select"
       >
-        @for (country of countries(); track country.countryId) {
-          <mat-option [value]="country.countryId">
-            {{ country.countryName }}
+        @for (country of countries(); track country.regionId) {
+          <mat-option [value]="country.regionId">
+            {{ country.regionName }}
             @if (country.pairCount > 0) {
               <span class="pair-badge">{{ country.pairCount }}</span>
             } @else {
@@ -30,14 +30,14 @@
         }
       </mat-select>
 
-      @if (selectedCountryId()) {
+      @if (selectedRegionId()) {
         <span class="queue-status">
           @if (loading()) {
             <mat-progress-spinner mode="indeterminate" diameter="20" />
           } @else if (totalPairs() > 0) {
             <strong>{{ totalPairs() }}</strong>&nbsp;pair(s) remaining
           } @else {
-            <span class="done-label">All done for this country 🎉</span>
+            <span class="done-label">All done for this region 🎉</span>
           }
         </span>
       }
@@ -70,15 +70,32 @@
             {{ currentPair().station1Longitude | number:'1.5-5' }}
           </div>
           <div class="station-detail visits">
-            <mat-icon inline>people</mat-icon> {{ currentPair().station1Visits }} visit(s)
+            <mat-icon inline>people</mat-icon>&nbsp;{{ currentPair().station1Visits }} visit(s)
+          </div>
+          <div class="station-detail special-row">
+            @if (currentPair().station1Special) {
+              <mat-icon inline class="special-icon">museum</mat-icon>&nbsp;<span>Museum / special</span>
+              <button
+                mat-icon-button
+                class="toggle-special-btn"
+                (click)="toggleSpecial(currentPair().station1Id, currentPair().station1Special, 1)"
+                matTooltip="Unmark as special/museum"
+              ><mat-icon>train</mat-icon></button>
+            } @else {
+              <mat-icon inline class="normal-icon">train</mat-icon>&nbsp;<span>Regular</span>
+              <button
+                mat-icon-button
+                class="toggle-special-btn"
+                (click)="toggleSpecial(currentPair().station1Id, currentPair().station1Special, 1)"
+                matTooltip="Mark as special/museum"
+              ><mat-icon>museum</mat-icon></button>
+            }
           </div>
           <a
             [href]="openInOsm(currentPair().station1Lattitude, currentPair().station1Longitude)"
             target="_blank"
             class="osm-link"
-          >
-            <mat-icon inline>map</mat-icon> OSM
-          </a>
+          ><mat-icon inline>map</mat-icon> OSM</a>
           <button
             mat-raised-button
             color="primary"
@@ -116,15 +133,32 @@
             {{ currentPair().station2Longitude | number:'1.5-5' }}
           </div>
           <div class="station-detail visits">
-            <mat-icon inline>people</mat-icon> {{ currentPair().station2Visits }} visit(s)
+            {{ currentPair().station2Visits }} visit(s)&nbsp;<mat-icon inline>people</mat-icon>
+          </div>
+          <div class="station-detail special-row right-special">
+            @if (currentPair().station2Special) {
+              <button
+                mat-icon-button
+                class="toggle-special-btn"
+                (click)="toggleSpecial(currentPair().station2Id, currentPair().station2Special, 2)"
+                matTooltip="Unmark as special/museum"
+              ><mat-icon>train</mat-icon></button>
+              <span>Museum / special</span>&nbsp;<mat-icon inline class="special-icon">museum</mat-icon>
+            } @else {
+              <button
+                mat-icon-button
+                class="toggle-special-btn"
+                (click)="toggleSpecial(currentPair().station2Id, currentPair().station2Special, 2)"
+                matTooltip="Mark as special/museum"
+              ><mat-icon>museum</mat-icon></button>
+              <span>Regular</span>&nbsp;<mat-icon inline class="normal-icon">train</mat-icon>
+            }
           </div>
           <a
             [href]="openInOsm(currentPair().station2Lattitude, currentPair().station2Longitude)"
             target="_blank"
             class="osm-link"
-          >
-            <mat-icon inline>map</mat-icon> OSM
-          </a>
+          >OSM <mat-icon inline>map</mat-icon></a>
           <button
             mat-raised-button
             color="primary"
@@ -139,15 +173,15 @@
       </div>
     }
 
-    @if (!loading() && totalPairs() === 0 && selectedCountryId()) {
+    @if (!loading() && totalPairs() === 0 && selectedRegionId()) {
       <div class="no-pairs">
         <mat-icon>check_circle</mat-icon>
-        No nearby duplicate stations to review for this country.
+        No nearby duplicate stations to review for this region.
       </div>
     }
 
-    @if (!selectedCountryId()) {
-      <div class="prompt">Select a country above to start reviewing duplicates.</div>
+    @if (!selectedRegionId()) {
+      <div class="prompt">Select a region above to start reviewing duplicates.</div>
     }
   </mat-card-content>
 </mat-card>

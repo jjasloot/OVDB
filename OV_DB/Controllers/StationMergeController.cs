@@ -41,16 +41,18 @@ namespace OV_DB.Controllers
             return R * c;
         }
 
+        // 500 m ≈ 0.0045° latitude; bounding-box pre-filter uses a slightly larger value
+        private const double MaxDistanceMeters = 500.0;
+        private const double BBoxDegrees = 0.007;
+
         /// <summary>
-        /// Counts nearby pairs (within maxDistanceMeters) that are not in the ignore set.
+        /// Counts nearby pairs (within MaxDistanceMeters) that are not in the ignore set.
         /// The stations list must be pre-sorted by latitude.
         /// </summary>
         private static int CountNearbyPairs(
             IList<(int Id, double Lat, double Lon)> sortedStations,
-            HashSet<(int, int)> ignoredSet,
-            double maxDistanceMeters)
+            HashSet<(int, int)> ignoredSet)
         {
-            const double BBoxDegrees = 0.003;
             int count = 0;
             for (int i = 0; i < sortedStations.Count; i++)
             {
@@ -63,7 +65,7 @@ namespace OV_DB.Controllers
                         sortedStations[i].Lat, sortedStations[i].Lon,
                         sortedStations[j].Lat, sortedStations[j].Lon);
 
-                    if (dist < maxDistanceMeters)
+                    if (dist < MaxDistanceMeters)
                     {
                         var id1 = Math.Min(sortedStations[i].Id, sortedStations[j].Id);
                         var id2 = Math.Max(sortedStations[i].Id, sortedStations[j].Id);
@@ -76,31 +78,54 @@ namespace OV_DB.Controllers
         }
 
         /// <summary>
-        /// Returns all station countries with the number of unreviewed nearby pairs.
+        /// Builds a hierarchical region name, e.g. "United Kingdom - England - Cornwall".
         /// </summary>
-        [HttpGet("countries")]
-        public async Task<IActionResult> GetCountries()
+        private static string BuildRegionName(
+            int regionId,
+            Dictionary<int, (string Name, int? ParentId)> regionDict)
+        {
+            var parts = new List<string>();
+            int? current = regionId;
+            while (current.HasValue && regionDict.TryGetValue(current.Value, out var r))
+            {
+                parts.Add(r.Name);
+                current = r.ParentId;
+            }
+            parts.Reverse();
+            return string.Join(" - ", parts);
+        }
+
+        /// <summary>
+        /// Returns all regions (at any level) that have non-hidden stations, with
+        /// the number of unreviewed nearby pairs and a hierarchical name.
+        /// </summary>
+        [HttpGet("regions")]
+        public async Task<IActionResult> GetRegions()
         {
             if (!IsAdmin()) return Forbid();
 
-            var allStations = await DbContext.Stations
+            // All non-hidden stations with each of their regions
+            var stationsWithRegions = await DbContext.Stations
                 .AsNoTracking()
-                .Where(s => !s.Hidden && s.StationCountryId.HasValue)
-                .Select(s => new { s.Id, s.Lattitude, s.Longitude, CountryId = s.StationCountryId.Value })
+                .Where(s => !s.Hidden)
+                .SelectMany(s => s.Regions, (s, r) => new { s.Id, s.Lattitude, s.Longitude, RegionId = r.Id })
                 .ToListAsync();
 
-            if (!allStations.Any())
+            if (!stationsWithRegions.Any())
                 return Ok(new List<StationMergeCountryDTO>());
 
-            var stationsByCountry = allStations
-                .GroupBy(s => s.CountryId)
+            // Group stations by region
+            var stationsByRegion = stationsWithRegions
+                .GroupBy(x => x.RegionId)
                 .ToDictionary(
                     g => g.Key,
-                    g => g.Select(s => (s.Id, s.Lattitude, s.Longitude))
-                          .OrderBy(s => s.Lattitude)
+                    g => g.Select(x => (x.Id, x.Lattitude, x.Longitude))
+                          .Distinct()
+                          .OrderBy(x => x.Lattitude)
                           .ToList());
 
-            var allStationIds = allStations.Select(s => s.Id).ToHashSet();
+            // Load all ignore pairs for these stations
+            var allStationIds = stationsWithRegions.Select(x => x.Id).ToHashSet();
             var allIgnoredPairs = await DbContext.StationMergeIgnores
                 .AsNoTracking()
                 .Where(i => allStationIds.Contains(i.Station1Id))
@@ -110,61 +135,65 @@ namespace OV_DB.Controllers
             var ignoredSet = new HashSet<(int, int)>(
                 allIgnoredPairs.Select(i => (i.Station1Id, i.Station2Id)));
 
-            var countryIds = stationsByCountry.Keys.ToHashSet();
-            var countries = await DbContext.StationCountries
+            // Load all regions to build hierarchy
+            var allRegions = await DbContext.Regions
                 .AsNoTracking()
-                .Where(c => countryIds.Contains(c.Id))
-                .OrderBy(c => c.Name)
-                .Select(c => new { c.Id, c.Name })
+                .Select(r => new { r.Id, r.Name, r.ParentRegionId })
                 .ToListAsync();
 
-            var result = countries.Select(c =>
-            {
-                var stations = stationsByCountry.TryGetValue(c.Id, out var s)
-                    ? s
-                    : new List<(int, double, double)>();
-                return new StationMergeCountryDTO
+            var regionDict = allRegions.ToDictionary(
+                r => r.Id,
+                r => (r.Name, ParentId: r.ParentRegionId));
+
+            var regionIds = stationsByRegion.Keys.ToHashSet();
+
+            var result = regionIds
+                .Select(rId =>
                 {
-                    CountryId = c.Id,
-                    CountryName = c.Name,
-                    PairCount = CountNearbyPairs(stations, ignoredSet, 200.0)
-                };
-            }).ToList();
+                    var stations = stationsByRegion[rId];
+                    var name = BuildRegionName(rId, regionDict);
+                    return new StationMergeCountryDTO
+                    {
+                        RegionId = rId,
+                        RegionName = name,
+                        PairCount = CountNearbyPairs(stations, ignoredSet)
+                    };
+                })
+                .Where(r => r.PairCount > 0 || stationsByRegion.ContainsKey(r.RegionId))
+                .OrderBy(r => r.RegionName)
+                .ToList();
 
             return Ok(result);
         }
 
         /// <summary>
-        /// Returns paginated pairs of nearby stations (within 200 m) for a given country
+        /// Returns paginated pairs of nearby stations (within 500 m) for a given region
         /// that have not yet been reviewed (not in the ignore list).
         /// </summary>
-        [HttpGet("pairs/{countryId:int}")]
-        public async Task<IActionResult> GetPairs(int countryId, [FromQuery] int page = 0, [FromQuery] int pageSize = 10)
+        [HttpGet("pairs/{regionId:int}")]
+        public async Task<IActionResult> GetPairs(int regionId, [FromQuery] int page = 0, [FromQuery] int pageSize = 10)
         {
             if (!IsAdmin()) return Forbid();
 
-            const double MaxDistanceMeters = 200.0;
-            const double BBoxDegrees = 0.003;
-
             var stations = await DbContext.Stations
                 .AsNoTracking()
-                .Where(s => s.StationCountryId == countryId && !s.Hidden)
+                .Where(s => !s.Hidden && s.Regions.Any(r => r.Id == regionId))
                 .Select(s => new
                 {
                     s.Id,
                     s.Name,
                     s.Lattitude,
                     s.Longitude,
+                    s.Special,
                     Visits = s.StationVisits.Count()
                 })
                 .ToListAsync();
 
+            var stationIds = stations.Select(s => s.Id).ToHashSet();
+
             var ignoredPairs = await DbContext.StationMergeIgnores
                 .AsNoTracking()
-                .Where(i => DbContext.Stations
-                    .Where(s => s.StationCountryId == countryId)
-                    .Select(s => s.Id)
-                    .Contains(i.Station1Id))
+                .Where(i => stationIds.Contains(i.Station1Id))
                 .Select(i => new { i.Station1Id, i.Station2Id })
                 .ToListAsync();
 
@@ -199,11 +228,13 @@ namespace OV_DB.Controllers
                         Station1Lattitude = stations[i].Lattitude,
                         Station1Longitude = stations[i].Longitude,
                         Station1Visits = stations[i].Visits,
+                        Station1Special = stations[i].Special,
                         Station2Id = stations[j].Id,
                         Station2Name = stations[j].Name,
                         Station2Lattitude = stations[j].Lattitude,
                         Station2Longitude = stations[j].Longitude,
                         Station2Visits = stations[j].Visits,
+                        Station2Special = stations[j].Special,
                         DistanceMeters = Math.Round(dist, 1)
                     });
                 }

@@ -1,5 +1,5 @@
 .description {
-  color: rgba(0, 0, 0, 0.6);
+  opacity: 0.7;
   margin-bottom: 1.25rem;
 }
 
@@ -56,7 +56,7 @@
   border-radius: 8px;
   overflow: hidden;
   margin-bottom: 1rem;
-  border: 1px solid rgba(0, 0, 0, 0.12);
+  border: 1px solid rgba(128, 128, 128, 0.3);
 }
 
 .pair-info {
@@ -108,12 +108,18 @@
 
 .station-detail {
   font-size: 0.82rem;
-  color: rgba(0, 0, 0, 0.6);
+  opacity: 0.75;
 
   &.visits {
     display: flex;
     align-items: center;
+  }
+
+  &.special-row {
+    display: flex;
+    align-items: center;
     gap: 2px;
+    opacity: 1;
   }
 }
 
@@ -121,15 +127,35 @@
   justify-content: flex-end;
 }
 
+.special-icon {
+  color: #fb8c00;
+}
+
+.normal-icon {
+  opacity: 0.5;
+}
+
+.toggle-special-btn {
+  width: 24px;
+  height: 24px;
+  font-size: 16px;
+  line-height: 24px;
+  padding: 0;
+}
+
 .osm-link {
   font-size: 0.8rem;
-  color: #1565c0;
+  color: #1976d2;
   text-decoration: none;
   display: inline-flex;
   align-items: center;
   gap: 2px;
 
   &:hover { text-decoration: underline; }
+}
+
+:host-context(.dark-theme) .osm-link {
+  color: #90caf9;
 }
 
 .keep-btn {
@@ -157,7 +183,7 @@
   align-items: center;
   font-size: 0.85rem;
   font-weight: 500;
-  color: rgba(0, 0, 0, 0.55);
+  opacity: 0.65;
   gap: 2px;
 }
 
@@ -171,7 +197,7 @@
 }
 
 .prompt {
-  color: rgba(0, 0, 0, 0.45);
+  opacity: 0.55;
   font-style: italic;
   margin-top: 0.5rem;
 }

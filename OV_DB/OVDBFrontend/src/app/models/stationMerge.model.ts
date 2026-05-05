@@ -4,17 +4,19 @@ export interface StationNearbyPair {
   station1Lattitude: number;
   station1Longitude: number;
   station1Visits: number;
+  station1Special: boolean;
   station2Id: number;
   station2Name: string;
   station2Lattitude: number;
   station2Longitude: number;
   station2Visits: number;
+  station2Special: boolean;
   distanceMeters: number;
 }
 
 export interface StationMergeCountry {
-  countryId: number;
-  countryName: string;
+  regionId: number;
+  regionName: string;
   pairCount: number;
 }
 

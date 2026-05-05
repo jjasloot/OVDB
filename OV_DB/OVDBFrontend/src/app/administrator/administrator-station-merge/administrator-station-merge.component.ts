@@ -48,13 +48,12 @@ export class AdministratorStationMergeComponent implements OnInit {
   private destroyRef = inject(DestroyRef);
 
   countries = signal<StationMergeCountry[]>([]);
-  selectedCountryId = signal<number | null>(null);
+  selectedRegionId = signal<number | null>(null);
   currentPair = signal<StationNearbyPair | null>(null);
   totalPairs = signal<number>(0);
   loading = signal<boolean>(false);
   actionInProgress = signal<boolean>(false);
 
-  // Leaflet base options (tile layer in options so it's not re-added with every pair change)
   readonly mapOptions = {
     layers: [
       tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
@@ -65,7 +64,6 @@ export class AdministratorStationMergeComponent implements OnInit {
     zoom: 17,
   };
 
-  // Computed markers – update whenever currentPair changes
   readonly mapLayers = computed<Layer[]>(() => {
     const pair = this.currentPair();
     if (!pair) return [];
@@ -91,7 +89,6 @@ export class AdministratorStationMergeComponent implements OnInit {
     return [markerL, markerR];
   });
 
-  // Computed bounds – update whenever currentPair changes, padded for context
   readonly mapBounds = computed<LatLngBounds>(() => {
     const pair = this.currentPair();
     if (!pair) {
@@ -105,6 +102,10 @@ export class AdministratorStationMergeComponent implements OnInit {
   });
 
   ngOnInit(): void {
+    this.loadRegions();
+  }
+
+  private loadRegions(): void {
     this.apiService
       .getStationMergeCountries()
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -113,17 +114,17 @@ export class AdministratorStationMergeComponent implements OnInit {
       });
   }
 
-  onCountryChange(countryId: number): void {
-    this.selectedCountryId.set(countryId);
+  onRegionChange(regionId: number): void {
+    this.selectedRegionId.set(regionId);
     this.loadCurrentPair();
   }
 
   private loadCurrentPair(): void {
-    const countryId = this.selectedCountryId();
-    if (!countryId) return;
+    const regionId = this.selectedRegionId();
+    if (!regionId) return;
     this.loading.set(true);
     this.apiService
-      .getStationMergePairs(countryId, 0, 1)
+      .getStationMergePairs(regionId, 0, 1)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (data) => {
@@ -132,15 +133,6 @@ export class AdministratorStationMergeComponent implements OnInit {
           this.loading.set(false);
         },
         error: () => this.loading.set(false),
-      });
-  }
-
-  private refreshCountries(): void {
-    this.apiService
-      .getStationMergeCountries()
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((data) => {
-        this.countries.set(data);
       });
   }
 
@@ -153,7 +145,7 @@ export class AdministratorStationMergeComponent implements OnInit {
         next: () => {
           this.actionInProgress.set(false);
           this.loadCurrentPair();
-          this.refreshCountries();
+          this.loadRegions();
         },
         error: () => this.actionInProgress.set(false),
       });
@@ -168,9 +160,27 @@ export class AdministratorStationMergeComponent implements OnInit {
         next: () => {
           this.actionInProgress.set(false);
           this.loadCurrentPair();
-          this.refreshCountries();
+          this.loadRegions();
         },
         error: () => this.actionInProgress.set(false),
+      });
+  }
+
+  toggleSpecial(stationId: number, currentSpecial: boolean, side: 1 | 2): void {
+    const newSpecial = !currentSpecial;
+    this.apiService
+      .updateStationAdmin(stationId, newSpecial, false)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          const pair = this.currentPair();
+          if (!pair) return;
+          if (side === 1) {
+            this.currentPair.set({ ...pair, station1Special: newSpecial });
+          } else {
+            this.currentPair.set({ ...pair, station2Special: newSpecial });
+          }
+        },
       });
   }
 

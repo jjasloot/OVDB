@@ -673,16 +673,16 @@ export class ApiService {
 
   getStationMergeCountries(): Observable<StationMergeCountry[]> {
     return this.httpClient.get<StationMergeCountry[]>(
-      environment.backend + "api/stationMerge/countries"
+      environment.backend + "api/stationMerge/regions"
     );
   }
 
-  getStationMergePairs(countryId: number, page = 0, pageSize = 10): Observable<StationMergePairsResponse> {
+  getStationMergePairs(regionId: number, page = 0, pageSize = 10): Observable<StationMergePairsResponse> {
     const params = new HttpParams()
       .set("page", page.toString())
       .set("pageSize", pageSize.toString());
     return this.httpClient.get<StationMergePairsResponse>(
-      environment.backend + "api/stationMerge/pairs/" + countryId,
+      environment.backend + "api/stationMerge/pairs/" + regionId,
       { params }
     );
   }
