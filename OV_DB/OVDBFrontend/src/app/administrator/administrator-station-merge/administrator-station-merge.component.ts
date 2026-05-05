@@ -181,6 +181,10 @@ export class AdministratorStationMergeComponent implements OnInit {
             this.currentPair.set({ ...pair, station2Special: newSpecial });
           }
         },
+        error: () => {
+          // reload pair to reset any optimistic state
+          this.loadCurrentPair();
+        },
       });
   }
 

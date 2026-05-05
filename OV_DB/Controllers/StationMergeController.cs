@@ -120,7 +120,7 @@ namespace OV_DB.Controllers
                 .ToDictionary(
                     g => g.Key,
                     g => g.Select(x => (x.Id, x.Lattitude, x.Longitude))
-                          .Distinct()
+                          .DistinctBy(x => x.Id)
                           .OrderBy(x => x.Lattitude)
                           .ToList());
 
