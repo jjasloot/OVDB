@@ -41,6 +41,11 @@ namespace OV_DB.Controllers
         /// At higher latitudes, 1° of longitude covers fewer metres, so the pre-filter
         /// degree threshold must be widened to avoid false negatives.
         /// </summary>
+        /// <param name="latDeg">Station latitude in degrees.</param>
+        /// <returns>
+        /// Longitude delta in degrees that corresponds to <see cref="MaxDistanceMeters"/> at
+        /// <paramref name="latDeg"/>. Returns 180° near the poles to avoid division-by-zero.
+        /// </returns>
         private static double LonBBoxDegrees(double latDeg)
         {
             var cosLat = Math.Cos(latDeg * Math.PI / 180.0);
@@ -189,6 +194,14 @@ namespace OV_DB.Controllers
         /// Uses a per-station latitude-based longitude bounding box to prevent false negatives
         /// at high latitudes.
         /// </summary>
+        /// <param name="stations">
+        /// Station list sorted ascending by <see cref="StationData.Lat"/>. Sorting is required
+        /// for the early-exit latitude bounding-box optimisation.
+        /// </param>
+        /// <param name="ignoredSet">
+        /// Set of already-reviewed pairs as normalised (min-id, max-id) tuples that should be
+        /// excluded from the results.
+        /// </param>
         private static IEnumerable<StationNearbyPairDTO> EnumeratePairs(
             IList<StationData> stations,
             HashSet<(int, int)> ignoredSet)
