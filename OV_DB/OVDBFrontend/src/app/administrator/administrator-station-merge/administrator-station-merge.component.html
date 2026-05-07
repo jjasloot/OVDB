@@ -18,11 +18,11 @@
         (ngModelChange)="onRegionChange($event)"
         class="country-select"
       >
-        @for (country of countries(); track country.regionId) {
-          <mat-option [value]="country.regionId">
-            {{ country.regionName }}
-            @if (country.pairCount > 0) {
-              <span class="pair-badge">{{ country.pairCount }}</span>
+        @for (region of regions(); track region.regionId) {
+          <mat-option [value]="region.regionId">
+            {{ region.regionName }}
+            @if (region.pairCount > 0) {
+              <span class="pair-badge">{{ region.pairCount }}</span>
             } @else {
               <span class="pair-done">✓</span>
             }
@@ -94,6 +94,7 @@
           <a
             [href]="openInOsm(currentPair().station1Lattitude, currentPair().station1Longitude)"
             target="_blank"
+            rel="noopener noreferrer"
             class="osm-link"
           ><mat-icon inline>map</mat-icon> OSM</a>
           <button
@@ -157,6 +158,7 @@
           <a
             [href]="openInOsm(currentPair().station2Lattitude, currentPair().station2Longitude)"
             target="_blank"
+            rel="noopener noreferrer"
             class="osm-link"
           ><mat-icon inline>map</mat-icon> OSM</a>
           <button

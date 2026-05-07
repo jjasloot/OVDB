@@ -29,25 +29,39 @@ namespace OV_DB.Controllers
                 "true",
                 StringComparison.OrdinalIgnoreCase);
 
+        private const double MaxDistanceMeters = 500.0;
+        /// <summary>Conservative latitude bounding-box pre-filter (~500 m).</summary>
+        private const double LatBBoxDegrees = 0.005;
+        private const double EarthRadius = 6371000.0;
+        /// <summary>Maximum pair count returned or counted; prevents runaway iteration on dense regions.</summary>
+        private const int MaxPairCount = 9999;
+
+        /// <summary>
+        /// Computes a conservative longitude bounding-box for the given latitude.
+        /// At higher latitudes, 1° of longitude covers fewer metres, so the pre-filter
+        /// degree threshold must be widened to avoid false negatives.
+        /// </summary>
+        private static double LonBBoxDegrees(double latDeg)
+        {
+            var cosLat = Math.Cos(latDeg * Math.PI / 180.0);
+            if (cosLat < 0.001) return 180.0; // near pole – no lon restriction
+            return MaxDistanceMeters / (EarthRadius * cosLat * Math.PI / 180.0);
+        }
+
         private static double HaversineDistance(double lat1, double lon1, double lat2, double lon2)
         {
-            const double R = 6371000.0;
             var dLat = (lat2 - lat1) * Math.PI / 180.0;
             var dLon = (lon2 - lon1) * Math.PI / 180.0;
             var a = Math.Sin(dLat / 2) * Math.Sin(dLat / 2)
                   + Math.Cos(lat1 * Math.PI / 180.0) * Math.Cos(lat2 * Math.PI / 180.0)
                   * Math.Sin(dLon / 2) * Math.Sin(dLon / 2);
-            var c = 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
-            return R * c;
+            return EarthRadius * 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
         }
 
-        // 500 m ≈ 0.0045° latitude; bounding-box pre-filter uses a slightly larger value
-        private const double MaxDistanceMeters = 500.0;
-        private const double BBoxDegrees = 0.007;
-
         /// <summary>
-        /// Counts nearby pairs (within MaxDistanceMeters) that are not in the ignore set.
+        /// Counts nearby pairs (within MaxDistanceMeters, inclusive) that are not in the ignore set.
         /// The stations list must be pre-sorted by latitude.
+        /// Uses a per-station longitude bounding box to avoid false negatives at high latitudes.
         /// </summary>
         private static int CountNearbyPairs(
             IList<(int Id, double Lat, double Lon)> sortedStations,
@@ -56,21 +70,27 @@ namespace OV_DB.Controllers
             int count = 0;
             for (int i = 0; i < sortedStations.Count; i++)
             {
+                if (count >= MaxPairCount) break;
+                var latI = sortedStations[i].Lat;
+                var lonBBox = LonBBoxDegrees(latI);
                 for (int j = i + 1; j < sortedStations.Count; j++)
                 {
-                    if (sortedStations[j].Lat - sortedStations[i].Lat > BBoxDegrees) break;
-                    if (Math.Abs(sortedStations[i].Lon - sortedStations[j].Lon) > BBoxDegrees) continue;
+                    if (sortedStations[j].Lat - latI > LatBBoxDegrees) break;
+                    if (Math.Abs(sortedStations[i].Lon - sortedStations[j].Lon) > lonBBox) continue;
 
                     var dist = HaversineDistance(
-                        sortedStations[i].Lat, sortedStations[i].Lon,
+                        latI, sortedStations[i].Lon,
                         sortedStations[j].Lat, sortedStations[j].Lon);
 
-                    if (dist < MaxDistanceMeters)
+                    if (dist <= MaxDistanceMeters)
                     {
                         var id1 = Math.Min(sortedStations[i].Id, sortedStations[j].Id);
                         var id2 = Math.Max(sortedStations[i].Id, sortedStations[j].Id);
                         if (!ignoredSet.Contains((id1, id2)))
+                        {
                             count++;
+                            if (count >= MaxPairCount) break;
+                        }
                     }
                 }
             }
@@ -104,7 +124,6 @@ namespace OV_DB.Controllers
         {
             if (!IsAdmin()) return Forbid();
 
-            // All non-hidden stations with each of their regions
             var stationsWithRegions = await DbContext.Stations
                 .AsNoTracking()
                 .Where(s => !s.Hidden)
@@ -114,7 +133,6 @@ namespace OV_DB.Controllers
             if (!stationsWithRegions.Any())
                 return Ok(new List<StationMergeCountryDTO>());
 
-            // Group stations by region
             var stationsByRegion = stationsWithRegions
                 .GroupBy(x => x.RegionId)
                 .ToDictionary(
@@ -124,18 +142,18 @@ namespace OV_DB.Controllers
                           .OrderBy(x => x.Lattitude)
                           .ToList());
 
-            // Load all ignore pairs for these stations
             var allStationIds = stationsWithRegions.Select(x => x.Id).ToHashSet();
+
+            // Query ignore pairs where either station is in the region, and normalize ordering
             var allIgnoredPairs = await DbContext.StationMergeIgnores
                 .AsNoTracking()
-                .Where(i => allStationIds.Contains(i.Station1Id))
+                .Where(i => allStationIds.Contains(i.Station1Id) || allStationIds.Contains(i.Station2Id))
                 .Select(i => new { i.Station1Id, i.Station2Id })
                 .ToListAsync();
 
             var ignoredSet = new HashSet<(int, int)>(
-                allIgnoredPairs.Select(i => (i.Station1Id, i.Station2Id)));
+                allIgnoredPairs.Select(i => (Math.Min(i.Station1Id, i.Station2Id), Math.Max(i.Station1Id, i.Station2Id))));
 
-            // Load all regions to build hierarchy
             var allRegions = await DbContext.Regions
                 .AsNoTracking()
                 .Select(r => new { r.Id, r.Name, r.ParentRegionId })
@@ -145,37 +163,86 @@ namespace OV_DB.Controllers
                 r => r.Id,
                 r => (r.Name, ParentId: r.ParentRegionId));
 
-            var regionIds = stationsByRegion.Keys.ToHashSet();
-
-            var result = regionIds
+            var result = stationsByRegion.Keys
                 .Select(rId =>
                 {
                     var stations = stationsByRegion[rId];
-                    var name = BuildRegionName(rId, regionDict);
                     return new StationMergeCountryDTO
                     {
                         RegionId = rId,
-                        RegionName = name,
+                        RegionName = BuildRegionName(rId, regionDict),
                         PairCount = CountNearbyPairs(stations, ignoredSet)
                     };
                 })
-                .Where(r => r.PairCount > 0 || stationsByRegion.ContainsKey(r.RegionId))
                 .OrderBy(r => r.RegionName)
                 .ToList();
 
             return Ok(result);
         }
 
+        // Typed station data used for in-memory pair generation
+        private sealed record StationData(int Id, string Name, double Lat, double Lon, bool Special, int Visits);
+
+        /// <summary>
+        /// Lazily enumerates pairs of nearby stations (within MaxDistanceMeters, inclusive)
+        /// that are not in the ignore set. Stations must be pre-sorted by latitude.
+        /// Uses a per-station latitude-based longitude bounding box to prevent false negatives
+        /// at high latitudes.
+        /// </summary>
+        private static IEnumerable<StationNearbyPairDTO> EnumeratePairs(
+            IList<StationData> stations,
+            HashSet<(int, int)> ignoredSet)
+        {
+            for (int i = 0; i < stations.Count; i++)
+            {
+                var latI = stations[i].Lat;
+                var lonBBox = LonBBoxDegrees(latI);
+                for (int j = i + 1; j < stations.Count; j++)
+                {
+                    if (stations[j].Lat - latI > LatBBoxDegrees) break;
+                    if (Math.Abs(stations[i].Lon - stations[j].Lon) > lonBBox) continue;
+
+                    var dist = HaversineDistance(latI, stations[i].Lon, stations[j].Lat, stations[j].Lon);
+                    if (dist > MaxDistanceMeters) continue;
+
+                    var id1 = Math.Min(stations[i].Id, stations[j].Id);
+                    var id2 = Math.Max(stations[i].Id, stations[j].Id);
+                    if (ignoredSet.Contains((id1, id2))) continue;
+
+                    yield return new StationNearbyPairDTO
+                    {
+                        Station1Id = stations[i].Id,
+                        Station1Name = stations[i].Name,
+                        Station1Lattitude = stations[i].Lat,
+                        Station1Longitude = stations[i].Lon,
+                        Station1Visits = stations[i].Visits,
+                        Station1Special = stations[i].Special,
+                        Station2Id = stations[j].Id,
+                        Station2Name = stations[j].Name,
+                        Station2Lattitude = stations[j].Lat,
+                        Station2Longitude = stations[j].Lon,
+                        Station2Visits = stations[j].Visits,
+                        Station2Special = stations[j].Special,
+                        DistanceMeters = Math.Round(dist, 1)
+                    };
+                }
+            }
+        }
+
         /// <summary>
         /// Returns paginated pairs of nearby stations (within 500 m) for a given region
         /// that have not yet been reviewed (not in the ignore list).
+        /// Total is capped at MaxPairCount to prevent runaway counting on dense regions.
         /// </summary>
         [HttpGet("pairs/{regionId:int}")]
         public async Task<IActionResult> GetPairs(int regionId, [FromQuery] int page = 0, [FromQuery] int pageSize = 10)
         {
             if (!IsAdmin()) return Forbid();
 
-            var stations = await DbContext.Stations
+            if (page < 0 || pageSize < 1 || pageSize > 100)
+                return BadRequest("page must be >= 0 and pageSize must be between 1 and 100.");
+
+            var stationsRaw = await DbContext.Stations
                 .AsNoTracking()
                 .Where(s => !s.Hidden && s.Regions.Any(r => r.Id == regionId))
                 .Select(s => new
@@ -187,61 +254,38 @@ namespace OV_DB.Controllers
                     s.Special,
                     Visits = s.StationVisits.Count()
                 })
+                .OrderBy(s => s.Lattitude)
                 .ToListAsync();
 
-            var stationIds = stations.Select(s => s.Id).ToHashSet();
+            var stationIds = stationsRaw.Select(s => s.Id).ToHashSet();
 
+            // Query ignore pairs where either station belongs to this region, normalize ordering
             var ignoredPairs = await DbContext.StationMergeIgnores
                 .AsNoTracking()
-                .Where(i => stationIds.Contains(i.Station1Id))
+                .Where(i => stationIds.Contains(i.Station1Id) || stationIds.Contains(i.Station2Id))
                 .Select(i => new { i.Station1Id, i.Station2Id })
                 .ToListAsync();
 
             var ignoredSet = new HashSet<(int, int)>(
-                ignoredPairs.Select(i => (i.Station1Id, i.Station2Id)));
+                ignoredPairs.Select(i => (Math.Min(i.Station1Id, i.Station2Id), Math.Max(i.Station1Id, i.Station2Id))));
 
-            stations.Sort((a, b) => a.Lattitude.CompareTo(b.Lattitude));
+            var stationList = stationsRaw
+                .Select(s => new StationData(s.Id, s.Name, s.Lattitude, s.Longitude, s.Special, s.Visits))
+                .ToList();
 
-            var pairs = new List<StationNearbyPairDTO>();
-            for (int i = 0; i < stations.Count; i++)
+            // Enumerate pairs lazily: collect the requested page; count up to MaxPairCount without
+            // building a full DTO list for non-paged items.
+            int skip = page * pageSize;
+            int total = 0;
+            var paged = new List<StationNearbyPairDTO>(pageSize);
+
+            foreach (var pair in EnumeratePairs(stationList, ignoredSet))
             {
-                for (int j = i + 1; j < stations.Count; j++)
-                {
-                    if (stations[j].Lattitude - stations[i].Lattitude > BBoxDegrees) break;
-                    if (Math.Abs(stations[i].Longitude - stations[j].Longitude) > BBoxDegrees) continue;
-
-                    var dist = HaversineDistance(
-                        stations[i].Lattitude, stations[i].Longitude,
-                        stations[j].Lattitude, stations[j].Longitude);
-
-                    if (dist >= MaxDistanceMeters) continue;
-
-                    var id1 = Math.Min(stations[i].Id, stations[j].Id);
-                    var id2 = Math.Max(stations[i].Id, stations[j].Id);
-
-                    if (ignoredSet.Contains((id1, id2))) continue;
-
-                    pairs.Add(new StationNearbyPairDTO
-                    {
-                        Station1Id = stations[i].Id,
-                        Station1Name = stations[i].Name,
-                        Station1Lattitude = stations[i].Lattitude,
-                        Station1Longitude = stations[i].Longitude,
-                        Station1Visits = stations[i].Visits,
-                        Station1Special = stations[i].Special,
-                        Station2Id = stations[j].Id,
-                        Station2Name = stations[j].Name,
-                        Station2Lattitude = stations[j].Lattitude,
-                        Station2Longitude = stations[j].Longitude,
-                        Station2Visits = stations[j].Visits,
-                        Station2Special = stations[j].Special,
-                        DistanceMeters = Math.Round(dist, 1)
-                    });
-                }
+                if (total >= skip && paged.Count < pageSize)
+                    paged.Add(pair);
+                total++;
+                if (total >= MaxPairCount) break;
             }
-
-            var total = pairs.Count;
-            var paged = pairs.Skip(page * pageSize).Take(pageSize).ToList();
 
             return Ok(new { total, pairs = paged });
         }
@@ -296,6 +340,7 @@ namespace OV_DB.Controllers
 
         /// <summary>
         /// Marks a pair as "keep both" – the pair will no longer appear in the merge queue.
+        /// Station1Id is always stored as min(id1, id2) to enforce canonical ordering.
         /// </summary>
         [HttpPost("skip")]
         public async Task<IActionResult> SkipPair([FromBody] StationMergeSkipDTO request)

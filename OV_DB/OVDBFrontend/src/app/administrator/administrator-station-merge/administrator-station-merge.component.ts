@@ -22,6 +22,13 @@ import { divIcon, LatLng, LatLngBounds, Layer, marker, tileLayer } from "leaflet
 import { StationMergeCountry, StationNearbyPair } from "src/app/models/stationMerge.model";
 import { ApiService } from "src/app/services/api.service";
 
+/** Returns an HTMLElement whose textContent is set, so Leaflet treats it as safe plain text. */
+function safeTooltipContent(text: string): HTMLElement {
+  const el = document.createElement("span");
+  el.textContent = text;
+  return el;
+}
+
 @Component({
   selector: "app-administrator-station-merge",
   templateUrl: "./administrator-station-merge.component.html",
@@ -47,7 +54,7 @@ export class AdministratorStationMergeComponent implements OnInit {
   private apiService = inject(ApiService);
   private destroyRef = inject(DestroyRef);
 
-  countries = signal<StationMergeCountry[]>([]);
+  regions = signal<StationMergeCountry[]>([]);
   selectedRegionId = signal<number | null>(null);
   currentPair = signal<StationNearbyPair | null>(null);
   totalPairs = signal<number>(0);
@@ -75,7 +82,11 @@ export class AdministratorStationMergeComponent implements OnInit {
         iconSize: [28, 28],
         iconAnchor: [14, 14],
       }),
-    }).bindTooltip(pair.station1Name || "(unnamed)", { permanent: true, direction: "top", offset: [0, -14] });
+    }).bindTooltip(safeTooltipContent(pair.station1Name || "(unnamed)"), {
+      permanent: true,
+      direction: "top",
+      offset: [0, -14],
+    });
 
     const markerR = marker(new LatLng(pair.station2Lattitude, pair.station2Longitude), {
       icon: divIcon({
@@ -84,7 +95,11 @@ export class AdministratorStationMergeComponent implements OnInit {
         iconSize: [28, 28],
         iconAnchor: [14, 14],
       }),
-    }).bindTooltip(pair.station2Name || "(unnamed)", { permanent: true, direction: "top", offset: [0, -14] });
+    }).bindTooltip(safeTooltipContent(pair.station2Name || "(unnamed)"), {
+      permanent: true,
+      direction: "top",
+      offset: [0, -14],
+    });
 
     return [markerL, markerR];
   });
@@ -110,7 +125,7 @@ export class AdministratorStationMergeComponent implements OnInit {
       .getStationMergeCountries()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((data) => {
-        this.countries.set(data);
+        this.regions.set(data);
       });
   }
 
@@ -182,7 +197,7 @@ export class AdministratorStationMergeComponent implements OnInit {
           }
         },
         error: () => {
-          // reload pair to reset any optimistic state
+          // Reload pair to reset any optimistic state on failure
           this.loadCurrentPair();
         },
       });
