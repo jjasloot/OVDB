@@ -168,21 +168,33 @@ namespace OV_DB.Controllers
                 r => r.Id,
                 r => (r.Name, ParentId: r.ParentRegionId));
 
-            var result = stationsByRegion.Keys
+            var result = stationsByRegion
+                .Keys
                 .Select(rId =>
                 {
                     var stations = stationsByRegion[rId];
-                    return new StationMergeCountryDTO
+                    return new
                     {
                         RegionId = rId,
                         RegionName = BuildRegionName(rId, regionDict),
-                        PairCount = CountNearbyPairs(stations, ignoredSet)
+                        PairCount = CountNearbyPairs(stations, ignoredSet),
+                        ParentRegionId = regionDict[rId].ParentId
                     };
                 })
-                .OrderBy(r => r.RegionName)
                 .ToList();
 
-            return Ok(result);
+
+            result = result.Where(r => !r.ParentRegionId.HasValue || result.Find(res => res.RegionId == r.ParentRegionId.Value)!.PairCount > 0).ToList();
+
+
+            return Ok(result
+                    .Select(r => new StationMergeCountryDTO
+                    {
+                        RegionId = r.RegionId,
+                        RegionName = r.RegionName,
+                        PairCount = r.PairCount
+                    }).OrderBy(r => r.RegionName).ToList()
+                );
         }
 
         // Typed station data used for in-memory pair generation
