@@ -29,6 +29,19 @@ namespace OV_DB.Controllers
                 "true",
                 StringComparison.OrdinalIgnoreCase);
 
+        /// <summary>
+        /// Returns true when a <see cref="DbUpdateException"/> was caused by a unique-constraint
+        /// violation (e.g. MySQL error 1062 "Duplicate entry", SQLite "UNIQUE constraint failed").
+        /// Other database errors (connection loss, timeout, etc.) are NOT matched and will
+        /// continue to propagate.
+        /// </summary>
+        private static bool IsUniqueConstraintViolation(DbUpdateException ex)
+        {
+            var msg = ex.InnerException?.Message ?? ex.Message;
+            return msg.Contains("duplicate", StringComparison.OrdinalIgnoreCase)
+                || msg.Contains("UNIQUE constraint failed", StringComparison.OrdinalIgnoreCase);
+        }
+
         private const double MaxDistanceMeters = 500.0;
         /// <summary>Conservative latitude bounding-box pre-filter (~500 m).</summary>
         private const double LatBBoxDegrees = 0.005;
@@ -361,7 +374,7 @@ namespace OV_DB.Controllers
             {
                 await DbContext.SaveChangesAsync();
             }
-            catch (DbUpdateException)
+            catch (DbUpdateException ex) when (IsUniqueConstraintViolation(ex))
             {
                 // Duplicate ignore entry created by a concurrent request – that's fine; the merge
                 // itself (Hidden flag + visit reassignments) was still applied correctly.
@@ -390,7 +403,7 @@ namespace OV_DB.Controllers
             {
                 await DbContext.SaveChangesAsync();
             }
-            catch (DbUpdateException)
+            catch (DbUpdateException ex) when (IsUniqueConstraintViolation(ex))
             {
                 // Pair was already skipped/merged by a concurrent request – that's fine.
             }
