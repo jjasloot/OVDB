@@ -136,7 +136,7 @@ namespace OV_DB.Controllers
                 .ToListAsync();
 
             if (!stationsWithRegions.Any())
-                return Ok(new List<StationMergeCountryDTO>());
+                return Ok(new List<StationMergeRegionDTO>());
 
             var stationsByRegion = stationsWithRegions
                 .GroupBy(x => x.RegionId)
@@ -188,7 +188,7 @@ namespace OV_DB.Controllers
 
 
             return Ok(result
-                    .Select(r => new StationMergeCountryDTO
+                    .Select(r => new StationMergeRegionDTO
                     {
                         RegionId = r.RegionId,
                         RegionName = r.RegionName,
@@ -352,14 +352,21 @@ namespace OV_DB.Controllers
 
             var id1 = Math.Min(request.KeepStationId, request.DeleteStationId);
             var id2 = Math.Max(request.KeepStationId, request.DeleteStationId);
-            var alreadyIgnored = await DbContext.StationMergeIgnores
-                .AnyAsync(i => i.Station1Id == id1 && i.Station2Id == id2);
-            if (!alreadyIgnored)
+
+            // Always add the ignore entry; if a concurrent request already inserted the same pair,
+            // catch the resulting duplicate-key DbUpdateException and treat it as success.
+            DbContext.StationMergeIgnores.Add(new StationMergeIgnore { Station1Id = id1, Station2Id = id2 });
+
+            try
             {
-                DbContext.StationMergeIgnores.Add(new StationMergeIgnore { Station1Id = id1, Station2Id = id2 });
+                await DbContext.SaveChangesAsync();
+            }
+            catch (DbUpdateException)
+            {
+                // Duplicate ignore entry created by a concurrent request – that's fine; the merge
+                // itself (Hidden flag + visit reassignments) was still applied correctly.
             }
 
-            await DbContext.SaveChangesAsync();
             return Ok(new { message = "Stations merged successfully." });
         }
 
@@ -375,13 +382,17 @@ namespace OV_DB.Controllers
             var id1 = Math.Min(request.Station1Id, request.Station2Id);
             var id2 = Math.Max(request.Station1Id, request.Station2Id);
 
-            var alreadyIgnored = await DbContext.StationMergeIgnores
-                .AnyAsync(i => i.Station1Id == id1 && i.Station2Id == id2);
+            // Always attempt the insert; if a concurrent request beat us to it, treat the
+            // resulting duplicate-key DbUpdateException as success (idempotent).
+            DbContext.StationMergeIgnores.Add(new StationMergeIgnore { Station1Id = id1, Station2Id = id2 });
 
-            if (!alreadyIgnored)
+            try
             {
-                DbContext.StationMergeIgnores.Add(new StationMergeIgnore { Station1Id = id1, Station2Id = id2 });
                 await DbContext.SaveChangesAsync();
+            }
+            catch (DbUpdateException)
+            {
+                // Pair was already skipped/merged by a concurrent request – that's fine.
             }
 
             return Ok(new { message = "Pair skipped." });

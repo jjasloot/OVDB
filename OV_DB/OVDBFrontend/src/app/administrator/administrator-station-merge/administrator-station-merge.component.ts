@@ -19,7 +19,7 @@ import { MatSelect } from "@angular/material/select";
 import { MatTooltip } from "@angular/material/tooltip";
 import { LeafletModule } from "@bluehalo/ngx-leaflet";
 import { divIcon, LatLng, LatLngBounds, Layer, marker, tileLayer } from "leaflet";
-import { StationMergeCountry, StationNearbyPair } from "src/app/models/stationMerge.model";
+import { StationMergeRegion, StationNearbyPair } from "src/app/models/stationMerge.model";
 import { ApiService } from "src/app/services/api.service";
 
 /** Returns an HTMLElement whose textContent is set, so Leaflet treats it as safe plain text. */
@@ -54,7 +54,7 @@ export class AdministratorStationMergeComponent implements OnInit {
   private apiService = inject(ApiService);
   private destroyRef = inject(DestroyRef);
 
-  regions = signal<StationMergeCountry[]>([]);
+  regions = signal<StationMergeRegion[]>([]);
   selectedRegionId = signal<number | null>(null);
   currentPair = signal<StationNearbyPair | null>(null);
   totalPairs = signal<number>(0);

@@ -33,7 +33,7 @@ import {
   LinkToRouteInstanceResponse,
   TrawellingIgnoreResponse
 } from "../models/traewelling.model";
-import { StationMergeCountry, StationMergePairsResponse } from "../models/stationMerge.model";
+import { StationMergeRegion, StationMergePairsResponse } from "../models/stationMerge.model";
 
 @Injectable({
   providedIn: "root",
@@ -671,8 +671,8 @@ export class ApiService {
     );
   }
 
-  getStationMergeCountries(): Observable<StationMergeCountry[]> {
-    return this.httpClient.get<StationMergeCountry[]>(
+  getStationMergeCountries(): Observable<StationMergeRegion[]> {
+    return this.httpClient.get<StationMergeRegion[]>(
       environment.backend + "api/stationMerge/regions"
     );
   }

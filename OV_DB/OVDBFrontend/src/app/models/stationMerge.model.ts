@@ -14,7 +14,7 @@ export interface StationNearbyPair {
   distanceMeters: number;
 }
 
-export interface StationMergeCountry {
+export interface StationMergeRegion {
   regionId: number;
   regionName: string;
   pairCount: number;
