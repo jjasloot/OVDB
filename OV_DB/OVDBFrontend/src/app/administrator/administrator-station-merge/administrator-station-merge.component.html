@@ -115,6 +115,19 @@
             <mat-icon>swap_horiz</mat-icon>
             <span>{{ currentPair().distanceMeters | number:'1.0-0' }}&nbsp;m</span>
           </div>
+          @if (stationsMapQueryParams()) {
+            <a
+              mat-stroked-button
+              [routerLink]="['/administrator/stations']"
+              [queryParams]="stationsMapQueryParams()"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="stations-map-link"
+              matTooltip="Open admin stations map centred on this pair"
+            >
+              <mat-icon>open_in_new</mat-icon> Stations map
+            </a>
+          }
           <button
             mat-stroked-button
             [disabled]="actionInProgress()"

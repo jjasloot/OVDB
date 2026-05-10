@@ -6,6 +6,7 @@ import {
   input,
   signal
 } from "@angular/core";
+import { ActivatedRoute } from "@angular/router";
 import { MatCheckboxChange, MatCheckbox } from "@angular/material/checkbox";
 import { LatLngBounds, LatLng, divIcon, circleMarker } from "leaflet";
 import { tileLayer } from "leaflet";
@@ -59,6 +60,7 @@ import { createMarkerClusterGroup } from "src/app/leaflet-markercluster-loader";
 export class AdminStationsMapComponent implements OnInit {
   private apiService = inject(ApiService);
   private cd = inject(ChangeDetectorRef);
+  private route = inject(ActivatedRoute);
 
   regionsService = inject(RegionsService);
   translationService = inject(TranslationService);
@@ -142,9 +144,20 @@ export class AdminStationsMapComponent implements OnInit {
     return Math.round((this.visited / this.total) * 1000) / 10;
   }
   ngOnInit(): void {
-    this.getData(true);
+    const lat = parseFloat(this.route.snapshot.queryParamMap.get('lat'));
+    const lon = parseFloat(this.route.snapshot.queryParamMap.get('lon'));
+    if (isFinite(lat) && isFinite(lon)) {
+      // Set initial bounds to a ~1 km box around the requested location so the
+      // map opens centred there rather than fitting all markers.
+      this.bounds = new LatLngBounds(
+        new LatLng(lat - 0.005, lon - 0.010),
+        new LatLng(lat + 0.005, lon + 0.010)
+      );
+      this.getData(false);
+    } else {
+      this.getData(true);
+    }
     this.getRegions();
-
   }
 
   getRegions() {

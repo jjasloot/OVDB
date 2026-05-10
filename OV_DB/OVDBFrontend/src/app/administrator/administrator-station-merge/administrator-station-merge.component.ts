@@ -1,3 +1,4 @@
+import { RouterLink } from "@angular/router";
 import { DecimalPipe } from "@angular/common";
 import {
   ChangeDetectionStrategy,
@@ -48,6 +49,7 @@ function safeTooltipContent(text: string): HTMLElement {
     MatTooltip,
     DecimalPipe,
     LeafletModule,
+    RouterLink,
   ],
 })
 export class AdministratorStationMergeComponent implements OnInit {
@@ -206,4 +208,14 @@ export class AdministratorStationMergeComponent implements OnInit {
   openInOsm(lat: number, lon: number): string {
     return `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lon}&zoom=18`;
   }
+
+  /** Query params for the admin stations map link, centred on the midpoint of the current pair. */
+  readonly stationsMapQueryParams = computed(() => {
+    const pair = this.currentPair();
+    if (!pair) return null;
+    return {
+      lat: ((pair.station1Lattitude + pair.station2Lattitude) / 2).toFixed(6),
+      lon: ((pair.station1Longitude + pair.station2Longitude) / 2).toFixed(6),
+    };
+  });
 }
