@@ -238,3 +238,32 @@ body {
   -ms-user-select: none;
   user-select: none;
 }
+
+// Station merge map markers (rendered by Leaflet outside Angular's scope)
+.smerge-icon {
+  background: transparent !important;
+  border: none !important;
+}
+
+.smerge-marker-l,
+.smerge-marker-r {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  color: white;
+  font-weight: 700;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.smerge-marker-l {
+  background: #1565c0;
+  border: 2px solid #0d47a1;
+}
+
+.smerge-marker-r {
+  background: #c62828;
+  border: 2px solid #b71c1c;
+}

@@ -61,6 +61,7 @@ export const routes: Routes = [
           { path: "regions", loadComponent: () => import("./administrator/administrator-regions/administrator-regions.component").then(m => m.AdministratorRegionsComponent) },
           { path: "requests", loadComponent: () => import("./administrator/administrator-requests/administrator-requests.component").then(m => m.AdministratorRequestsComponent) },
           { path: "operators", loadComponent: () => import("./administrator/administrator-operators/administrator-operators.component").then(m => m.AdministratorOperatorsComponent) },
+          { path: "station-merge", loadComponent: () => import("./administrator/administrator-station-merge/administrator-station-merge.component").then(m => m.AdministratorStationMergeComponent) },
         ],
       },
       { path: "requests", loadComponent: () => import("./requests/requests-list/requests-list.component").then(m => m.RequestsListComponent), canActivate: [LoginGuard] },

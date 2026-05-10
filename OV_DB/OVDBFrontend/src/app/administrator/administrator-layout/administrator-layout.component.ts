@@ -56,6 +56,11 @@ export class AdministratorLayoutComponent implements OnInit {
         link: "/administrator/operators",
         index: 5,
       },
+      {
+        label: "Merge Stations",
+        link: "/administrator/station-merge",
+        index: 6,
+      },
     ];
   }
   ngOnInit(): void {
