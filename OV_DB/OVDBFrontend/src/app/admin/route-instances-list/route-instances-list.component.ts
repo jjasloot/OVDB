@@ -282,7 +282,7 @@ export class RouteInstancesListComponent implements OnInit, AfterViewInit {
     return element.arrivalDelayMinutes ?? null;
   }
 
-  formatDelay(minutes: number | null): string {
+  formatDelay(minutes: number | null): string | null {
     if (minutes === null) return null;
     const rounded = Math.round(minutes);
     if (rounded === 0) return '+0 min';

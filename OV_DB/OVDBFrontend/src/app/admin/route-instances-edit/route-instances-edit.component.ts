@@ -268,7 +268,7 @@ export class RouteInstancesEditComponent implements OnInit {
         this.instance.routeInstanceProperties.slice(0, this.instance.routeInstanceProperties.length - 1);
     }
     this.instance.routeInstanceMaps = this.selectedMaps().map(s => { return { mapId: s } });
-    if (this.instance.date['_isAMomentObject']) {
+    if (this.instance.date && (this.instance.date as any)['_isAMomentObject']) {
       this.instance.date = (this.instance.date as unknown as Moment).format('YYYY-MM-DD');
     }
     if(!this.enterScheduledTimes()){
@@ -286,7 +286,7 @@ export class RouteInstancesEditComponent implements OnInit {
   }
   addRow() {
     this.instance.routeInstanceProperties.push({} as RouteInstanceProperty);
-    this.table().renderRows();
+    this.table()?.renderRows();
   }
 
   get canAddNewRow() {
@@ -295,7 +295,7 @@ export class RouteInstancesEditComponent implements OnInit {
 
   removeRow(index: number) {
     this.instance.routeInstanceProperties.splice(index, 1);
-    this.table().renderRows();
+    this.table()?.renderRows();
   }
 
   rowIsEmpty(prop: RouteInstanceProperty) {

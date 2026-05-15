@@ -58,7 +58,7 @@ namespace OV_DB.Controllers
                 {
                     return Forbid();
                 }
-                var adminClaim = (User.Claims.SingleOrDefault(c => c.Type == "admin").Value ?? "false");
+                var adminClaim = (User.Claims.SingleOrDefault(c => c.Type == "admin")?.Value ?? "false");
 
                 if ((userIdClaim < 0 || map.UserId != userIdClaim) && !string.Equals(adminClaim, "true", StringComparison.OrdinalIgnoreCase))
                 {

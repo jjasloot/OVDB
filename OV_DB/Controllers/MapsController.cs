@@ -26,7 +26,7 @@ namespace OV_DB.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Map>>> GetMaps()
         {
-            var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value ?? "-1");
+            var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value ?? "-1");
             if (userIdClaim < 0)
             {
                 return Forbid();
@@ -42,7 +42,7 @@ namespace OV_DB.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<Map>> GetMap(int id)
         {
-            var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value ?? "-1");
+            var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value ?? "-1");
             if (userIdClaim < 0)
             {
                 return Forbid();
@@ -63,12 +63,17 @@ namespace OV_DB.Controllers
         [HttpPut]
         public async Task<IActionResult> PutMap(Map map)
         {
-            var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value ?? "-1");
+            var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value ?? "-1");
             if (userIdClaim < 0)
             {
                 return Forbid();
             }
             var dbMap = await _context.Maps.Where(m => m.UserId == userIdClaim).SingleOrDefaultAsync(m => m.MapId == map.MapId);
+
+            if (dbMap == null)
+            {
+                return NotFound();
+            }
 
             dbMap.SharingLinkName = map.SharingLinkName;
             dbMap.Name = map.Name;
@@ -109,7 +114,7 @@ namespace OV_DB.Controllers
         [HttpPost]
         public async Task<ActionResult<Map>> PostMap(Map map)
         {
-            var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value ?? "-1");
+            var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value ?? "-1");
             if (userIdClaim < 0)
             {
                 return Forbid();
@@ -132,7 +137,7 @@ namespace OV_DB.Controllers
         [HttpDelete("{id}")]
         public async Task<ActionResult<Map>> DeleteMap(int id)
         {
-            var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value ?? "-1");
+            var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value ?? "-1");
             if (userIdClaim < 0)
             {
                 return Forbid();
@@ -153,7 +158,7 @@ namespace OV_DB.Controllers
         [HttpPost("order")]
         public async Task<ActionResult> UpdateMapsOrdering([FromBody] List<int> mapOrdering)
         {
-            var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value ?? "-1");
+            var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value ?? "-1");
             if (userIdClaim < 0)
             {
                 return Forbid();

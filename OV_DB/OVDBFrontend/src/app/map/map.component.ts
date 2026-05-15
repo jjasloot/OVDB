@@ -1,4 +1,5 @@
-import { Component, OnInit, AfterViewInit, ChangeDetectorRef, NgZone, EventEmitter, OnDestroy, input, viewChild, signal, inject } from "@angular/core";
+import { Component, OnInit, AfterViewInit, ChangeDetectorRef, NgZone, EventEmitter, OnDestroy, DestroyRef, input, viewChild, signal, inject } from "@angular/core";
+import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import moment from "moment";
 import { tileLayer } from "leaflet";
 import { ApiService } from "../services/api.service";
@@ -60,6 +61,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
   private activatedRoute = inject(ActivatedRoute);
   private signalRService = inject(SignalRService);
   private cd = inject(ChangeDetectorRef);
+  private destroyRef = inject(DestroyRef);
 
   readonly guid = input<string>(undefined);
   readonly mapContainer = viewChild<HTMLElement>("mapContainer");
@@ -84,7 +86,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     if (!!value && value.isValid()) {
       this._bounds = value;
     } else {
-      this.bounds = new LatLngBounds(
+      this._bounds = new LatLngBounds(
         new LatLng(50.656245, 2.92136),
         new LatLng(53.604563, 7.428211)
       );
@@ -216,18 +218,20 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
       });
 
     this.readFromQueryParams();
-    this.translationService.languageChanged.subscribe(() =>
-      this.getRoutes$.next(this.getFilter())
-    );
+    this.translationService.languageChanged
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.getRoutes$.next(this.getFilter()));
     this.signalRService.connect();
-    this.signalRService.updates$.subscribe({
-      next: (data) => {
-        if (data.requestIdentifier === this.requestIdentifier) {
-          this.loading.set(data.percentage);
-          this.cd.detectChanges();
-        }
-      },
-    });
+    this.signalRService.updates$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (data) => {
+          if (data.requestIdentifier === this.requestIdentifier) {
+            this.loading.set(data.percentage);
+            this.cd.detectChanges();
+          }
+        },
+      });
   }
 
   ngOnDestroy() {
@@ -243,7 +247,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     if (queryParams.has("from")) {
       this.from = moment(+queryParams.get("from"));
     }
-    if (queryParams.has("from")) {
+    if (queryParams.has("to")) {
       this.to = moment(+queryParams.get("to"));
     }
     if (queryParams.has("types")) {
@@ -427,7 +431,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     this.loading.set(true);
     let filter = "";
     if (!!this.to && !!this.from) {
-      filter += filter +=
+      filter +=
         "(Date ge " +
         this.from.format("YYYY-MM-DD") +
         " and Date lt " +
@@ -566,7 +570,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     this.defaults.forEach((value, key) => {
       if (
         (value.from?.isSame(from) ?? (value.from == null && from == null)) &&
-        (value.to?.isSame(to) ?? (value.to == null && from == null)) &&
+        (value.to?.isSame(to) ?? (value.to == null && to == null)) &&
         value.selectedYears.every((y) => (years??[]).includes(y)) &&
         (years??[]).every((y) => value.selectedYears.includes(y))
       ) {

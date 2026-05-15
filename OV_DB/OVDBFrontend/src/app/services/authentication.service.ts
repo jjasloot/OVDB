@@ -153,11 +153,15 @@ export class AuthenticationService {
   }
 
   get email() {
-    return this.helper.decodeToken(this.token)['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress'];
+    if (!this.token) return null;
+    return this.helper.decodeToken(this.token)?.['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress'] ?? null;
   }
 
   get admin() {
-    return this.helper.decodeToken(this.token).admin === 'true';
+    if (!this.token) return false;
+    const decoded = this.helper.decodeToken(this.token);
+    if (!decoded) return false;
+    return decoded.admin === 'true' || decoded.admin === true;
   }
 
   getActiveSessions() {

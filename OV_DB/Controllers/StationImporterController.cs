@@ -22,7 +22,7 @@ namespace OV_DB.Controllers
         [HttpPost("region/{regionId}")]
         public async Task<IActionResult> UpdateRegionAsync(int regionId)
         {
-            var adminClaim = (User.Claims.SingleOrDefault(c => c.Type == "admin").Value ?? "false");
+            var adminClaim = (User.Claims.SingleOrDefault(c => c.Type == "admin")?.Value ?? "false");
             if (string.Equals(adminClaim, "false", StringComparison.OrdinalIgnoreCase))
             {
                 return Forbid();
@@ -38,7 +38,7 @@ namespace OV_DB.Controllers
         [HttpPost("{stationId}")]
         public async Task<IActionResult> CreateStation(string stationId)
         {
-            var adminClaim = (User.Claims.SingleOrDefault(c => c.Type == "admin").Value ?? "false");
+            var adminClaim = (User.Claims.SingleOrDefault(c => c.Type == "admin")?.Value ?? "false");
             if (string.Equals(adminClaim, "false", StringComparison.OrdinalIgnoreCase))
             {
                 return Forbid();

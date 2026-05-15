@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, DestroyRef, OnInit, inject } from '@angular/core';
 import { ApiService } from 'src/app/services/api.service';
 import { Router } from '@angular/router';
 import { Country } from 'src/app/models/country.model';
@@ -12,6 +12,7 @@ import { MatProgressSpinner } from '@angular/material/progress-spinner';
 import { MatList, MatListItem } from '@angular/material/list';
 import { MatButton, MatIconButton, MatFabButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
     selector: 'app-countries',
@@ -26,25 +27,29 @@ export class CountriesComponent implements OnInit {
   private translateService = inject(TranslateService);
   private translationService = inject(TranslationService);
   private dataUpdateService = inject(DataUpdateService);
+  private destroyRef = inject(DestroyRef);
 
-  data: Country[];
+  data: Country[] = [];
   loading = false;
 
   ngOnInit() {
     this.loadData();
-    this.translationService.languageChanged.subscribe(() => this.sort());
+    this.translationService.languageChanged
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.sort());
   }
 
   private loadData() {
     this.loading = true;
     this.apiService.getCountries().subscribe(data => {
-      this.data = data;
+      this.data = data ?? [];
       this.sort();
       this.loading = false;
     });
   }
 
   sort() {
+    if (!this.data) { return; }
     this.data = this.data.sort((a, b) => {
       if (this.name(a) > this.name(b)) {
         return 1;

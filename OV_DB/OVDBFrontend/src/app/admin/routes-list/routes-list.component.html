@@ -113,7 +113,7 @@
           </mat-chip-option>
         </mat-chip-listbox>
         }
-        @if (element.routeTypeColour) {
+        @if (element.routeTypeColour && element.routeType) {
         <mat-chip-listbox>
           <mat-chip-option [color]="element.routeTypeColour" [style.background]="element.routeTypeColour"
             [selectable]="false">

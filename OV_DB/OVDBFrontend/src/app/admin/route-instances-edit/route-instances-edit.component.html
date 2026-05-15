@@ -12,7 +12,7 @@
   <mat-card class="time-section">
     <mat-card-content>
       <div class="time-mode-toggle">
-        <mat-slide-toggle [(ngModel)]="useDetailedTime" (change)="onTimeModeChange()">
+        <mat-slide-toggle [ngModel]="useDetailedTime()" (ngModelChange)="useDetailedTime.set($event); onTimeModeChange()">
           {{'ROUTEINSTANCESEDIT.ADDTIMES'|translate}}
         </mat-slide-toggle>
       </div>
@@ -49,7 +49,7 @@
 
           <mat-form-field appearance="outline" class="day-offset-field">
             <mat-label>{{'ROUTEINSTANCESEDIT.DAYOFFSET'|translate}}</mat-label>
-            <mat-select [(ngModel)]="endTimeDayOffset" (selectionChange)="setEndTimeDayOffset($event.value)">
+            <mat-select [ngModel]="endTimeDayOffset()" (selectionChange)="setEndTimeDayOffset($event.value)">
               @for (offset of dayOffsetOptions(); track offset) {
                 <mat-option [value]="offset">
                   @if (offset === 0) {
@@ -65,7 +65,7 @@
 
         <!-- Delayed toggle on its own row -->
         <div class="delayed-row">
-          <mat-slide-toggle [(ngModel)]="enterScheduledTimes" (change)="onScheduledTimesChange()">
+          <mat-slide-toggle [ngModel]="enterScheduledTimes()" (ngModelChange)="enterScheduledTimes.set($event); onScheduledTimesChange()">
             {{'ROUTEINSTANCESEDIT.TRIP_SCHEDULED_TIMES'|translate}}
           </mat-slide-toggle>
         </div>
@@ -148,7 +148,7 @@
         {{'ROUTEINSTANCESEDIT.SELECTADDITIONALMAPS'|translate}}
       </mat-panel-title>
     </mat-expansion-panel-header>
-    <mat-selection-list [(ngModel)]="selectedMaps">
+    <mat-selection-list [ngModel]="selectedMaps()" (ngModelChange)="selectedMaps.set($event)">
       @for (map of maps(); track map) {
         <mat-list-option [value]="map.mapId">
           {{name(map)}}

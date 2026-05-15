@@ -182,11 +182,14 @@ export class RouteDetailComponent implements OnInit {
       return;
     }
     const mapsSelection = this.mapsSelection();
-    if (mapsSelection.selectedOptions.selected.length === 0) {
+    if (!mapsSelection || mapsSelection.selectedOptions.selected.length === 0) {
       return false;
     }
     const route = values as UpdateRoute;
-    route.routeId = this.route()!.routeId;
+    if (!this.route()) {
+      return;
+    }
+    route.routeId = this.route().routeId;
     route.overrideColour = this.colour();
     route.maps = mapsSelection.selectedOptions.selected.map(
       (s) => s.value
@@ -237,7 +240,7 @@ export class RouteDetailComponent implements OnInit {
   }
 
   get countriesString() {
-    if (!this.countriesSelection() || !this.countries) {
+    if (!this.countriesSelection() || !this.countries()) {
       return "";
     }
     const countries = this.countries()
@@ -259,7 +262,7 @@ export class RouteDetailComponent implements OnInit {
   }
 
   get mapsString() {
-    if (!this.mapsSelection() || !this.maps) {
+    if (!this.mapsSelection() || !this.maps()) {
       return "";
     }
     const maps = this.maps()
