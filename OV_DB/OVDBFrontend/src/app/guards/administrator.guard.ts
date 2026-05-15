@@ -14,9 +14,13 @@ export class AdministratorGuard  {
   canActivate(
     next: ActivatedRouteSnapshot,
     state: RouterStateSnapshot): Observable<boolean | UrlTree> | Promise<boolean | UrlTree> | boolean | UrlTree {
-    if (!this.authService.admin) {
+    try {
+      if (!this.authService.isLoggedIn || !this.authService.admin) {
+        return false;
+      }
+      return true;
+    } catch {
       return false;
     }
-    return true;
   }
 }

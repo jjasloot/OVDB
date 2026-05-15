@@ -28,7 +28,7 @@ export class ImageCreatorComponent implements OnInit {
   translateService = inject(TranslateService);
   private cd = inject(ChangeDetectorRef);
 
-  maps: Map[];
+  maps: Map[] = [];
   baseUrl = environment.backend + "api/images/";
   selectedGuids: string[] = [];
   imageSrc: string = environment.backend + "api/images/";
@@ -38,8 +38,13 @@ export class ImageCreatorComponent implements OnInit {
   includeTotals = false;
 
   ngOnInit(): void {
-    this.apiService.getMaps().subscribe((maps) => {
-      this.maps = maps;
+    this.apiService.getMaps().subscribe({
+      next: (maps) => {
+        this.maps = maps ?? [];
+      },
+      error: () => {
+        this.maps = [];
+      }
     });
   }
 

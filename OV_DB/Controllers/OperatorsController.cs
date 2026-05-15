@@ -35,7 +35,7 @@ public class OperatorsController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<Operator>> CreateOperator(OperatorUpdateDTO createOperator)
     {
-        var adminClaim = (User.Claims.SingleOrDefault(c => c.Type == "admin").Value ?? "false");
+        var adminClaim = (User.Claims.SingleOrDefault(c => c.Type == "admin")?.Value ?? "false");
         if (string.Equals(adminClaim, "false", StringComparison.OrdinalIgnoreCase))
         {
             return Forbid();
@@ -58,7 +58,7 @@ public class OperatorsController : ControllerBase
     [HttpGet("{id}")]
     public async Task<ActionResult<OperatorDTO>> GetOperatorById(int id)
     {
-        var adminClaim = (User.Claims.SingleOrDefault(c => c.Type == "admin").Value ?? "false");
+        var adminClaim = (User.Claims.SingleOrDefault(c => c.Type == "admin")?.Value ?? "false");
         if (string.Equals(adminClaim, "false", StringComparison.OrdinalIgnoreCase))
         {
             return Forbid();
@@ -127,7 +127,7 @@ public class OperatorsController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<List<OperatorDTO>>> GetAllOperators()
     {
-        var adminClaim = (User.Claims.SingleOrDefault(c => c.Type == "admin").Value ?? "false");
+        var adminClaim = (User.Claims.SingleOrDefault(c => c.Type == "admin")?.Value ?? "false");
         if (string.Equals(adminClaim, "false", StringComparison.OrdinalIgnoreCase))
         {
             return Forbid();
@@ -139,7 +139,7 @@ public class OperatorsController : ControllerBase
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateOperator(int id, OperatorUpdateDTO updatedOperator)
     {
-        var adminClaim = (User.Claims.SingleOrDefault(c => c.Type == "admin").Value ?? "false");
+        var adminClaim = (User.Claims.SingleOrDefault(c => c.Type == "admin")?.Value ?? "false");
         if (string.Equals(adminClaim, "false", StringComparison.OrdinalIgnoreCase))
         {
             return Forbid();
@@ -165,7 +165,7 @@ public class OperatorsController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteOperator(int id)
     {
-        var adminClaim = (User.Claims.SingleOrDefault(c => c.Type == "admin").Value ?? "false");
+        var adminClaim = (User.Claims.SingleOrDefault(c => c.Type == "admin")?.Value ?? "false");
         if (string.Equals(adminClaim, "false", StringComparison.OrdinalIgnoreCase))
         {
             return Forbid();
@@ -185,7 +185,7 @@ public class OperatorsController : ControllerBase
     [HttpPost("{id}/uploadLogo")]
     public async Task<IActionResult> Upload(IFormFile file, int id)
     {
-        var adminClaim = (User.Claims.SingleOrDefault(c => c.Type == "admin").Value ?? "false");
+        var adminClaim = (User.Claims.SingleOrDefault(c => c.Type == "admin")?.Value ?? "false");
         if (string.Equals(adminClaim, "false", StringComparison.OrdinalIgnoreCase))
         {
             return Forbid();
@@ -218,7 +218,7 @@ public class OperatorsController : ControllerBase
     [HttpPatch("{id}/connect")]
     public async Task<IActionResult> ConnectAllRoutesForThisOperator(int id)
     {
-        var adminClaim = (User.Claims.SingleOrDefault(c => c.Type == "admin").Value ?? "false");
+        var adminClaim = (User.Claims.SingleOrDefault(c => c.Type == "admin")?.Value ?? "false");
         if (string.Equals(adminClaim, "false", StringComparison.OrdinalIgnoreCase))
         {
             return Forbid();
@@ -258,7 +258,7 @@ public class OperatorsController : ControllerBase
     [HttpGet("openOperators/{regionId}")]
     public async Task<ActionResult<IEnumerable<string>>> GetUnclaimedOperators(int regionId)
     {
-        var adminClaim = (User.Claims.SingleOrDefault(c => c.Type == "admin").Value ?? "false");
+        var adminClaim = (User.Claims.SingleOrDefault(c => c.Type == "admin")?.Value ?? "false");
         if (string.Equals(adminClaim, "false", StringComparison.OrdinalIgnoreCase))
         {
             return Forbid();
@@ -279,7 +279,7 @@ public class OperatorsController : ControllerBase
     [HttpGet("groupedByRegion")]
     public async Task<ActionResult<List<RegionOperatorsDTO>>> GetOperatorsGroupedByRegion()
     {
-        var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value ?? "-1");
+        var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value ?? "-1");
         if (userIdClaim < 0)
         {
             return Forbid();

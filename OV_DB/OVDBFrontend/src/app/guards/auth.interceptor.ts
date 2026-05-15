@@ -12,11 +12,17 @@ export class AuthInterceptor implements HttpInterceptor {
 
 
     intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
-        if (req.url.startsWith(environment.backend)) {
+        if (req.url.startsWith(environment.backend) && this.authService.token) {
             req = req.clone({
                 setHeaders: {
                     Accept: 'application/json',
                     Authorization: `Bearer ${this.authService.token}`,
+                },
+            });
+        } else if (req.url.startsWith(environment.backend)) {
+            req = req.clone({
+                setHeaders: {
+                    Accept: 'application/json',
                 },
             });
         }

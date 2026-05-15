@@ -25,7 +25,7 @@ namespace OV_DB.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<RouteType>>> GetRouteTypes()
         {
-            var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value ?? "-1");
+            var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value ?? "-1");
             if (userIdClaim < 0)
             {
                 return Forbid();
@@ -36,7 +36,7 @@ namespace OV_DB.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<RouteType>> GetRouteType(int id)
         {
-            var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value ?? "-1");
+            var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value ?? "-1");
             if (userIdClaim < 0)
             {
                 return Forbid();
@@ -53,7 +53,7 @@ namespace OV_DB.Controllers
         [HttpPost]
         public async Task<ActionResult> AddRouteType([FromBody] RouteType routeType)
         {
-            var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value ?? "-1");
+            var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value ?? "-1");
             if (userIdClaim < 0)
             {
                 return Forbid();
@@ -67,7 +67,7 @@ namespace OV_DB.Controllers
         [HttpPut]
         public async Task<ActionResult> UpdateRouteType([FromBody] RouteType routeType)
         {
-            var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value ?? "-1");
+            var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value ?? "-1");
             if (userIdClaim < 0)
             {
                 return Forbid();
@@ -90,7 +90,7 @@ namespace OV_DB.Controllers
         [HttpDelete("{id}")]
         public async Task<ActionResult> DeleteRouteType(int id)
         {
-            var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value ?? "-1");
+            var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value ?? "-1");
             if (userIdClaim < 0)
             {
                 return Forbid();
@@ -115,7 +115,7 @@ namespace OV_DB.Controllers
         [HttpPost("order")]
         public async Task<ActionResult> UpdateRouteTypeOrdering([FromBody] List<int> routeTypeOrder)
         {
-            var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value ?? "-1");
+            var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value ?? "-1");
             if (userIdClaim < 0)
             {
                 return Forbid();

@@ -45,7 +45,7 @@ namespace OV_DB.Controllers
         [HttpGet]
         public async Task<ActionResult<RouteListDTO>> GetRoutes([FromQuery] int? start, [FromQuery] int? count, [FromQuery] string sortColumn, [FromQuery] bool? descending, [FromQuery] string filter, CancellationToken cancellationToken)
         {
-            var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value ?? "-1");
+            var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value ?? "-1");
             if (userIdClaim < 0)
             {
                 return Forbid();
@@ -129,7 +129,7 @@ namespace OV_DB.Controllers
         [HttpGet("instances/list")]
         public async Task<ActionResult<RouteInstanceListResponseDTO>> GetRouteInstances([FromQuery] int? start, [FromQuery] int? count, [FromQuery] string sortColumn, [FromQuery] bool? descending, [FromQuery] string filter, CancellationToken cancellationToken)
         {
-            var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value ?? "-1");
+            var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value ?? "-1");
             if (userIdClaim < 0)
             {
                 return Forbid();
@@ -200,7 +200,7 @@ namespace OV_DB.Controllers
         [HttpGet("missingInfo")]
         public async Task<ActionResult<IEnumerable<RouteDTO>>> GetRoutesWithMissingInfo()
         {
-            var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value ?? "-1");
+            var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value ?? "-1");
             if (userIdClaim < 0)
             {
                 return Forbid();
@@ -228,7 +228,7 @@ namespace OV_DB.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<RouteDTO>> GetRoute(int id)
         {
-            var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value ?? "-1");
+            var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value ?? "-1");
             if (userIdClaim < 0)
             {
                 return Forbid();
@@ -238,7 +238,7 @@ namespace OV_DB.Controllers
                 .Include(r => r.RouteInstances)
                 .Include(r => r.RouteMaps)
                 .SelectToRouteDTO()
-                .SingleAsync(r => r.RouteId == id);
+                .SingleOrDefaultAsync(r => r.RouteId == id);
             if (route == null)
             {
                 return NotFound();
@@ -252,7 +252,7 @@ namespace OV_DB.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> PutRoute(int id, UpdateRoute route)
         {
-            var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value ?? "-1");
+            var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value ?? "-1");
             if (userIdClaim < 0)
             {
                 return Forbid();
@@ -356,7 +356,7 @@ namespace OV_DB.Controllers
         [HttpPost("kml")]
         public async Task<ActionResult<Route>> PostKML()
         {
-            var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value ?? "-1");
+            var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value ?? "-1");
             if (userIdClaim < 0)
             {
                 return Forbid();
@@ -364,7 +364,12 @@ namespace OV_DB.Controllers
 
             using var stream = new StreamReader(HttpContext.Request.Body);
 
-            var route = (await PostKmlToDatabase(stream, "Nieuwe route", userIdClaim)).Single();
+            var routes = await PostKmlToDatabase(stream, "Nieuwe route", userIdClaim);
+            var route = routes.FirstOrDefault();
+            if (route == null)
+            {
+                return BadRequest("No route could be imported from the provided KML.");
+            }
 
             return CreatedAtAction("GetRoute", new { id = route.RouteId }, route);
         }
@@ -372,7 +377,7 @@ namespace OV_DB.Controllers
         [HttpPost("kmlfile")]
         public async Task<ActionResult<Route>> PostKMLFiles()
         {
-            var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value ?? "-1");
+            var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value ?? "-1");
             if (userIdClaim < 0)
             {
                 return Forbid();
@@ -645,7 +650,7 @@ namespace OV_DB.Controllers
         [HttpDelete("{id}")]
         public async Task<ActionResult<Route>> DeleteRoute(int id)
         {
-            var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value ?? "-1");
+            var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value ?? "-1");
             if (userIdClaim < 0)
             {
                 return Forbid();
@@ -669,7 +674,7 @@ namespace OV_DB.Controllers
         [HttpGet("{id}/export")]
         public async Task<ActionResult<string>> ExportRoute(int id)
         {
-            var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value ?? "-1");
+            var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value ?? "-1");
             if (userIdClaim < 0)
             {
                 return Forbid();
@@ -716,7 +721,7 @@ namespace OV_DB.Controllers
         public async Task<ActionResult<string>> ExportSetOfRoutes([FromQuery] string routeIds)
         {
             var splitRouteIds = routeIds.Split(',').Select(int.Parse).ToList();
-            var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value ?? "-1");
+            var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value ?? "-1");
             if (userIdClaim < 0)
             {
                 return Forbid();
@@ -758,7 +763,7 @@ namespace OV_DB.Controllers
         [HttpGet("export")]
         public async Task<ActionResult<string>> ExportAllRoutes(int id, [FromQuery] Guid? map, [FromQuery] int? year)
         {
-            var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value ?? "-1");
+            var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value ?? "-1");
             if (userIdClaim < 0)
             {
                 return Forbid();
@@ -884,7 +889,7 @@ namespace OV_DB.Controllers
         [HttpPut("editmultiple")]
         public async Task<ActionResult> UpdateMultipleRoutes([FromBody] EditMultiple editMultiple)
         {
-            var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value ?? "-1");
+            var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value ?? "-1");
             if (userIdClaim < 0)
             {
                 return Forbid();
@@ -1018,7 +1023,7 @@ namespace OV_DB.Controllers
         [HttpPut("instances")]
         public async Task<ActionResult> UpdateInstance([FromBody] RouteInstanceUpdate update)
         {
-            var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value ?? "-1");
+            var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value ?? "-1");
             if (userIdClaim < 0)
             {
                 return Forbid();
@@ -1142,7 +1147,7 @@ namespace OV_DB.Controllers
         [HttpDelete("instances/{id:int}")]
         public async Task<ActionResult> DeleteInstance(int id)
         {
-            var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value ?? "-1");
+            var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value ?? "-1");
             if (userIdClaim < 0)
             {
                 return Forbid();
@@ -1165,7 +1170,7 @@ namespace OV_DB.Controllers
         [HttpGet("instances/tags/autocomplete")]
         public async Task<ActionResult> AutocompleteTags()
         {
-            var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value ?? "-1");
+            var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value ?? "-1");
             if (userIdClaim < 0)
             {
                 return Forbid();
@@ -1184,7 +1189,7 @@ namespace OV_DB.Controllers
         [HttpGet("operators/autocomplete")]
         public async Task<ActionResult<IEnumerable<string>>> AutocompleteOperators()
         {
-            var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value ?? "-1");
+            var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value ?? "-1");
             if (userIdClaim < 0)
             {
                 return Forbid();

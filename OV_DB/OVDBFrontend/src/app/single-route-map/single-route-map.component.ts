@@ -1,4 +1,4 @@
-import { Component, OnInit, viewChild, inject } from '@angular/core';
+import { Component, OnInit, OnDestroy, DestroyRef, viewChild, inject } from '@angular/core';
 import { LatLngBounds, LatLng, geoJSON } from 'leaflet';
 import { tileLayer } from 'leaflet';
 import { TranslateService, TranslateModule } from '@ngx-translate/core';
@@ -8,6 +8,7 @@ import { ActivatedRoute } from '@angular/router';
 import { LeafletModule } from '@bluehalo/ngx-leaflet';
 import { NgClass } from '@angular/common';
 import { MatProgressSpinner } from '@angular/material/progress-spinner';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
     selector: 'app-single-route-map',
@@ -20,6 +21,7 @@ export class SingleRouteMapComponent implements OnInit {
   private translationService = inject(TranslationService);
   private activatedRoute = inject(ActivatedRoute);
   private apiService = inject(ApiService);
+  private destroyRef = inject(DestroyRef);
 
   readonly mapContainer = viewChild<HTMLElement>('mapContainer');
   loading = false;
@@ -35,7 +37,7 @@ export class SingleRouteMapComponent implements OnInit {
     if (!!value && value.isValid()) {
       this._bounds = value;
     } else {
-      this.bounds = new LatLngBounds(new LatLng(50.656245, 2.921360), new LatLng(53.604563, 7.428211));
+      this._bounds = new LatLngBounds(new LatLng(50.656245, 2.921360), new LatLng(53.604563, 7.428211));
     }
   }
    private _bounds: LatLngBounds;
@@ -76,12 +78,16 @@ export class SingleRouteMapComponent implements OnInit {
 
 
   ngOnInit() {
-    this.activatedRoute.paramMap.subscribe(p => {
-      this.routeId = +p.get('routeId');
-      this.guid = p.get('guid');
-      this.getRoute();
-    });
-    this.translationService.languageChanged.subscribe(() => this.getRoute());
+    this.activatedRoute.paramMap
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(p => {
+        this.routeId = +p.get('routeId');
+        this.guid = p.get('guid');
+        this.getRoute();
+      });
+    this.translationService.languageChanged
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.getRoute());
   }
 
 
@@ -100,7 +106,8 @@ export class SingleRouteMapComponent implements OnInit {
           };
         },
         onEachFeature(feature, layer) {
-          let popup = '<h2>' + feature.properties.name + '</h2><p>'
+          if (!feature.properties) return;
+          let popup = '<h2>' + (feature.properties.name ?? '') + '</h2><p>'
             + parent.translateService.instant('MAP.POPUP.TYPE')
             + ': ' + feature.properties.type;
           if (feature.properties.description) {
@@ -116,11 +123,14 @@ export class SingleRouteMapComponent implements OnInit {
           layer.on('click', f => {
             f.target.setStyle({ weight: 8, });
             f.target.bringToFront();
-            f.target.getPopup().on('remove', () => {
-              f.target.setStyle({
-                weight: 3,
+            const popup = f.target.getPopup();
+            if (popup) {
+              popup.on('remove', () => {
+                f.target.setStyle({
+                  weight: 3,
+                });
               });
-            });
+            }
           });
           layer.bindPopup(popup);
         }

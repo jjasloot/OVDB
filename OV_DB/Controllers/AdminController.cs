@@ -36,7 +36,7 @@ namespace OV_DB.Controllers
         [HttpPost("AddMissingGuidsForRoute")]
         public async Task<ActionResult> AddMissingGuidsForRoutes()
         {
-            var adminClaim = (User.Claims.SingleOrDefault(c => c.Type == "admin").Value ?? "false");
+            var adminClaim = (User.Claims.SingleOrDefault(c => c.Type == "admin")?.Value ?? "false");
             if (string.Equals(adminClaim, "false", StringComparison.OrdinalIgnoreCase))
             {
                 return Forbid();
@@ -53,7 +53,7 @@ namespace OV_DB.Controllers
         [HttpGet("users")]
         public async Task<ActionResult> GetAdministratorUsers()
         {
-            var adminClaim = (User.Claims.SingleOrDefault(c => c.Type == "admin").Value ?? "false");
+            var adminClaim = (User.Claims.SingleOrDefault(c => c.Type == "admin")?.Value ?? "false");
             if (string.Equals(adminClaim, "false", StringComparison.OrdinalIgnoreCase))
             {
                 return Forbid();
@@ -101,7 +101,7 @@ namespace OV_DB.Controllers
         [HttpGet("maps")]
         public async Task<ActionResult> GetAdministratorMaps()
         {
-            var adminClaim = (User.Claims.SingleOrDefault(c => c.Type == "admin").Value ?? "false");
+            var adminClaim = (User.Claims.SingleOrDefault(c => c.Type == "admin")?.Value ?? "false");
             if (string.Equals(adminClaim, "false", StringComparison.OrdinalIgnoreCase))
             {
                 return Forbid();
@@ -122,7 +122,7 @@ namespace OV_DB.Controllers
         [HttpGet("distance/{id:int}")]
         public async Task<ActionResult> CalculateDistanceById(int id)
         {
-            var adminClaim = (User.Claims.SingleOrDefault(c => c.Type == "admin").Value ?? "false");
+            var adminClaim = (User.Claims.SingleOrDefault(c => c.Type == "admin")?.Value ?? "false");
             if (string.Equals(adminClaim, "false", StringComparison.OrdinalIgnoreCase))
             {
                 return Forbid();
@@ -141,7 +141,7 @@ namespace OV_DB.Controllers
         [HttpGet("distance/missing")]
         public async Task<ActionResult> CalculateDistanceForAllMissing()
         {
-            var adminClaim = (User.Claims.SingleOrDefault(c => c.Type == "admin").Value ?? "false");
+            var adminClaim = (User.Claims.SingleOrDefault(c => c.Type == "admin")?.Value ?? "false");
             if (string.Equals(adminClaim, "false", StringComparison.OrdinalIgnoreCase))
             {
                 return Forbid();
@@ -159,7 +159,7 @@ namespace OV_DB.Controllers
         [HttpGet("distance/all")]
         public async Task<ActionResult> CalculateDistanceForAll()
         {
-            var adminClaim = (User.Claims.SingleOrDefault(c => c.Type == "admin").Value ?? "false");
+            var adminClaim = (User.Claims.SingleOrDefault(c => c.Type == "admin")?.Value ?? "false");
             if (string.Equals(adminClaim, "false", StringComparison.OrdinalIgnoreCase))
             {
                 return Forbid();
@@ -185,7 +185,7 @@ namespace OV_DB.Controllers
         [HttpGet("convertToInstances")]
         public async Task<ActionResult> ConvertToInstances()
         {
-            var adminClaim = (User.Claims.SingleOrDefault(c => c.Type == "admin").Value ?? "false");
+            var adminClaim = (User.Claims.SingleOrDefault(c => c.Type == "admin")?.Value ?? "false");
             if (string.Equals(adminClaim, "false", StringComparison.OrdinalIgnoreCase))
             {
                 return Forbid();
@@ -211,7 +211,7 @@ namespace OV_DB.Controllers
         [HttpGet("addRegions")]
         public async Task<ActionResult> AddRegionsToAllRoutes([FromServices] IRouteRegionsService routeRegionsService)
         {
-            var adminClaim = (User.Claims.SingleOrDefault(c => c.Type == "admin").Value ?? "false");
+            var adminClaim = (User.Claims.SingleOrDefault(c => c.Type == "admin")?.Value ?? "false");
             if (string.Equals(adminClaim, "false", StringComparison.OrdinalIgnoreCase))
             {
                 return Forbid();
@@ -241,7 +241,7 @@ namespace OV_DB.Controllers
         [HttpGet("fixOriginalnames")]
         public async Task<ActionResult> FixOriginalNames()
         {
-            var adminClaim = (User.Claims.SingleOrDefault(c => c.Type == "admin").Value ?? "false");
+            var adminClaim = (User.Claims.SingleOrDefault(c => c.Type == "admin")?.Value ?? "false");
             if (string.Equals(adminClaim, "false", StringComparison.OrdinalIgnoreCase))
             {
                 return Forbid();
@@ -267,7 +267,7 @@ namespace OV_DB.Controllers
         [AllowAnonymous]
         public async Task<ActionResult> AssignRegionsToStations([FromServices] IStationRegionsService stationRegionsService, [FromQuery] int? regionId)
         {
-            var adminClaim = (User.Claims.SingleOrDefault(c => c.Type == "admin").Value ?? "false");
+            var adminClaim = (User.Claims.SingleOrDefault(c => c.Type == "admin")?.Value ?? "false");
             if (string.Equals(adminClaim, "false", StringComparison.OrdinalIgnoreCase))
             {
                 return Forbid();

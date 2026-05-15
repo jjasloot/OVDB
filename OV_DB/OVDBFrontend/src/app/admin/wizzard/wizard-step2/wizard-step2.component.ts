@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from "@angular/core";
+import { Component, DestroyRef, OnInit, inject } from "@angular/core";
 import { ActivatedRoute, Router } from "@angular/router";
 import { ApiService } from "src/app/services/api.service";
 import { OSMDataLine } from "src/app/models/osmDataLine.model";
@@ -22,6 +22,7 @@ import { NgClass } from "@angular/common";
 import { CdkCopyToClipboard } from "@angular/cdk/clipboard";
 import { TrawellingTripContext } from "src/app/models/traewelling.model";
 import { TrawellingContextCardComponent } from "src/app/traewelling/context-card/traewelling-context-card.component";
+import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 
 @Component({
   selector: "app-wizard-step2",
@@ -50,6 +51,7 @@ export class WizzardStep2Component implements OnInit {
   private translateService = inject(TranslateService);
   private dialog = inject(MatDialog);
   private router = inject(Router);
+  private destroyRef = inject(DestroyRef);
 
   id: string;
   data: OSMDataLine;
@@ -76,8 +78,12 @@ export class WizzardStep2Component implements OnInit {
   fromTraewelling = false;
   trawellingTripData: TrawellingTripContext | null = null;
   constructor() {
-    this.activatedRoute.params.subscribe((p) => (this.id = p.id));
-    this.activatedRoute.queryParamMap.subscribe((p) => {
+    this.activatedRoute.params
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((p) => (this.id = p.id));
+    this.activatedRoute.queryParamMap
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((p) => {
       if (p.has("date")) {
         this.dateTime = moment.unix(+p.get("date"));
       } else {

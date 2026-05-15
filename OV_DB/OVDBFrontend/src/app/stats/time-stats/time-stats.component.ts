@@ -1,5 +1,5 @@
 import { NgClass } from '@angular/common';
-import { Component, Signal, viewChild, OnInit, inject } from '@angular/core';
+import { Component, DestroyRef, Signal, viewChild, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButton } from '@angular/material/button';
 import { MatCard, MatCardContent, MatCardTitle } from '@angular/material/card';
@@ -18,6 +18,7 @@ import { Map } from 'src/app/models/map.model';
 import { BaseChartDirective } from 'ng2-charts';
 import 'chartjs-adapter-luxon';
 import { MatTabsModule } from '@angular/material/tabs';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 @Component({
   selector: 'app-time-stats',
   imports: [MatCard, MatCardTitle, MatFormField, MatLabel, MatSelect, MatOption, FormsModule, MatButton, LeafletModule, NgClass, MatProgressSpinner, TranslateModule, BaseChartDirective, MatTabsModule, MatCardContent],
@@ -27,6 +28,7 @@ import { MatTabsModule } from '@angular/material/tabs';
 export class TimeStatsComponent implements OnInit {
   private apiService = inject(ApiService);
   private translationService = inject(TranslationService);
+  private destroyRef = inject(DestroyRef);
   translateService = inject(TranslateService);
 
   data: ChartConfiguration['data'];
@@ -102,18 +104,22 @@ export class TimeStatsComponent implements OnInit {
   maps: Map[];
 
   ngOnInit(): void {
-    this.apiService.getMaps().subscribe(maps => {
-      this.maps = maps;
-    });
+    this.apiService.getMaps()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(maps => {
+        this.maps = maps ?? [];
+      });
   }
 
 
   changeMap(mapGuid: string) {
     this.selectedMap = mapGuid;
 
-    this.apiService.getYears(mapGuid).subscribe(years => {
-      this.years = years.sort().reverse();
-    });
+    this.apiService.getYears(mapGuid)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(years => {
+        this.years = years.sort().reverse();
+      });
     this.data = null;
     this.layers = [];
     this.tableData = null;
@@ -122,79 +128,94 @@ export class TimeStatsComponent implements OnInit {
 
   getData(year?: number) {
     if (year === 0) year = null;
-    this.apiService.getStatsForGraph(this.selectedMap, year).subscribe(stats => {
-      this.data = stats.cumulative;
-      this.singleData = stats.single;
-    });
-    this.apiService.getStats(this.selectedMap, year).subscribe(data => {
-      this.tableData = data;
-    });
+    this.apiService.getStatsForGraph(this.selectedMap, year)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(stats => {
+        this.data = stats.cumulative;
+        this.singleData = stats.single;
+      });
+    this.apiService.getStats(this.selectedMap, year)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(data => {
+        this.tableData = data;
+      });
     this.loadingMap = true;
-    this.apiService.getStatsReach(this.selectedMap, year).subscribe((data: any) => {
-      this.layers = [];
-      const latMin = marker([data.latMin.lat, data.latMin.long], {
-        title: 'LatMin', icon: icon({
-          iconSize: [25, 41],
-          iconAnchor: [13, 41],
-          iconUrl: 'assets/marker-icon.png',
-          shadowUrl: 'assets/marker-shadow.png'
-        })
+    this.apiService.getStatsReach(this.selectedMap, year)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (data: any) => {
+          if (!data) {
+            this.loadingMap = false;
+            return;
+          }
+          this.layers = [];
+          const latMin = marker([data.latMin.lat, data.latMin.long], {
+            title: 'LatMin', icon: icon({
+              iconSize: [25, 41],
+              iconAnchor: [13, 41],
+              iconUrl: 'assets/marker-icon.png',
+              shadowUrl: 'assets/marker-shadow.png'
+            })
+          });
+          let popup = `<h2>${this.translateService.instant('EXTREMES.SOUTH')}</h2>`;
+          popup += '<p>Latitude: ' + data.latMin.lat + '<br>';
+          popup += 'Longitude: ' + data.latMin.long + '<br>';
+          popup += 'Route: ' + data.latMin.route.name + '</p>';
+          latMin.bindPopup(popup);
+          this.layers.push(latMin);
+          const latMax = marker([data.latMax.lat, data.latMax.long], {
+            title: 'latMax', icon: icon({
+              iconSize: [25, 41],
+              iconAnchor: [13, 41],
+              iconUrl: 'assets/marker-icon.png',
+              shadowUrl: 'assets/marker-shadow.png'
+            })
+          });
+          popup = `<h2>${this.translateService.instant('EXTREMES.NORTH')}</h2>`;
+          popup += '<p>Latitude: ' + data.latMax.lat + '<br>';
+          popup += 'Longitude: ' + data.latMax.long + '<br>';
+          popup += 'Route: ' + data.latMax.route.name + '</p>';
+          latMax.bindPopup(popup);
+          this.layers.push(latMax);
+          const longMin = marker([data.longMin.lat, data.longMin.long], {
+            title: 'longMin', icon: icon({
+              iconSize: [25, 41],
+              iconAnchor: [13, 41],
+              iconUrl: 'assets/marker-icon.png',
+              shadowUrl: 'assets/marker-shadow.png'
+            })
+          });
+          popup = `<h2>${this.translateService.instant('EXTREMES.WEST')}</h2>`;
+          popup += '<p>Latitude: ' + data.longMin.lat + '<br>';
+          popup += 'Longitude: ' + data.longMin.long + '<br>';
+          popup += 'Route: ' + data.longMin.route.name + '</p>';
+          longMin.bindPopup(popup);
+          this.layers.push(longMin);
+          const longMax = marker([data.longMax.lat, data.longMax.long], {
+            title: 'longMax', icon: icon({
+              iconSize: [25, 41],
+              iconAnchor: [13, 41],
+              iconUrl: 'assets/marker-icon.png',
+              shadowUrl: 'assets/marker-shadow.png'
+            })
+          });
+          popup = `<h2>${this.translateService.instant('EXTREMES.EAST')}</h2>`;
+          popup += '<p>Latitude: ' + data.longMax.lat + '<br>';
+          popup += 'Longitude: ' + data.longMax.long + '<br>';
+          popup += 'Route: ' + data.longMax.route.name + '</p>';
+          longMax.bindPopup(popup);
+          this.layers.push(longMax);
+          this.bounds = new LatLngBounds([data.latMin.lat, data.longMin.long], [data.latMax.lat, data.longMax.long]);
+          const rectangle = new Rectangle(this.bounds, {
+            fill: false
+          });
+          this.layers.push(rectangle);
+          this.loadingMap = false;
+        },
+        error: () => {
+          this.loadingMap = false;
+        }
       });
-      let popup = `<h2>${this.translateService.instant('EXTREMES.SOUTH')}</h2>`;
-      popup += '<p>Latitude: ' + data.latMin.lat + '<br>';
-      popup += 'Longitude: ' + data.latMin.long + '<br>';
-      popup += 'Route: ' + data.latMin.route.name + '</p>';
-      latMin.bindPopup(popup);
-      this.layers.push(latMin);
-      const latMax = marker([data.latMax.lat, data.latMax.long], {
-        title: 'latMax', icon: icon({
-          iconSize: [25, 41],
-          iconAnchor: [13, 41],
-          iconUrl: 'assets/marker-icon.png',
-          shadowUrl: 'assets/marker-shadow.png'
-        })
-      });
-      popup = `<h2>${this.translateService.instant('EXTREMES.NORTH')}</h2>`;
-      popup += '<p>Latitude: ' + data.latMax.lat + '<br>';
-      popup += 'Longitude: ' + data.latMax.long + '<br>';
-      popup += 'Route: ' + data.latMax.route.name + '</p>';
-      latMax.bindPopup(popup);
-      this.layers.push(latMax);
-      const longMin = marker([data.longMin.lat, data.longMin.long], {
-        title: 'longMin', icon: icon({
-          iconSize: [25, 41],
-          iconAnchor: [13, 41],
-          iconUrl: 'assets/marker-icon.png',
-          shadowUrl: 'assets/marker-shadow.png'
-        })
-      });
-      popup = `<h2>${this.translateService.instant('EXTREMES.WEST')}</h2>`;
-      popup += '<p>Latitude: ' + data.longMin.lat + '<br>';
-      popup += 'Longitude: ' + data.longMin.long + '<br>';
-      popup += 'Route: ' + data.longMin.route.name + '</p>';
-      longMin.bindPopup(popup);
-      this.layers.push(longMin);
-      const longMax = marker([data.longMax.lat, data.longMax.long], {
-        title: 'longMax', icon: icon({
-          iconSize: [25, 41],
-          iconAnchor: [13, 41],
-          iconUrl: 'assets/marker-icon.png',
-          shadowUrl: 'assets/marker-shadow.png'
-        })
-      });
-      popup = `<h2>${this.translateService.instant('EXTREMES.EAST')}</h2>`;
-      popup += '<p>Latitude: ' + data.longMax.lat + '<br>';
-      popup += 'Longitude: ' + data.longMax.long + '<br>';
-      popup += 'Route: ' + data.longMax.route.name + '</p>';
-      longMax.bindPopup(popup);
-      this.layers.push(longMax);
-      this.bounds = new LatLngBounds([data.latMin.lat, data.longMin.long], [data.latMax.lat, data.longMax.long]);
-      const rectangle = new Rectangle(this.bounds, {
-        fill: false
-      });
-      this.layers.push(rectangle);
-      this.loadingMap = false;
-    });
 
   }
 

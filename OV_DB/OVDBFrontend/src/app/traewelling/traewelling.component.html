@@ -10,7 +10,7 @@
       </mat-card-title>
       @if (connectionStatus?.user) {
       <mat-card-subtitle>
-        {{ 'PROFILE.TRAEWELLING_CONNECTED' | translate }} {{ connectionStatus.user.displayName }}
+        {{ 'PROFILE.TRAEWELLING_CONNECTED' | translate }} {{ connectionStatus?.user?.displayName }}
       </mat-card-subtitle>
       }
     </mat-card-header>

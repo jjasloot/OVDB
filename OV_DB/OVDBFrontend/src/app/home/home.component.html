@@ -23,7 +23,7 @@
       </mat-card-content>
     </mat-card>
 
-    @if (!!maps() || !!stationMaps()) {
+    @if (maps().length > 0 || stationMaps().length > 0 || !loading) {
     <div>
       @if (maps().length > 0 || stationMaps().length > 0) {
       <mat-list>

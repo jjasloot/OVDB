@@ -20,7 +20,8 @@ export class LoginGuard  {
     }
 
     if (!this.authService.isLoggedIn) {
-      this.router.navigate(['/login'], { queryParams: { returnUrl: '/' + next.url.join('/') } });
+      const returnUrl = next.url.length > 0 ? '/' + next.url.join('/') : '/';
+      this.router.navigate(['/login'], { queryParams: { returnUrl } });
       return false;
     }
     return true;

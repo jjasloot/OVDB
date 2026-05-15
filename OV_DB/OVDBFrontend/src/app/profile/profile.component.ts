@@ -1,4 +1,4 @@
-import { Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, DestroyRef, OnInit, OnDestroy, computed, inject, signal } from '@angular/core';
 import { UntypedFormBuilder, UntypedFormGroup, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { ApiService } from '../services/api.service';
 import { UserProfile, UpdateProfile, ChangePassword, TraewellingTagMapping, TrainlogOperatorMapping } from '../models/user-profile.model';
@@ -53,7 +53,7 @@ import { TrawellingService } from '../traewelling/services/traewelling.service';
     OperatorMappingComponent
   ]
 })
-export class ProfileComponent implements OnInit {
+export class ProfileComponent implements OnInit, OnDestroy {
   private formBuilder = inject(UntypedFormBuilder);
   private apiService = inject(ApiService);
   private snackBar = inject(MatSnackBar);
@@ -242,6 +242,12 @@ export class ProfileComponent implements OnInit {
       next: (response) => {
         // Open the authorization URL in a new window
         const authWindow = window.open(response.authorizationUrl, '_blank', 'width=600,height=700');
+
+        if (!authWindow) {
+          this.trawellingConnecting = false;
+          this.showMessage('PROFILE.TRAEWELLING_POPUP_BLOCKED');
+          return;
+        }
 
         // Listen for messages from the popup
         const messageListener = (event: MessageEvent) => {
@@ -435,6 +441,10 @@ export class ProfileComponent implements OnInit {
       window.clearInterval(this.pollingIntervalId);
       this.pollingIntervalId = null;
     }
+  }
+
+  ngOnDestroy(): void {
+    this.stopPolling();
   }
 
   loadAvailableOvdbTags(): void {
