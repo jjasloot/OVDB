@@ -12,6 +12,7 @@ namespace OV_DB.Models
         public string NameNL { get; set; }
         public string MapGuid { get; set; }
         public string? SharingLinkName { get; set; }
+        public bool IncludeSpecials { get; set; }
         public List<int> RegionIds { get; set; } = [];
     }
 }

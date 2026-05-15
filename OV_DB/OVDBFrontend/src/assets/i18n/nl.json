@@ -281,6 +281,7 @@
   "STATIONMAP.DELETEFRONT": "de stationskaart",
   "STATIONMAP.DELETEREAR": "uit de database wilt verwijderen",
   "STATIONMAP.DESCRIPTION": "Hier kun je stationskaarten aanmaken. Dat zijn kaarten waarop alle stations in een regio staan. Deze kun je dan afvinken. Mis je een gebied dat je wel graag wilt gebruiken, maak dan een issue aan op <a href=\"https://github.com/jjasloot/OVDB/\">GitHub</a> of stuur me een bericht.",
+  "STATIONMAP.INCLUDESPECIALS": "Bijzondere/historische stations tonen",
   "FILTER.INCLUDELINECOLOURS": "Toon lijnkleuren",
   "SAVE_GO_TO_INSTANCES": "Opslaan en naar ritten",
   "FILTER.LIMITTOSELECTEDAREAS": "Knip routes bij tot geselecteerde gebieden. Let op! Dit duurt wat langer.",
