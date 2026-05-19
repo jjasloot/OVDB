@@ -436,6 +436,35 @@ namespace OV_DB.Controllers
         }
 
         /// <summary>
+        /// Fetch active warning/danger alerts from the Träwelling platform
+        /// </summary>
+        [HttpGet("alerts")]
+        public async Task<IActionResult> GetAlerts()
+        {
+            try
+            {
+                var userId = GetCurrentUserId();
+                if (!userId.HasValue)
+                    return Unauthorized();
+
+                var user = await _dbContext.Users.FindAsync(userId.Value);
+                if (user == null)
+                    return NotFound("User not found");
+
+                if (!_trawellingService.HasValidTokens(user))
+                    return Ok(Array.Empty<object>());
+
+                var alerts = await _trawellingService.GetAlertsAsync(user);
+                return Ok(alerts);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching Träwelling alerts");
+                return StatusCode(500, "Error fetching alerts");
+            }
+        }
+
+        /// <summary>
         /// Backfill scheduled (planned) departure/arrival times for existing Träwelling-imported trips
         /// </summary>
         [HttpPost("backfill-scheduled")]

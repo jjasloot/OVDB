@@ -161,6 +161,23 @@ export interface TrawellingConnectResponse {
   authorizationUrl: string;
 }
 
+// Alert models
+export interface TraewellingAlertTranslation {
+  title: string;
+  content: string;
+  url?: string;
+  locale: string;
+}
+
+export interface TraewellingAlert {
+  id: string;
+  type: 'info' | 'warning' | 'danger' | 'success';
+  activeFrom?: string;
+  activeUntil?: string;
+  url?: string;
+  translations: TraewellingAlertTranslation[];
+}
+
 // Legacy models for backward compatibility
 export interface TrawellingStatusesResponse {
   data: any[];

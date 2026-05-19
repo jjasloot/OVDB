@@ -478,7 +478,8 @@
     "LINE": "Lijn",
     "START_TIME": "Vertrek",
     "END_TIME": "Aankomst",
-    "DESCRIPTION": "Beschrijving"
+    "DESCRIPTION": "Beschrijving",
+    "ALERT_READ_MORE": "Meer informatie"
   },
   "ROUTESLIST.EXPORTTOTRAINLOG": "Exporteer selectie voor Trainlog",
   "ROUTESLIST.SHOWROUTES": "Toon routes",

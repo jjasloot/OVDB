@@ -169,17 +169,33 @@ namespace OV_DB.Models
         [JsonProperty("createdAt")]
         public DateTimeOffset CreatedAt { get; set; }
 
+        // Deprecated (2026-07-31): use Checkin instead
         [JsonProperty("train")]
         public TrawellingTransport Train { get; set; }
+
+        // Replaces deprecated Train field
+        [JsonProperty("checkin")]
+        public TrawellingTransport Checkin { get; set; }
 
         [JsonProperty("event")]
         public TrawellingEvent Event { get; set; }
 
+        // Deprecated (2026-07-31): use User instead
         [JsonProperty("userDetails")]
         public TrawellingLightUser UserDetails { get; set; }
 
+        // Replaces deprecated UserDetails field
+        [JsonProperty("user")]
+        public TrawellingLightUser User { get; set; }
+
         [JsonProperty("tags")]
         public List<TrawellingStatusTag> Tags { get; set; }
+
+        [JsonIgnore]
+        public TrawellingTransport EffectiveTransport => Checkin ?? Train;
+
+        [JsonIgnore]
+        public TrawellingLightUser EffectiveUser => User ?? UserDetails;
     }
 
     public class TrawellingMention
@@ -314,14 +330,58 @@ namespace OV_DB.Models
 
     public class TrawellingOperator
     {
+        // Will become a UUID after 2026-09-30; using string for forward compatibility
         [JsonProperty("id")]
-        public int Id { get; set; }
+        public string Id { get; set; }
 
+        // Deprecated (2026-09-30): always null for new operators
         [JsonProperty("identifier")]
         public string Identifier { get; set; }
 
         [JsonProperty("name")]
         public string Name { get; set; }
+    }
+
+    public class TrawellingAlertTranslation
+    {
+        [JsonProperty("title")]
+        public string Title { get; set; }
+
+        [JsonProperty("content")]
+        public string Content { get; set; }
+
+        [JsonProperty("url")]
+        public string Url { get; set; }
+
+        [JsonProperty("locale")]
+        public string Locale { get; set; }
+    }
+
+    public class TrawellingAlert
+    {
+        [JsonProperty("id")]
+        public string Id { get; set; }
+
+        [JsonProperty("type")]
+        public string Type { get; set; }
+
+        [JsonProperty("active_from")]
+        public DateTimeOffset? ActiveFrom { get; set; }
+
+        [JsonProperty("active_until")]
+        public DateTimeOffset? ActiveUntil { get; set; }
+
+        [JsonProperty("url")]
+        public string Url { get; set; }
+
+        [JsonProperty("translations")]
+        public List<TrawellingAlertTranslation> Translations { get; set; }
+    }
+
+    public class TrawellingApiAlertsResponse
+    {
+        [JsonProperty("data")]
+        public List<TrawellingAlert> Data { get; set; }
     }
 
     public class TrawellingDataSource

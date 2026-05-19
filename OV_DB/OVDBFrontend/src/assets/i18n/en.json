@@ -483,6 +483,7 @@
     "DESCRIPTION": "Description",
     "ROUTESLIST.EXPORTTOTRAINLOG": "Export selection for Trainlog",
     "ROUTESLIST.SHOWROUTES": "Show routes",
-    "ROUTESLIST.SHOWINSTANCES": "Show trips"
+    "ROUTESLIST.SHOWINSTANCES": "Show trips",
+    "ALERT_READ_MORE": "Read more"
   }
 }

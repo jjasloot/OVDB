@@ -15,7 +15,8 @@ import {
   RouteSearchResult,
   TrawellingTripContext,
   TrawellingTransportCategory,
-  RoutesListResponse
+  RoutesListResponse,
+  TraewellingAlert
 } from '../../models/traewelling.model';
 import { TraewellingTagMapping } from '../../models/user-profile.model';
 import { ApiService } from '../../services/api.service';
@@ -51,6 +52,12 @@ export class TrawellingService {
   async ignoreTrip(tripId: number): Promise<TrawellingIgnoreResponse> {
     const request: TrawellingIgnoreRequest = { statusId: tripId };
     return this.http.post<TrawellingIgnoreResponse>(`${this.baseUrl}/ignore`, request)
+      .pipe(first())
+      .toPromise();
+  }
+
+  async getAlerts(): Promise<TraewellingAlert[]> {
+    return this.http.get<TraewellingAlert[]>(`${this.baseUrl}/alerts`)
       .pipe(first())
       .toPromise();
   }

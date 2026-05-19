@@ -5,12 +5,14 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { TrawellingService } from './services/traewelling.service';
 import {
   TrawellingConnectionStatus,
   TrawellingTripsResponse,
-  TrawellingTrip
+  TrawellingTrip,
+  TraewellingAlert,
+  TraewellingAlertTranslation
 } from '../models/traewelling.model';
 import { TripCardComponent } from './components/trip-card/trip-card.component';
 
@@ -32,9 +34,11 @@ import { TripCardComponent } from './components/trip-card/trip-card.component';
 export class TrawellingComponent implements OnInit {
   private trawellingService = inject(TrawellingService);
   private snackBar = inject(MatSnackBar);
+  private translateService = inject(TranslateService);
 
   connectionStatus: TrawellingConnectionStatus | null = null;
   trips: TrawellingTrip[] = [];
+  alerts: TraewellingAlert[] = [];
   isLoading = true;
   isLoadingMore = false;
   hasMorePages = false;
@@ -43,7 +47,7 @@ export class TrawellingComponent implements OnInit {
   async ngOnInit() {
     await this.loadConnectionStatus();
     if (this.connectionStatus?.connected) {
-      await this.loadTrips();
+      await Promise.all([this.loadTrips(), this.loadAlerts()]);
     }
     this.isLoading = false;
   }
@@ -52,11 +56,27 @@ export class TrawellingComponent implements OnInit {
     this.trips = this.trips.filter(trip => trip.id !== tripId);
   }
 
+  getAlertTranslation(alert: TraewellingAlert): TraewellingAlertTranslation {
+    const lang = this.translateService.currentLang || 'en';
+    return alert.translations?.find(t => t.locale === lang)
+      ?? alert.translations?.find(t => t.locale === 'en')
+      ?? alert.translations?.[0]
+      ?? { title: '', content: '', locale: 'en' };
+  }
+
   private async loadConnectionStatus() {
     try {
       this.connectionStatus = await this.trawellingService.getConnectionStatus();
     } catch (error) {
       this.snackBar.open('Failed to check Träwelling connection', 'Close', { duration: 5000 });
+    }
+  }
+
+  private async loadAlerts() {
+    try {
+      this.alerts = await this.trawellingService.getAlerts() ?? [];
+    } catch {
+      // Alerts are non-critical; ignore errors silently
     }
   }
 

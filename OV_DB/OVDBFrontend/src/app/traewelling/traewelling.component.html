@@ -17,6 +17,21 @@
     <mat-card-content></mat-card-content>
   </mat-card>
 
+  <!-- Platform Alerts -->
+  @for (alert of alerts; track alert.id) {
+  <mat-card class="alert-card" [ngClass]="'alert-' + alert.type">
+    <mat-card-content>
+      <strong>{{ getAlertTranslation(alert).title }}</strong>
+      <p>{{ getAlertTranslation(alert).content }}</p>
+      @if (getAlertTranslation(alert).url) {
+      <a [href]="getAlertTranslation(alert).url" target="_blank" rel="noopener noreferrer">
+        {{ 'TRAEWELLING.ALERT_READ_MORE' | translate }}
+      </a>
+      }
+    </mat-card-content>
+  </mat-card>
+  }
+
   <!-- Loading State -->
   @if(isLoading){
   <div class="loading-container">

@@ -560,15 +560,16 @@ namespace OV_DB.Services
         {
             try
             {
-                if (status.Train?.Origin == null || status.Train?.Destination == null)
+                var transport = status.EffectiveTransport;
+                if (transport?.Origin == null || transport?.Destination == null)
                 {
                     _logger.LogWarning("Status {StatusId} missing origin or destination data", status.Id);
                     return null;
                 }
 
-                var originName = status.Train.Origin.Name;
-                var destinationName = status.Train.Destination.Name;
-                var lineName = status.Train.LineName ?? $"{status.Train.Category} {status.Train.Number}";
+                var originName = transport.Origin.Name;
+                var destinationName = transport.Destination.Name;
+                var lineName = transport.LineName ?? $"{transport.Category} {transport.Number}";
 
                 // Try to find existing route by name pattern
                 var routeName = $"{originName} - {destinationName}";
@@ -594,7 +595,7 @@ namespace OV_DB.Services
                     OperatingCompany = "Imported from Träwelling",
                     FirstDateTime = status.CreatedAt.DateTime,
                     Share = Guid.NewGuid(),
-                    CalculatedDistance = status.Train.Distance > 0 ? status.Train.Distance / 1000.0 : 0 // Convert meters to km
+                    CalculatedDistance = transport.Distance > 0 ? transport.Distance / 1000.0 : 0 // Convert meters to km
                 };
 
                 _dbContext.Routes.Add(newRoute);
@@ -620,11 +621,12 @@ namespace OV_DB.Services
         {
             try
             {
-                if (status.Train?.Origin == null || status.Train?.Destination == null)
+                var transport = status.EffectiveTransport;
+                if (transport?.Origin == null || transport?.Destination == null)
                     return false;
 
-                var originName = status.Train.Origin.Name;
-                var destinationName = status.Train.Destination.Name;
+                var originName = transport.Origin.Name;
+                var destinationName = transport.Destination.Name;
                 var tripDate = status.CreatedAt.Date;
 
                 // Find RouteInstances on the same date that might match this trip
@@ -666,27 +668,29 @@ namespace OV_DB.Services
                 // Update with Träwelling data
                 var updated = false;
 
-                if (!bestMatch.StartTime.HasValue && status.Train.Origin.Departure.HasValue)
+                var effectiveDeparture = transport.Origin.DepartureReal ?? transport.Origin.DeparturePlanned;
+                if (!bestMatch.StartTime.HasValue && effectiveDeparture.HasValue)
                 {
-                    bestMatch.StartTime = status.Train.Origin.Departure.Value.DateTime;
+                    bestMatch.StartTime = effectiveDeparture.Value.DateTime;
                     updated = true;
                 }
 
-                if (!bestMatch.ScheduledStartTime.HasValue && status.Train.Origin.DeparturePlanned.HasValue)
+                if (!bestMatch.ScheduledStartTime.HasValue && transport.Origin.DeparturePlanned.HasValue)
                 {
-                    bestMatch.ScheduledStartTime = status.Train.Origin.DeparturePlanned.Value.DateTime;
+                    bestMatch.ScheduledStartTime = transport.Origin.DeparturePlanned.Value.DateTime;
                     updated = true;
                 }
 
-                if (!bestMatch.EndTime.HasValue && status.Train.Destination.Arrival.HasValue)
+                var effectiveArrival = transport.Destination.ArrivalReal ?? transport.Destination.ArrivalPlanned;
+                if (!bestMatch.EndTime.HasValue && effectiveArrival.HasValue)
                 {
-                    bestMatch.EndTime = status.Train.Destination.Arrival.Value.DateTime;
+                    bestMatch.EndTime = effectiveArrival.Value.DateTime;
                     updated = true;
                 }
 
-                if (!bestMatch.ScheduledEndTime.HasValue && status.Train.Destination.ArrivalPlanned.HasValue)
+                if (!bestMatch.ScheduledEndTime.HasValue && transport.Destination.ArrivalPlanned.HasValue)
                 {
-                    bestMatch.ScheduledEndTime = status.Train.Destination.ArrivalPlanned.Value.DateTime;
+                    bestMatch.ScheduledEndTime = transport.Destination.ArrivalPlanned.Value.DateTime;
                     updated = true;
                 }
 
@@ -706,13 +710,13 @@ namespace OV_DB.Services
                 var existingKeys = bestMatch.RouteInstanceProperties?.Select(p => p.Key).ToHashSet() ?? new HashSet<string>();
                 var newProperties = new List<RouteInstanceProperty>();
 
-                if (!existingKeys.Contains("traewelling_line") && !string.IsNullOrEmpty(status.Train.LineName))
+                if (!existingKeys.Contains("traewelling_line") && !string.IsNullOrEmpty(transport.LineName))
                 {
                     newProperties.Add(new RouteInstanceProperty
                     {
                         RouteInstanceId = bestMatch.RouteInstanceId,
                         Key = "traewelling_line",
-                        Value = status.Train.LineName
+                        Value = transport.LineName
                     });
                 }
 
@@ -896,11 +900,12 @@ namespace OV_DB.Services
         {
             try
             {
-                if (status.Train?.Origin == null || status.Train?.Destination == null)
+                var transport = status.EffectiveTransport;
+                if (transport?.Origin == null || transport?.Destination == null)
                     return null;
 
-                var origin = await MapStopoverToDto(user, status.Train.Origin, status.Train.ManualDeparture?.DateTime, isArrival: false);
-                var destination = await MapStopoverToDto(user, status.Train.Destination, status.Train.ManualArrival?.DateTime, isArrival: true);
+                var origin = await MapStopoverToDto(user, transport.Origin, transport.ManualDeparture?.DateTime, isArrival: false);
+                var destination = await MapStopoverToDto(user, transport.Destination, transport.ManualArrival?.DateTime, isArrival: true);
 
                 return new TrawellingTripDto
                 {
@@ -911,27 +916,27 @@ namespace OV_DB.Services
                     CreatedAt = status.CreatedAt,
                     Transport = new TrawellingTransportDto
                     {
-                        Category = status.Train.Category,
-                        Number = status.Train.Number,
-                        LineName = status.Train.LineName,
-                        JourneyNumber = !string.IsNullOrWhiteSpace(status.Train.ManualJourneyNumber) ? status.Train.ManualJourneyNumber : status.Train.JourneyNumber.ToString(),
-                        Distance = status.Train.Distance,
-                        Duration = status.Train.Duration,
+                        Category = transport.Category,
+                        Number = transport.Number,
+                        LineName = transport.LineName,
+                        JourneyNumber = !string.IsNullOrWhiteSpace(transport.ManualJourneyNumber) ? transport.ManualJourneyNumber : transport.JourneyNumber.ToString(),
+                        Distance = transport.Distance,
+                        Duration = transport.Duration,
                         Origin = origin,
                         Destination = destination,
-                        Operator = status.Train.Operator != null ? new TrawellingOperatorDto
+                        Operator = transport.Operator != null ? new TrawellingOperatorDto
                         {
-                            Name = status.Train.Operator.Name,
-                            Identifier = status.Train.Operator.Identifier
+                            Name = transport.Operator.Name,
+                            Identifier = transport.Operator.Identifier
                         } : null
                     },
-                    UserDetails = new TrawellingLightUserDto
+                    UserDetails = status.EffectiveUser != null ? new TrawellingLightUserDto
                     {
-                        Id = status.UserDetails.Id,
-                        DisplayName = status.UserDetails.DisplayName,
-                        Username = status.UserDetails.Username,
-                        ProfilePicture = status.UserDetails.ProfilePicture
-                    },
+                        Id = status.EffectiveUser.Id,
+                        DisplayName = status.EffectiveUser.DisplayName,
+                        Username = status.EffectiveUser.Username,
+                        ProfilePicture = status.EffectiveUser.ProfilePicture
+                    } : null,
                     Tags = status.Tags?.Select(t => new TrawellingStatusTagDto
                     {
                         Key = t.Key,
@@ -960,12 +965,12 @@ namespace OV_DB.Services
 
                 if (isArrival)
                 {
-                    realArrival = (manualTime ?? stopover.Arrival)?.DateTime;
+                    realArrival = manualTime ?? (stopover.ArrivalReal ?? stopover.ArrivalPlanned)?.DateTime;
                 }
 
                 else
                 {
-                    realDeparture = (manualTime ?? stopover.Departure)?.DateTime;
+                    realDeparture = manualTime ?? (stopover.DepartureReal ?? stopover.DeparturePlanned)?.DateTime;
                 }
 
                 // Convert UTC times to local timezone if we have coordinates
@@ -1027,12 +1032,44 @@ namespace OV_DB.Services
                     Name = stopover.Name,
                     ArrivalScheduled = stopover.ArrivalPlanned?.DateTime,
                     DepartureScheduled = stopover.DeparturePlanned?.DateTime,
-                    ArrivalReal = (stopover.ArrivalReal ?? stopover.Arrival)?.DateTime,
-                    DepartureReal = (stopover.DepartureReal ?? stopover.Departure)?.DateTime,
+                    ArrivalReal = (stopover.ArrivalReal ?? stopover.ArrivalPlanned)?.DateTime,
+                    DepartureReal = (stopover.DepartureReal ?? stopover.DeparturePlanned)?.DateTime,
                     IsArrivalDelayed = stopover.IsArrivalDelayed,
                     IsDepartureDelayed = stopover.IsDepartureDelayed,
                     Cancelled = stopover.Cancelled
                 };
+            }
+        }
+
+        public async Task<List<TrawellingAlert>> GetAlertsAsync(User user)
+        {
+            try
+            {
+                if (!await EnsureValidTokenAsync(user))
+                    return new List<TrawellingAlert>();
+
+                _httpClient.DefaultRequestHeaders.Clear();
+                _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {user.TrawellingAccessToken}");
+
+                var response = await _httpClient.GetAsync($"{_baseUrl}/alerts");
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    _logger.LogWarning("Failed to get Träwelling alerts. Status: {StatusCode}", response.StatusCode);
+                    return new List<TrawellingAlert>();
+                }
+
+                var content = await response.Content.ReadAsStringAsync();
+                var alertsResponse = JsonConvert.DeserializeObject<TrawellingApiAlertsResponse>(content);
+
+                return alertsResponse?.Data
+                    ?.Where(a => a.Type == "warning" || a.Type == "danger")
+                    .ToList() ?? new List<TrawellingAlert>();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching Träwelling alerts");
+                return new List<TrawellingAlert>();
             }
         }
 

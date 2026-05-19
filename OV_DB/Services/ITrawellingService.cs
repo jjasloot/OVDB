@@ -102,5 +102,12 @@ namespace OV_DB.Services
         /// <param name="user">User whose trips to backfill</param>
         /// <returns>Counts of (found, updated, failed) trips</returns>
         Task<(int found, int updated, int failed)> BackfillScheduledTimesAsync(User user);
+
+        /// <summary>
+        /// Fetch active warning/danger alerts from the Träwelling platform
+        /// </summary>
+        /// <param name="user">User with valid tokens</param>
+        /// <returns>List of active warning or danger alerts</returns>
+        Task<List<TrawellingAlert>> GetAlertsAsync(User user);
     }
 }

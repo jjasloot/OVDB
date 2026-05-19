@@ -100,6 +100,28 @@
   }
 }
 
+.alert-card {
+  margin-bottom: 16px;
+
+  &.alert-warning {
+    border-left: 4px solid #FF9800;
+  }
+
+  &.alert-danger {
+    border-left: 4px solid #f44336;
+  }
+
+  p {
+    margin: 8px 0 0 0;
+  }
+
+  a {
+    display: inline-block;
+    margin-top: 8px;
+    font-size: 14px;
+  }
+}
+
 // Light theme colors
 :root {
   --text-primary: rgba(0, 0, 0, 0.87);
