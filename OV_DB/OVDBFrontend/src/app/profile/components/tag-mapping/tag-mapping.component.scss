@@ -268,7 +268,7 @@
 }
 
 /* Dark mode support */
-@media (prefers-color-scheme: dark) {
+:host-context(.dark-theme) {
   .mapping-description {
     color: rgba(255, 255, 255, 0.7);
   }

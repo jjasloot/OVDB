@@ -59,23 +59,6 @@ export class ApiService {
     );
   }
 
-  addCountry(country: Country): Observable<any> {
-    return this.httpClient.post<Country>(
-      environment.backend + "api/countries",
-      country
-    );
-  }
-  updateCountry(country: Country) {
-    return this.httpClient.put<Country>(
-      environment.backend + "api/countries",
-      country
-    );
-  }
-  deleteCountry(countryId: number): Observable<any> {
-    return this.httpClient.delete(
-      environment.backend + "api/countries/" + countryId
-    );
-  }
   getTypes(guid?: string): Observable<RouteType[]> {
     if (!guid) {
       return this.httpClient.get<RouteType[]>(

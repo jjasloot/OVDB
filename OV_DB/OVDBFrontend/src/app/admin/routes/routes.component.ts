@@ -30,7 +30,6 @@ export class RoutesComponent implements OnInit {
   menuEffect = effect(() => {
     this.language();
     this.userPreferenceService.hasTraewelling();
-    this.userPreferenceService.hasTraewelling
     const navLinks = [
       {
         label: this.translateService.instant("ADMINPAGES.MAPS"),

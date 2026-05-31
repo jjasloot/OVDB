@@ -3,8 +3,15 @@
 <app-traewelling-context-card [tripContext]="trawellingTripData"/>
 
   <div class="buttons">
-    <input type="file" multiple (change)="handleFileInput($event.target.files)">
-    <button mat-raised-button (click)="saveFiles()">{{'ADDROUTE.SAVEFILES'|translate}}</button>
+    <input #fileInput type="file" multiple (change)="handleFileInput($event.target.files)" hidden>
+    <button mat-raised-button (click)="fileInput.click()">
+      <mat-icon>upload_file</mat-icon>
+      {{'ADDROUTE.SELECTFILES'|translate}}
+    </button>
+    @if (fileToUpload) {
+      <span class="file-count">{{ fileToUpload.length }} {{'ADDROUTE.FILESSELECTED'|translate}}</span>
+    }
+    <button mat-raised-button color="primary" (click)="saveFiles()" [disabled]="!fileToUpload || fileToUpload.length === 0">{{'ADDROUTE.SAVEFILES'|translate}}</button>
   </div>
   @if (!filesLoading) {
     <div>

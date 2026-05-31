@@ -6,6 +6,7 @@ import { DataUpdateService } from 'src/app/services/data-update.service';
 import { FileUpload } from 'src/app/models/fileUpload.model';
 import { TranslateService, TranslateModule } from '@ngx-translate/core';
 import { MatButton } from '@angular/material/button';
+import { MatIcon } from '@angular/material/icon';
 import { NgClass } from '@angular/common';
 import { MatProgressSpinner } from '@angular/material/progress-spinner';
 import { TrawellingTripContext } from 'src/app/models/traewelling.model';
@@ -15,7 +16,7 @@ import { TrawellingContextCardComponent } from "src/app/traewelling/context-card
   selector: 'app-route-add',
   templateUrl: './route-add.component.html',
   styleUrls: ['./route-add.component.scss'],
-  imports: [MatButton, NgClass, MatProgressSpinner, TranslateModule, TrawellingContextCardComponent]
+  imports: [MatButton, MatIcon, NgClass, MatProgressSpinner, TranslateModule, TrawellingContextCardComponent]
 })
 export class RouteAddComponent implements OnInit {
   private apiService = inject(ApiService);

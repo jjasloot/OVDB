@@ -270,14 +270,14 @@
         <!-- Current Password -->
         <mat-form-field>
           <mat-label>{{ 'PROFILE.CURRENT_PASSWORD' | translate }}</mat-label>
-          <input matInput type="password" formControlName="currentPassword">
+          <input matInput type="password" autocomplete="current-password" formControlName="currentPassword">
           <mat-icon matSuffix>lock</mat-icon>
         </mat-form-field>
 
         <!-- New Password -->
         <mat-form-field>
           <mat-label>{{ 'PROFILE.NEW_PASSWORD' | translate }}</mat-label>
-          <input matInput type="password" formControlName="newPassword">
+          <input matInput type="password" autocomplete="new-password" formControlName="newPassword">
           <mat-icon matSuffix>lock_open</mat-icon>
           @if (passwordForm.get('newPassword')?.hasError('minlength') && passwordForm.get('newPassword')?.touched) {
           <mat-error>{{ 'PROFILE.PASSWORD_MIN_LENGTH' | translate }}</mat-error>
@@ -287,7 +287,7 @@
         <!-- Confirm Password -->
         <mat-form-field>
           <mat-label>{{ 'PROFILE.CONFIRM_PASSWORD' | translate }}</mat-label>
-          <input matInput type="password" formControlName="confirmPassword">
+          <input matInput type="password" autocomplete="new-password" formControlName="confirmPassword">
           <mat-icon matSuffix>lock_outline</mat-icon>
           @if (passwordForm.hasError('passwordMismatch') && passwordForm.get('confirmPassword')?.touched) {
           <mat-error>{{ 'PROFILE.PASSWORDS_DO_NOT_MATCH' | translate }}</mat-error>

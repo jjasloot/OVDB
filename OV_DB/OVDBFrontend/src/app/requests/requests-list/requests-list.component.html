@@ -3,12 +3,14 @@
     <mat-card-title>
       {{ "REQUESTS.NEW_REQUEST" | translate }}
     </mat-card-title>
-    <textarea
-      matInput
-      [(ngModel)]="newRequest"
-      lines="10"
-      placeholder="{{ 'REQUESTS.NEW_REQUEST_PLACEHOLDER' | translate }}"
-    ></textarea>
+    <mat-form-field appearance="outline" class="request-field">
+      <mat-label>{{ "REQUESTS.NEW_REQUEST_PLACEHOLDER" | translate }}</mat-label>
+      <textarea
+        matInput
+        [(ngModel)]="newRequest"
+        rows="6"
+      ></textarea>
+    </mat-form-field>
     <button mat-raised-button color="primary" (click)="sendRequest()">
       {{ "REQUESTS.SEND_REQUEST" | translate }}
     </button>

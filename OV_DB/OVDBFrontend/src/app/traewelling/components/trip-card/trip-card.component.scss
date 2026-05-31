@@ -226,17 +226,15 @@
 }
 
 // Light theme colors
-:root {
+:host {
   --text-primary: rgba(0, 0, 0, 0.87);
   --text-secondary: rgba(0, 0, 0, 0.6);
   --warn-color: #f44336;
 }
 
 // Dark theme colors
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text-primary: rgba(255, 255, 255, 0.87);
-    --text-secondary: rgba(255, 255, 255, 0.6);
-    --warn-color: #ff5252;
-  }
+:host-context(.dark-theme) {
+  --text-primary: rgba(255, 255, 255, 0.87);
+  --text-secondary: rgba(255, 255, 255, 0.6);
+  --warn-color: #ff5252;
 }

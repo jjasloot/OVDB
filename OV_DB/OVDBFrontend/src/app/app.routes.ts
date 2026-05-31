@@ -33,7 +33,6 @@ export const routes: Routes = [
           { path: "routes/:routeId", loadComponent: () => import("./admin/route-detail/route-detail.component").then(m => m.RouteDetailComponent) },
           { path: "routes/instances/:routeId", loadComponent: () => import("./admin/route-instances/route-instances.component").then(m => m.RouteInstancesComponent) },
           { path: "addRoute", loadComponent: () => import("./admin/route-add/route-add.component").then(m => m.RouteAddComponent) },
-          { path: "countries", loadComponent: () => import("./admin/countries/countries.component").then(m => m.CountriesComponent) },
           { path: "types", loadComponent: () => import("./admin/route-types/route-types.component").then(m => m.RouteTypesComponent) },
           { path: "missingData", loadComponent: () => import("./admin/fill-missing-data-list/fill-missing-data-list.component").then(m => m.FillMissingDataListComponent) },
           { path: "wizard/:id", loadComponent: () => import("./admin/wizzard/wizard-step2/wizard-step2.component").then(m => m.WizzardStep2Component) },

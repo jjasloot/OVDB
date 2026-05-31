@@ -3,6 +3,7 @@ import { RequestForUser } from "src/app/models/requests.model";
 import { RequestsService } from "src/app/services/requests.service";
 import { TranslationService } from "src/app/services/translation.service";
 import { MatCard, MatCardTitle } from "@angular/material/card";
+import { MatFormField, MatLabel } from "@angular/material/form-field";
 import { MatInput } from "@angular/material/input";
 import { FormsModule } from "@angular/forms";
 import { MatButton } from "@angular/material/button";
@@ -16,6 +17,8 @@ import { TranslateModule } from "@ngx-translate/core";
     imports: [
         MatCard,
         MatCardTitle,
+        MatFormField,
+        MatLabel,
         MatInput,
         FormsModule,
         MatButton,
