@@ -64,6 +64,7 @@ export class StationMapsEditComponent implements OnInit {
       name: [this.map?.name ?? "", Validators.required],
       nameNL: this.map?.nameNL ?? "",
       sharingLinkName: this.map?.sharingLinkName ?? "",
+      includeSpecials: this.map?.includeSpecials ?? false,
     });
   }
 
@@ -96,6 +97,7 @@ export class StationMapsEditComponent implements OnInit {
     this.map.name = this.form.value.name;
     this.map.nameNL = this.form.value.nameNL;
     this.map.sharingLinkName = this.form.value.sharingLinkName;
+    this.map.includeSpecials = this.form.value.includeSpecials;
     this.map.regionIds = this.selectedOptions;
     if (this.map.id) {
       this.apiService.updateStationMap(this.map).subscribe(() => {
