@@ -247,7 +247,9 @@ namespace OV_DB.Services
                 if (!await EnsureValidTokenAsync(user))
                     return null;
 
-                _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {user.TrawellingAccessToken}");
+                if (!_httpClient.DefaultRequestHeaders.Contains("Authorization"))
+                    _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {user.TrawellingAccessToken}");
+                else _httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", user.TrawellingAccessToken);
 
                 var response = await _httpClient.GetAsync($"{_baseUrl}/auth/user");
 
@@ -297,7 +299,9 @@ namespace OV_DB.Services
                     }
                 }
 
-                _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {user.TrawellingAccessToken}");
+                if (!_httpClient.DefaultRequestHeaders.Contains("Authorization"))
+                    _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {user.TrawellingAccessToken}");
+                else _httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", user.TrawellingAccessToken);
 
                 TrawellingStatusesResponse statusesResponse = null;
                 int currentPage = page;
@@ -453,7 +457,9 @@ namespace OV_DB.Services
                 if (!await EnsureValidTokenAsync(user))
                     return null;
 
-                _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {user.TrawellingAccessToken}");
+                if (!_httpClient.DefaultRequestHeaders.Contains("Authorization"))
+                    _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {user.TrawellingAccessToken}");
+                else _httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", user.TrawellingAccessToken);
 
                 var response = await ExecuteWithExponentialBackoffAsync(() =>
                     _httpClient.GetAsync($"{_baseUrl}/stations/{stationId}"));
@@ -1046,7 +1052,9 @@ namespace OV_DB.Services
                 if (!await EnsureValidTokenAsync(user))
                     return new List<TrawellingAlert>();
 
-                _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {user.TrawellingAccessToken}");
+                if (!_httpClient.DefaultRequestHeaders.Contains("Authorization"))
+                    _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {user.TrawellingAccessToken}");
+                else _httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", user.TrawellingAccessToken);
 
                 var response = await _httpClient.GetAsync($"{_baseUrl}/alerts");
 
