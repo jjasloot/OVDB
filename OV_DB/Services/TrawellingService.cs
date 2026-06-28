@@ -18,6 +18,7 @@ namespace OV_DB.Services
 {
     public class TrawellingService : ITrawellingService
     {
+        public static string HTTP_CLIENT_NAME = "TrawellingServiceClient";
         private readonly HttpClient _httpClient;
         private readonly IConfiguration _configuration;
         private readonly ITimezoneService _timezoneService;
@@ -42,10 +43,10 @@ namespace OV_DB.Services
         private DateTime _rateLimitUpdated;
 
 
-        public TrawellingService(HttpClient httpClient, IConfiguration configuration, ITimezoneService timezoneService,
+        public TrawellingService(IHttpClientFactory httpClientFactory, IConfiguration configuration, ITimezoneService timezoneService,
             OVDBDatabaseContext dbContext, ILogger<TrawellingService> logger, IMemoryCache memoryCache)
         {
-            _httpClient = httpClient;
+            _httpClient = httpClientFactory.CreateClient(HTTP_CLIENT_NAME);
             _configuration = configuration;
             _timezoneService = timezoneService;
             _dbContext = dbContext;
@@ -65,7 +66,7 @@ namespace OV_DB.Services
             queryParams["response_type"] = "code";
             queryParams["client_id"] = _clientId;
             queryParams["redirect_uri"] = _redirectUri;
-            queryParams["scope"] = "read-statuses write-statuses";
+            queryParams["scope"] = "read-statuses";
             queryParams["state"] = state;
 
             return $"{_authorizeUrl}?{queryParams}";

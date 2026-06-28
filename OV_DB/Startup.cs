@@ -150,7 +150,7 @@ namespace OV_DB
             services.AddTransient<ITimezoneService, TimezoneService>();
             services.AddSingleton<IFontLoader, FontLoader>();
             services.AddScoped<TelegramBotService>();
-            services.AddHttpClient<ITrawellingService, TrawellingService>(client =>
+            services.AddHttpClient(TrawellingService.HTTP_CLIENT_NAME,client =>
             {
                 client.DefaultRequestHeaders.Add("User-Agent", "OVDB/1.0 (https://github.com/jjasloot/OVDB; contact-me jaapslootbeek@gmail.com)");
             });
