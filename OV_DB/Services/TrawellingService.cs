@@ -247,7 +247,6 @@ namespace OV_DB.Services
                 if (!await EnsureValidTokenAsync(user))
                     return null;
 
-                _httpClient.DefaultRequestHeaders.Clear();
                 _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {user.TrawellingAccessToken}");
 
                 var response = await _httpClient.GetAsync($"{_baseUrl}/auth/user");
@@ -298,7 +297,6 @@ namespace OV_DB.Services
                     }
                 }
 
-                _httpClient.DefaultRequestHeaders.Clear();
                 _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {user.TrawellingAccessToken}");
 
                 TrawellingStatusesResponse statusesResponse = null;
@@ -455,7 +453,6 @@ namespace OV_DB.Services
                 if (!await EnsureValidTokenAsync(user))
                     return null;
 
-                _httpClient.DefaultRequestHeaders.Clear();
                 _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {user.TrawellingAccessToken}");
 
                 var response = await ExecuteWithExponentialBackoffAsync(() =>
@@ -1049,7 +1046,6 @@ namespace OV_DB.Services
                 if (!await EnsureValidTokenAsync(user))
                     return new List<TrawellingAlert>();
 
-                _httpClient.DefaultRequestHeaders.Clear();
                 _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {user.TrawellingAccessToken}");
 
                 var response = await _httpClient.GetAsync($"{_baseUrl}/alerts");
