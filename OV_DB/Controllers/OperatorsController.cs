@@ -196,8 +196,12 @@ public class OperatorsController : ControllerBase
         if (!file.ContentType.StartsWith("image/"))
             return BadRequest("Only image files are allowed.");
 
-        var filePath = Path.Combine(_storagePath, id.ToString(), file.FileName);
-        var relativePath = Path.Combine(id.ToString(), file.FileName);
+        // Never trust the client-supplied file name — strip any path components to prevent traversal.
+        var safeFileName = Path.GetFileName(file.FileName);
+        if (string.IsNullOrWhiteSpace(safeFileName))
+            return BadRequest("Invalid file name.");
+        var filePath = Path.Combine(_storagePath, id.ToString(), safeFileName);
+        var relativePath = Path.Combine(id.ToString(), safeFileName);
         if (!Directory.Exists(Path.GetDirectoryName(filePath)))
             Directory.CreateDirectory(Path.GetDirectoryName(filePath));
 

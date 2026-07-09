@@ -216,9 +216,15 @@ namespace OV_DB.Controllers
         [HttpGet("years")]
         public async Task<ActionResult<IEnumerable<int?>>> GetRoutesYears()
         {
+            var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value ?? "-1");
+            if (userIdClaim < 0)
+            {
+                return Forbid();
+            }
             var years = await _context.Routes
                 .AsNoTracking()
                 .Where(r => r.RouteTypeId != null)
+                .Where(r => r.RouteMaps.Any(rm => rm.Map.UserId == userIdClaim))
                 .Select(r => r.FirstDateTime.HasValue ? (int?)r.FirstDateTime.Value.Year : null)
                 .Distinct()
                 .ToListAsync();
@@ -1202,7 +1208,18 @@ namespace OV_DB.Controllers
         [HttpPatch("{id:int}/assignRegions")]
         public async Task<IActionResult> AssignRegionsToRouteAsync(int id, [FromServices] IRouteRegionsService routeRegionsService)
         {
-            var route = await _context.Routes.Include(r => r.Regions).SingleAsync(r => r.RouteId == id);
+            var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value ?? "-1");
+            if (userIdClaim < 0)
+            {
+                return Forbid();
+            }
+            var route = await _context.Routes
+                .Include(r => r.Regions)
+                .SingleOrDefaultAsync(r => r.RouteId == id && r.RouteMaps.Any(rm => rm.Map.UserId == userIdClaim));
+            if (route == null)
+            {
+                return NotFound();
+            }
             await routeRegionsService.AssignRegionsToRouteAsync(route);
             await _context.SaveChangesAsync();
             return Ok();
