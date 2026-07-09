@@ -155,6 +155,7 @@ namespace OV_DB
                 client.DefaultRequestHeaders.Add("User-Agent", "OVDB/1.0 (https://github.com/jjasloot/OVDB; contact-me jaapslootbeek@gmail.com)");
             });
             services.AddScoped<ITrawellingService, TrawellingService>();
+            services.AddHostedService<TraewellingTokenRefreshService>();
 
             // Register named HttpClients for different services to avoid socket exhaustion
             services.AddHttpClient("OSM", client =>

@@ -570,7 +570,7 @@ namespace OV_DB.Services
         // revoke the token the other request just received, so refreshes are serialized per user
         private static readonly ConcurrentDictionary<int, SemaphoreSlim> _refreshLocks = new();
 
-        private async Task<bool> EnsureValidTokenAsync(User user)
+        public async Task<bool> EnsureValidTokenAsync(User user)
         {
             if (HasValidTokens(user))
                 return true;

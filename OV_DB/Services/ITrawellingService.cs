@@ -87,6 +87,14 @@ namespace OV_DB.Services
         bool IsConnected(User user);
 
         /// <summary>
+        /// Ensure the user has a valid access token, refreshing it if necessary.
+        /// Refreshes are serialized per user to avoid revoking a concurrently rotated refresh token.
+        /// </summary>
+        /// <param name="user">User to ensure tokens for</param>
+        /// <returns>True if a valid access token is available</returns>
+        Task<bool> EnsureValidTokenAsync(User user);
+
+        /// <summary>
         /// Get existing RouteInstances for a specific date and optionally filter by route name
         /// </summary>
         /// <param name="user">User to search RouteInstances for</param>
