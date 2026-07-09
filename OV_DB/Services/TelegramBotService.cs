@@ -116,7 +116,12 @@ namespace OV_DB.Services
 
         private async Task HandleCallbackQueryAsync(CallbackQuery callbackQuery)
         {
-            var stationId = int.Parse(callbackQuery.Data);
+            // callbackQuery.Data is attacker-influenced and Message may be null for old messages.
+            if (!int.TryParse(callbackQuery.Data, out var stationId) || callbackQuery.Message == null)
+            {
+                await _botClient.AnswerCallbackQuery(callbackQuery.Id, "❌");
+                return;
+            }
             var userId = callbackQuery.From.Id;
 
             var user = await _dbContext.Users.SingleOrDefaultAsync(u => u.TelegramUserId == userId);
