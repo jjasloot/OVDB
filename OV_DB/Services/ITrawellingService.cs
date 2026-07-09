@@ -79,6 +79,14 @@ namespace OV_DB.Services
         bool HasValidTokens(User user);
 
         /// <summary>
+        /// Check if user has a usable Träwelling connection: either a currently valid
+        /// access token or a refresh token that can be used to obtain one
+        /// </summary>
+        /// <param name="user">User to check</param>
+        /// <returns>True if the connection can still be used</returns>
+        bool IsConnected(User user);
+
+        /// <summary>
         /// Get existing RouteInstances for a specific date and optionally filter by route name
         /// </summary>
         /// <param name="user">User to search RouteInstances for</param>

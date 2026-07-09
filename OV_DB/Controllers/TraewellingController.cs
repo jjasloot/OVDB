@@ -172,19 +172,24 @@ namespace OV_DB.Controllers
                 if (user == null)
                     return NotFound("User not found");
 
-                var isConnected = _trawellingService.HasValidTokens(user);
-                
-                if (!isConnected)
+                if (!_trawellingService.IsConnected(user))
                 {
                     return Ok(new { connected = false });
                 }
 
+                // This refreshes the access token when it has expired; a definitive refresh
+                // failure clears the stored tokens, so re-check afterwards
                 var userInfo = await _trawellingService.GetUserInfoAsync(user);
-                
-                return Ok(new 
-                { 
-                    connected = true, 
-                    user = userInfo 
+
+                if (userInfo == null && !_trawellingService.IsConnected(user))
+                {
+                    return Ok(new { connected = false });
+                }
+
+                return Ok(new
+                {
+                    connected = true,
+                    user = userInfo
                 });
             }
             catch (Exception ex)
@@ -210,7 +215,7 @@ namespace OV_DB.Controllers
                 if (user == null)
                     return NotFound("User not found");
 
-                if (!_trawellingService.HasValidTokens(user))
+                if (!_trawellingService.IsConnected(user))
                     return BadRequest("Träwelling account not connected or tokens expired");
 
                 var tripsResponse = await _trawellingService.GetOptimizedTripsAsync(user, page);
@@ -243,7 +248,7 @@ namespace OV_DB.Controllers
                 if (user == null)
                     return NotFound("User not found");
 
-                if (!_trawellingService.HasValidTokens(user))
+                if (!_trawellingService.IsConnected(user))
                     return BadRequest("Träwelling account not connected or tokens expired");
 
                 var success = await _trawellingService.IgnoreStatusAsync(user, request.StatusId);
@@ -312,7 +317,7 @@ namespace OV_DB.Controllers
                 if (user == null)
                     return NotFound("User not found");
 
-                if (!_trawellingService.HasValidTokens(user))
+                if (!_trawellingService.IsConnected(user))
                     return Ok(new { connected = false });
 
                 // Count RouteInstances linked to Träwelling
@@ -451,7 +456,7 @@ namespace OV_DB.Controllers
                 if (user == null)
                     return NotFound("User not found");
 
-                if (!_trawellingService.HasValidTokens(user))
+                if (!_trawellingService.IsConnected(user))
                     return Ok(Array.Empty<object>());
 
                 var alerts = await _trawellingService.GetAlertsAsync(user);

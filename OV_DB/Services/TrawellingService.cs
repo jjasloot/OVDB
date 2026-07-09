@@ -7,10 +7,12 @@ using OV_DB.Models;
 using OVDB_database.Database;
 using OVDB_database.Models;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
 
@@ -206,8 +208,19 @@ namespace OV_DB.Services
 
                 if (!response.IsSuccessStatusCode)
                 {
-                    _logger.LogError("Failed to refresh tokens for user {UserId}. Status: {StatusCode}",
-                        user.Id, response.StatusCode);
+                    _logger.LogError("Failed to refresh tokens for user {UserId}. Status: {StatusCode}, Content: {Content}",
+                        user.Id, response.StatusCode, await response.Content.ReadAsStringAsync());
+
+                    // 400/401 means the refresh token itself was rejected (expired or revoked);
+                    // clear the tokens so the connection status honestly reports disconnected
+                    if (response.StatusCode == System.Net.HttpStatusCode.BadRequest ||
+                        response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+                    {
+                        user.TrawellingAccessToken = null;
+                        user.TrawellingRefreshToken = null;
+                        user.TrawellingTokenExpiresAt = null;
+                        await _dbContext.SaveChangesAsync();
+                    }
                     return false;
                 }
 
@@ -546,18 +559,46 @@ namespace OV_DB.Services
                    user.TrawellingTokenExpiresAt.Value > DateTime.UtcNow.AddMinutes(5);
         }
 
+        public bool IsConnected(User user)
+        {
+            // The connection is alive as long as we hold a refresh token, even when the
+            // short-lived access token has expired — it can be refreshed on demand
+            return HasValidTokens(user) || !string.IsNullOrEmpty(user.TrawellingRefreshToken);
+        }
+
+        // Träwelling rotates refresh tokens on every use; a concurrent double-refresh would
+        // revoke the token the other request just received, so refreshes are serialized per user
+        private static readonly ConcurrentDictionary<int, SemaphoreSlim> _refreshLocks = new();
+
         private async Task<bool> EnsureValidTokenAsync(User user)
         {
             if (HasValidTokens(user))
                 return true;
 
-            if (!string.IsNullOrEmpty(user.TrawellingRefreshToken))
+            if (string.IsNullOrEmpty(user.TrawellingRefreshToken))
             {
-                return await RefreshTokensAsync(user);
+                _logger.LogWarning("User {UserId} has no valid Träwelling tokens", user.Id);
+                return false;
             }
 
-            _logger.LogWarning("User {UserId} has no valid Träwelling tokens", user.Id);
-            return false;
+            var refreshLock = _refreshLocks.GetOrAdd(user.Id, _ => new SemaphoreSlim(1, 1));
+            await refreshLock.WaitAsync();
+            try
+            {
+                // A parallel request may have refreshed while we waited; pick up its tokens
+                await _dbContext.Entry(user).ReloadAsync();
+                if (HasValidTokens(user))
+                    return true;
+
+                if (string.IsNullOrEmpty(user.TrawellingRefreshToken))
+                    return false;
+
+                return await RefreshTokensAsync(user);
+            }
+            finally
+            {
+                refreshLock.Release();
+            }
         }
 
         private async Task<Route> FindOrCreateRouteAsync(TrawellingStatus status)
