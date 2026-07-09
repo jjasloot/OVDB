@@ -41,11 +41,18 @@ namespace OV_DB.Controllers
             var httpClient = _httpClientFactory.CreateClient("OSM");
 
             var response = await httpClient.GetAsync($"https://polygons.openstreetmap.fr/get_geojson.py?id={id}&params=0");
-            if (response.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
+            if (!response.IsSuccessStatusCode)
             {
                 return null;
             }
             text = await response.Content.ReadAsStringAsync();
+
+            // This service returns the literal body "None" (or an empty body) for relations it has
+            // not cached yet — don't let that reach the GeoJSON deserializer.
+            if (string.IsNullOrWhiteSpace(text) || string.Equals(text.Trim(), "None", StringComparison.OrdinalIgnoreCase))
+            {
+                return null;
+            }
 
             return text;
         }
@@ -61,15 +68,16 @@ namespace OV_DB.Controllers
             using (var content = new StringContent(query))
             {
                 var response = await httpClient.PostAsync("https://overpass-api.de/api/interpreter", content);
-                if (response.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
+                if (!response.IsSuccessStatusCode)
                 {
                     return null;
                 }
                 text = await response.Content.ReadAsStringAsync();
             }
-            
+
             var parsed = JsonConvert.DeserializeObject<OSM>(text.ToString());
-            return parsed.Elements.Single().Tags;
+            // Overpass returns an empty element list for a nonexistent relation id — don't throw.
+            return parsed?.Elements?.FirstOrDefault()?.Tags;
         }
 
         [HttpPut("{id}")]
@@ -100,6 +108,11 @@ namespace OV_DB.Controllers
                 return Forbid();
             }
             var tags = await GetTagsAsync(newRegion.OsmRelationId);
+            if (tags == null)
+            {
+                // Overpass was unavailable/rate-limited or the relation id does not exist.
+                return NotFound();
+            }
 
             var name = tags.GetValueOrDefault("name:en");
             if (string.IsNullOrWhiteSpace(name))
@@ -169,7 +182,7 @@ namespace OV_DB.Controllers
                         NameNL = nameNL,
                         OriginalName = originalName,
                         OsmRelationId = newRegion.OsmRelationId,
-                        Geometry = geometry,
+                        Geometry = multiPolygon,
                         ParentRegionId = newRegion.ParentRegionId
                     };
                     _context.Regions.Add(region);
@@ -213,7 +226,9 @@ namespace OV_DB.Controllers
                 }
             }
 
-            var factory = new GeometryFactory();
+            // Match the SRID (WGS84 / 4326) of the GeoJson-deserialized input so stored geometries are
+            // consistent whether they came through the create or the update branch.
+            var factory = new GeometryFactory(new PrecisionModel(), 4326);
             var outers = new List<NetTopologySuite.Geometries.Polygon>();
             foreach (var outerGeom in outerGeometries)
             {
