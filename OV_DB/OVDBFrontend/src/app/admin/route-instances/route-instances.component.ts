@@ -7,6 +7,7 @@ import { RouteInstanceProperty } from "src/app/models/routeInstanceProperty.mode
 import { TranslateService, TranslateModule } from "@ngx-translate/core";
 import { DatePipe, DecimalPipe, formatNumber } from "@angular/common";
 import { MatDialog } from "@angular/material/dialog";
+import { MatSnackBar } from "@angular/material/snack-bar";
 import { RouteInstancesEditComponent } from "../route-instances-edit/route-instances-edit.component";
 import { Route } from "src/app/models/route.model";
 import { AreYouSureDialogComponent } from "src/app/are-you-sure-dialog/are-you-sure-dialog.component";
@@ -52,6 +53,7 @@ export class RouteInstancesComponent implements OnInit {
   private dialog = inject(MatDialog);
   private router = inject(Router);
   private destroyRef = inject(DestroyRef);
+  private snackBar = inject(MatSnackBar);
 
   routeId = signal<number>(0);
   route = signal<Route | null>(null);
@@ -226,9 +228,15 @@ export class RouteInstancesComponent implements OnInit {
     });
     dialogRef.afterClosed().subscribe((result: RouteInstance) => {
       if (result) {
-        this.router.navigate(['/admin/routes/instances', this.routeId()]);
-        this.apiService.updateRouteInstance(result).subscribe(() => {
-          this.getData();
+        this.apiService.updateRouteInstance(result).subscribe({
+          next: () => {
+            this.router.navigate(['/admin/routes/instances', this.routeId()]);
+            this.getData();
+          },
+          error: (err) => {
+            console.error('Failed to save route instance', err);
+            this.snackBar.open(this.translateService.instant('ROUTEINSTANCE.SAVE_ERROR'), undefined, { duration: 5000 });
+          },
         });
       }
     });
@@ -272,21 +280,34 @@ export class RouteInstancesComponent implements OnInit {
     });
     dialogRef.afterClosed().subscribe((result: RouteInstance) => {
       if (result) {
-        this.router.navigate(['/admin/routes/instances', this.routeId()]);
-        this.apiService.updateRouteInstance(result).subscribe(() => {
-          this.getData();
-          // Clear the fromTraewelling flag after successful creation
-          this.fromTraewelling.set(false);
-          this.trawellingTripData.set(null);
+        this.apiService.updateRouteInstance(result).subscribe({
+          next: () => {
+            this.router.navigate(['/admin/routes/instances', this.routeId()]);
+            this.getData();
+            // Clear the fromTraewelling flag after successful creation
+            this.fromTraewelling.set(false);
+            this.trawellingTripData.set(null);
+          },
+          error: (err) => {
+            console.error('Failed to save route instance', err);
+            this.snackBar.open(this.translateService.instant('ROUTEINSTANCE.SAVE_ERROR'), undefined, { duration: 5000 });
+          },
         });
       }
     });
   }
 
+  private toLocalDateString(date: Date): string {
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+  }
+
   private prefillWithTraewellingData(newInstance: RouteInstance) {
     if (this.fromTraewelling() && this.trawellingTripData()) {
       const tripData = this.trawellingTripData();
-      newInstance.date = tripData!.date ? new Date(tripData!.date).toISOString().split('T')[0] : undefined;
+      // Use the local calendar date, not the UTC one: toISOString() would roll a late-evening
+      // local check-in back to the previous day.
+      newInstance.date = tripData!.date ? this.toLocalDateString(new Date(tripData!.date)) : undefined;
       newInstance.startTime = tripData!.departureTime;
       newInstance.endTime = tripData!.arrivalTime;
       newInstance.scheduledStartTime = tripData!.scheduledDepartureTime;

@@ -85,12 +85,7 @@ export class TrawellingContextCardComponent {
   @Input() tripContext: TrawellingTripContext | null = null;
 
   formatTime(isoString?: string): string {
-    if (!isoString) return '';
-    const date = new Date(isoString);
-    return date.toLocaleTimeString('nl-NL', {
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    return this.traewellingService.formatTime(isoString);
   }
 
   formatDuration(minutes: number): string {

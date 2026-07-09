@@ -20,6 +20,7 @@ import {
 } from '../../models/traewelling.model';
 import { TraewellingTagMapping } from '../../models/user-profile.model';
 import { ApiService } from '../../services/api.service';
+import { TranslationService } from '../../services/translation.service';
 
 @Injectable({
   providedIn: 'root'
@@ -27,6 +28,7 @@ import { ApiService } from '../../services/api.service';
 export class TrawellingService {
   private http = inject(HttpClient);
   private apiService = inject(ApiService);
+  private translationService = inject(TranslationService);
 
   private readonly baseUrl = `${environment.backend}api/Traewelling`;
   private readonly routesUrl = `${environment.backend}api/routes`;
@@ -231,19 +233,19 @@ export class TrawellingService {
   formatTime(isoString?: string): string {
     if (!isoString) return '';
     const date = new Date(isoString);
-    return date.toLocaleTimeString('nl-NL', { 
-      hour: '2-digit', 
-      minute: '2-digit' 
+    return date.toLocaleTimeString(this.translationService.language || 'nl-NL', {
+      hour: '2-digit',
+      minute: '2-digit'
     });
   }
 
   // Format date from ISO string to readable local date
   formatDate(isoString: string): string {
     const date = new Date(isoString);
-    return date.toLocaleDateString('nl-NL', { 
-      day: 'numeric', 
-      month: 'short', 
-      year: 'numeric' 
+    return date.toLocaleDateString(this.translationService.language || 'nl-NL', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric'
     });
   }
 }

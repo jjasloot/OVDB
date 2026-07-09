@@ -7,13 +7,14 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDividerModule } from '@angular/material/divider';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { Router } from '@angular/router';
 import { TrawellingTrip } from '../../../models/traewelling.model';
 import { TrawellingService } from '../../services/traewelling.service';
 import { RouteInstanceSearchDialogComponent } from '../route-instance-search-dialog/route-instance-search-dialog.component';
 import { RouteSearchDialogComponent } from '../route-search-dialog/route-search-dialog.component';
 import { MatDialog } from '@angular/material/dialog';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 @Component({
   selector: 'app-trip-card',
@@ -35,6 +36,8 @@ export class TripCardComponent {
   trawellingService = inject(TrawellingService);
   private router = inject(Router);
   private dialog = inject(MatDialog);
+  private snackBar = inject(MatSnackBar);
+  private translateService = inject(TranslateService);
 
   @Input() trip!: TrawellingTrip;
   readonly removeTrip = output<void>();
@@ -62,6 +65,7 @@ export class TripCardComponent {
       this.removeTrip.emit();
     } catch (error) {
       console.error('Error ignoring trip:', error);
+      this.snackBar.open(this.translateService.instant('TRAEWELLING.IGNORE_ERROR'), undefined, { duration: 5000 });
     } finally {
       this.isProcessing = false;
     }

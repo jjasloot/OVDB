@@ -17,6 +17,7 @@ import { TranslateService, TranslateModule } from "@ngx-translate/core";
 import { TranslationService } from "src/app/services/translation.service";
 import { MatCheckboxChange, MatCheckbox } from "@angular/material/checkbox";
 import { MatDialog } from "@angular/material/dialog";
+import { MatSnackBar } from "@angular/material/snack-bar";
 import { RouteInstancesEditComponent } from "../route-instances-edit/route-instances-edit.component";
 import { OperatorService } from "src/app/services/operator.service";
 import { TableStateService } from "src/app/services/table-state.service";
@@ -79,6 +80,8 @@ export class RouteInstancesListComponent implements OnInit, AfterViewInit {
   private operatorService = inject(OperatorService);
   private dialog = inject(MatDialog);
   private destroyRef = inject(DestroyRef);
+  private snackBar = inject(MatSnackBar);
+  private translateService = inject(TranslateService);
   private bottomSheet = inject(MatBottomSheet);
   private tableStateService = inject(TableStateService);
   private userPreferenceService = inject(UserPreferenceService);
@@ -270,9 +273,15 @@ export class RouteInstancesListComponent implements OnInit, AfterViewInit {
       if (result) {
         this.apiService.updateRouteInstance(result).pipe(
           takeUntilDestroyed(this.destroyRef)
-        ).subscribe(() => {
-          this.loadInstancesPage().subscribe();
-          this.saveCurrentTableState();
+        ).subscribe({
+          next: () => {
+            this.loadInstancesPage().subscribe();
+            this.saveCurrentTableState();
+          },
+          error: (err) => {
+            console.error('Failed to save route instance', err);
+            this.snackBar.open(this.translateService.instant('ROUTEINSTANCE.SAVE_ERROR'), undefined, { duration: 5000 });
+          },
         });
       }
     });

@@ -43,6 +43,8 @@
   "ROUTESLIST.NOROUTES": "Geen routes gevonden, voeg er een toe via het tabblad \"Route toevoegen\"",
   "IMPORTER.THISMAYTAKEAWHILE": "Dit kan even duren...",
   "ERROR": "Fout...",
+  "ROUTEINSTANCE.SAVE_ERROR": "Kon de rit niet opslaan. Probeer het opnieuw.",
+  "TRAEWELLING.IGNORE_ERROR": "Kon de rit niet negeren. Probeer het opnieuw.",
   "IMPORTER.STEP1": "Zoek op een naam en een type. Voeg een netwerk toe om resultaten te beperken.",
   "IMPORTER.REFERENCE": "Naam van de lijn",
   "IMPORTER.NETWORK": "Netwerk",

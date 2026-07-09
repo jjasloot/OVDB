@@ -46,6 +46,8 @@
   "ROUTESLIST.NOROUTES": "No routes found, add a new route on the tab \"Add route\"",
   "IMPORTER.THISMAYTAKEAWHILE": "This may take a while..",
   "ERROR": "Error...",
+  "ROUTEINSTANCE.SAVE_ERROR": "Could not save the trip. Please try again.",
+  "TRAEWELLING.IGNORE_ERROR": "Could not ignore the trip. Please try again.",
   "IMPORTER.STEP1": "Search for a line and a type, add a network to limit results.",
   "IMPORTER.REFERENCE": "Name of the line",
   "IMPORTER.NETWORK": "Network",
