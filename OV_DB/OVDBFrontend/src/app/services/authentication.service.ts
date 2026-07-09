@@ -23,18 +23,29 @@ export class AuthenticationService {
   refreshTrigger: any;
   returnUrl: string;
 
+  private readonly refreshBufferMs = 5 * 60 * 1000; // refresh this long before expiry
+  private refreshInFlight: Promise<boolean> | null = null;
+
   constructor() {
     this.token = localStorage.getItem('OVDBToken');
     this.refreshToken = localStorage.getItem('OVDBRefreshToken');
-    
+
     // Emit initial login state
     this.updateLoginState();
-    
-    setTimeout(() => {
-      if (this.token) {
-        this.refreshTheToken();
+
+    // Pick up token changes made by other tabs so we never keep using a stale/rotated token,
+    // and so a refresh performed by one tab is adopted by its siblings.
+    window.addEventListener('storage', (event) => {
+      if (event.key === 'OVDBToken' || event.key === 'OVDBRefreshToken') {
+        this.syncFromStorage();
+        this.updateLoginState();
+        this.scheduleRefresh();
       }
-    }, 100);
+    });
+
+    // Don't force a refresh on every tab open — that races sibling tabs on the rotating refresh
+    // token. Just schedule one shortly before expiry (refreshing immediately only if already due).
+    this.scheduleRefresh();
   }
 
   login(email: string, password: string) {
@@ -73,40 +84,89 @@ export class AuthenticationService {
       this.refreshToken = data.refreshToken;
     }
 
-    // Get token expiration date with null check
-    const expirationDate = this.helper.getTokenExpirationDate(this.token);
-    if (!expirationDate) {
-      console.error('Invalid token - cannot schedule refresh');
-      return;
-    }
+    this.scheduleRefresh();
 
-    const expiry = expirationDate.valueOf() - new Date().valueOf();
-    const refreshBuffer = 5 * 60 * 1000; // 5 minutes in milliseconds
-    this.refreshTrigger = setTimeout(() => this.refreshTheToken(), Math.max(expiry - refreshBuffer, 0));
-    
     // Emit login state change
     this.updateLoginState();
   }
 
-  refreshTheToken() {
-    if (!this.refreshToken) {
-      console.warn('No refresh token available');
+  private syncFromStorage() {
+    this.token = localStorage.getItem('OVDBToken');
+    this.refreshToken = localStorage.getItem('OVDBRefreshToken');
+  }
+
+  private tokenValidForMs(): number {
+    if (!this.token) {
+      return -1;
+    }
+    const expirationDate = this.helper.getTokenExpirationDate(this.token);
+    if (!expirationDate) {
+      return -1;
+    }
+    return expirationDate.valueOf() - Date.now();
+  }
+
+  private scheduleRefresh() {
+    if (this.refreshTrigger) {
+      clearTimeout(this.refreshTrigger);
+      this.refreshTrigger = null;
+    }
+    if (!this.token || !this.refreshToken) {
       return;
     }
+    const remaining = this.tokenValidForMs();
+    const delay = remaining - this.refreshBufferMs;
+    if (delay <= 0) {
+      this.refreshTheToken();
+    } else {
+      this.refreshTrigger = setTimeout(() => this.refreshTheToken(), delay);
+    }
+  }
 
-    this.httpClient.post(environment.backend + 'api/Authentication/refreshToken',
-      { refreshToken: this.refreshToken }).subscribe({
-        next: (data: any) => {
-          this.HandleArrivalOfTokens(data);
-        },
-        error: (error) => {
-          console.error('Token refresh failed:', error);
-          // If refresh fails, log out the user
-          if (error.status === 401 || error.status === 400) {
-            this.logOut();
-          }
+  // Returns true if a valid token is in place afterwards. Coalesces concurrent callers within this
+  // tab, and serializes across tabs via the Web Locks API so rotating refresh tokens aren't raced.
+  refreshTheToken(): Promise<boolean> {
+    if (this.refreshInFlight) {
+      return this.refreshInFlight;
+    }
+    this.refreshInFlight = this.performRefresh().finally(() => {
+      this.refreshInFlight = null;
+    });
+    return this.refreshInFlight;
+  }
+
+  private performRefresh(): Promise<boolean> {
+    const run = async (): Promise<boolean> => {
+      // Another tab may have refreshed while we waited for the lock — adopt its token instead.
+      this.syncFromStorage();
+      if (this.tokenValidForMs() > this.refreshBufferMs) {
+        this.updateLoginState();
+        return true;
+      }
+      if (!this.refreshToken) {
+        return false;
+      }
+      try {
+        const data: any = await new Promise((resolve, reject) => {
+          this.httpClient.post(environment.backend + 'api/Authentication/refreshToken',
+            { refreshToken: this.refreshToken }).subscribe({ next: resolve, error: reject });
+        });
+        this.HandleArrivalOfTokens(data);
+        return true;
+      } catch (error: any) {
+        console.error('Token refresh failed:', error);
+        if (error?.status === 401 || error?.status === 400) {
+          this.logOut();
         }
-      });
+        return false;
+      }
+    };
+
+    const locks = (navigator as any)?.locks;
+    if (locks?.request) {
+      return locks.request('ovdb-token-refresh', run);
+    }
+    return run();
   }
 
   logOut() {
@@ -157,7 +217,10 @@ export class AuthenticationService {
   }
 
   get admin() {
-    return this.helper.decodeToken(this.token).admin === 'true';
+    if (!this.token) {
+      return false;
+    }
+    return this.helper.decodeToken(this.token)?.admin === 'true';
   }
 
   getActiveSessions() {

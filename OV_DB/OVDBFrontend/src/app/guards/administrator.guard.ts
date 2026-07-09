@@ -14,8 +14,8 @@ export class AdministratorGuard  {
   canActivate(
     next: ActivatedRouteSnapshot,
     state: RouterStateSnapshot): Observable<boolean | UrlTree> | Promise<boolean | UrlTree> | boolean | UrlTree {
-    if (!this.authService.admin) {
-      return false;
+    if (!this.authService.isLoggedIn || !this.authService.admin) {
+      return this.router.parseUrl('/');
     }
     return true;
   }
