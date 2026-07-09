@@ -231,6 +231,11 @@ namespace OV_DB.Services
                 user.TrawellingRefreshToken = tokenResponse.RefreshToken;
                 user.TrawellingTokenExpiresAt = DateTime.UtcNow.AddSeconds(tokenResponse.ExpiresIn);
 
+                // Persist the rotated tokens IMMEDIATELY, before any further network call. Träwelling
+                // invalidates the old refresh token the moment this response is issued; if we threw or
+                // crashed before saving, the DB would keep the dead token and the connection would break.
+                await _dbContext.SaveChangesAsync();
+
                 // Fetch and store user information including username if not already stored
                 if (string.IsNullOrEmpty(user.TrawellingUsername))
                 {
@@ -239,10 +244,10 @@ namespace OV_DB.Services
                     {
                         user.TrawellingUsername = userInfo.Username;
                         _logger.LogInformation("Stored Träwelling username {Username} for user {UserId}", userInfo.Username, user.Id);
+                        await _dbContext.SaveChangesAsync();
                     }
                 }
 
-                await _dbContext.SaveChangesAsync();
                 _logger.LogInformation("Successfully refreshed tokens for user {UserId}", user.Id);
                 return true;
             }
@@ -347,9 +352,12 @@ namespace OV_DB.Services
                             _memoryCache.Set("TraewellingStatus|" + status.Id, status, TimeSpan.FromMinutes(30));
                         }
 
-                        // Filter out statuses that are already imported or ignored
+                        // Filter out statuses that are already imported or ignored — scoped to THIS user,
+                        // otherwise two accounts linked to the same Träwelling account hide each other's trips.
                         var existingTrawellingIds = await _dbContext.RouteInstances
                             .Where(ri => ri.TrawellingStatusId.HasValue)
+                            .Where(ri => ri.RouteInstanceMaps.Any(rim => rim.Map.UserId == user.Id)
+                                || ri.Route.RouteMaps.Any(rm => rm.Map.UserId == user.Id))
                             .Select(ri => ri.TrawellingStatusId.Value)
                             .ToListAsync();
 
@@ -949,8 +957,8 @@ namespace OV_DB.Services
                 if (transport?.Origin == null || transport?.Destination == null)
                     return null;
 
-                var origin = await MapStopoverToDto(user, transport.Origin, transport.ManualDeparture?.DateTime, isArrival: false);
-                var destination = await MapStopoverToDto(user, transport.Destination, transport.ManualArrival?.DateTime, isArrival: true);
+                var origin = await MapStopoverToDto(user, transport.Origin, transport.ManualDeparture?.UtcDateTime, isArrival: false);
+                var destination = await MapStopoverToDto(user, transport.Destination, transport.ManualArrival?.UtcDateTime, isArrival: true);
 
                 return new TrawellingTripDto
                 {
@@ -1010,12 +1018,12 @@ namespace OV_DB.Services
 
                 if (isArrival)
                 {
-                    realArrival = manualTime ?? (stopover.ArrivalReal ?? stopover.ArrivalPlanned)?.DateTime;
+                    realArrival = manualTime ?? (stopover.ArrivalReal ?? stopover.ArrivalPlanned)?.UtcDateTime;
                 }
 
                 else
                 {
-                    realDeparture = manualTime ?? (stopover.DepartureReal ?? stopover.DeparturePlanned)?.DateTime;
+                    realDeparture = manualTime ?? (stopover.DepartureReal ?? stopover.DeparturePlanned)?.UtcDateTime;
                 }
 
                 // Convert UTC times to local timezone if we have coordinates
@@ -1027,10 +1035,10 @@ namespace OV_DB.Services
                 if (stationData?.Latitude.HasValue == true && stationData?.Longitude.HasValue == true)
                 {
                     if (stopover.ArrivalPlanned.HasValue)
-                        localArrivalScheduled = await _timezoneService.ConvertUtcToLocalTimeAsync(stopover.ArrivalPlanned.Value.DateTime, stationData.Latitude.Value, stationData.Longitude.Value);
+                        localArrivalScheduled = await _timezoneService.ConvertUtcToLocalTimeAsync(stopover.ArrivalPlanned.Value.UtcDateTime, stationData.Latitude.Value, stationData.Longitude.Value);
 
                     if (stopover.DeparturePlanned.HasValue)
-                        localDepartureScheduled = await _timezoneService.ConvertUtcToLocalTimeAsync(stopover.DeparturePlanned.Value.DateTime, stationData.Latitude.Value, stationData.Longitude.Value);
+                        localDepartureScheduled = await _timezoneService.ConvertUtcToLocalTimeAsync(stopover.DeparturePlanned.Value.UtcDateTime, stationData.Latitude.Value, stationData.Longitude.Value);
 
                     if (realArrival.HasValue)
                         localArrivalReal = await _timezoneService.ConvertUtcToLocalTimeAsync(realArrival.Value, stationData.Latitude.Value, stationData.Longitude.Value);
@@ -1041,8 +1049,8 @@ namespace OV_DB.Services
                 else
                 {
                     // Fallback to UTC times if no coordinates available
-                    localArrivalScheduled = stopover.ArrivalPlanned?.DateTime;
-                    localDepartureScheduled = stopover.DeparturePlanned?.DateTime;
+                    localArrivalScheduled = stopover.ArrivalPlanned?.UtcDateTime;
+                    localDepartureScheduled = stopover.DeparturePlanned?.UtcDateTime;
                     localArrivalReal = realArrival;
                     localDepartureReal = realDeparture;
 

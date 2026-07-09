@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using OV_DB.Models;
 using OV_DB.Services;
 using OVDB_database.Database;
+using OVDB_database.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -320,18 +321,26 @@ namespace OV_DB.Controllers
                 if (!_trawellingService.IsConnected(user))
                     return Ok(new { connected = false });
 
+                // All counts are scoped to the current user's routes/maps.
+                System.Linq.Expressions.Expression<Func<RouteInstance, bool>> ownedByUser =
+                    ri => ri.RouteInstanceMaps.Any(rim => rim.Map.UserId == user.Id)
+                        || ri.Route.RouteMaps.Any(rm => rm.Map.UserId == user.Id);
+
                 // Count RouteInstances linked to Träwelling
                 var importedTripsCount = await _dbContext.RouteInstances
+                    .Where(ownedByUser)
                     .Where(ri => ri.TrawellingStatusId.HasValue)
                     .CountAsync();
 
                 // Count RouteInstances with timing data
                 var tripsWithTimingCount = await _dbContext.RouteInstances
+                    .Where(ownedByUser)
                     .Where(ri => ri.StartTime.HasValue && ri.EndTime.HasValue)
                     .CountAsync();
 
                 // Count RouteInstances with source = traewelling
                 var userTrawellingTripsCount = await _dbContext.RouteInstances
+                    .Where(ownedByUser)
                     .Where(ri => ri.RouteInstanceProperties.Any(p => p.Key == "source" && p.Value.StartsWith("traewelling")))
                     .CountAsync();
 
