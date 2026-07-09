@@ -12,7 +12,7 @@ import { TranslationService } from "../services/translation.service";
 import { Router, ActivatedRoute } from "@angular/router";
 import { MapInstanceDialogComponent } from "../map-instance-dialog/map-instance-dialog.component";
 import { switchMap } from "rxjs/operators";
-import { Observable } from "rxjs";
+import { Observable, Subscription, from } from "rxjs";
 import { MapDataDTO } from "../models/map-data.model";
 import { v4 as uuidv4 } from "uuid";
 import { SignalRService } from "../services/signal-r.service";
@@ -64,6 +64,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
   readonly guid = input<string>(undefined);
   readonly mapContainer = viewChild<HTMLElement>("mapContainer");
   loading = signal<boolean | number>(false);
+  private subscriptions = new Subscription();
   from: moment.Moment;
   to: moment.Moment;
   selectedRegion: number[] = [];
@@ -216,21 +217,26 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
       });
 
     this.readFromQueryParams();
-    this.translationService.languageChanged.subscribe(() =>
-      this.getRoutes$.next(this.getFilter())
+    this.subscriptions.add(
+      this.translationService.languageChanged.subscribe(() =>
+        this.getRoutes$.next(this.getFilter())
+      )
     );
     this.signalRService.connect();
-    this.signalRService.updates$.subscribe({
-      next: (data) => {
-        if (data.requestIdentifier === this.requestIdentifier) {
-          this.loading.set(data.percentage);
-          this.cd.detectChanges();
-        }
-      },
-    });
+    this.subscriptions.add(
+      this.signalRService.updates$.subscribe({
+        next: (data) => {
+          if (data.requestIdentifier === this.requestIdentifier) {
+            this.loading.set(data.percentage);
+            this.cd.detectChanges();
+          }
+        },
+      })
+    );
   }
 
   ngOnDestroy() {
+    this.subscriptions.unsubscribe();
     this.signalRService.disconnect();
   }
 
@@ -243,7 +249,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     if (queryParams.has("from")) {
       this.from = moment(+queryParams.get("from"));
     }
-    if (queryParams.has("from")) {
+    if (queryParams.has("to")) {
       this.to = moment(+queryParams.get("to"));
     }
     if (queryParams.has("types")) {
@@ -275,13 +281,19 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     //Generate a GUID
     this.requestIdentifier = uuidv4();
 
-    return this.apiService.getRoutes(
-      filter,
-      this.guid(),
-      this.translationService.language,
-      this.includeLineColours,
-      this.limitToSelectedArea,
-      this.requestIdentifier
+    // Join the SignalR group for this request before issuing it, so progress events for this
+    // generation reach only us and we don't miss the early ones.
+    return from(this.signalRService.joinGenerationGroup(this.requestIdentifier)).pipe(
+      switchMap(() =>
+        this.apiService.getRoutes(
+          filter,
+          this.guid(),
+          this.translationService.language,
+          this.includeLineColours,
+          this.limitToSelectedArea,
+          this.requestIdentifier
+        )
+      )
     );
   }
   private showRoutes(data: MapDataDTO) {

@@ -104,7 +104,7 @@ namespace OV_DB.Controllers
 
             // Immediately transition spinner from indeterminate to determinate
             if (requestIdentifier != null)
-                await _mapGenerationHubContext.Clients.All.SendAsync(MapGenerationHub.GenerationUpdateMethod, requestIdentifier.Value, 5, cancellationToken: cancellationToken);
+                await _mapGenerationHubContext.Clients.Group(requestIdentifier.Value.ToString()).SendAsync(MapGenerationHub.GenerationUpdateMethod, requestIdentifier.Value, 5, cancellationToken: cancellationToken);
 
             if (limitingArea == null)
             {
@@ -116,7 +116,7 @@ namespace OV_DB.Controllers
                     AddLineToCollection(language, includeLineColours, r, r.LineString, userIdClaim, map, collection, routesToReturn);
                     processed++;
                     if (processed % 10 == 0 && requestIdentifier != null)
-                        await _mapGenerationHubContext.Clients.All.SendAsync(MapGenerationHub.GenerationUpdateMethod, requestIdentifier.Value, 5 + (int)Math.Round(95.0 * processed / total, 0), cancellationToken: cancellationToken);
+                        await _mapGenerationHubContext.Clients.Group(requestIdentifier.Value.ToString()).SendAsync(MapGenerationHub.GenerationUpdateMethod, requestIdentifier.Value, 5 + (int)Math.Round(95.0 * processed / total, 0), cancellationToken: cancellationToken);
                 }
             }
             else
@@ -133,7 +133,7 @@ namespace OV_DB.Controllers
                             concurrentFeatures.Add(f);
                         var current = Interlocked.Increment(ref processed);
                         if (requestIdentifier != null && current % 10 == 0)
-                            await _mapGenerationHubContext.Clients.All.SendAsync(MapGenerationHub.GenerationUpdateMethod, requestIdentifier.Value, 5 + (int)Math.Round(95.0 * current / total, 0), cancellationToken: ct);
+                            await _mapGenerationHubContext.Clients.Group(requestIdentifier.Value.ToString()).SendAsync(MapGenerationHub.GenerationUpdateMethod, requestIdentifier.Value, 5 + (int)Math.Round(95.0 * current / total, 0), cancellationToken: ct);
                     });
                 collection.Features.AddRange(concurrentFeatures);
             }
