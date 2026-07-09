@@ -72,9 +72,9 @@ namespace OV_DB.Helpers
                 {
                     Writer_.WriteStartElement("WaypointExtension", GpxNamespaces.GARMIN_WAYPOINT_EXTENSIONS_NAMESPACE);
 
-                    if (wayPoint.Proximity != null) Writer_.WriteElementString("Proximity", GpxNamespaces.GARMIN_WAYPOINT_EXTENSIONS_NAMESPACE, wayPoint.Proximity.Value.ToString());
-                    if (wayPoint.Temperature != null) Writer_.WriteElementString("Temperature", GpxNamespaces.GARMIN_WAYPOINT_EXTENSIONS_NAMESPACE, wayPoint.Temperature.Value.ToString());
-                    if (wayPoint.Depth != null) Writer_.WriteElementString("Depth", GpxNamespaces.GARMIN_WAYPOINT_EXTENSIONS_NAMESPACE, wayPoint.Depth.Value.ToString());
+                    if (wayPoint.Proximity != null) Writer_.WriteElementString("Proximity", GpxNamespaces.GARMIN_WAYPOINT_EXTENSIONS_NAMESPACE, wayPoint.Proximity.Value.ToString(CultureInfo.InvariantCulture));
+                    if (wayPoint.Temperature != null) Writer_.WriteElementString("Temperature", GpxNamespaces.GARMIN_WAYPOINT_EXTENSIONS_NAMESPACE, wayPoint.Temperature.Value.ToString(CultureInfo.InvariantCulture));
+                    if (wayPoint.Depth != null) Writer_.WriteElementString("Depth", GpxNamespaces.GARMIN_WAYPOINT_EXTENSIONS_NAMESPACE, wayPoint.Depth.Value.ToString(CultureInfo.InvariantCulture));
                     if (wayPoint.DisplayMode != null) Writer_.WriteElementString("DisplayMode", GpxNamespaces.GARMIN_WAYPOINT_EXTENSIONS_NAMESPACE, wayPoint.DisplayMode);
 
                     if (wayPoint.Categories.Count != 0)
@@ -96,7 +96,7 @@ namespace OV_DB.Helpers
                         WritePhone("PhoneNumber", phone);
                     }
 
-                    if (wayPoint.Samples != null) Writer_.WriteElementString("Samples", GpxNamespaces.GARMIN_WAYPOINT_EXTENSIONS_NAMESPACE, wayPoint.Samples.Value.ToString());
+                    if (wayPoint.Samples != null) Writer_.WriteElementString("Samples", GpxNamespaces.GARMIN_WAYPOINT_EXTENSIONS_NAMESPACE, wayPoint.Samples.Value.ToString(CultureInfo.InvariantCulture));
                     if (wayPoint.Expiration != null) Writer_.WriteElementString("Expiration", GpxNamespaces.GARMIN_WAYPOINT_EXTENSIONS_NAMESPACE, ToGpxDateString(wayPoint.Expiration.Value));
 
                     Writer_.WriteEndElement();
@@ -116,7 +116,7 @@ namespace OV_DB.Helpers
 
                 if (wayPoint.Level != null)
                 {
-                    Writer_.WriteElementString("level", GpxNamespaces.DLG_EXTENSIONS_NAMESPACE, wayPoint.Level.Value.ToString());
+                    Writer_.WriteElementString("level", GpxNamespaces.DLG_EXTENSIONS_NAMESPACE, wayPoint.Level.Value.ToString(CultureInfo.InvariantCulture));
                 }
 
                 Writer_.WriteEndElement();
@@ -200,14 +200,14 @@ namespace OV_DB.Helpers
                 Writer_.WriteStartElement("extensions");
                 Writer_.WriteStartElement("TrackPointExtension", GpxNamespaces.GARMIN_TRACKPOINT_EXTENSIONS_V2_NAMESPACE);
 
-                if (trackPoint.Temperature != null) Writer_.WriteElementString("atemp", GpxNamespaces.GARMIN_TRACKPOINT_EXTENSIONS_V2_NAMESPACE, trackPoint.Temperature.Value.ToString());
-                if (trackPoint.WaterTemperature != null) Writer_.WriteElementString("wtemp", GpxNamespaces.GARMIN_TRACKPOINT_EXTENSIONS_V2_NAMESPACE, trackPoint.WaterTemperature.Value.ToString());
-                if (trackPoint.Depth != null) Writer_.WriteElementString("depth", GpxNamespaces.GARMIN_TRACKPOINT_EXTENSIONS_V2_NAMESPACE, trackPoint.Depth.Value.ToString());
-                if (trackPoint.HeartRate != null) Writer_.WriteElementString("hr", GpxNamespaces.GARMIN_TRACKPOINT_EXTENSIONS_V2_NAMESPACE, trackPoint.HeartRate.Value.ToString());
-                if (trackPoint.Cadence != null) Writer_.WriteElementString("cad", GpxNamespaces.GARMIN_TRACKPOINT_EXTENSIONS_V2_NAMESPACE, trackPoint.Cadence.Value.ToString());
-                if (trackPoint.Speed != null) Writer_.WriteElementString("speed", GpxNamespaces.GARMIN_TRACKPOINT_EXTENSIONS_V2_NAMESPACE, trackPoint.Speed.Value.ToString());
-                if (trackPoint.Course != null) Writer_.WriteElementString("course", GpxNamespaces.GARMIN_TRACKPOINT_EXTENSIONS_V2_NAMESPACE, trackPoint.Course.Value.ToString());
-                if (trackPoint.Bearing != null) Writer_.WriteElementString("bearing", GpxNamespaces.GARMIN_TRACKPOINT_EXTENSIONS_V2_NAMESPACE, trackPoint.Bearing.Value.ToString());
+                if (trackPoint.Temperature != null) Writer_.WriteElementString("atemp", GpxNamespaces.GARMIN_TRACKPOINT_EXTENSIONS_V2_NAMESPACE, trackPoint.Temperature.Value.ToString(CultureInfo.InvariantCulture));
+                if (trackPoint.WaterTemperature != null) Writer_.WriteElementString("wtemp", GpxNamespaces.GARMIN_TRACKPOINT_EXTENSIONS_V2_NAMESPACE, trackPoint.WaterTemperature.Value.ToString(CultureInfo.InvariantCulture));
+                if (trackPoint.Depth != null) Writer_.WriteElementString("depth", GpxNamespaces.GARMIN_TRACKPOINT_EXTENSIONS_V2_NAMESPACE, trackPoint.Depth.Value.ToString(CultureInfo.InvariantCulture));
+                if (trackPoint.HeartRate != null) Writer_.WriteElementString("hr", GpxNamespaces.GARMIN_TRACKPOINT_EXTENSIONS_V2_NAMESPACE, trackPoint.HeartRate.Value.ToString(CultureInfo.InvariantCulture));
+                if (trackPoint.Cadence != null) Writer_.WriteElementString("cad", GpxNamespaces.GARMIN_TRACKPOINT_EXTENSIONS_V2_NAMESPACE, trackPoint.Cadence.Value.ToString(CultureInfo.InvariantCulture));
+                if (trackPoint.Speed != null) Writer_.WriteElementString("speed", GpxNamespaces.GARMIN_TRACKPOINT_EXTENSIONS_V2_NAMESPACE, trackPoint.Speed.Value.ToString(CultureInfo.InvariantCulture));
+                if (trackPoint.Course != null) Writer_.WriteElementString("course", GpxNamespaces.GARMIN_TRACKPOINT_EXTENSIONS_V2_NAMESPACE, trackPoint.Course.Value.ToString(CultureInfo.InvariantCulture));
+                if (trackPoint.Bearing != null) Writer_.WriteElementString("bearing", GpxNamespaces.GARMIN_TRACKPOINT_EXTENSIONS_V2_NAMESPACE, trackPoint.Bearing.Value.ToString(CultureInfo.InvariantCulture));
 
                 Writer_.WriteEndElement();
                 Writer_.WriteEndElement();
@@ -308,7 +308,7 @@ namespace OV_DB.Helpers
         {
             Writer_.WriteStartElement(elementName);
             Writer_.WriteAttributeString("author", copyright.Author);
-            if (copyright.Year != null) Writer_.WriteElementString("year", copyright.Year.Value.ToString());
+            if (copyright.Year != null) Writer_.WriteElementString("year", copyright.Year.Value.ToString(CultureInfo.InvariantCulture));
             if (copyright.Licence != null) Writer_.WriteElementString("licence", copyright.Licence.ToString());
             Writer_.WriteEndElement();
         }

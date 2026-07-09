@@ -20,11 +20,11 @@ namespace OV_DB.Helpers
                 dist = Math.Acos(dist);
                 dist = rad2deg(dist);
                 dist = dist * 60 * 1.1515;
-                if (unit == 'K')
+                if (unit == 'K' || unit == 'k')
                 {
                     dist = dist * 1.609344;
                 }
-                else if (unit == 'N')
+                else if (unit == 'N' || unit == 'n')
                 {
                     dist = dist * 0.8684;
                 }
