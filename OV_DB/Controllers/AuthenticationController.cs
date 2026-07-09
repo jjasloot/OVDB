@@ -27,6 +27,9 @@ namespace OV_DB.Controllers
         private readonly OVDBDatabaseContext _dbContext;
         private readonly PasswordHasher<User> passwordHasher;
 
+        // A valid-format PBKDF2 hash used only to equalize login response timing when the email is unknown.
+        private static readonly string DummyPasswordHash = new PasswordHasher<User>().HashPassword(new User(), "timing-equalizer");
+
         // Token expiration settings
         private const int RefreshTokenExpirationDays = 30;
         private const int RevokedTokenRetentionDays = 7;
@@ -72,10 +75,16 @@ namespace OV_DB.Controllers
                     passwordCorrect = true;
                 }
             }
+            else
+            {
+                // Verify against a dummy hash so an unknown email costs the same time as a known one,
+                // preventing account enumeration via response latency.
+                passwordHasher.VerifyHashedPassword(new User(), DummyPasswordHash, loginRequest.Password);
+            }
 
             if (passwordCorrect == false)
             {
-                return Forbid();
+                return Unauthorized();
             }
 
             var claims = new List<Claim>
@@ -117,6 +126,17 @@ namespace OV_DB.Controllers
             // Validate the refresh token
             if (refreshToken.IsRevoked)
             {
+                // Presenting an already-rotated (revoked) token indicates it was replayed/stolen.
+                // Revoke the whole token family for this user so the theft can't be used further.
+                var activeTokens = await _dbContext.RefreshTokens
+                    .Where(rt => rt.UserId == refreshToken.UserId && !rt.IsRevoked)
+                    .ToListAsync();
+                foreach (var token in activeTokens)
+                {
+                    token.IsRevoked = true;
+                    token.RevokedAt = DateTime.UtcNow;
+                }
+                await _dbContext.SaveChangesAsync();
                 return Unauthorized("Refresh token has been revoked");
             }
 

@@ -184,6 +184,17 @@ namespace OV_DB.Controllers
             // Update password
             user.Password = passwordHasher.HashPassword(user, changePassword.NewPassword);
             DatabaseContext.Update(user);
+
+            // Revoke all existing refresh tokens so a password change ends other sessions.
+            var activeTokens = await DatabaseContext.RefreshTokens
+                .Where(rt => rt.UserId == user.Id && !rt.IsRevoked)
+                .ToListAsync();
+            foreach (var token in activeTokens)
+            {
+                token.IsRevoked = true;
+                token.RevokedAt = DateTime.UtcNow;
+            }
+
             await DatabaseContext.SaveChangesAsync();
 
             return Ok();

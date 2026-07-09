@@ -16,20 +16,29 @@ namespace OV_DB.Services
                 return (endTime - startTime).TotalHours;
             }
 
-            var startTimezoneId = GetTimezoneId(lineString[0].Y, lineString[0].X);
-            var end = lineString[lineString.Count - 1];
-            var endTimezoneId = GetTimezoneId(end.Y, end.X);
+            try
+            {
+                var startTimezoneId = GetTimezoneId(lineString[0].Y, lineString[0].X);
+                var end = lineString[lineString.Count - 1];
+                var endTimezoneId = GetTimezoneId(end.Y, end.X);
 
-            var startTimezone = GetTimeZoneInfo(startTimezoneId);
-            var endTimezone = GetTimeZoneInfo(endTimezoneId);
-            startTime = DateTime.SpecifyKind(startTime, DateTimeKind.Unspecified);
-            endTime = DateTime.SpecifyKind(endTime, DateTimeKind.Unspecified);
-            //convert start and endtime to utc 
-            var startUtc = TimeZoneInfo.ConvertTimeToUtc(startTime, startTimezone);
-            var endUtc = TimeZoneInfo.ConvertTimeToUtc(endTime, endTimezone);
-            //calculate duration in hours
+                var startTimezone = GetTimeZoneInfo(startTimezoneId);
+                var endTimezone = GetTimeZoneInfo(endTimezoneId);
+                startTime = DateTime.SpecifyKind(startTime, DateTimeKind.Unspecified);
+                endTime = DateTime.SpecifyKind(endTime, DateTimeKind.Unspecified);
+                //convert start and endtime to utc
+                var startUtc = TimeZoneInfo.ConvertTimeToUtc(startTime, startTimezone);
+                var endUtc = TimeZoneInfo.ConvertTimeToUtc(endTime, endTimezone);
+                //calculate duration in hours
 
-            return (endUtc - startUtc).TotalHours;
+                return (endUtc - startUtc).TotalHours;
+            }
+            catch (ArgumentException)
+            {
+                // A local time can be invalid for the resolved zone (DST spring-forward gap);
+                // fall back to a naive duration rather than throwing a 500 on a legitimate trip.
+                return (endTime - startTime).TotalHours;
+            }
         }
 
         public async Task<DateTime> ConvertUtcToLocalTimeAsync(DateTime utcDateTime, double latitude, double longitude)
