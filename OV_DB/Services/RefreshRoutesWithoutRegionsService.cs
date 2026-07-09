@@ -10,10 +10,11 @@ using OVDB_database.Models;
 using System.Collections.Concurrent;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace OV_DB.Services
 {
-    public class RefreshRoutesWithoutRegionsService(IServiceProvider serviceProvider, IHubContext<MapGenerationHub> hubContext) : IHostedService, IDisposable
+    public class RefreshRoutesWithoutRegionsService(IServiceProvider serviceProvider, IHubContext<MapGenerationHub> hubContext, ILogger<RefreshRoutesWithoutRegionsService> logger) : IHostedService, IDisposable
     {
         public static readonly ConcurrentQueue<bool> RouteQueue = new ConcurrentQueue<bool>();
         private Task _executingTask;
@@ -36,7 +37,12 @@ namespace OV_DB.Services
                     {
                         await RefreshRoutesWithoutRegionsAsync();
                     }
-                    catch { }
+                    catch (Exception ex)
+                    {
+                        // Log instead of silently swallowing, and release the UI which waits for 100%.
+                        logger.LogError(ex, "Error refreshing routes without regions");
+                        await hubContext.Clients.All.SendAsync(MapGenerationHub.RegionUpdateMethod, 0, 100, 0, cancellationToken);
+                    }
                 }
                 await Task.Delay(10000, cancellationToken);
             }
