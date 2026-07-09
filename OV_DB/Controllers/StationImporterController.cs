@@ -8,6 +8,7 @@ using OV_DB.Services;
 using OVDB_database.Database;
 using OVDB_database.Models;
 using System;
+using System.Globalization;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -35,8 +36,8 @@ namespace OV_DB.Controllers
             return Ok();
         }
 
-        [HttpPost("{stationId}")]
-        public async Task<IActionResult> CreateStation(string stationId)
+        [HttpPost("{stationId:long}")]
+        public async Task<IActionResult> CreateStation(long stationId)
         {
             var adminClaim = (User.Claims.SingleOrDefault(c => c.Type == "admin").Value ?? "false");
             if (string.Equals(adminClaim, "false", StringComparison.OrdinalIgnoreCase))
@@ -76,8 +77,8 @@ namespace OV_DB.Controllers
                         stationToUpdate.Longitude = station.Lon;
                         if (station.Tags.ContainsKey("name"))
                             stationToUpdate.Name = station.Tags["name"];
-                        if (station.Tags.ContainsKey("ele"))
-                            stationToUpdate.Elevation = double.Parse(station.Tags["ele"]);
+                        if (station.Tags.ContainsKey("ele") && double.TryParse(station.Tags["ele"], NumberStyles.Float, CultureInfo.InvariantCulture, out var elevation))
+                            stationToUpdate.Elevation = elevation;
                         if (station.Tags.ContainsKey("network"))
                             stationToUpdate.Network = station.Tags["network"];
                         if (station.Tags.ContainsKey("operator"))
@@ -116,7 +117,7 @@ namespace OV_DB.Controllers
         }
 
         [NonAction]
-        public async Task<string> GetStationAsync(string osmId)
+        public async Task<string> GetStationAsync(long osmId)
         {
             var query = $"[out:json][timeout:240];\r\nnode({osmId});out body;";
             string text = null;
@@ -125,7 +126,7 @@ namespace OV_DB.Controllers
             using (var content = new StringContent(query))
             {
                 var response = await httpClient.PostAsync("https://overpass-api.de/api/interpreter", content);
-                if (response.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
+                if (!response.IsSuccessStatusCode)
                 {
                     return null;
                 }

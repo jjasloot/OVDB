@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Net.Http;
+using System.Security;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using GeoJSON.Net.Feature;
@@ -12,6 +13,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using OV_DB.Enum;
 using OV_DB.Helpers;
@@ -32,14 +34,16 @@ namespace OV_DB.Controllers
         private IConfiguration _configuration;
         private readonly IRouteRegionsService _routeRegionsService;
         private readonly IHttpClientFactory _httpClientFactory;
+        private readonly ILogger<ImporterController> _logger;
 
-        public ImporterController(IMemoryCache memoryCache, OVDBDatabaseContext context, IConfiguration configuration, IRouteRegionsService routeRegionsService, IHttpClientFactory httpClientFactory)
+        public ImporterController(IMemoryCache memoryCache, OVDBDatabaseContext context, IConfiguration configuration, IRouteRegionsService routeRegionsService, IHttpClientFactory httpClientFactory, ILogger<ImporterController> logger)
         {
             _cache = memoryCache;
             _context = context;
             _configuration = configuration;
             _routeRegionsService = routeRegionsService;
             _httpClientFactory = httpClientFactory;
+            _logger = logger;
         }
 
         [HttpGet("find")]
@@ -106,6 +110,10 @@ namespace OV_DB.Controllers
                 }
             }
             var relation = osm.Elements.SingleOrDefault(e => e.Type == TypeEnum.Relation);
+            if (relation == null)
+            {
+                return NotFound();
+            }
             var stops = new List<Element>();
             relation.Members.ForEach(way =>
             {
@@ -141,7 +149,7 @@ namespace OV_DB.Controllers
         {
             var query = $"[out:json]";
             if (dateTime != null)
-                query += $"[date:\"{dateTime:o}\"]";
+                query += $"[date:\"{dateTime.Value.ToUniversalTime():o}\"]";
             query += $";relation({id});";
             query += "(._;>;);out;node(r)->.nodes;.nodes is_in;area._[boundary=administrative][admin_level=10]->.areas;foreach.areas -> .a {  node.nodes(area.a);  convert node ::id = id(), is_in= a.set(t[\"name\"]);  out; }";
             string text = null;
@@ -179,6 +187,10 @@ namespace OV_DB.Controllers
             }
 
             var relation = osm.Elements.SingleOrDefault(e => e.Type == TypeEnum.Relation);
+            if (relation == null)
+            {
+                return NotFound();
+            }
             var stops = new List<Element>();
             var lists = new List<List<IPosition>>();
             relation.Members.ForEach(way =>
@@ -225,7 +237,7 @@ namespace OV_DB.Controllers
                 element.PotentialErrors = relation.Tags["fixme"];
             if (relation.Tags.ContainsKey("colour"))
                 element.Colour = relation.Tags["colour"];
-            if (relation.Tags.ContainsKey("ref") && relation.Tags.ContainsKey("to") && relation.Tags.ContainsKey("to"))
+            if (relation.Tags.ContainsKey("ref") && relation.Tags.ContainsKey("from") && relation.Tags.ContainsKey("to"))
             {
                 element.Name = relation.Tags["ref"] + ": " + relation.Tags["from"] + " => " + relation.Tags["to"];
             }
@@ -295,7 +307,7 @@ namespace OV_DB.Controllers
                 toIndex = temp;
                 reverseFromToOrder = true;
 
-                if (relation.Tags.ContainsKey("ref") && relation.Tags.ContainsKey("to") && relation.Tags.ContainsKey("to"))
+                if (relation.Tags.ContainsKey("ref"))
                 {
                     element.Name = relation.Tags["ref"] + ": " + toStop.Tags["friendlyName"] + " => " + fromStop.Tags["friendlyName"];
                 }
@@ -422,7 +434,7 @@ namespace OV_DB.Controllers
                             }
                             else
                             {
-                                points.AddRange(test[index].Take(endIndex).Skip(startIndex));
+                                points.AddRange(test[index].Take(endIndex + 1).Skip(startIndex));
                             }
                             test[index] = points;
                             if (!points.Any())
@@ -459,7 +471,8 @@ namespace OV_DB.Controllers
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine("Hier");
+                    // Was silently swallowed ("Hier") — surface it so mis-ordered geometry is at least traceable.
+                    _logger.LogWarning(ex, "Failed to stitch way segment at index {Index} while ordering route geometry", index);
                 }
             }
             return test;
@@ -493,8 +506,8 @@ namespace OV_DB.Controllers
         {
             var query = $"<osm-script output=\"json\"><query type=\"relation\">";
             if (dateTime.HasValue)
-                query = $"<osm-script output=\"json\" date=\"{dateTime:o}\"><query type=\"relation\">";
-            query += $"<has-kv k=\"network\" modv=\"\" regv=\"" + network + "\"/>";
+                query = $"<osm-script output=\"json\" date=\"{dateTime.Value.ToUniversalTime():o}\"><query type=\"relation\">";
+            query += $"<has-kv k=\"network\" modv=\"\" regv=\"" + SecurityElement.Escape(network) + "\"/>";
             query += $"<has-kv k=\"route\"/>";
             query += $"</query><print mode=\"tags\" order=\"quadtile\"/></osm-script>";
             string text = null;
@@ -548,14 +561,14 @@ namespace OV_DB.Controllers
             {
                 query = $"<osm-script output=\"json\" date=\"{dateTime.Value.ToUniversalTime():o}\"><query type=\"relation\">";
             }
-            query += $"<has-kv k=\"ref\" v=\"" + reference + "\"/>";
+            query += $"<has-kv k=\"ref\" v=\"" + SecurityElement.Escape(reference) + "\"/>";
             if (routeType != null && routeType != OSMRouteType.not_specified)
             {
-                query += $"<has-kv k=\"route\" v=\"" + routeType.ToString() + "\"/>";
+                query += $"<has-kv k=\"route\" v=\"" + SecurityElement.Escape(routeType.ToString()) + "\"/>";
             }
             if (!string.IsNullOrWhiteSpace(network))
             {
-                query += $"<has-kv k=\"network\" modv=\"\" regv=\"" + network + "\"/>";
+                query += $"<has-kv k=\"network\" modv=\"\" regv=\"" + SecurityElement.Escape(network) + "\"/>";
             }
             query += $"</query><print mode=\"tags\" geometry=\"center\" order=\"quadtile\"/></osm-script>";
             string text = null;
