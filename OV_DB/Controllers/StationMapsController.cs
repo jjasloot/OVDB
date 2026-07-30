@@ -77,6 +77,7 @@ namespace OV_DB.Controllers
             dbStationMap.SharingLinkName = stationMap.SharingLinkName;
             dbStationMap.Name = stationMap.Name;
             dbStationMap.NameNL = stationMap.NameNL;
+            dbStationMap.IncludeSpecials = stationMap.IncludeSpecials;
 
             var regions = await _context.Regions.Where(r => stationMap.RegionIds.Contains(r.Id)).ToListAsync();
             dbStationMap.Regions = regions;
@@ -114,6 +115,7 @@ namespace OV_DB.Controllers
                 SharingLinkName = stationMap.SharingLinkName,
                 Name = stationMap.Name,
                 NameNL = stationMap.NameNL,
+                IncludeSpecials = stationMap.IncludeSpecials,
                 UserId = userIdClaim,
                 MapGuid = Guid.NewGuid()
             };
@@ -179,8 +181,12 @@ namespace OV_DB.Controllers
             var regionIds = stationMap.Regions.Select(r => r.Id).ToList();
             var stationsQuery = _context.Stations.AsQueryable();
             stationsQuery = stationsQuery.Where(s => s.Regions.Any(r => regionIds.Contains(r.Id)))
-                .Where(s => s.Hidden == false)
-                .Where(s => s.Special == false);
+                .Where(s => s.Hidden == false);
+
+            if (!stationMap.IncludeSpecials)
+            {
+                stationsQuery = stationsQuery.Where(s => s.Special == false);
+            }
 
             var stations = await stationsQuery.Select(s => new StationDTO
             {

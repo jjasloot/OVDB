@@ -200,6 +200,7 @@ namespace OV_DB.Mappings
                 NameNL = m.NameNL,
                 MapGuid = m.MapGuid.ToString(),
                 SharingLinkName = m.SharingLinkName,
+                IncludeSpecials = m.IncludeSpecials,
                 RegionIds = m.Regions.Select(r => r.Id).ToList()
             });
         }

@@ -6,6 +6,7 @@ export interface StationMap {
   nameNL: string;
   mapGuid: string;
   sharingLinkName: string | null;
+  includeSpecials: boolean;
   regionIds: number[]
 }
 

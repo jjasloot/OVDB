@@ -21,6 +21,7 @@ namespace OVDB_database.Models
         [JsonProperty]
         public string? SharingLinkName { get; set; }
         public int OrderNr { get; set; }
+        public bool IncludeSpecials { get; set; }
         public User? User { get; set; }
         public List<Region> Regions { get; set; }
     }

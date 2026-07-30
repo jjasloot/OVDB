@@ -84,6 +84,12 @@ namespace OV_DB.Services
             {
                 await HandleCallbackQueryAsync(update.CallbackQuery);
             }
+            else if (update.Type == UpdateType.Message &&
+                     (update.Message.Text?.StartsWith("/settings") == true ||
+                      update.Message.Text == "⚙️ Settings"))
+            {
+                await HandleSettingsMessageAsync(update.Message);
+            }
             else if (update.Type == UpdateType.Message)
             {
                 await HandleUnknownMessageAsync(update.Message);
@@ -102,7 +108,7 @@ namespace OV_DB.Services
                 return;
             }
 
-            var nearbyStations = await GetNearbyStationsAsync(location.Latitude, location.Longitude, user.Id);
+            var nearbyStations = await GetNearbyStationsAsync(location.Latitude, location.Longitude, user.Id, user.TelegramIncludeSpecials);
 
             var responseText = "Nearby stations:\n";
             await _botClient.SendMessage(message.Chat.Id, responseText, replyMarkup: GetStationsInlineKeyboard(nearbyStations));
@@ -116,6 +122,12 @@ namespace OV_DB.Services
 
         private async Task HandleCallbackQueryAsync(CallbackQuery callbackQuery)
         {
+            if (callbackQuery.Data == "toggle_specials")
+            {
+                await HandleToggleSpecialsAsync(callbackQuery);
+                return;
+            }
+
             var stationId = int.Parse(callbackQuery.Data);
             var userId = callbackQuery.From.Id;
 
@@ -147,14 +159,21 @@ namespace OV_DB.Services
                 var percentageMessage = string.Empty;
                 foreach (var region in regionIds)
                 {
-                    var totalStationsInRegion = await _dbContext.Stations.Where(s=>!s.Special && !s.Hidden).CountAsync(s => s.Regions.Any(r => r.Id== region));
-                    var visitedStationsInRegion = await _dbContext.StationVisits.CountAsync(sv => sv.UserId == user.Id && sv.Station.Regions.Any(r => r.Id == region) && !sv.Station.Special && !sv.Station.Hidden);
+                    var totalQuery = _dbContext.Stations.Where(s => !s.Hidden).Where(s => s.Regions.Any(r => r.Id == region));
+                    var visitedQuery = _dbContext.StationVisits.Where(sv => sv.UserId == user.Id && sv.Station.Regions.Any(r => r.Id == region) && !sv.Station.Hidden);
+                    if (!user.TelegramIncludeSpecials)
+                    {
+                        totalQuery = totalQuery.Where(s => !s.Special);
+                        visitedQuery = visitedQuery.Where(sv => !sv.Station.Special);
+                    }
+                    var totalStationsInRegion = await totalQuery.CountAsync();
+                    var visitedStationsInRegion = await visitedQuery.CountAsync();
                     var regionName = await _dbContext.Regions.Where(r => r.Id == region).Select(r => r.Name).FirstOrDefaultAsync();
                     var percentageVisited = Math.Round((double)visitedStationsInRegion / totalStationsInRegion * 100, 2);
                     percentageMessage += $"{regionName}: {percentageVisited}%\n\r";
                 }
 
-                await _botClient.SendMessage(callbackQuery.Message.Chat.Id, $"""{station.Name}: {(visited? "✅": "❌")}"""+ $"\n\r{percentageMessage}", replyMarkup: KeyboardButton.WithRequestLocation("Share your location"));
+                await _botClient.SendMessage(callbackQuery.Message.Chat.Id, $"""{station.Name}: {(visited? "✅": "❌")}"""+ $"\n\r{percentageMessage}", replyMarkup: GetMainReplyKeyboard());
                 await _botClient.AnswerCallbackQuery(callbackQuery.Id, "✅");
             }
             else
@@ -163,10 +182,64 @@ namespace OV_DB.Services
             }
         }
 
+        private async Task HandleSettingsMessageAsync(Message message)
+        {
+            var userId = message.From.Id;
+            var user = await _dbContext.Users.SingleOrDefaultAsync(u => u.TelegramUserId == userId);
+            if (user == null)
+            {
+                await HandleUnknownUserAsync(message);
+                return;
+            }
+            await _botClient.SendMessage(message.Chat.Id, GetSettingsText(user.TelegramIncludeSpecials), replyMarkup: GetSettingsInlineKeyboard(user.TelegramIncludeSpecials));
+        }
+
+        private async Task HandleToggleSpecialsAsync(CallbackQuery callbackQuery)
+        {
+            var userId = callbackQuery.From.Id;
+            var user = await _dbContext.Users.SingleOrDefaultAsync(u => u.TelegramUserId == userId);
+            if (user == null)
+            {
+                await HandleUnknownUserAsync(callbackQuery.Message);
+                return;
+            }
+
+            user.TelegramIncludeSpecials = !user.TelegramIncludeSpecials;
+            await _dbContext.SaveChangesAsync();
+
+            await _botClient.EditMessageText(callbackQuery.Message.Chat.Id, callbackQuery.Message.MessageId, GetSettingsText(user.TelegramIncludeSpecials), replyMarkup: GetSettingsInlineKeyboard(user.TelegramIncludeSpecials));
+            await _botClient.AnswerCallbackQuery(callbackQuery.Id, user.TelegramIncludeSpecials ? "Special stations enabled ✅" : "Special stations disabled ❌");
+        }
+
+        private static string GetSettingsText(bool includeSpecials)
+        {
+            var status = includeSpecials ? "✅ Enabled" : "❌ Disabled";
+            return $"⚙️ Settings\n\nSpecial/historic stations: {status}";
+        }
+
+        private static InlineKeyboardMarkup GetSettingsInlineKeyboard(bool includeSpecials)
+        {
+            var toggleLabel = includeSpecials ? "❌ Disable special/historic stations" : "✅ Enable special/historic stations";
+            return new InlineKeyboardMarkup(new[]
+            {
+                new[] { InlineKeyboardButton.WithCallbackData(toggleLabel, "toggle_specials") }
+            });
+        }
+
+        private static ReplyKeyboardMarkup GetMainReplyKeyboard()
+        {
+            return new ReplyKeyboardMarkup(new[]
+            {
+                new[] { KeyboardButton.WithRequestLocation("📍 Share your location") },
+                new[] { new KeyboardButton("⚙️ Settings") }
+            })
+            { ResizeKeyboard = true };
+        }
+
         private async Task HandleUnknownMessageAsync(Message message)
         {
             var responseText = "Sorry, I didn't understand that. Please share your location to find nearby stations.";
-            await _botClient.SendMessage(message.Chat.Id, responseText, replyMarkup:  KeyboardButton.WithRequestLocation("Share your location"));
+            await _botClient.SendMessage(message.Chat.Id, responseText, replyMarkup: GetMainReplyKeyboard());
         }
 
         private async Task HandleUnknownUserAsync(Message message)
@@ -175,10 +248,15 @@ namespace OV_DB.Services
             await _botClient.SendMessage(message.Chat.Id, responseText);
         }
 
-        private async Task<List<StationDTO>> GetNearbyStationsAsync(double latitude, double longitude, int userId)
+        private async Task<List<StationDTO>> GetNearbyStationsAsync(double latitude, double longitude, int userId, bool includeSpecials)
         {
-            var nearbyStations = await _dbContext.Stations
-                .Where(s => !s.Special && !s.Hidden)
+            var stationsQuery = _dbContext.Stations
+                .Where(s => !s.Hidden);
+            if (!includeSpecials)
+            {
+                stationsQuery = stationsQuery.Where(s => !s.Special);
+            }
+            var nearbyStations = await stationsQuery
                 .OrderBy(s => (s.Lattitude - latitude) * (s.Lattitude - latitude) + (s.Longitude - longitude) * (s.Longitude - longitude))
                 .Take(5)
                 .Select(s => new StationDTO
