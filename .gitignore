@@ -1,3 +1,5 @@
+dev-db/*.sql
+dev-db/logos/
 OVDB/.vs/
 OVDB/bin/
 OVDB/obj/

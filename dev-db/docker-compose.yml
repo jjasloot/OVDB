@@ -1,0 +1,22 @@
+services:
+  ovdb-dev-db:
+    image: mariadb:11.4
+    container_name: ovdb-dev-db
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3307:3306"
+    environment:
+      MARIADB_ROOT_PASSWORD: ovdb-dev-root
+      MARIADB_DATABASE: ovdb
+      MARIADB_USER: ovdb
+      MARIADB_PASSWORD: ovdb-dev
+    volumes:
+      - ovdb-dev-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+volumes:
+  ovdb-dev-data:
