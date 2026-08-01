@@ -7,6 +7,7 @@ import {
   signal,
 } from "@angular/core";
 import { MatDialog } from "@angular/material/dialog";
+import { MatSnackBar } from "@angular/material/snack-bar";
 import { Observable } from "rxjs";
 import { Operator } from "src/app/models/operator.model";
 import { Region } from "src/app/models/region.model";
@@ -84,6 +85,7 @@ export class AdministratorOperatorsComponent implements OnInit {
   regionsService = inject(RegionsService);
   operatorService = inject(OperatorService);
   dialog = inject(MatDialog);
+  private snackBar = inject(MatSnackBar);
   operators = signal<Operator[]>([]);
   displayedColumns: string[] = [
     "id",
@@ -157,11 +159,18 @@ export class AdministratorOperatorsComponent implements OnInit {
     this.reconnecting.set([...this.reconnecting(), operator.id]);
     this.operatorService
       .connectRoutesToOperator(operator.id)
-      .subscribe((count) => {
-        this.reconnecting.set(
-          this.reconnecting().filter((id) => id !== operator.id)
-        );
-        alert(operator.names[0] + ": " + count);
+      .subscribe({
+        next: (count) => {
+          this.reconnecting.set(
+            this.reconnecting().filter((id) => id !== operator.id)
+          );
+          this.snackBar.open(operator.names[0] + ": " + count + " routes connected", undefined, { duration: 4000 });
+        },
+        error: () => {
+          this.reconnecting.set(
+            this.reconnecting().filter((id) => id !== operator.id)
+          );
+        },
       });
   }
 

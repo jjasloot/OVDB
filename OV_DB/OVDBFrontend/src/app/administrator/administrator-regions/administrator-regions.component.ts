@@ -1,5 +1,6 @@
 import { Component, OnInit, inject } from "@angular/core";
 import { MatDialog } from "@angular/material/dialog";
+import { MatSnackBar } from "@angular/material/snack-bar";
 import { NewRegion, Region } from "src/app/models/region.model";
 import { RegionsService } from "src/app/services/regions.service";
 import { AdministratorNewRegionComponent } from "../administrator-new-region/administrator-new-region.component";
@@ -36,6 +37,7 @@ import { FormsModule } from "@angular/forms";
 export class AdministratorRegionsComponent implements OnInit {
   private regionsService = inject(RegionsService);
   private dialog = inject(MatDialog);
+  private snackBar = inject(MatSnackBar);
   private signalRService = inject(SignalRService);
 
   regions: Region[];
@@ -78,33 +80,20 @@ export class AdministratorRegionsComponent implements OnInit {
   }
 
   refreshRoutesForRegion(regionId: number) {
-    this.regionsService.refreshRoutesForRegion(regionId).subscribe({
-      next: () => {
-      },
-      error: (err) => {
-        alert(JSON.stringify(err));
-      },
+    this.regionsService.refreshRoutesForRegion(regionId).subscribe(() => {
+      this.snackBar.open("Refresh queued", undefined, { duration: 3000 });
     });
   }
 
   refreshRoutesWithoutRegions() {
-    this.regionsService.refreshRoutesWithoutRegions().subscribe({
-      next: () => {
-      },
-      error: (err) => {
-        alert(JSON.stringify(err));
-      },
+    this.regionsService.refreshRoutesWithoutRegions().subscribe(() => {
+      this.snackBar.open("Refresh queued", undefined, { duration: 3000 });
     });
   }
 
   saveRegion(region: Region) {
-    this.regionsService.updateRegion(region).subscribe({
-      next: () => {
-        // Optional: show snackbar or notification
-      },
-      error: (err) => {
-        alert("Failed to update region: " + JSON.stringify(err));
-      }
+    this.regionsService.updateRegion(region).subscribe(() => {
+      this.snackBar.open("Region saved", undefined, { duration: 3000 });
     });
   }
 }

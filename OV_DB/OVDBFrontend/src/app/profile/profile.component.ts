@@ -4,6 +4,8 @@ import { ApiService } from '../services/api.service';
 import { UserProfile, UpdateProfile, ChangePassword, TraewellingTagMapping, TrainlogOperatorMapping } from '../models/user-profile.model';
 import { TrawellingConnectionStatus } from '../models/traewelling.model';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { MatDialog } from '@angular/material/dialog';
+import { AreYouSureDialogComponent } from '../are-you-sure-dialog/are-you-sure-dialog.component';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { TranslationService } from '../services/translation.service';
 import { UserPreferenceService } from '../services/user-preference.service';
@@ -57,6 +59,7 @@ export class ProfileComponent implements OnInit {
   private formBuilder = inject(UntypedFormBuilder);
   private apiService = inject(ApiService);
   private snackBar = inject(MatSnackBar);
+  private dialog = inject(MatDialog);
   private translateService = inject(TranslateService);
   private translationService = inject(TranslationService);
   private userPreferenceService = inject(UserPreferenceService);
@@ -336,7 +339,13 @@ export class ProfileComponent implements OnInit {
   }
 
   revokeSession(sessionId: number): void {
-    if (confirm(this.translateService.instant('PROFILE.CONFIRM_REVOKE_SESSION'))) {
+    const dialogRef = this.dialog.open(AreYouSureDialogComponent, {
+      data: { item: this.translateService.instant('PROFILE.REVOKE_SESSION_ITEM') },
+    });
+    dialogRef.afterClosed().subscribe((confirmed: boolean) => {
+      if (!confirmed) {
+        return;
+      }
       this.revokingSessionId = sessionId;
       this.authService.revokeSession(sessionId).subscribe({
         next: () => {
@@ -350,7 +359,7 @@ export class ProfileComponent implements OnInit {
           this.revokingSessionId = null;
         }
       });
-    }
+    });
   }
 
   formatDate(dateString: string): string {

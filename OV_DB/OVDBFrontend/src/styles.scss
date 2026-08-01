@@ -37,6 +37,17 @@ body {
   --mat-toolbar-container-background-color: #4caf50;
   --mat-app-background-color: white;
   
+  // App surface colors used by component styles
+  --app-background-color: white;
+  --app-surface-color: white;
+  --app-table-background: white;
+  --app-text-color: rgba(0, 0, 0, 0.87);
+  --app-shadow-color: rgba(0, 0, 0, 0.2);
+  --app-input-background: #f5f5f5;
+
+  // Destructive actions
+  --app-danger-color: #c62828;
+
   // Help page colors - light theme
   --help-background-color: white;
   --help-text-color: #333;
@@ -108,6 +119,17 @@ mat-toolbar.mat-primary {
     --mdc-fab-container-color: #006b0e !important;
   }
   
+  // App surface colors used by component styles
+  --app-background-color: #303030;
+  --app-surface-color: #424242;
+  --app-table-background: #424242;
+  --app-text-color: white;
+  --app-shadow-color: rgba(0, 0, 0, 0.5);
+  --app-input-background: #424242;
+
+  // Destructive actions
+  --app-danger-color: #ef5350;
+
   // Help page colors - dark theme
   --help-background-color: #303030;
   --help-text-color: #e9ecef;
@@ -166,6 +188,25 @@ body {
   display: flex !important;
   justify-content: center;
   align-items: center;
+}
+
+// Destructive actions (delete buttons, confirm dialogs) render in red.
+// Material has no built-in "danger" variant in M3, so this utility class fills the gap.
+.mat-mdc-button.danger,
+.mat-mdc-icon-button.danger,
+.mat-mdc-outlined-button.danger {
+  --mdc-text-button-label-text-color: var(--app-danger-color);
+  --mdc-icon-button-icon-color: var(--app-danger-color);
+  --mdc-outlined-button-label-text-color: var(--app-danger-color);
+  color: var(--app-danger-color);
+}
+
+.mat-mdc-list-item.danger {
+  color: var(--app-danger-color);
+
+  .mat-icon {
+    color: var(--app-danger-color);
+  }
 }
 
 .cdk-overlay-pane {

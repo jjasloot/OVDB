@@ -329,7 +329,7 @@ export class RouteInstancesComponent implements OnInit {
   delete(instance: RouteInstance) {
     const dialogRef = this.dialog.open(AreYouSureDialogComponent, {
       width: "50%",
-      data: { item: "deze rit wilt verwijderen" },
+      data: { item: this.translateService.instant("ROUTEINSTANCES.DELETECONFIRM") },
     });
     dialogRef.afterClosed().subscribe((result: RouteInstance) => {
       if (result) {
