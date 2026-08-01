@@ -55,9 +55,12 @@ export class UsedOperatorsComponent implements OnInit {
   });
 
   ngOnInit(): void {
-    this.apiService.getOperatorsGroupedByRegion().subscribe((data) => {
-      this.regions.set(data);
-      this.loading.set(false);
+    this.apiService.getOperatorsGroupedByRegion().subscribe({
+      next: (data) => {
+        this.regions.set(data);
+        this.loading.set(false);
+      },
+      error: () => this.loading.set(false),
     });
   }
 

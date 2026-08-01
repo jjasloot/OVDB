@@ -34,13 +34,11 @@ export class RoutesDataSource implements DataSource<Route> {
     return this.apiService
       .getAllRoutes(start, count, column, descending, filter)
       .pipe(
-        catchError(() => of({ count: -1, routes: [] })),
+        catchError(() => of({ count: 0, routes: [] })),
         tap((routes) => {
           this.routesSubject.next(routes.routes);
-          if (routes?.count >= 0) {
-            this.loadingSubject.next(false);
-          }
-        })
+        }),
+        finalize(() => this.loadingSubject.next(false))
       );
   }
 }

@@ -38,9 +38,12 @@ export class RouteTypesComponent implements OnInit {
 
   private loadData() {
     this.loading = true;
-    this.apiService.getTypes().subscribe(data => {
-      this.data = data;
-      this.loading = false;
+    this.apiService.getTypes().subscribe({
+      next: (data) => {
+        this.data = data;
+        this.loading = false;
+      },
+      error: () => (this.loading = false),
     });
   }
 

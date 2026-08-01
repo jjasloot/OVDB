@@ -24,9 +24,12 @@ export class RegionStatComponent implements OnInit {
 
 
   ngOnInit(): void {
-    this.apiService.getRegionStats().subscribe(stats => {
-      this.regionStats.set(stats);
-      this.loading.set(false);
+    this.apiService.getRegionStats().subscribe({
+      next: (stats) => {
+        this.regionStats.set(stats);
+        this.loading.set(false);
+      },
+      error: () => this.loading.set(false),
     });
   }
 

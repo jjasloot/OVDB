@@ -15,6 +15,7 @@ import {
   HttpClient,
 } from "@angular/common/http";
 import { AuthInterceptor } from "./app/guards/auth.interceptor";
+import { HttpErrorInterceptor } from "./app/guards/http-error.interceptor";
 import {
   MatPaginatorIntl,
   MatPaginatorModule,
@@ -142,6 +143,7 @@ bootstrapApplication(AppComponent, {
     { provide: DateAdapter, useClass: DynamicMomentDateAdapter, deps: [MAT_DATE_LOCALE, TranslationService] },
     { provide: MAT_DATE_FORMATS, useValue: MAT_MOMENT_DATE_FORMATS },
     { provide: HTTP_INTERCEPTORS, useClass: AuthInterceptor, multi: true },
+    { provide: HTTP_INTERCEPTORS, useClass: HttpErrorInterceptor, multi: true },
     {
       provide: MatPaginatorIntl,
       useFactory: (translate) => {

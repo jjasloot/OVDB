@@ -57,10 +57,16 @@ export class MapsListComponent implements OnInit {
 
   private loadData() {
     this.loading = true;
-    this.apiService.getMaps().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((data) => {
-      this.data = data;
-      this.loading = false;
-      this.cdr.markForCheck();
+    this.apiService.getMaps().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (data) => {
+        this.data = data;
+        this.loading = false;
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.loading = false;
+        this.cdr.markForCheck();
+      },
     });
   }
 

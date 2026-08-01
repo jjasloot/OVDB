@@ -22,9 +22,12 @@ export class FillMissingDataListComponent implements OnInit {
 
   ngOnInit() {
     this.loading = true;
-    this.apiService.getRoutesWithMissingSettings().subscribe(data => {
-      this.data = data;
-      this.loading = false;
+    this.apiService.getRoutesWithMissingSettings().subscribe({
+      next: (data) => {
+        this.data = data;
+        this.loading = false;
+      },
+      error: () => (this.loading = false),
     });
   }
 

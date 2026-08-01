@@ -35,7 +35,7 @@ export class RouteInstancesDataSource implements DataSource<RouteInstanceListDTO
     return this.apiService
       .getAllRouteInstances(start, count, column, descending, filter)
       .pipe(
-        catchError(() => of({ count: -1, instances: [] })),
+        catchError(() => of({ count: 0, instances: [] })),
         tap((data) => {
           this.instancesSubject.next(data.instances);
         }),

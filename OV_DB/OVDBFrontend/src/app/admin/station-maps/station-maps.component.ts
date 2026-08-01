@@ -53,9 +53,12 @@ export class StationMapsComponent implements OnInit {
 
   private loadData() {
     this.loading = true;
-    this.apiService.listStationMaps().subscribe((data) => {
-      this.data = data;
-      this.loading = false;
+    this.apiService.listStationMaps().subscribe({
+      next: (data) => {
+        this.data = data;
+        this.loading = false;
+      },
+      error: () => (this.loading = false),
     });
   }
 

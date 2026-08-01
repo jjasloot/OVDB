@@ -61,13 +61,16 @@ export class RouteAddComponent implements OnInit {
       return;
     }
     this.filesLoading = true;
-    this.apiService.postFiles(this.fileToUpload).subscribe((result: FileUpload[]) => {
-      this.fileToUpload = null;
-      this.text = result.length + ' ' + this.translateService.instant('ADDROUTE.FILESUPLOADED') + ', '
-        + (result.filter(f => f.failed).length) + ' ' + this.translateService.instant('ADDROUTE.ERRORS');
-      this.files = result;
-      this.dataUpdateService.requestUpdate();
-      this.filesLoading = false;
+    this.apiService.postFiles(this.fileToUpload).subscribe({
+      next: (result: FileUpload[]) => {
+        this.fileToUpload = null;
+        this.text = result.length + ' ' + this.translateService.instant('ADDROUTE.FILESUPLOADED') + ', '
+          + (result.filter(f => f.failed).length) + ' ' + this.translateService.instant('ADDROUTE.ERRORS');
+        this.files = result;
+        this.dataUpdateService.requestUpdate();
+        this.filesLoading = false;
+      },
+      error: () => (this.filesLoading = false),
     });
   }
 
