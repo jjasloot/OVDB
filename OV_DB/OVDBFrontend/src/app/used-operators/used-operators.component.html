@@ -2,7 +2,7 @@
   <div class="compact-toggle-switch">
     <mat-slide-toggle [(ngModel)]="compact" color="primary"
       style="margin-bottom:0;vertical-align:middle;"></mat-slide-toggle>
-    <span class="compact-toggle-switch-label">Compact</span>
+    <span class="compact-toggle-switch-label">{{ 'STATS.COMPACT' | translate }}</span>
   </div>
   @if(loading()){
   <mat-spinner />

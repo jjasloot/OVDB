@@ -11,7 +11,10 @@ export class TranslationService {
 
   languageChanged = new EventEmitter<Language>();
   constructor() {
-    if (navigator.language.includes('nl')) {
+    const saved = localStorage.getItem('OVDBLanguage');
+    if (saved === 'nl' || saved === 'en') {
+      this.language = saved;
+    } else if (navigator.language.includes('nl')) {
       this.language = 'nl';
     } else {
       this.language = 'en';
@@ -24,6 +27,7 @@ export class TranslationService {
   set language(value: Language) {
     this._language = value;
     this.translateService.use(value);
+    localStorage.setItem('OVDBLanguage', value);
     this.languageChanged.emit(this._language);
   }
 
@@ -43,7 +47,8 @@ export class TranslationService {
     if (this.language === 'nl') {
       return 'nl-NL';
     }
-    return 'en-US';
+    // Keep in sync with the locales registered in main.ts (nl-NL / en-GB).
+    return 'en-GB';
   }
 
 

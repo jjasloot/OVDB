@@ -13,6 +13,7 @@ import { RegionOperator, RegionOperators } from "../models/region-operators.mode
 import { TranslationService } from "../services/translation.service";
 import { toSignal } from "@angular/core/rxjs-interop";
 import { MatProgressSpinnerModule } from "@angular/material/progress-spinner";
+import { TranslateModule } from "@ngx-translate/core";
 
 @Component({
   selector: "app-used-operators",
@@ -29,7 +30,8 @@ import { MatProgressSpinnerModule } from "@angular/material/progress-spinner";
     FormsModule,
     AsyncPipe,
     NgClass,
-    MatProgressSpinnerModule
+    MatProgressSpinnerModule,
+    TranslateModule
   ],
 })
 export class UsedOperatorsComponent implements OnInit {

@@ -58,6 +58,10 @@
   "ADD": "Add",
   "SORT": "Sort",
   "ACTIONS": "Actions",
+  "LOADING": "Loading...",
+  "FILTER.TITLE": "Custom selection",
+  "ROUTES.ASSIGNREGIONS": "Assign regions",
+  "STATS.COMPACT": "Compact",
   "ROUTEINSTANCE.SAVE_ERROR": "Could not save the trip. Please try again.",
   "TRAEWELLING.IGNORE_ERROR": "Could not ignore the trip. Please try again.",
   "IMPORTER.STEP1": "Search for a line and a type, add a network to limit results.",
@@ -194,6 +198,7 @@
   "ADMINPAGES.TYPES": "Types",
   "ADMINPAGES.WIZARD": "Wizard",
   "ADMINPAGES.STATIONMAPS": "Station maps",
+  "ADMINPAGES.TRAEWELLING": "Träwelling",
   "IMPORTER.ADD": "save this route",
   "IMPORTER.TRAEWELLING_INFO": "Creating a new route from your Träwelling trip. You can search for OSM data or upload a GPX file.",
   "IMPORTER.SEARCH_OSM_DATA": "Search OSM Data",
@@ -494,9 +499,9 @@
     "START_TIME": "Departure",
     "END_TIME": "Arrival",
     "DESCRIPTION": "Description",
-    "ROUTESLIST.EXPORTTOTRAINLOG": "Export selection for Trainlog",
-    "ROUTESLIST.SHOWROUTES": "Show routes",
-    "ROUTESLIST.SHOWINSTANCES": "Show trips",
     "ALERT_READ_MORE": "Read more"
-  }
+  },
+  "ROUTESLIST.EXPORTTOTRAINLOG": "Export selection for Trainlog",
+  "ROUTESLIST.SHOWROUTES": "Show routes",
+  "ROUTESLIST.SHOWINSTANCES": "Show trips"
 }
