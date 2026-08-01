@@ -17,7 +17,8 @@ import { AreYouSureDialogComponent } from "src/app/are-you-sure-dialog/are-you-s
 import saveAs from "file-saver";
 import { AuthenticationService } from "src/app/services/authentication.service";
 import { MatButton } from "@angular/material/button";
-import { MatFormField, MatLabel, MatSuffix } from "@angular/material/form-field";
+import { MatFormField, MatLabel, MatError, MatSuffix } from "@angular/material/form-field";
+import { MatSnackBar } from "@angular/material/snack-bar";
 import { MatInput } from "@angular/material/input";
 import { RouteDetailOperatorSelectionComponent } from "./route-detail-operator-selection/route-detail-operator-selection.component";
 import { MatDatepickerInput, MatDatepickerToggle, MatDatepicker } from "@angular/material/datepicker";
@@ -40,6 +41,7 @@ import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
     ReactiveFormsModule,
     MatFormField,
     MatLabel,
+    MatError,
     MatInput,
     RouteDetailOperatorSelectionComponent,
     MatDatepickerInput,
@@ -73,6 +75,7 @@ export class RouteDetailComponent implements OnInit {
   private authService = inject(AuthenticationService);
   private dateAdapter = inject<DateAdapter<any>>(DateAdapter);
   private dialog = inject(MatDialog);
+  private snackBar = inject(MatSnackBar);
   private router = inject(Router);
   private destroyRef = inject(DestroyRef);
 
@@ -179,10 +182,16 @@ export class RouteDetailComponent implements OnInit {
 
   onSubmit(values, goToInstances: boolean) {
     if (this.form.invalid) {
+      this.form.markAllAsTouched();
       return;
     }
     const mapsSelection = this.mapsSelection();
     if (mapsSelection.selectedOptions.selected.length === 0) {
+      this.snackBar.open(
+        this.translateService.instant("ROUTES.SELECTMAP"),
+        this.translateService.instant("CLOSE"),
+        { duration: 5000 }
+      );
       return false;
     }
     const route = values as UpdateRoute;

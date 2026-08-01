@@ -48,6 +48,8 @@
   "VALIDATION.EMAIL_REQUIRED": "E-mailadres is verplicht",
   "VALIDATION.EMAIL_INVALID": "Voer een geldig e-mailadres in",
   "VALIDATION.PASSWORD_REQUIRED": "Wachtwoord is verplicht",
+  "VALIDATION.REQUIRED": "Dit veld is verplicht",
+  "ROUTES.SELECTMAP": "Selecteer minstens één kaart voordat je opslaat",
   "ROUTEINSTANCES.NOINSTANCES": "Geen ritten gevonden",
   "ROUTEINSTANCES.DELETECONFIRM": "deze rit wilt verwijderen",
   "REQUESTS.NO_REQUESTS": "Nog geen verzoeken. Stel hierboven een vraag, dan verschijnt het antwoord hier.",

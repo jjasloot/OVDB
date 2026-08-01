@@ -4,7 +4,7 @@
         <mat-card-content>
             <mat-form-field>
                 <mat-label>{{'CHOOSEMAP'|translate}}</mat-label>
-                <mat-select (selectionChange)="changeMap($event.value)">
+                <mat-select [value]="selectedMap" (selectionChange)="changeMap($event.value)">
                     @for (map of maps; track map) {
                     <mat-option [value]="map.mapGuid">
                         {{map.name}}

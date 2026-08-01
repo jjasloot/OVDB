@@ -104,6 +104,11 @@ export class TimeStatsComponent implements OnInit {
   ngOnInit(): void {
     this.apiService.getMaps().subscribe(maps => {
       this.maps = maps;
+      // Start with the default (or first) map selected instead of an empty page.
+      if (maps.length > 0 && this.selectedMap === null) {
+        const defaultMap = maps.find(m => m.default) ?? maps[0];
+        this.changeMap(defaultMap.mapGuid);
+      }
     });
   }
 
@@ -111,13 +116,19 @@ export class TimeStatsComponent implements OnInit {
   changeMap(mapGuid: string) {
     this.selectedMap = mapGuid;
 
-    this.apiService.getYears(mapGuid).subscribe(years => {
-      this.years = years.sort().reverse();
-    });
     this.data = null;
     this.layers = [];
     this.tableData = null;
     this.selectedYear = null;
+    this.apiService.getYears(mapGuid).subscribe(years => {
+      this.years = years.sort().reverse();
+      // Preselect the current year (or the most recent one with data).
+      if (this.selectedYear === null && this.years.length > 0) {
+        const currentYear = new Date().getFullYear();
+        this.selectedYear = this.years.includes(currentYear) ? currentYear : this.years[0];
+        this.getData(this.selectedYear);
+      }
+    });
   }
 
   getData(year?: number) {

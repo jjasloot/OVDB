@@ -51,6 +51,8 @@
   "VALIDATION.EMAIL_REQUIRED": "Email is required",
   "VALIDATION.EMAIL_INVALID": "Enter a valid email address",
   "VALIDATION.PASSWORD_REQUIRED": "Password is required",
+  "VALIDATION.REQUIRED": "This field is required",
+  "ROUTES.SELECTMAP": "Select at least one map before saving",
   "ROUTEINSTANCES.NOINSTANCES": "No trips found",
   "ROUTEINSTANCES.DELETECONFIRM": "delete this trip",
   "REQUESTS.NO_REQUESTS": "No requests yet. Ask a question above and you will see the reply here.",

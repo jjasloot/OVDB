@@ -64,6 +64,7 @@ export const routes: Routes = [
         ],
       },
       { path: "requests", loadComponent: () => import("./requests/requests-list/requests-list.component").then(m => m.RequestsListComponent), canActivate: [LoginGuard] },
+      { path: "**", redirectTo: "" },
     ],
   },
 ];
