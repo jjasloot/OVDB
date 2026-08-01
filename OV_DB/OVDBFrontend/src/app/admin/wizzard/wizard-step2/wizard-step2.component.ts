@@ -1,8 +1,8 @@
 import { Component, OnInit, inject } from "@angular/core";
 import { ActivatedRoute, Router } from "@angular/router";
 import { ApiService } from "src/app/services/api.service";
+import { MapTileLayersService } from "src/app/services/map-tile-layers.service";
 import { OSMDataLine } from "src/app/models/osmDataLine.model";
-import { tileLayer } from "leaflet";
 import { LatLngBounds, geoJSON } from "leaflet";
 import { OSMLineStop } from "src/app/models/osmLineStop.model";
 import { saveAs } from "file-saver";
@@ -50,18 +50,13 @@ export class WizzardStep2Component implements OnInit {
   private translateService = inject(TranslateService);
   private dialog = inject(MatDialog);
   private router = inject(Router);
+  private mapTileLayersService = inject(MapTileLayersService);
 
   id: string;
   data: OSMDataLine;
 
   options = {
-    layers: [
-      tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        opacity: 0.5,
-        attribution:
-          '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-      }),
-    ],
+    layers: [this.mapTileLayersService.createThemedLayer(0.5)],
     zoom: 5,
   };
   leafletLayersControl = {};

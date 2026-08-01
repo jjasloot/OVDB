@@ -9,7 +9,6 @@ import {
 import { ActivatedRoute } from "@angular/router";
 import { MatCheckboxChange, MatCheckbox } from "@angular/material/checkbox";
 import { LatLngBounds, LatLng, divIcon, circleMarker } from "leaflet";
-import { tileLayer } from "leaflet";
 import { Region } from "src/app/models/region.model";
 import { StationAdminProperties } from "src/app/models/stationAdminProperties.model";
 import { ApiService } from "src/app/services/api.service";
@@ -28,6 +27,7 @@ import { MatIcon } from "@angular/material/icon";
 import { MatSelect } from "@angular/material/select";
 import { MatOption } from "@angular/material/core";
 import { SignalRService } from "src/app/services/signal-r.service";
+import { MapTileLayersService } from "src/app/services/map-tile-layers.service";
 import { MatChip } from "@angular/material/chips";
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { createMarkerClusterGroup } from "src/app/leaflet-markercluster-loader";
@@ -65,35 +65,11 @@ export class AdminStationsMapComponent implements OnInit {
   regionsService = inject(RegionsService);
   translationService = inject(TranslationService);
   signalRService = inject(SignalRService);
-  baseLayers = {
-    OpenStreetMap: tileLayer(
-      "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-      {
-        opacity: 0.8,
-        attribution:
-          '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-      }
-    ),
-    "OpenStreetMap Mat": tileLayer(
-      "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-      {
-        opacity: 0.5,
-        attribution:
-          '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-      }
-    ),
-    "Esri WorldTopoMap": tileLayer(
-      "https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}",
-      {
-        opacity: 0.65,
-               attribution:
-          "Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ, TomTom, Intermap, iPC, USGS, FAO, NPS, NRCAN, GeoBase, Kadaster NL, Ordnance Survey, Esri Japan, METI, Esri China (Hong Kong), and the GIS User Community",
-      }
-    ),
-  };
+  private mapTileLayersService = inject(MapTileLayersService);
+  baseLayers = this.mapTileLayersService.createBaseLayers();
   readonly guid = input<string>(undefined);
   options = {
-    layers: [this.baseLayers["OpenStreetMap Mat"]],
+    layers: [this.mapTileLayersService.defaultLayer(this.baseLayers)],
     zoom: 5,
   };
   private _bounds: LatLngBounds;

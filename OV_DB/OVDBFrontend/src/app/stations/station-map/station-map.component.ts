@@ -4,11 +4,11 @@ import {
   LatLng,
   divIcon,
   circleMarker,
-  LeafletEvent,
-  tileLayer
+  LeafletEvent
 } from "leaflet";
 import { ApiService } from "src/app/services/api.service";
 import { TranslationService } from "src/app/services/translation.service";
+import { MapTileLayersService } from "src/app/services/map-tile-layers.service";
 import { LeafletModule } from "@bluehalo/ngx-leaflet";
 import { NgClass } from "@angular/common";
 import { MatProgressSpinner } from "@angular/material/progress-spinner";
@@ -28,36 +28,12 @@ export class StationMapComponent implements OnInit {
   private apiService = inject(ApiService);
   private translationService = inject(TranslationService);
   private cd = inject(ChangeDetectorRef);
+  private mapTileLayersService = inject(MapTileLayersService);
 
-  baseLayers = {
-    OpenStreetMap: tileLayer(
-      "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-      {
-        opacity: 0.8,
-        attribution:
-          '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-      }
-    ),
-    "OpenStreetMap Mat": tileLayer(
-      "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-      {
-        opacity: 0.5,
-        attribution:
-          '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-      }
-    ),
-    "Esri WorldTopoMap": tileLayer(
-      "https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}",
-      {
-        opacity: 0.65,
-               attribution:
-          "Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ, TomTom, Intermap, iPC, USGS, FAO, NPS, NRCAN, GeoBase, Kadaster NL, Ordnance Survey, Esri Japan, METI, Esri China (Hong Kong), and the GIS User Community",
-      }
-    ),
-  };
+  baseLayers = this.mapTileLayersService.createBaseLayers();
   readonly guid = input<string>(undefined);
   options = {
-    layers: [this.baseLayers["OpenStreetMap Mat"]],
+    layers: [this.mapTileLayersService.defaultLayer(this.baseLayers)],
     zoom: 5,
   };
   private _bounds = signal<LatLngBounds>(null);

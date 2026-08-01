@@ -19,9 +19,10 @@ import { MatProgressSpinner } from "@angular/material/progress-spinner";
 import { MatSelect } from "@angular/material/select";
 import { MatTooltip } from "@angular/material/tooltip";
 import { LeafletModule } from "@bluehalo/ngx-leaflet";
-import { divIcon, LatLng, LatLngBounds, Layer, marker, tileLayer } from "leaflet";
+import { divIcon, LatLng, LatLngBounds, Layer, marker } from "leaflet";
 import { StationMergeRegion, StationNearbyPair } from "src/app/models/stationMerge.model";
 import { ApiService } from "src/app/services/api.service";
+import { MapTileLayersService } from "src/app/services/map-tile-layers.service";
 
 /** Returns an HTMLElement whose textContent is set, so Leaflet treats it as safe plain text. */
 function safeTooltipContent(text: string): HTMLElement {
@@ -55,6 +56,7 @@ function safeTooltipContent(text: string): HTMLElement {
 export class AdministratorStationMergeComponent implements OnInit {
   private apiService = inject(ApiService);
   private destroyRef = inject(DestroyRef);
+  private mapTileLayersService = inject(MapTileLayersService);
 
   regions = signal<StationMergeRegion[]>([]);
   selectedRegionId = signal<number | null>(null);
@@ -64,12 +66,7 @@ export class AdministratorStationMergeComponent implements OnInit {
   actionInProgress = signal<boolean>(false);
 
   readonly mapOptions = {
-    layers: [
-      tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        opacity: 0.85,
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-      }),
-    ],
+    layers: [this.mapTileLayersService.createThemedLayer(0.85)],
     zoom: 17,
   };
 

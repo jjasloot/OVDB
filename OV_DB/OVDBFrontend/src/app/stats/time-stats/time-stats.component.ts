@@ -11,9 +11,10 @@ import { LeafletModule } from '@bluehalo/ngx-leaflet';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { ChartConfiguration } from 'chart.js';
 import saveAs from 'file-saver';
-import { LatLngBounds, LatLng, tileLayer, marker, icon, Rectangle } from 'leaflet';
+import { LatLngBounds, LatLng, marker, icon, Rectangle } from 'leaflet';
 import { ApiService } from 'src/app/services/api.service';
 import { TranslationService } from 'src/app/services/translation.service';
+import { MapTileLayersService } from 'src/app/services/map-tile-layers.service';
 import { Map } from 'src/app/models/map.model';
 import { BaseChartDirective } from 'ng2-charts';
 import 'chartjs-adapter-luxon';
@@ -27,6 +28,7 @@ import { MatTabsModule } from '@angular/material/tabs';
 export class TimeStatsComponent implements OnInit {
   private apiService = inject(ApiService);
   private translationService = inject(TranslationService);
+  private mapTileLayersService = inject(MapTileLayersService);
   translateService = inject(TranslateService);
 
   data: ChartConfiguration['data'];
@@ -76,23 +78,10 @@ export class TimeStatsComponent implements OnInit {
   };
   tableData: any;
   layers = [];
-  baseLayers =
-    {
-      OpenStreetMap: tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-        { opacity: 0.8, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' }),
-      'OpenStreetMap Mat': tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-        { opacity: 0.5, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' }),
-      'Esri WorldTopoMap': tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',
-        {
-          opacity: 0.65,
-                   attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ, TomTom, Intermap, iPC, USGS, FAO, NPS, NRCAN, GeoBase, Kadaster NL, Ordnance Survey, Esri Japan, METI, Esri China (Hong Kong), and the GIS User Community'
-        })
-    };
+  baseLayers = this.mapTileLayersService.createBaseLayers();
 
   options = {
-    layers: [
-      this.baseLayers['OpenStreetMap Mat']
-    ],
+    layers: [this.mapTileLayersService.defaultLayer(this.baseLayers)],
     zoom: 5
   };
   leafletLayersControl = {

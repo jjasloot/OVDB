@@ -1,9 +1,9 @@
 import { Component, OnInit, viewChild, inject } from '@angular/core';
 import { LatLngBounds, LatLng, geoJSON } from 'leaflet';
-import { tileLayer } from 'leaflet';
 import { TranslateService, TranslateModule } from '@ngx-translate/core';
 import { TranslationService } from '../services/translation.service';
 import { ApiService } from '../services/api.service';
+import { MapTileLayersService } from '../services/map-tile-layers.service';
 import { ActivatedRoute } from '@angular/router';
 import { LeafletModule } from '@bluehalo/ngx-leaflet';
 import { NgClass } from '@angular/common';
@@ -20,6 +20,7 @@ export class SingleRouteMapComponent implements OnInit {
   private translationService = inject(TranslationService);
   private activatedRoute = inject(ActivatedRoute);
   private apiService = inject(ApiService);
+  private mapTileLayersService = inject(MapTileLayersService);
 
   readonly mapContainer = viewChild<HTMLElement>('mapContainer');
   loading = false;
@@ -48,23 +49,10 @@ export class SingleRouteMapComponent implements OnInit {
     return 500;
   }
 
-  baseLayers =
-    {
-      OpenStreetMap: tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-        { opacity: 0.8, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' }),
-      'OpenStreetMap Mat': tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-        { opacity: 0.5, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' }),
-      'Esri WorldTopoMap': tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',
-        {
-          opacity: 0.65,
-                   attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ, TomTom, Intermap, iPC, USGS, FAO, NPS, NRCAN, GeoBase, Kadaster NL, Ordnance Survey, Esri Japan, METI, Esri China (Hong Kong), and the GIS User Community'
-        })
-    };
+  baseLayers = this.mapTileLayersService.createBaseLayers();
 
   options = {
-    layers: [
-      this.baseLayers['OpenStreetMap Mat']
-    ],
+    layers: [this.mapTileLayersService.defaultLayer(this.baseLayers)],
     zoom: 5
   };
   leafletLayersControl = {
