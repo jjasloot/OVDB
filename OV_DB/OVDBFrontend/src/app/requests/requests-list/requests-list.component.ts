@@ -7,6 +7,7 @@ import { MatFormField, MatLabel } from "@angular/material/form-field";
 import { MatInput } from "@angular/material/input";
 import { FormsModule } from "@angular/forms";
 import { MatButton } from "@angular/material/button";
+import { MatProgressSpinner } from "@angular/material/progress-spinner";
 import { DatePipe } from "@angular/common";
 import { TranslateModule } from "@ngx-translate/core";
 
@@ -22,6 +23,7 @@ import { TranslateModule } from "@ngx-translate/core";
         MatInput,
         FormsModule,
         MatButton,
+        MatProgressSpinner,
         DatePipe,
         TranslateModule,
     ]
@@ -32,24 +34,36 @@ export class RequestsListComponent implements OnInit {
 
   requests: RequestForUser[];
   newRequest?: string;
+  loading = false;
+  sending = false;
 
   ngOnInit(): void {
-    this.requestsService.getUserRequests().subscribe((requests) => {
-      this.requests = requests;
+    this.loadRequests();
+  }
+
+  private loadRequests() {
+    this.loading = true;
+    this.requestsService.getUserRequests().subscribe({
+      next: (requests) => {
+        this.requests = requests;
+        this.loading = false;
+      },
+      error: () => (this.loading = false),
     });
   }
 
   sendRequest() {
-    if(!this.newRequest || this.newRequest.trim() === "") {
+    if (!this.newRequest || this.newRequest.trim() === "" || this.sending) {
       return;
     }
+    this.sending = true;
     this.requestsService.addNewRequest({ message: this.newRequest }).subscribe({
       next: () => {
         this.newRequest = "";
-        this.requestsService.getUserRequests().subscribe((requests) => {
-          this.requests = requests;
-        });
+        this.sending = false;
+        this.loadRequests();
       },
+      error: () => (this.sending = false),
     });
   }
 

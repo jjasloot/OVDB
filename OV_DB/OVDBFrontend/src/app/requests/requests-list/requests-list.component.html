@@ -11,11 +11,16 @@
         rows="6"
       ></textarea>
     </mat-form-field>
-    <button mat-raised-button color="primary" (click)="sendRequest()">
+    <button mat-raised-button color="primary" (click)="sendRequest()" [disabled]="sending">
       {{ "REQUESTS.SEND_REQUEST" | translate }}
     </button>
   </mat-card>
 
+  @if (loading) {
+  <mat-spinner></mat-spinner>
+  } @else if (!requests || requests.length === 0) {
+  <div class="no-data">{{ "REQUESTS.NO_REQUESTS" | translate }}</div>
+  }
   @for (request of requests; track request.id) {
   <mat-card>
     {{ request.message }}

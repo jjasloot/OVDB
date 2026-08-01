@@ -109,7 +109,7 @@ export class RouteInstancesListComponent implements OnInit, AfterViewInit {
 
     // Load instances with restored state or defaults
     const pageIndex = this.restoredState?.pageIndex ?? 0;
-    const pageSize = this.restoredState?.pageSize ?? 10;
+    const pageSize = this.restoredState?.pageSize ?? 25;
     const sortActive = this.restoredState?.sortActive ?? 'date';
     const sortDirection = this.restoredState?.sortDirection ?? 'desc';
     const filter = this.restoredState?.filter ?? '';
@@ -131,7 +131,7 @@ export class RouteInstancesListComponent implements OnInit, AfterViewInit {
 
   private restoreTableState(): void {
     const savedState = this.tableStateService.getTableState(this.TABLE_ID, {
-      defaultPageSize: 10,
+      defaultPageSize: 25,
       defaultSortActive: 'date',
       defaultSortDirection: 'desc'
     });

@@ -36,6 +36,9 @@
   }
   @if (!loading()) {
   <div>
+    @if (instances().length === 0) {
+    <div class="no-data">{{ "ROUTEINSTANCES.NOINSTANCES" | translate }}</div>
+    }
     @for (instance of instances(); track instance.routeInstanceId) {
     <mat-expansion-panel>
       <mat-expansion-panel-header>

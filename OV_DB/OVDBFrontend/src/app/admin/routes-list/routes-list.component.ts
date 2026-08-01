@@ -214,7 +214,7 @@ export class RoutesListComponent implements OnInit, AfterViewInit {
 
   private restoreTableState(): void {
     const savedState = this.tableStateService.getTableState(this.TABLE_ID, {
-      defaultPageSize: 10,
+      defaultPageSize: 25,
       defaultSortActive: 'date',
       defaultSortDirection: 'desc'
     });
