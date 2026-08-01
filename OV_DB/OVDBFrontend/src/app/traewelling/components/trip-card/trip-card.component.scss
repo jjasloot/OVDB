@@ -156,10 +156,15 @@
     font-size: 11px;
     min-height: 24px;
     border-radius: 12px;
+    cursor: copy;
 
     .tag-key {
       font-weight: 500;
       color: var(--text-primary);
+
+      &::after {
+        content: ':';
+      }
     }
 
     .tag-value {
@@ -182,35 +187,17 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
 
     .primary-actions {
       display: flex;
       gap: 8px;
       flex-wrap: wrap;
-
-      // button {
-      //   width: 36px;
-      //   height: 36px;
-
-      //   mat-icon {
-      //     font-size: 16px;
-      //     width: 16px;
-      //     height: 16px;
-      //   }
-      // }
     }
 
     .secondary-actions {
-      button {
-        width: 32px;
-        height: 32px;
-
-        mat-icon {
-          font-size: 14px;
-          width: 14px;
-          height: 14px;
-        }
-      }
+      margin-left: auto;
     }
   }
 

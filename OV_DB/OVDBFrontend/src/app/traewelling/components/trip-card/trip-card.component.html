@@ -72,8 +72,9 @@
 
   @if(trip.tags?.length>0){ <div class="trip-tags">
     @for(tag of trip.tags; track tag.key) {
-    <mat-chip class="tag-chip">
-      <span class="tag-key">{{ tag.key }}</span>
+    <mat-chip class="tag-chip" [matTooltip]="tag.key + ' — ' + ('TRAEWELLING.TAG_COPY_HINT' | translate)"
+      [cdkCopyToClipboard]="tag.key" (click)="tagKeyCopied(tag.key)">
+      <span class="tag-key">{{ trawellingService.formatTagKey(tag.key) }}</span>
       <span class="tag-value">{{ tag.value }}</span>
     </mat-chip>
     }
@@ -85,32 +86,37 @@
   <!-- Compact Actions -->
   <mat-card-actions class="trip-actions">
     <div class="actions-row">
-      <!-- Primary Actions -->
+      <!-- Importing the trip onto a route you already have is the common case,
+           so it is the only filled button; the other routes into the flow are
+           secondary and ignoring is last. -->
       <div class="primary-actions">
-        <button mat-raised-button color="accent" (click)="openRouteSearch()" [disabled]="isProcessing"
+        <button mat-raised-button color="primary" (click)="openRouteSearch()" [disabled]="isProcessing"
           [title]="'TRAEWELLING.ADD_TO_ROUTE' | translate">
           <mat-icon>add_road</mat-icon>
           {{ 'TRAEWELLING.ADD_TO_ROUTE' | translate }}
         </button>
 
-        <button mat-raised-button (click)="createRouteViaWizard()" [disabled]="isProcessing"
-          [title]="'TRAEWELLING.CREATE_WIZARD' | translate">
-          <mat-icon>assistant</mat-icon>
-          {{ 'TRAEWELLING.CREATE_WIZARD' | translate }}
-        </button>
-
-        <button mat-raised-button (click)="createRouteViaGPX()" [disabled]="isProcessing"
-          [title]="'TRAEWELLING.CREATE_GPX' | translate">
-          <mat-icon>upload_file</mat-icon>
-          {{ 'TRAEWELLING.CREATE_GPX' | translate }}
-        </button>
-        <button mat-raised-button color="primary" (click)="openRouteInstanceSearch()" [disabled]="isProcessing"
+        <button mat-stroked-button (click)="openRouteInstanceSearch()" [disabled]="isProcessing"
           [title]="'TRAEWELLING.CONNECT_TO_INSTANCE' | translate">
           <mat-icon>link</mat-icon>
           {{ 'TRAEWELLING.CONNECT_TO_INSTANCE' | translate }}
         </button>
 
-        <button mat-raised-button (click)="ignoreTrip()" [disabled]="isProcessing"
+        <button mat-stroked-button (click)="createRouteViaWizard()" [disabled]="isProcessing"
+          [title]="'TRAEWELLING.CREATE_WIZARD' | translate">
+          <mat-icon>assistant</mat-icon>
+          {{ 'TRAEWELLING.CREATE_WIZARD' | translate }}
+        </button>
+
+        <button mat-stroked-button (click)="createRouteViaGPX()" [disabled]="isProcessing"
+          [title]="'TRAEWELLING.CREATE_GPX' | translate">
+          <mat-icon>upload_file</mat-icon>
+          {{ 'TRAEWELLING.CREATE_GPX' | translate }}
+        </button>
+      </div>
+
+      <div class="secondary-actions">
+        <button mat-button (click)="ignoreTrip()" [disabled]="isProcessing"
           [title]="'TRAEWELLING.IGNORE_TRIP' | translate">
           <mat-icon>visibility_off</mat-icon>
           {{ 'TRAEWELLING.IGNORE_TRIP' | translate }}

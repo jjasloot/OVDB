@@ -11,7 +11,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { TraewellingTagMapping } from '../../../models/user-profile.model';
-import { STANDARD_TRAEWELLING_TAGS, TRAEWELLING_TAG_LABELS } from '../../../constants/traewelling-tags.constants';
+import { STANDARD_TRAEWELLING_TAGS } from '../../../constants/traewelling-tags.constants';
 import { ApiService } from '../../../services/api.service';
 import { TrawellingService } from '../../../traewelling/services/traewelling.service';
 
@@ -51,7 +51,6 @@ export class TagMappingComponent {
 
   // Constants for autocomplete
   readonly standardTraewellingTags = STANDARD_TRAEWELLING_TAGS;
-  readonly traewellingTagLabels = TRAEWELLING_TAG_LABELS;
 
   // Signals for reactive filtering
   fromTagInput = signal('');
@@ -65,7 +64,7 @@ export class TagMappingComponent {
     }
     return this.standardTraewellingTags.filter(tag => 
       tag.toLowerCase().includes(input) ||
-      this.traewellingTagLabels[tag]?.toLowerCase().includes(input)
+      this.getTraewellingTagLabel(tag).toLowerCase().includes(input)
     );
   });
 
@@ -151,7 +150,7 @@ export class TagMappingComponent {
   }
 
   getTraewellingTagLabel(tag: string): string {
-    return this.traewellingTagLabels[tag] || tag;
+    return this.trawellingService.formatTagKey(tag);
   }
 
   selectTraewellingTag(tag: string) {

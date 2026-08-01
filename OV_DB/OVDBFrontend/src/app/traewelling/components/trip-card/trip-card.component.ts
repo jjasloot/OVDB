@@ -15,6 +15,9 @@ import { RouteInstanceSearchDialogComponent } from '../route-instance-search-dia
 import { RouteSearchDialogComponent } from '../route-search-dialog/route-search-dialog.component';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { ClipboardModule } from '@angular/cdk/clipboard';
+import { AreYouSureDialogComponent } from '../../../are-you-sure-dialog/are-you-sure-dialog.component';
 
 @Component({
   selector: 'app-trip-card',
@@ -27,6 +30,8 @@ import { MatSnackBar } from '@angular/material/snack-bar';
     MatMenuModule,
     MatProgressSpinnerModule,
     MatDividerModule,
+    MatTooltipModule,
+    ClipboardModule,
     TranslateModule
   ],
   templateUrl: './trip-card.component.html',
@@ -56,19 +61,39 @@ export class TripCardComponent {
     return this.trip.transport.journeyNumber || '';
   }
 
-  async ignoreTrip() {
-    this.isProcessing = true;
-    this.processingMessage = 'Ignoring trip...';
+  // Chips show a friendly label, but the raw key is what the profile tag
+  // mapping needs — clicking a chip copies it.
+  tagKeyCopied(key: string) {
+    this.snackBar.open(
+      this.translateService.instant('TRAEWELLING.TAG_COPIED', { key }),
+      this.translateService.instant('CLOSE'),
+      { duration: 4000 }
+    );
+  }
 
-    try {
-      await this.trawellingService.ignoreTrip(this.trip.id);
-      this.removeTrip.emit();
-    } catch (error) {
-      console.error('Error ignoring trip:', error);
-      this.snackBar.open(this.translateService.instant('TRAEWELLING.IGNORE_ERROR'), undefined, { duration: 5000 });
-    } finally {
-      this.isProcessing = false;
-    }
+  ignoreTrip() {
+    // There is no un-ignore endpoint: once ignored the check-in never returns
+    // to this list, so confirm before dropping it.
+    const dialogRef = this.dialog.open(AreYouSureDialogComponent, {
+      data: { item: this.translateService.instant('TRAEWELLING.IGNORE_CONFIRM') },
+    });
+    dialogRef.afterClosed().subscribe(async (confirmed: boolean) => {
+      if (!confirmed) {
+        return;
+      }
+      this.isProcessing = true;
+      this.processingMessage = this.translateService.instant('TRAEWELLING.IGNORING');
+
+      try {
+        await this.trawellingService.ignoreTrip(this.trip.id);
+        this.removeTrip.emit();
+      } catch (error) {
+        console.error('Error ignoring trip:', error);
+        this.snackBar.open(this.translateService.instant('TRAEWELLING.IGNORE_ERROR'), undefined, { duration: 5000 });
+      } finally {
+        this.isProcessing = false;
+      }
+    });
   }
 
   openRouteInstanceSearch() {

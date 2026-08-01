@@ -6,6 +6,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { TrawellingTransportCategory, TrawellingTripContext } from '../../models/traewelling.model';
 import { TrawellingService } from '../services/traewelling.service';
 import { MatButtonModule } from '@angular/material/button';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { TranslateModule } from '@ngx-translate/core';
 
 @Component({
@@ -16,6 +17,7 @@ import { TranslateModule } from '@ngx-translate/core';
     MatChipsModule,
     MatIconModule,
     MatButtonModule,
+    MatTooltipModule,
     TranslateModule
   ],
   template: `
@@ -65,8 +67,8 @@ import { TranslateModule } from '@ngx-translate/core';
           @if (tripContext.tags.length > 0) {
             <div class="trip-tags">
                 @for (tag of tripContext.tags; track tag) {
-                  <mat-chip>
-                    <strong>{{ tag.key }}:</strong> {{ tag.value }}
+                  <mat-chip [matTooltip]="tag.key">
+                    <strong>{{ traewellingService.formatTagKey(tag.key) }}:</strong> {{ tag.value }}
                   </mat-chip>
                 }
             </div>

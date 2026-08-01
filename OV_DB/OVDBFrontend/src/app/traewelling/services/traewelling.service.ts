@@ -21,6 +21,7 @@ import {
 import { TraewellingTagMapping } from '../../models/user-profile.model';
 import { ApiService } from '../../services/api.service';
 import { TranslationService } from '../../services/translation.service';
+import { TranslateService } from '@ngx-translate/core';
 
 @Injectable({
   providedIn: 'root'
@@ -29,6 +30,7 @@ export class TrawellingService {
   private http = inject(HttpClient);
   private apiService = inject(ApiService);
   private translationService = inject(TranslationService);
+  private translateService = inject(TranslateService);
 
   private readonly baseUrl = `${environment.backend}api/Traewelling`;
   private readonly routesUrl = `${environment.backend}api/routes`;
@@ -247,5 +249,35 @@ export class TrawellingService {
       month: 'short',
       year: 'numeric'
     });
+  }
+
+  /**
+   * Readable label for a Träwelling tag key. Known trwl:* keys get a translated
+   * label; tags from other apps use reverse-DNS keys (dev.vendor.App:123:Label)
+   * where only the trailing segment carries meaning. Display only — callers keep
+   * the raw key as a tooltip so nothing is hidden.
+   */
+  formatTagKey(key: string): string {
+    if (!key) {
+      return '';
+    }
+    if (key.startsWith('trwl:')) {
+      const slug = key.slice('trwl:'.length);
+      const translationKey = `TRAEWELLING.TAG.${slug.toUpperCase()}`;
+      const translated = this.translateService.instant(translationKey);
+      return translated === translationKey ? this.humanizeTagKey(slug) : translated;
+    }
+    const reverseDns = /^[a-z0-9-]+(?:\.[a-z0-9-]+)+\.(.+)$/.exec(key);
+    const withoutVendor = reverseDns ? reverseDns[1] : key;
+    const segments = withoutVendor.split(':');
+    return this.humanizeTagKey(segments[segments.length - 1]);
+  }
+
+  private humanizeTagKey(key: string): string {
+    const spaced = key.replace(/[_-]+/g, ' ').trim();
+    if (!spaced) {
+      return key;
+    }
+    return spaced.charAt(0).toUpperCase() + spaced.slice(1);
   }
 }
