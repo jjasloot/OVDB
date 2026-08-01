@@ -1,11 +1,12 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpContext } from '@angular/common/http';
 import { environment } from 'src/environments/environment';
 import { Router } from '@angular/router';
 import { JwtHelperService } from '@auth0/angular-jwt';
 import { RegistrationRequest } from '../models/registrationRequest.model';
 import { tap } from 'rxjs/operators';
 import { BehaviorSubject } from 'rxjs';
+import { SKIP_ERROR_TOAST } from '../guards/http-error.interceptor';
 
 @Injectable({
   providedIn: 'root'
@@ -50,7 +51,8 @@ export class AuthenticationService {
 
   login(email: string, password: string) {
     return this.httpClient.post(environment.backend + 'api/Authentication/login',
-      { email, password }).pipe(tap((data: any) => {
+      { email, password },
+      { context: new HttpContext().set(SKIP_ERROR_TOAST, true) }).pipe(tap((data: any) => {
         this.HandleArrivalOfTokens(data);
 
         if (this.returnUrl) {
@@ -62,7 +64,8 @@ export class AuthenticationService {
   }
 
   registration(registration: RegistrationRequest) {
-    return this.httpClient.post(environment.backend + 'api/Authentication/register', registration).pipe(tap(data => {
+    return this.httpClient.post(environment.backend + 'api/Authentication/register', registration,
+      { context: new HttpContext().set(SKIP_ERROR_TOAST, true) }).pipe(tap(data => {
       this.HandleArrivalOfTokens(data);
 
       if (this.returnUrl) {

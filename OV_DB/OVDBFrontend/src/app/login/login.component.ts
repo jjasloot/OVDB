@@ -2,7 +2,7 @@ import { Component, OnInit, inject } from '@angular/core';
 import { UntypedFormBuilder, Validators, UntypedFormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { AuthenticationService } from '../services/authentication.service';
 import { ActivatedRoute, Data, RouterLink } from '@angular/router';
-import { MatFormField, MatLabel } from '@angular/material/form-field';
+import { MatFormField, MatLabel, MatError } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 import { MatButton } from '@angular/material/button';
 import { MatProgressSpinner } from '@angular/material/progress-spinner';
@@ -13,7 +13,7 @@ import { UserPreferenceService } from '../services/user-preference.service';
   selector: 'app-login',
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.scss'],
-  imports: [FormsModule, ReactiveFormsModule, MatFormField, MatLabel, MatInput, MatButton, MatProgressSpinner, TranslateModule, RouterLink]
+  imports: [FormsModule, ReactiveFormsModule, MatFormField, MatLabel, MatError, MatInput, MatButton, MatProgressSpinner, TranslateModule, RouterLink]
 })
 export class LoginComponent implements OnInit {
   private authService = inject(AuthenticationService);
@@ -45,15 +45,23 @@ export class LoginComponent implements OnInit {
   }
 
   submit() {
-    if (this.form.valid) {
-      this.loading = true;
-      this.authService.login(this.form.value.email, this.form.value.password).subscribe(() => {
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
+      return;
+    }
+    this.loading = true;
+    this.failed = false;
+    this.authService.login(this.form.value.email, this.form.value.password).subscribe({
+      next: () => {
         this.loading = false;
         this.userPreferenceService.applyUserLanguagePreference();
-
       },
-        err => { this.error = err; this.loading = false; this.failed = true; });
-    }
+      error: (err) => {
+        this.error = err;
+        this.loading = false;
+        this.failed = true;
+      },
+    });
   }
 }
 
