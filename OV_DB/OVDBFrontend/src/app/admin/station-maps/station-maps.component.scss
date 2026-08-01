@@ -45,3 +45,8 @@ button:not(.mat-mdc-fab) {
 mat-list-item{
   border-bottom: 1px solid rgba(0, 0, 0, 0.2);
 }
+
+.container {
+  max-width: 1100px;
+  margin: 0 auto;
+}
