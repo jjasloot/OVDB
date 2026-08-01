@@ -51,7 +51,7 @@
       </th>
       <td mat-cell *matCellDef="let element">
         @for (operatorId of element.operatorIds; track operatorId) {
-        <img style="max-height: 1rem; max-width: 2rem; background:white;padding:4px; border-radius: 2px;"
+        <img style="max-height: 1rem; max-width: 2rem; background:white;padding:4px; border-radius: 2px;" alt=""
           [src]="getOperatorLogo(operatorId) | async" />
         }
       </td>
@@ -140,7 +140,8 @@
           (click)="instances(element)">
           <mat-icon>list</mat-icon>
         </button>
-        <button class="mobile" mat-icon-button (click)="openBottomSheet(element)">
+        <button class="mobile" mat-icon-button (click)="openBottomSheet(element)"
+          [attr.aria-label]="'ACTIONS' | translate">
           <mat-icon>reorder</mat-icon>
         </button>
       </td>

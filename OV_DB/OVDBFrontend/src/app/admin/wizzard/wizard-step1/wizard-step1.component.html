@@ -83,7 +83,7 @@
     }
     @if (step==2) {
     <div>
-      <div class="row"> <button mat-icon-button (click)="gotoStep1()">
+      <div class="row"> <button mat-icon-button (click)="gotoStep1()" [attr.aria-label]="'BACK' | translate">
           <mat-icon>arrow_back</mat-icon>
         </button>
         <p>{{'IMPORTER.STEP2'|translate}}</p>

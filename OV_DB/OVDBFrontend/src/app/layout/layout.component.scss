@@ -58,6 +58,15 @@ mat-select {
   }
 }
 
+.active-link {
+  background-color: rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+}
+
+.flag {
+  font-family: "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
+}
+
 .marker::after {
   content: "";
   position: absolute;

@@ -50,11 +50,13 @@
               }
             </div>
             <div class="mobile buttons">
-              <button mat-icon-button color="primary" (click)="view(map)">
+              <button mat-icon-button color="primary" (click)="view(map)"
+                [attr.aria-label]="'HOME.VIEW' | translate">
                 <mat-icon>visibility</mat-icon>
               </button>
               @if (!!map.sharingLinkName) {
-              <button mat-icon-button [cdkCopyToClipboard]="getLink(map)">
+              <button mat-icon-button [cdkCopyToClipboard]="getLink(map)"
+                [attr.aria-label]="'HOME.COPY' | translate">
                 <mat-icon>content_copy</mat-icon>
               </button>
               }
@@ -83,11 +85,13 @@
               }
             </div>
             <div class="mobile buttons">
-              <button mat-icon-button color="primary" (click)="viewStation(map)">
+              <button mat-icon-button color="primary" (click)="viewStation(map)"
+                [attr.aria-label]="'HOME.VIEW' | translate">
                 <mat-icon>visibility</mat-icon>
               </button>
               @if (!!map.sharingLinkName) {
-              <button mat-icon-button [cdkCopyToClipboard]="getLinkStation(map)">
+              <button mat-icon-button [cdkCopyToClipboard]="getLinkStation(map)"
+                [attr.aria-label]="'HOME.COPY' | translate">
                 <mat-icon>content_copy</mat-icon>
               </button>
               }

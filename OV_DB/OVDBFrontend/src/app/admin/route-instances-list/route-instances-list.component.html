@@ -128,7 +128,8 @@
                     (click)="edit(element)">
                     <mat-icon>create</mat-icon>
                 </button>
-                <button class="mobile" mat-icon-button (click)="openBottomSheet(element)">
+                <button class="mobile" mat-icon-button (click)="openBottomSheet(element)"
+                    [attr.aria-label]="'ACTIONS' | translate">
                     <mat-icon>reorder</mat-icon>
                 </button>
             </td>

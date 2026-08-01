@@ -1,5 +1,5 @@
 @if (data) {
-<button mat-icon-button (click)="goback()">
+<button mat-icon-button (click)="goback()" [attr.aria-label]="'BACK' | translate">
   <mat-icon>arrow_back</mat-icon>
 </button>
 

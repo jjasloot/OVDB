@@ -59,7 +59,8 @@
                       <mat-icon>share</mat-icon>
                     </button>
                   }
-                  <button class="mobile" mat-icon-button (click)="openBottomSheet(map)">
+                  <button class="mobile" mat-icon-button (click)="openBottomSheet(map)"
+                    [attr.aria-label]="'ACTIONS' | translate">
                     <mat-icon>reorder</mat-icon>
                   </button>
                   @if (!map.sharingLinkName) {
@@ -74,10 +75,12 @@
         }
       </div>
     }
-    <button class="sort" mat-fab (click)="sort()">
+    <button class="sort" mat-fab (click)="sort()" [matTooltip]="'SORT' | translate"
+      [attr.aria-label]="'SORT' | translate">
       <mat-icon>sort</mat-icon>
     </button>
-    <button class="add" mat-fab (click)="add()">
+    <button class="add" mat-fab (click)="add()" [matTooltip]="'ADD' | translate"
+      [attr.aria-label]="'ADD' | translate">
       <mat-icon>add</mat-icon>
     </button>
 

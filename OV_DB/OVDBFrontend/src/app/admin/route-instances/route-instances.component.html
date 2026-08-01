@@ -77,6 +77,6 @@
   }
 </div>
 
-<button class="add" mat-fab (click)="add()">
+<button class="add" mat-fab (click)="add()" [attr.aria-label]="'ADD' | translate">
   <mat-icon>add</mat-icon>
 </button>

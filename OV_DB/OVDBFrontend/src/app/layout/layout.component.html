@@ -6,31 +6,40 @@
       @if (isLoggedIn) {
       <div class="icons">
         @if (isAdmin) {
-        <button mat-icon-button [routerLink]="['/administrator']" [class.marker]="hasUnreadRequestsAdmin">
+        <button mat-icon-button [routerLink]="['/administrator']" routerLinkActive="active-link"
+          [class.marker]="hasUnreadRequestsAdmin" [matTooltip]="'MENU.ADMINISTRATOR'|translate"
+          [attr.aria-label]="'MENU.ADMINISTRATOR'|translate">
           <mat-icon>supervisor_account</mat-icon>
         </button>
         }
         <div class="mobile">
-          <button mat-icon-button [routerLink]="['/requests']" [class.marker]="hasUnreadRequests">
+          <button mat-icon-button [routerLink]="['/requests']" routerLinkActive="active-link"
+            [class.marker]="hasUnreadRequests" [matTooltip]="'MENU.REQUESTS'|translate"
+            [attr.aria-label]="'MENU.REQUESTS'|translate">
             <mat-icon>forum</mat-icon>
           </button>
-          <button mat-icon-button [routerLink]="['/']">
+          <button mat-icon-button [routerLink]="['/']" routerLinkActive="active-link"
+            [routerLinkActiveOptions]="{exact: true}" [matTooltip]="'MENU.MAPS'|translate"
+            [attr.aria-label]="'MENU.MAPS'|translate">
             <mat-icon>map</mat-icon>
           </button>
-          <button mat-icon-button [routerLink]="['/admin']">
+          <button mat-icon-button [routerLink]="['/admin']" routerLinkActive="active-link"
+            [matTooltip]="'MENU.DATA'|translate" [attr.aria-label]="'MENU.DATA'|translate">
             <mat-icon>backup</mat-icon>
           </button>
         </div>
         <div class="desktop">
-          <button mat-button [routerLink]="['/requests']" [class.marker]="hasUnreadRequests">
+          <button mat-button [routerLink]="['/requests']" routerLinkActive="active-link"
+            [class.marker]="hasUnreadRequests">
             <mat-icon>forum</mat-icon>
             {{'MENU.REQUESTS'|translate}}
           </button>
-          <button mat-button [routerLink]="['/']">
+          <button mat-button [routerLink]="['/']" routerLinkActive="active-link"
+            [routerLinkActiveOptions]="{exact: true}">
             <mat-icon>map</mat-icon>
             {{'MENU.MAPS'|translate}}
           </button>
-          <button mat-button [routerLink]="['/admin']">
+          <button mat-button [routerLink]="['/admin']" routerLinkActive="active-link">
             <mat-icon>backup</mat-icon>
             {{'MENU.DATA'|translate}}
           </button>
@@ -41,10 +50,10 @@
         </button>
         <mat-menu #menu="matMenu">
           @if(currentLanguage!=='nl'){
-          <button mat-menu-item (click)="setLanguage('nl')"><mat-icon>🇳🇱</mat-icon> Nederlands</button>
+          <button mat-menu-item (click)="setLanguage('nl')"><span class="flag">🇳🇱</span> Nederlands</button>
           }
           @if(currentLanguage!=='en'){
-          <button mat-menu-item (click)="setLanguage('en')"><mat-icon>🇬🇧</mat-icon> English</button>
+          <button mat-menu-item (click)="setLanguage('en')"><span class="flag">🇬🇧</span> English</button>
           }
           <button mat-menu-item (click)="toggleTheme()">
             <mat-icon>{{themeService.isDarkMode ? 'light_mode' : 'dark_mode'}}</mat-icon>
@@ -77,19 +86,24 @@
       @if (!isLoggedIn) {
       <div class="icons">
         <button mat-icon-button (click)="toggleTheme()"
-          [title]="themeService.isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'">
+          [matTooltip]="(themeService.isDarkMode ? 'MENU.LIGHT_MODE' : 'MENU.DARK_MODE') | translate"
+          [attr.aria-label]="(themeService.isDarkMode ? 'MENU.LIGHT_MODE' : 'MENU.DARK_MODE') | translate">
           <mat-icon>{{themeService.isDarkMode ? 'light_mode' : 'dark_mode'}}</mat-icon>
         </button>
-        <button mat-icon-button [routerLink]="['/help']">
+        <button mat-icon-button [routerLink]="['/help']" [matTooltip]="'MENU.HELP'|translate"
+          [attr.aria-label]="'MENU.HELP'|translate">
           <mat-icon>help_outline</mat-icon>
         </button>
         @if(currentLanguage!=='nl'){
-        <button mat-icon-button (click)="setLanguage('nl')"><mat-icon>🇳🇱</mat-icon></button>
+        <button mat-icon-button (click)="setLanguage('nl')" matTooltip="Nederlands" aria-label="Nederlands"><span
+            class="flag">🇳🇱</span></button>
         }
         @if(currentLanguage!=='en'){
-        <button mat-icon-button (click)="setLanguage('en')"><mat-icon>🇬🇧</mat-icon></button>
+        <button mat-icon-button (click)="setLanguage('en')" matTooltip="English" aria-label="English"><span
+            class="flag">🇬🇧</span></button>
         }
-        <button mat-icon-button (click)="signIn()">
+        <button mat-icon-button (click)="signIn()" [matTooltip]="'HOME.LOGIN'|translate"
+          [attr.aria-label]="'HOME.LOGIN'|translate">
           <mat-icon>person</mat-icon>
         </button>
       </div>

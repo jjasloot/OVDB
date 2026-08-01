@@ -1,5 +1,5 @@
 import { Component, DestroyRef, OnInit, inject } from "@angular/core";
-import { Router, RouterLink, RouterOutlet } from "@angular/router";
+import { Router, RouterLink, RouterLinkActive, RouterOutlet } from "@angular/router";
 import { AuthenticationService } from "../services/authentication.service";
 import { TranslationService } from "../services/translation.service";
 import { ThemeService } from "../services/theme.service";
@@ -8,6 +8,7 @@ import { MatToolbar } from "@angular/material/toolbar";
 import { MatButton, MatIconButton } from "@angular/material/button";
 import { MatIcon } from "@angular/material/icon";
 import { MatMenuModule } from "@angular/material/menu";
+import { MatTooltip } from "@angular/material/tooltip";
 import { TranslateModule } from "@ngx-translate/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 
@@ -20,9 +21,11 @@ import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
     MatIconButton,
     MatButton,
     RouterLink,
+    RouterLinkActive,
     MatIcon,
     RouterOutlet,
     MatMenuModule,
+    MatTooltip,
     TranslateModule
   ]
 })

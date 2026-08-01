@@ -60,10 +60,10 @@
     } @else {
       {{ "ROUTETYPES.NODATA" | translate }}
     }
-    <button class="sort" mat-fab (click)="sort()">
+    <button class="sort" mat-fab (click)="sort()" [attr.aria-label]="'SORT' | translate">
       <mat-icon>sort</mat-icon>
     </button>
-    <button class="add" mat-fab (click)="add()">
+    <button class="add" mat-fab (click)="add()" [attr.aria-label]="'ADD' | translate">
       <mat-icon>add</mat-icon>
     </button>
   </div>
