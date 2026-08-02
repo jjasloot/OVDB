@@ -66,10 +66,11 @@ mat-tab {
     position: relative;
 }
 
-/* TODO(mdc-migration): The following rule targets internal classes of card that may no longer apply for the MDC version. */
 mat-card {
-    width: 50%;
-    margin: 0 25%;
+    // Centred and capped rather than a fixed 50%, which left the selectors
+    // squeezed into half a phone screen.
+    width: min(100%, 600px);
+    margin: 0 auto;
 
     mat-form-field {
         width: 100%;

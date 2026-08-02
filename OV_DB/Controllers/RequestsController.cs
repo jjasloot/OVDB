@@ -67,7 +67,10 @@ public class RequestsController(OVDBDatabaseContext dbContext, TelegramBotServic
             UserEmail = r.User?.Email
         }).ToList();
 
-        foreach (var request in requests.Where(r => !string.IsNullOrWhiteSpace(r.Response) && !r.ResponseRead))
+        // The admin marker counts requests with Read == false, so listing them
+        // clears it — including new requests that have no response yet, which
+        // are exactly the ones the marker is for.
+        foreach (var request in requests.Where(r => !r.Read))
         {
             request.Read = true;
         }

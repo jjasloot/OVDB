@@ -41,19 +41,23 @@ export class LayoutComponent implements OnInit {
   hasUnreadRequestsAdmin = false;
 
   ngOnInit() {
+    // Follow the shared flags rather than checking once: opening the requests
+    // page marks them read server-side, and the toolbar has to notice.
+    this.requestsService.hasUnread$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((hasUnread) => {
+        this.hasUnreadRequests = hasUnread;
+      });
+    this.requestsService.hasUnreadAdmin$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((hasUnread) => {
+        this.hasUnreadRequestsAdmin = hasUnread;
+      });
+
     if (this.isLoggedIn) {
-      this.requestsService.hasAnyUnreadRequests()
-        .pipe(takeUntilDestroyed(this.destroyRef))
-        .subscribe((hasUnread) => {
-          this.hasUnreadRequests = hasUnread;
-        });
+      this.requestsService.refreshUnreadRequests();
       if (this.isAdmin) {
-        this.requestsService
-          .adminHasAnyUnreadRequests()
-          .pipe(takeUntilDestroyed(this.destroyRef))
-          .subscribe((hasUnread) => {
-            this.hasUnreadRequestsAdmin = hasUnread;
-          });
+        this.requestsService.refreshUnreadAdminRequests();
       }
     }
   }

@@ -1,4 +1,9 @@
 <div class="mat-elevation-z8">
+    <mat-form-field class="filter">
+        <mat-label>{{ 'ROUTESLIST.SEARCH' | translate }}</mat-label>
+        <input matInput (keyup)="applyFilter($event)" />
+    </mat-form-field>
+
     <mat-table [dataSource]="dataSource" matSort>
         <ng-container matColumnDef="id">
             <mat-header-cell *matHeaderCellDef mat-sort-header> Id</mat-header-cell>
@@ -12,7 +17,7 @@
 
         <ng-container matColumnDef="lastLogin">
             <mat-header-cell *matHeaderCellDef mat-sort-header> Last login </mat-header-cell>
-            <mat-cell *matCellDef="let element"> {{element.lastLogin|date:'medium':undefined:'nl-NL'}} </mat-cell>
+            <mat-cell *matCellDef="let element"> {{element.lastLogin|date:'medium':undefined:currentLocale}} </mat-cell>
         </ng-container>
 
         <ng-container matColumnDef="routeCount">
@@ -37,15 +42,20 @@
 
         <ng-container matColumnDef="lastRouteInstanceDate">
             <mat-header-cell *matHeaderCellDef mat-sort-header> Last Route Instance </mat-header-cell>
-            <mat-cell *matCellDef="let element"> 
-                {{element.lastRouteInstanceDate ? (element.lastRouteInstanceDate|date:'medium':undefined:'nl-NL') : 'N/A'}} 
+            <mat-cell *matCellDef="let element">
+                {{element.lastRouteInstanceDate ? (element.lastRouteInstanceDate|date:'medium':undefined:currentLocale) : 'N/A'}}
             </mat-cell>
         </ng-container>
 
         <ng-container matColumnDef="isAdmin">
             <mat-header-cell *matHeaderCellDef mat-sort-header> IsAdmin </mat-header-cell>
             <mat-cell *matCellDef="let element">
-                <mat-checkbox [checked]="element.isAdmin"></mat-checkbox>
+                <!-- Read-only: this API exposes admin rights but has no way to change them. -->
+                @if (element.isAdmin) {
+                <mat-icon color="primary" aria-label="Administrator">check_circle</mat-icon>
+                } @else {
+                <span class="not-admin" aria-hidden="true">&mdash;</span>
+                }
             </mat-cell>
         </ng-container>
 
@@ -53,4 +63,5 @@
         <mat-row *matRowDef="let row; columns: displayedColumns;"></mat-row>
     </mat-table>
 
+    <mat-paginator [pageSize]="25" [pageSizeOptions]="[10, 25, 50, 100]" [showFirstLastButtons]="true"></mat-paginator>
 </div>
