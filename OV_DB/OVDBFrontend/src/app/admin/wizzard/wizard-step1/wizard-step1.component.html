@@ -2,6 +2,8 @@
   <!-- Träwelling Trip Info -->
   <app-traewelling-context-card [tripContext]="trawellingTripData" />
 
+  <app-wizard-steps [current]="step" />
+
   @if (loading) {
   <div>
     <mat-spinner></mat-spinner>
@@ -9,8 +11,9 @@
   </div>
   }
   @if (error) {
-  <div>
-    {{'ERROR'|translate}}
+  <div class="error">
+    <p>{{'ERRORS.SEARCH_FAILED'|translate}}</p>
+    <button mat-stroked-button (click)="retry()">{{'RETRY'|translate}}</button>
   </div>
   }
   @if (!loading) {
@@ -53,14 +56,14 @@
       </div>
       <div class="right">
         <p>{{'IMPORTER.STEP1NETWORK'|translate}}</p>
-        <div class="form column">
+        <form class="form column" (ngSubmit)="getNetwork()">
           <mat-form-field>
             <mat-label>{{'IMPORTER.NETWORK'|translate}}</mat-label>
-            <input matInput [(ngModel)]="selectedNetwork" required>
+            <input matInput name="network" [(ngModel)]="selectedNetwork" required>
           </mat-form-field>
           <mat-form-field>
             <mat-label>{{'IMPORTER.NETWORKNETHERLANDS'|translate}}</mat-label>
-            <mat-select [(ngModel)]="selectedNetwork">
+            <mat-select name="networkPreset" [(ngModel)]="selectedNetwork">
               @for (network of networks; track network) {
               <mat-option [value]="network">
                 {{network}}
@@ -68,16 +71,16 @@
               }
             </mat-select>
           </mat-form-field>
-          <mat-checkbox [(ngModel)]="differentTimeRight">
+          <mat-checkbox name="differentTimeRight" [(ngModel)]="differentTimeRight">
             {{'IMPORTER.DIFFERENTTIME'|translate}}</mat-checkbox>
           <mat-form-field [ngClass]="{'hidden':!differentTimeRight}">
             <mat-label>{{'IMPORTER.DATETIME'|translate}}</mat-label>
-            <input matInput [matDatepicker]="rightPicker" [(ngModel)]="dateTime">
+            <input matInput name="dateTimeRight" [matDatepicker]="rightPicker" [(ngModel)]="dateTime">
             <mat-datepicker-toggle matSuffix [for]="rightPicker"></mat-datepicker-toggle>
             <mat-datepicker #rightPicker></mat-datepicker>
           </mat-form-field>
-          <button mat-raised-button (click)="getNetwork()">{{'IMPORTER.SEARCH'|translate}}</button>
-        </div>
+          <button mat-raised-button type="submit">{{'IMPORTER.SEARCH'|translate}}</button>
+        </form>
       </div>
     </div>
     }

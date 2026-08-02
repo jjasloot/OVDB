@@ -2,6 +2,7 @@ import { Component, OnInit, inject } from "@angular/core";
 import { ActivatedRoute, Router } from "@angular/router";
 import { ApiService } from "src/app/services/api.service";
 import { MapTileLayersService } from "src/app/services/map-tile-layers.service";
+import { WizardStepsComponent } from "../wizard-steps/wizard-steps.component";
 import { OSMDataLine } from "src/app/models/osmDataLine.model";
 import { LatLngBounds, geoJSON } from "leaflet";
 import { OSMLineStop } from "src/app/models/osmLineStop.model";
@@ -29,6 +30,7 @@ import { STANDARD_DIALOG } from "src/app/constants/dialog-sizes";
   templateUrl: "./wizard-step2.component.html",
   styleUrls: ["./wizard-step2.component.scss"],
   imports: [
+    WizardStepsComponent,
     MatIconButton,
     MatIcon,
     MatCard,
@@ -96,24 +98,36 @@ export class WizzardStep2Component implements OnInit {
   }
 
   ngOnInit(): void {
+    this.loadLine();
+  }
+
+  loadLine(): void {
     this.loading = true;
+    this.error = false;
     this.apiService
       .importerGetLine(this.id, null, null, this.dateTime)
-      .subscribe((data) => {
-        this.data = data;
-        this.apiService.importerGetStops(this.id, this.dateTime).subscribe(
-          (stops) => {
-            this.loading = false;
-            this.stops = stops;
-            this.from = this.stops[0].id;
-            this.to = this.stops[this.stops.length - 1].id;
-          },
-          () => {
-            this.error = true;
-            this.loading = false;
-          }
-        );
-        this.addTrackToMap();
+      .subscribe({
+        next: (data) => {
+          this.data = data;
+          this.apiService.importerGetStops(this.id, this.dateTime).subscribe({
+            next: (stops) => {
+              this.loading = false;
+              this.stops = stops;
+              this.from = this.stops[0].id;
+              this.to = this.stops[this.stops.length - 1].id;
+            },
+            error: () => {
+              this.error = true;
+              this.loading = false;
+            },
+          });
+          this.addTrackToMap();
+        },
+        // Without this the spinner ran forever when the line itself failed to load.
+        error: () => {
+          this.error = true;
+          this.loading = false;
+        },
       });
   }
 

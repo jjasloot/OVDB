@@ -19,12 +19,13 @@ import { MatChipListbox, MatChipOption } from '@angular/material/chips';
 import { TranslateModule } from '@ngx-translate/core';
 import { TrawellingTransportCategory, TrawellingTripContext } from 'src/app/models/traewelling.model';
 import { TrawellingContextCardComponent } from 'src/app/traewelling/context-card/traewelling-context-card.component';
+import { WizardStepsComponent } from '../wizard-steps/wizard-steps.component';
 
 @Component({
   selector: 'app-wizard-step1',
   templateUrl: './wizard-step1.component.html',
   styleUrls: ['./wizard-step1.component.scss'],
-  imports: [TrawellingContextCardComponent, MatProgressSpinner, FormsModule, ReactiveFormsModule, MatFormField, MatLabel, MatInput, MatSelect, MatOption, MatCheckbox, NgClass, MatDatepickerInput, MatDatepickerToggle, MatSuffix, MatDatepicker, MatButton, MatIconButton, MatIcon, MatChipListbox, MatChipOption, TranslateModule]
+  imports: [TrawellingContextCardComponent, WizardStepsComponent, MatProgressSpinner, FormsModule, ReactiveFormsModule, MatFormField, MatLabel, MatInput, MatSelect, MatOption, MatCheckbox, NgClass, MatDatepickerInput, MatDatepickerToggle, MatSuffix, MatDatepicker, MatButton, MatIconButton, MatIcon, MatChipListbox, MatChipOption, TranslateModule]
 })
 export class WizzardStep1Component implements OnInit {
   private formBuilder = inject(UntypedFormBuilder);
@@ -42,6 +43,8 @@ export class WizzardStep1Component implements OnInit {
   differentTimeRight = false;
   dateTime: moment.Moment = null;
   error: boolean;
+  // Which search to repeat when the user hits retry.
+  private lastSearch: (() => void) | null = null;
   fromTraewelling = false;
   trawellingTripData: TrawellingTripContext | null = null;
   constructor() {
@@ -139,16 +142,25 @@ export class WizzardStep1Component implements OnInit {
 
   getLines() {
     if (this.form.invalid) {
+      this.form.markAllAsTouched();
       return;
     }
     const value = this.form.value;
     this.loading = true;
+    this.error = false;
+    this.lastSearch = () => this.getLines();
     this.dateTime = value.dateTime;
-    this.apiService.importerGetLines(value.reference, value.network, value.type, value.dateTime).subscribe(data => {
-      this.lines = data;
-      this.step = 2;
-      this.loading = false;
-    }, err => { this.error = true; });
+    this.apiService.importerGetLines(value.reference, value.network, value.type, value.dateTime).subscribe({
+      next: (data) => {
+        this.lines = data;
+        this.step = 2;
+        this.loading = false;
+      },
+      error: () => {
+        this.error = true;
+        this.loading = false;
+      },
+    });
   }
 
   getNetwork() {
@@ -156,11 +168,23 @@ export class WizzardStep1Component implements OnInit {
       return;
     }
     this.loading = true;
-    this.apiService.importerGetNetwork(this.selectedNetwork, this.dateTime).subscribe(data => {
-      this.lines = data;
-      this.step = 2;
-      this.loading = false;
-    }, err => { this.error = true; });
+    this.error = false;
+    this.lastSearch = () => this.getNetwork();
+    this.apiService.importerGetNetwork(this.selectedNetwork, this.dateTime).subscribe({
+      next: (data) => {
+        this.lines = data;
+        this.step = 2;
+        this.loading = false;
+      },
+      error: () => {
+        this.error = true;
+        this.loading = false;
+      },
+    });
+  }
+
+  retry() {
+    this.lastSearch?.();
   }
   select(line: OSMDataLine) {
     const queryParams: any = {};

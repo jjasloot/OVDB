@@ -1,3 +1,5 @@
+<app-wizard-steps [current]="3" />
+
 @if (data) {
 <button mat-icon-button (click)="goback()" [attr.aria-label]="'BACK' | translate">
   <mat-icon>arrow_back</mat-icon>
@@ -15,7 +17,8 @@
 } @if (error) {
 <div class="loading">
   <mat-card appearance="outlined">
-    {{ "ERROR" | translate }}
+    <p>{{ "ERRORS.SEARCH_FAILED" | translate }}</p>
+    <button mat-stroked-button (click)="loadLine()">{{ "RETRY" | translate }}</button>
   </mat-card>
 </div>
 } @if (data) {

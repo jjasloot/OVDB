@@ -1,0 +1,42 @@
+.wizard-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 24px;
+  list-style: none;
+  margin: 0 0 16px;
+  padding: 0;
+
+  li {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    opacity: 0.55;
+
+    &.active {
+      opacity: 1;
+      font-weight: 600;
+    }
+
+    // Steps already passed stay legible: they are still clickable context.
+    &.done {
+      opacity: 0.8;
+    }
+  }
+
+  .marker {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 1px solid var(--app-border-color);
+    font-size: 12px;
+  }
+
+  li.active .marker {
+    background: var(--mdc-theme-primary);
+    border-color: transparent;
+    color: white;
+  }
+}
