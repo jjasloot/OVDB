@@ -138,6 +138,18 @@ export class RoutesListComponent implements OnInit, AfterViewInit {
         "type",
         "edit",
       ];
+    } else if (window.innerWidth > 768) {
+      // A tablet fits more than the phone layout; dropping straight to four
+      // columns hid the date and trip count on every screen under 1200px.
+      this.displayedColumns = [
+        "select",
+        "name",
+        "operator",
+        "date",
+        "instances",
+        "type",
+        "edit",
+      ];
     } else {
       this.displayedColumns = ["select", "name", "type", "edit"];
     }

@@ -23,6 +23,9 @@
   }
   @for (request of requests; track request.id) {
   <mat-card>
+    <div class="asked-on">
+      {{ request.created | date : "mediumDate" : undefined : currentLocale }}
+    </div>
     {{ request.message }}
     @if(!!request.response){
     <div style="margin-top: 1rem">
