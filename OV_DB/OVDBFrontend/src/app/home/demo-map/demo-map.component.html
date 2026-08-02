@@ -1,0 +1,10 @@
+<div class="demo-map-wrapper">
+  <div class="demo-map" leaflet [leafletOptions]="options" [leafletLayers]="layers" [leafletFitBounds]="bounds"></div>
+  <p class="demo-caption">
+    @if (sharedMapLink) {
+    <a [routerLink]="['/link', sharedMapLink]">{{ 'HOME.LANDING_DEMO_LINK' | translate }}</a>
+    } @else {
+    {{ 'HOME.LANDING_DEMO_CAPTION' | translate }}
+    }
+  </p>
+</div>

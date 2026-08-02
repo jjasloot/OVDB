@@ -18,6 +18,7 @@ import { MatIcon } from "@angular/material/icon";
 import { MatProgressSpinner } from "@angular/material/progress-spinner";
 import { TranslateModule } from "@ngx-translate/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
+import { DemoMapComponent } from "./demo-map/demo-map.component";
 @Component({
   selector: "app-home",
   templateUrl: "./home.component.html",
@@ -36,6 +37,7 @@ import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
     MatIcon,
     MatProgressSpinner,
     TranslateModule,
+    DemoMapComponent,
   ],
 })
 export class HomeComponent implements OnInit {

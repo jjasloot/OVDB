@@ -36,7 +36,18 @@ npm run lint                 # has hundreds of pre-existing errors; only check f
 npm run i18n:extract         # extract translation keys to src/assets/i18n/en.json and nl.json
 ```
 
-For frontend development run backend and frontend separately: the dev frontend calls the API directly at `https://localhost:5001/` (`src/environments/environment.ts`), and backend CORS allows `http://localhost:4200`. In production the backend serves the built frontend from `OVDBFrontend/dist/OVDBFrontend/browser`.
+Starting the backend in Development (F5 in Visual Studio, or `dotnet run` in `OV_DB/`) also starts the frontend: `Microsoft.AspNetCore.SpaProxy` runs `npm start` in `OVDBFrontend/` and redirects `https://localhost:5001` to the dev server at `http://localhost:4200` once it is up (first compile takes ~20s, and a "Launching the SPA proxy..." page is shown until then). This is wired via `SpaProxyServerUrl`/`SpaProxyLaunchCommand` in `OV_DB.csproj`, and it only activates when `ASPNETCORE_HOSTINGSTARTUPASSEMBLIES=Microsoft.AspNetCore.SpaProxy` is set — that lives in `Properties/launchSettings.json`, which is **gitignored**, so a fresh clone has to add it back:
+
+```json
+"environmentVariables": {
+  "ASPNETCORE_ENVIRONMENT": "Development",
+  "ASPNETCORE_HOSTINGSTARTUPASSEMBLIES": "Microsoft.AspNetCore.SpaProxy"
+}
+```
+
+You can still run the two separately (`dotnet run` + `npm start`) — the dev frontend calls the API directly at `https://localhost:5001/` (`src/environments/environment.ts`) and backend CORS allows `http://localhost:4200` either way. In production the backend serves the built frontend from `OVDBFrontend/dist/OVDBFrontend/browser`.
+
+Do not use `spa.UseAngularCliServer` in `Startup.cs`: `SpaServices.Extensions` waits for the webpack-era `open your browser on <url>` line, which Angular's esbuild dev server never prints, so it always times out.
 
 ### Database migrations (from repo root)
 

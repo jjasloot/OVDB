@@ -110,22 +110,46 @@
     }
   </div>
   } @else {
-  <h1>{{ "HOME.WELCOME" | translate }}</h1>
-  <p>{{ "HOME.INFONOTLOGGEDIN" | translate }}</p>
-  <div class="buttons main-actions">
-    <button mat-raised-button [routerLink]="['/login']">
-      <mat-icon>login</mat-icon>
-      {{ "HOME.LOGIN" | translate }}
-    </button>
-    <button mat-raised-button [routerLink]="['/register']">
-      <mat-icon>person_add</mat-icon>
-      {{ "HOME.REGISTER" | translate }}
-    </button>
-    <button mat-raised-button [routerLink]="['/help']">
-      <mat-icon>help_outline</mat-icon>
-      {{'MENU.HELP'|translate}}
-    </button>
-  </div>
+  <section class="landing">
+    <h1>{{ "HOME.LANDING_TITLE" | translate }}</h1>
+    <p class="lead">{{ "HOME.LANDING_SUBTITLE" | translate }}</p>
+    <div class="buttons main-actions">
+      <button mat-raised-button color="primary" [routerLink]="['/login']">
+        <mat-icon>login</mat-icon>
+        {{ "HOME.LOGIN" | translate }}
+      </button>
+      <button mat-stroked-button [routerLink]="['/register']">
+        <mat-icon>person_add</mat-icon>
+        {{ "HOME.REGISTER" | translate }}
+      </button>
+      <button mat-button [routerLink]="['/help']">
+        <mat-icon>help_outline</mat-icon>
+        {{'MENU.HELP'|translate}}
+      </button>
+    </div>
+
+    <!-- <app-demo-map /> -->
+
+    <div class="landing-features">
+      <div class="feature">
+        <mat-icon>timeline</mat-icon>
+        <h3>{{ "HOME.LANDING_F1_TITLE" | translate }}</h3>
+        <p>{{ "HOME.LANDING_F1_TEXT" | translate }}</p>
+      </div>
+      <div class="feature">
+        <mat-icon>query_stats</mat-icon>
+        <h3>{{ "HOME.LANDING_F2_TITLE" | translate }}</h3>
+        <p>{{ "HOME.LANDING_F2_TEXT" | translate }}</p>
+      </div>
+      <div class="feature">
+        <mat-icon>cloud_download</mat-icon>
+        <h3>{{ "HOME.LANDING_F3_TITLE" | translate }}</h3>
+        <p>{{ "HOME.LANDING_F3_TEXT" | translate }}</p>
+      </div>
+    </div>
+
+    <p class="landing-footnote">{{ "HOME.LANDING_SHARED_LINK_NOTE" | translate }}</p>
+  </section>
   }
   <br />
 

@@ -4,7 +4,11 @@
 
 export const environment = {
   production: false,
-  backend: 'https://localhost:5001/'
+  backend: 'https://localhost:5001/',
+  // Sharing link name of a map to show on the logged-out landing page, e.g.
+  // 'my-map' for /link/my-map. Empty means the illustrative sample map is used
+  // instead, so no real travel history is on the front page.
+  demoMapSharingLink: ''
 };
 
 /*

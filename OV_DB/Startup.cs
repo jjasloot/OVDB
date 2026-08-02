@@ -229,10 +229,11 @@ namespace OV_DB
 
                 spa.Options.SourcePath = "OVDBFrontend";
 
-                if (env.IsDevelopment())
-                {
-                    //spa.UseAngularCliServer(npmScript: "start");
-                }
+                // Don't add spa.UseAngularCliServer here: it waits for the dev server to
+                // print "open your browser on <url>", which is the old webpack message.
+                // Angular's esbuild dev server prints "Local: <url>" instead, so it always
+                // times out. Development launches `ng serve` via Microsoft.AspNetCore.SpaProxy
+                // (see SpaProxyServerUrl/SpaProxyLaunchCommand in OV_DB.csproj) instead.
             });
         }
 

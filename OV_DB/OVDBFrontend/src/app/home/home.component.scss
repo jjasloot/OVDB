@@ -61,3 +61,45 @@ mat-list-item {
   display: block;
   min-width: 360px;
 }
+
+.landing {
+  h1 {
+    margin-bottom: 8px;
+  }
+
+  .lead {
+    max-width: 60ch;
+    font-size: 1.05rem;
+    opacity: 0.85;
+    margin-top: 0;
+  }
+
+  .main-actions {
+    justify-content: flex-start;
+  }
+}
+
+.landing-features {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 24px;
+  margin: 24px 0;
+
+  .feature {
+    h3 {
+      margin: 8px 0 4px;
+      font-size: 1rem;
+    }
+
+    p {
+      margin: 0;
+      opacity: 0.8;
+      font-size: 0.9rem;
+    }
+  }
+}
+
+.landing-footnote {
+  opacity: 0.7;
+  font-size: 0.9rem;
+}

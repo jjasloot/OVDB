@@ -1,0 +1,21 @@
+.demo-map-wrapper {
+  margin: 24px 0;
+}
+
+.demo-map {
+  height: 360px;
+  border-radius: 8px;
+  border: 1px solid var(--app-divider-color);
+  overflow: hidden;
+
+  @media (max-width: 600px) {
+    height: 260px;
+  }
+}
+
+.demo-caption {
+  margin: 8px 0 0;
+  font-size: 0.85rem;
+  opacity: 0.7;
+  text-align: center;
+}
