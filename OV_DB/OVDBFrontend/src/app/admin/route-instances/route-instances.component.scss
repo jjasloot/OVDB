@@ -7,7 +7,7 @@ mat-expansion-panel {
 }
 
 .speed-indicator {
-    color: #666;
+    color: var(--app-text-secondary);
     font-weight: normal;
     margin-left: 8px;
     font-size: 0.9em;
@@ -41,13 +41,13 @@ mat-expansion-panel {
 
     .stat-label {
         font-size: 0.75em;
-        color: #666;
+        color: var(--app-text-secondary);
         text-align: center;
     }
 
     .stat-note {
         font-size: 0.8em;
-        color: #999;
+        color: var(--app-text-secondary);
     }
 }
 

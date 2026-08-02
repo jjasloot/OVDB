@@ -25,7 +25,7 @@ form {
 }
 
 .line {
-    border: solid 1px #ccc;
+    border: solid 1px var(--app-divider-color);
     margin: 8px;
     padding: 8px;
     display: flex;

@@ -50,7 +50,7 @@
     p {
       margin: 0;
       font-style: italic;
-      background-color: rgba(0, 0, 0, 0.02);
+      background-color: var(--app-hover-color);
       padding: 8px 12px;
       border-radius: 4px;
     }

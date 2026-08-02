@@ -44,6 +44,10 @@ body {
   --app-text-color: rgba(0, 0, 0, 0.87);
   --app-shadow-color: rgba(0, 0, 0, 0.2);
   --app-input-background: #f5f5f5;
+  --app-text-secondary: rgba(0, 0, 0, 0.6);
+  --app-divider-color: rgba(0, 0, 0, 0.12);
+  --app-border-color: rgba(0, 0, 0, 0.2);
+  --app-hover-color: rgba(0, 0, 0, 0.04);
 
   // Destructive actions
   --app-danger-color: #c62828;
@@ -126,6 +130,10 @@ mat-toolbar.mat-primary {
   --app-text-color: white;
   --app-shadow-color: rgba(0, 0, 0, 0.5);
   --app-input-background: #424242;
+  --app-text-secondary: rgba(255, 255, 255, 0.7);
+  --app-divider-color: rgba(255, 255, 255, 0.12);
+  --app-border-color: rgba(255, 255, 255, 0.2);
+  --app-hover-color: rgba(255, 255, 255, 0.06);
 
   // Destructive actions
   --app-danger-color: #ef5350;
@@ -163,31 +171,32 @@ body {
   height: calc(100vh - 128px);
 }
 
-.green {
-  background-color: #00FF00;
+// Station-map cluster badges: all visited / none visited / mixed. They sit on
+// top of map tiles, so they carry their own text colour and a light outline to
+// stay readable on both the light and dark basemaps.
+.green,
+.red,
+.orange {
   padding: 8px;
   border-radius: 100px;
   display: flex !important;
   justify-content: center;
   align-items: center;
+  color: #ffffff;
+  font-weight: 600;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.65);
+}
+
+.green {
+  background-color: #2e7d32;
 }
 
 .red {
-  background-color: #FF0000;
-  padding: 8px;
-  border-radius: 100px;
-  display: flex !important;
-  justify-content: center;
-  align-items: center;
+  background-color: #c62828;
 }
 
 .orange {
-  background-color: #FF7F00;
-  padding: 8px;
-  border-radius: 100px;
-  display: flex !important;
-  justify-content: center;
-  align-items: center;
+  background-color: #ef6c00;
 }
 
 // Destructive actions (delete buttons, confirm dialogs) render in red.
