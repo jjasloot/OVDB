@@ -22,6 +22,7 @@ import { NgClass } from "@angular/common";
 import { CdkCopyToClipboard } from "@angular/cdk/clipboard";
 import { TrawellingTripContext } from "src/app/models/traewelling.model";
 import { TrawellingContextCardComponent } from "src/app/traewelling/context-card/traewelling-context-card.component";
+import { STANDARD_DIALOG } from "src/app/constants/dialog-sizes";
 
 @Component({
   selector: "app-wizard-step2",
@@ -121,7 +122,7 @@ export class WizzardStep2Component implements OnInit {
   }
   save() {
     const dialogRef = this.dialog.open(AreYouSureDialogComponent, {
-      width: "50%",
+      ...STANDARD_DIALOG,
       data: {
         item: this.translateService.instant("IMPORTER.ADD"),
       },

@@ -5,6 +5,7 @@ import { Router } from "@angular/router";
 import { MatDialog } from "@angular/material/dialog";
 import { DataUpdateService } from "src/app/services/data-update.service";
 import { AreYouSureDialogComponent } from "src/app/are-you-sure-dialog/are-you-sure-dialog.component";
+import { STANDARD_DIALOG } from "src/app/constants/dialog-sizes";
 import { MapsAddComponent } from "../maps-add/maps-add.component";
 import { TranslateService, TranslateModule } from "@ngx-translate/core";
 import { SortItemsDialogComponent } from "../sort-items-dialog/sort-items-dialog.component";
@@ -72,7 +73,7 @@ export class MapsListComponent implements OnInit {
 
   add() {
     const dialogRef = this.dialog.open(MapsAddComponent, {
-      width: this.getWidth(),
+      ...STANDARD_DIALOG,
     });
     dialogRef.afterClosed().subscribe((result: boolean) => {
       if (result) {
@@ -83,7 +84,7 @@ export class MapsListComponent implements OnInit {
 
   edit(map: Map) {
     const dialogRef = this.dialog.open(MapsAddComponent, {
-      width: this.getWidth(),
+      ...STANDARD_DIALOG,
       data: { map },
     });
     dialogRef.afterClosed().subscribe((result: boolean) => {
@@ -127,7 +128,7 @@ export class MapsListComponent implements OnInit {
 
   delete(map: Map) {
     const dialogRef = this.dialog.open(AreYouSureDialogComponent, {
-      width: this.getWidth(),
+      ...STANDARD_DIALOG,
       data: {
         item:
           this.translateService.instant("MAPLIST.DELETEFRONT") +
@@ -147,17 +148,9 @@ export class MapsListComponent implements OnInit {
     });
   }
 
-  private getWidth() {
-    let width = "90%";
-    if (window.innerWidth > 600) {
-      width = "50%";
-    }
-    return width;
-  }
-
   sort() {
     const dialogRef = this.dialog.open(SortItemsDialogComponent, {
-      width: this.getWidth(),
+      ...STANDARD_DIALOG,
       data: {
         list: Object.assign([], this.data),
         title: this.translateService.instant("MAPLIST.SORTTITLE"),

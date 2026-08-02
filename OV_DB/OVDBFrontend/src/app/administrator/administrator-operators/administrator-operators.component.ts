@@ -46,6 +46,7 @@ import { MatSelect } from "@angular/material/select";
 import { FormsModule } from "@angular/forms";
 import { MatOption } from "@angular/material/core";
 import { AsyncPipe } from "@angular/common";
+import { EXTRA_WIDE_DIALOG } from "src/app/constants/dialog-sizes";
 
 @Component({
   selector: "app-administrator-operators",
@@ -135,7 +136,7 @@ export class AdministratorOperatorsComponent implements OnInit {
     const dialogRef = this.dialog.open(
       AdministratorOperatorEditDialogComponent,
       {
-        width: "max(80%, 1200px)",
+        ...EXTRA_WIDE_DIALOG,
         data: operator,
       }
     );
@@ -178,7 +179,7 @@ export class AdministratorOperatorsComponent implements OnInit {
     const dialogRef = this.dialog.open(
       AdministratorOperatorEditDialogComponent,
       {
-        width: "max(80%, 1200px)",
+        ...EXTRA_WIDE_DIALOG,
         data: {
           id: 0,
           names: [],

@@ -20,6 +20,8 @@ import { TranslationService } from "src/app/services/translation.service";
 import { MatCheckboxChange, MatCheckbox } from "@angular/material/checkbox";
 import { MatDialog } from "@angular/material/dialog";
 import { EditMultipleComponent } from "../edit-multiple/edit-multiple.component";
+import { WIDE_DIALOG } from "src/app/constants/dialog-sizes";
+import { contrastTextColour } from "src/app/utils/colour";
 import { RoutesListBottomsheetComponent } from "./routes-list-bottomsheet/routes-list-bottomsheet.component";
 import { RoutesListActions } from "src/app/models/routes-list-actions.enum";
 import { MatBottomSheet } from "@angular/material/bottom-sheet";
@@ -292,6 +294,10 @@ export class RoutesListComponent implements OnInit, AfterViewInit {
   name(item) {
     return this.translationService.getNameForItem(item);
   }
+
+  contrastColour(colour: string) {
+    return contrastTextColour(colour);
+  }
   openBottomSheet(route: Route): void {
     const ref = this.bottomSheet.open(RoutesListBottomsheetComponent);
     ref.afterDismissed().subscribe((action: RoutesListActions) => {
@@ -329,7 +335,7 @@ export class RoutesListComponent implements OnInit, AfterViewInit {
 
   editMultiple() {
     const dialog = this.dialog.open(EditMultipleComponent, {
-      width: this.getWidth(),
+      ...WIDE_DIALOG,
       data: {
         selectedRoutes: this.selectedRoutes,
       },
@@ -350,14 +356,6 @@ export class RoutesListComponent implements OnInit, AfterViewInit {
 
   instances(route: Route) {
     this.router.navigate(["/", "admin", "routes", "instances", route.routeId]);
-  }
-
-  private getWidth() {
-    let width = "90%";
-    if (window.innerWidth > 600) {
-      width = "80%";
-    }
-    return width;
   }
 
   getOperatorLogo(operatorId: number): Observable<string> {

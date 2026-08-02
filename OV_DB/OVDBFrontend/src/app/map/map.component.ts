@@ -31,6 +31,7 @@ import { LeafletModule } from "@bluehalo/ngx-leaflet";
 import { MatProgressSpinner } from "@angular/material/progress-spinner";
 import { MatButton } from "@angular/material/button";
 import { MatIcon } from "@angular/material/icon";
+import { STANDARD_DIALOG, WIDE_DIALOG } from "src/app/constants/dialog-sizes";
 
 @Component({
   selector: "app-map",
@@ -499,7 +500,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
       this.selectedYears
     );
     const dialogRef = this.dialog.open(MapFilterComponent, {
-      width: "75%",
+      ...WIDE_DIALOG,
       data: { settings, guid: this.guid() },
     });
     dialogRef.afterClosed().subscribe((result: FilterSettings) => {
@@ -531,7 +532,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
         limits,
         mapGuid: this.guid(),
       },
-      width: "50%",
+      ...STANDARD_DIALOG,
     });
   }
 

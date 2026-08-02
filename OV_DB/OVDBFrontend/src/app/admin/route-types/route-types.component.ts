@@ -4,6 +4,8 @@ import { ApiService } from 'src/app/services/api.service';
 import { Router } from '@angular/router';
 import { MatDialog } from '@angular/material/dialog';
 import { AreYouSureDialogComponent } from 'src/app/are-you-sure-dialog/are-you-sure-dialog.component';
+import { STANDARD_DIALOG } from "src/app/constants/dialog-sizes";
+import { contrastTextColour } from 'src/app/utils/colour';
 import { RouteTypesAddComponent } from '../route-types-add/route-types-add.component';
 import { DataUpdateService } from 'src/app/services/data-update.service';
 import { SortItemsDialogComponent } from '../sort-items-dialog/sort-items-dialog.component';
@@ -49,7 +51,7 @@ export class RouteTypesComponent implements OnInit {
 
   add() {
     const dialogRef = this.dialog.open(RouteTypesAddComponent, {
-      width: this.getWidth(),
+      ...STANDARD_DIALOG,
     });
     dialogRef.afterClosed().subscribe((result: boolean) => {
       if (result) {
@@ -59,7 +61,7 @@ export class RouteTypesComponent implements OnInit {
   }
   sort() {
     const dialogRef = this.dialog.open(SortItemsDialogComponent, {
-      width: this.getWidth(),
+      ...STANDARD_DIALOG,
       data: {
         list: Object.assign([], this.data),
         title: this.translateService.instant('ROUTETYPES.SORTTITLE')
@@ -78,9 +80,13 @@ export class RouteTypesComponent implements OnInit {
     return this.translationService.getNameForItem(routeType);
   }
 
+  contrastColour(colour: string) {
+    return contrastTextColour(colour);
+  }
+
   edit(routeType: RouteType) {
     const dialogRef = this.dialog.open(RouteTypesAddComponent, {
-      width: this.getWidth(),
+      ...STANDARD_DIALOG,
       data: { routeType }
     });
     dialogRef.afterClosed().subscribe((result: boolean) => {
@@ -91,7 +97,7 @@ export class RouteTypesComponent implements OnInit {
   }
   delete(routeType: RouteType) {
     const dialogRef = this.dialog.open(AreYouSureDialogComponent, {
-      width: this.getWidth(),
+      ...STANDARD_DIALOG,
       data: {
         item: this.translateService.instant('ROUTETYPES.DELETEFRONT') + ' ' + routeType.name + ' ' + this.translateService.instant('ROUTETYPES.DELETEBACK')
       }
@@ -104,13 +110,5 @@ export class RouteTypesComponent implements OnInit {
         });
       }
     });
-  }
-
-  private getWidth() {
-    let width = '90%';
-    if (window.innerWidth > 600) {
-      width = '50%';
-    }
-    return width;
   }
 }

@@ -4,6 +4,7 @@ import { MatDialog } from "@angular/material/dialog";
 import { Router } from "@angular/router";
 import { TranslateService, TranslateModule } from "@ngx-translate/core";
 import { AreYouSureDialogComponent } from "src/app/are-you-sure-dialog/are-you-sure-dialog.component";
+import { STANDARD_DIALOG } from "src/app/constants/dialog-sizes";
 import { MapListActions } from "src/app/models/maps-list-actions.enum";
 import { StationMap } from "src/app/models/stationMap.model";
 import { ApiService } from "src/app/services/api.service";
@@ -68,7 +69,7 @@ export class StationMapsComponent implements OnInit {
 
   add() {
     const dialogRef = this.dialog.open(StationMapsEditComponent, {
-      width: this.getWidth(),
+      ...STANDARD_DIALOG,
     });
     dialogRef.afterClosed().subscribe((result: boolean) => {
       if (result) {
@@ -79,7 +80,7 @@ export class StationMapsComponent implements OnInit {
 
   edit(map: StationMap) {
     const dialogRef = this.dialog.open(StationMapsEditComponent, {
-      width: this.getWidth(),
+      ...STANDARD_DIALOG,
       data: { map },
     });
     dialogRef.afterClosed().subscribe((result: boolean) => {
@@ -115,7 +116,7 @@ export class StationMapsComponent implements OnInit {
   }
   delete(map: StationMap) {
     const dialogRef = this.dialog.open(AreYouSureDialogComponent, {
-      width: this.getWidth(),
+      ...STANDARD_DIALOG,
       data: {
         item:
           this.translateService.instant("STATIONMAP.DELETEFRONT") +
@@ -135,17 +136,9 @@ export class StationMapsComponent implements OnInit {
     });
   }
 
-  private getWidth() {
-    let width = "90%";
-    if (window.innerWidth > 600) {
-      width = "50%";
-    }
-    return width;
-  }
-
   sort() {
     const dialogRef = this.dialog.open(SortItemsDialogComponent, {
-      width: this.getWidth(),
+      ...STANDARD_DIALOG,
       data: {
         list: Object.assign([], this.data),
         title: this.translateService.instant("MAPLIST.SORTTITLE"),

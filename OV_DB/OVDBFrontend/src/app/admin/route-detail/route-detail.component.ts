@@ -14,6 +14,7 @@ import { DateAdapter, MatOption } from "@angular/material/core";
 import { TranslationService } from "src/app/services/translation.service";
 import { MatDialog } from "@angular/material/dialog";
 import { AreYouSureDialogComponent } from "src/app/are-you-sure-dialog/are-you-sure-dialog.component";
+import { STANDARD_DIALOG } from "src/app/constants/dialog-sizes";
 import saveAs from "file-saver";
 import { AuthenticationService } from "src/app/services/authentication.service";
 import { MatButton } from "@angular/material/button";
@@ -226,7 +227,7 @@ export class RouteDetailComponent implements OnInit {
   }
   delete() {
     const dialogRef = this.dialog.open(AreYouSureDialogComponent, {
-      width: this.getWidth(),
+      ...STANDARD_DIALOG,
       data: {
         item:
           this.translateService.instant("ROUTE.DELETEFRONT") +
@@ -297,14 +298,6 @@ export class RouteDetailComponent implements OnInit {
     this.apiService.getExport(this.route()!.routeId).subscribe((data) => {
       saveAs(data, this.route()!.name.trim().replace(" ", "_") + ".gpx");
     });
-  }
-
-  private getWidth() {
-    let width = "90%";
-    if (window.innerWidth > 600) {
-      width = "50%";
-    }
-    return width;
   }
 
   get isAdmin() {

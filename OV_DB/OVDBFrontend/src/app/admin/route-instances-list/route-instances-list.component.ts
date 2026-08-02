@@ -38,6 +38,8 @@ import { RouteInstance } from "src/app/models/routeInstance.model";
 import { MatBottomSheet } from "@angular/material/bottom-sheet";
 import { TableState } from "src/app/models/table-state.model";
 import { UserPreferenceService } from "src/app/services/user-preference.service";
+import { STANDARD_DIALOG } from "src/app/constants/dialog-sizes";
+import { contrastTextColour } from "src/app/utils/colour";
 
 @Component({
   selector: "app-route-instances-list",
@@ -266,7 +268,7 @@ export class RouteInstancesListComponent implements OnInit, AfterViewInit {
 
   edit(element: RouteInstanceListDTO) {
     const dialogRef = this.dialog.open(RouteInstancesEditComponent, {
-      width: '90%',
+      ...STANDARD_DIALOG,
       data: { instance: element, new: false }
     });
     dialogRef.afterClosed().subscribe((result: RouteInstance) => {
@@ -311,6 +313,10 @@ export class RouteInstancesListComponent implements OnInit, AfterViewInit {
 
   name(routeType: any) {
     return this.translationService.getNameForItem(routeType);
+  }
+
+  contrastColour(colour: string) {
+    return contrastTextColour(colour);
   }
 
   openBottomSheet(instance: RouteInstanceListDTO): void {

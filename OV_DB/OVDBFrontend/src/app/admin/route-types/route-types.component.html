@@ -14,8 +14,8 @@
               @if (routeType) {
                 <mat-chip-listbox style="margin-left:1rem">
                   <mat-chip-option
-                    [color]="routeType.colour"
                     [style.background]="routeType.colour"
+                    [style.color]="contrastColour(routeType.colour)"
                     [selectable]="false"
                     >
                     <span class="desktop">{{ routeType.colour }}</span>

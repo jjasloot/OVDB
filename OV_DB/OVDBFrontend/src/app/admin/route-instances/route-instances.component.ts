@@ -21,6 +21,7 @@ import { MatIcon } from "@angular/material/icon";
 import { MatCard, MatCardContent, MatCardHeader, MatCardTitle } from "@angular/material/card";
 import { TrawellingTripContext } from "src/app/models/traewelling.model";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
+import { STANDARD_DIALOG } from "src/app/constants/dialog-sizes";
 
 @Component({
   selector: "app-route-instances",
@@ -219,8 +220,7 @@ export class RouteInstancesComponent implements OnInit {
 
   edit(instance: RouteInstance) {
     const dialogRef = this.dialog.open(RouteInstancesEditComponent, {
-      width: "80%",
-      maxWidth: "600px",
+      ...STANDARD_DIALOG,
       data: {
         instance, route: this.route(),
         traewellingTripData: this.fromTraewelling() ? this.trawellingTripData() : null // Pass trip context for display
@@ -269,8 +269,7 @@ export class RouteInstancesComponent implements OnInit {
     this.prefillWithTraewellingData(newInstance);
 
     const dialogRef = this.dialog.open(RouteInstancesEditComponent, {
-      width: "80%",
-      maxWidth: "600px",
+      ...STANDARD_DIALOG,
       data: {
         instance: newInstance,
         new: true,
@@ -328,7 +327,7 @@ export class RouteInstancesComponent implements OnInit {
 
   delete(instance: RouteInstance) {
     const dialogRef = this.dialog.open(AreYouSureDialogComponent, {
-      width: "50%",
+      ...STANDARD_DIALOG,
       data: { item: this.translateService.instant("ROUTEINSTANCES.DELETECONFIRM") },
     });
     dialogRef.afterClosed().subscribe((result: RouteInstance) => {
