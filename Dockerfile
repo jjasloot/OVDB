@@ -23,5 +23,4 @@ RUN apt-get update &&  apt-get install -y libc6-dev libgdiplus
 ENV UserAgent=$UserAgent
 ENV JWTSigningKey=$JWTSigningKey
 COPY --from=build-env /app/out .
-ENV LD_DEBUG=all
 ENTRYPOINT ["dotnet", "OV_DB.dll"]
