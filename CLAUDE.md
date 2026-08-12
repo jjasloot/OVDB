@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Overview
 
-OVDB (OV Database) is a personal transport-tracking application (routes, stations, maps) running at ovdb.infinityx.nl. It is a .NET 9.0 ASP.NET Core backend with an Angular 21 frontend, backed by MySQL/MariaDB with spatial data (NetTopologySuite).
+OVDB (OV Database) is a personal transport-tracking application (routes, stations, maps) running at ovdb.infinityx.nl. It is a .NET 10.0 ASP.NET Core backend (MySQL EF provider: the Microting fork of Pomelo, drop-in compatible) with an Angular 21 frontend, backed by MySQL/MariaDB with spatial data (NetTopologySuite).
 
 ## Solution layout
 
