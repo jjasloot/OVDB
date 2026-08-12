@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using System.Net.Http;
 using System.Security;
 using System.Security.Claims;
 using System.Threading.Tasks;
@@ -13,6 +12,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using OV_DB.Enum;
@@ -33,16 +33,16 @@ namespace OV_DB.Controllers
         private OVDBDatabaseContext _context;
         private IConfiguration _configuration;
         private readonly IRouteRegionsService _routeRegionsService;
-        private readonly IHttpClientFactory _httpClientFactory;
+        private readonly IOverpassService _overpassService;
         private readonly ILogger<ImporterController> _logger;
 
-        public ImporterController(IMemoryCache memoryCache, OVDBDatabaseContext context, IConfiguration configuration, IRouteRegionsService routeRegionsService, IHttpClientFactory httpClientFactory, ILogger<ImporterController> logger)
+        public ImporterController([FromKeyedServices("OsmCache")] IMemoryCache memoryCache, OVDBDatabaseContext context, IConfiguration configuration, IRouteRegionsService routeRegionsService, IOverpassService overpassService, ILogger<ImporterController> logger)
         {
             _cache = memoryCache;
             _context = context;
             _configuration = configuration;
             _routeRegionsService = routeRegionsService;
-            _httpClientFactory = httpClientFactory;
+            _overpassService = overpassService;
             _logger = logger;
         }
 
@@ -57,14 +57,9 @@ namespace OV_DB.Controllers
             var responseList = await _cache.GetOrCreateAsync(id, async i => await CreateCacheLines(reference, routeType, network, i, dateTime));
             if (responseList == null)
             {
+                // Don't cache the failure; the Overpass service already tried every mirror.
                 _cache.Remove(id);
-                await Task.Delay(1000);
-                responseList = await _cache.GetOrCreateAsync(id, async i => await CreateCacheLines(reference, routeType, network, i, dateTime));
-                if (responseList == null)
-                {
-                    _cache.Remove(id);
-                    return StatusCode(429);
-                }
+                return StatusCode(502, "OpenStreetMap could not be reached, please try again later");
             }
             return Ok(responseList);
         }
@@ -80,13 +75,7 @@ namespace OV_DB.Controllers
             if (responseList == null)
             {
                 _cache.Remove(id);
-                await Task.Delay(1000);
-                responseList = await _cache.GetOrCreateAsync(id, async i => await CreateCacheLinesNetwork(network, dateTime, i));
-                if (responseList == null)
-                {
-                    _cache.Remove(id);
-                    return StatusCode(429);
-                }
+                return StatusCode(502, "OpenStreetMap could not be reached, please try again later");
             }
             return Ok(responseList);
         }
@@ -101,25 +90,20 @@ namespace OV_DB.Controllers
             if (osm == null)
             {
                 _cache.Remove(idCache);
-                await Task.Delay(1000);
-                osm = await _cache.GetOrCreateAsync(idCache, async i => await CreateCache(id, i, dateTime));
-                if (osm == null)
-                {
-                    _cache.Remove(idCache);
-                    return StatusCode(429);
-                }
+                return StatusCode(502, "OpenStreetMap could not be reached, please try again later");
             }
             var relation = osm.Elements.SingleOrDefault(e => e.Type == TypeEnum.Relation);
             if (relation == null)
             {
                 return NotFound();
             }
+            var elementsById = osm.Elements.ToLookup(e => e.Id);
             var stops = new List<Element>();
             relation.Members.ForEach(way =>
             {
                 if (way.Role.Contains("Platform", StringComparison.OrdinalIgnoreCase) || way.Role.Contains("Stop", StringComparison.OrdinalIgnoreCase))
                 {
-                    HandleNewStop(way, osm, stops);
+                    HandleNewStop(way, elementsById, stops);
                 }
 
             });
@@ -147,25 +131,12 @@ namespace OV_DB.Controllers
 
         private async Task<string> GetRelationFromOSMAsync(int id, DateTime? dateTime)
         {
-            var query = $"[out:json]";
+            var query = $"[out:json][timeout:120]";
             if (dateTime != null)
                 query += $"[date:\"{dateTime.Value.ToUniversalTime():o}\"]";
             query += $";relation({id});";
             query += "(._;>;);out;node(r)->.nodes;.nodes is_in;area._[boundary=administrative][admin_level=10]->.areas;foreach.areas -> .a {  node.nodes(area.a);  convert node ::id = id(), is_in= a.set(t[\"name\"]);  out; }";
-            string text = null;
-            var httpClient = _httpClientFactory.CreateClient("OSM");
-
-            using (var content = new StringContent(query))
-            {
-                var response = await httpClient.PostAsync("https://overpass-api.de/api/interpreter", content);
-                if (response.StatusCode == System.Net.HttpStatusCode.TooManyRequests || !response.IsSuccessStatusCode)
-                {
-                    return null;
-                }
-                text = await response.Content.ReadAsStringAsync();
-            }
-
-            return text;
+            return await _overpassService.QueryAsync(query);
         }
 
         [HttpGet("{id:int}")]
@@ -177,13 +148,7 @@ namespace OV_DB.Controllers
             if (osm == null)
             {
                 _cache.Remove(idCache);
-                await Task.Delay(1000);
-                osm = await _cache.GetOrCreateAsync(idCache, async i => await CreateCache(id, i, dateTime));
-                if (osm == null)
-                {
-                    _cache.Remove(idCache);
-                    return StatusCode(429);
-                }
+                return StatusCode(502, "OpenStreetMap could not be reached, please try again later");
             }
 
             var relation = osm.Elements.SingleOrDefault(e => e.Type == TypeEnum.Relation);
@@ -191,24 +156,24 @@ namespace OV_DB.Controllers
             {
                 return NotFound();
             }
+            var elementsById = osm.Elements.ToLookup(e => e.Id);
             var stops = new List<Element>();
             var lists = new List<List<IPosition>>();
             relation.Members.ForEach(way =>
             {
                 if (way.Role.Contains("Platform", StringComparison.OrdinalIgnoreCase) || way.Role.Contains("Stop", StringComparison.OrdinalIgnoreCase))
                 {
-                    HandleNewStop(way, osm, stops);
+                    HandleNewStop(way, elementsById, stops);
                 }
                 else
                 {
-                    var wayOsm = osm.Elements.Where(e => e.Id == way.Ref).ToList();
-                    var nodes = wayOsm.FirstOrDefault().Nodes;
+                    var nodes = elementsById[way.Ref].FirstOrDefault()?.Nodes;
                     var subList = new List<IPosition>();
                     if (nodes != null)
                     {
                         nodes.ForEach(n =>
                         {
-                            var node = osm.Elements.FirstOrDefault(e => e.Id == n);
+                            var node = elementsById[n].FirstOrDefault();
                             subList.Add(new Position(node.Lat.GetValueOrDefault(), node.Lon.GetValueOrDefault()));
 
                         });
@@ -331,9 +296,9 @@ namespace OV_DB.Controllers
             return Ok(element);
         }
 
-        private static void HandleNewStop(Member way, OSM osm, List<Element> stops)
+        private static void HandleNewStop(Member way, ILookup<long, Element> elementsById, List<Element> stops)
         {
-            var bothStops = osm.Elements.Where(e => e.Id == way.Ref).ToList();
+            var bothStops = elementsById[way.Ref].ToList();
             var stop = bothStops.FirstOrDefault(s => s.Lat.HasValue);
             if (stop == null)
             {
@@ -481,46 +446,49 @@ namespace OV_DB.Controllers
         private async Task<OSM> CreateCache(int id, ICacheEntry entry, DateTime? dateTime)
         {
             entry.SetSlidingExpiration(TimeSpan.FromMinutes(15));
+            entry.SetSize(1);
             var text = await GetRelationFromOSMAsync(id, dateTime);
             if (text == null)
             {
                 return null;
             }
             var osm = JsonConvert.DeserializeObject<OSM>(text.ToString());
+            // Size by element count so a few huge international routes can't pin
+            // hundreds of megabytes; the cache evicts older entries past its limit.
+            entry.SetSize(osm?.Elements?.Count ?? 1);
             return osm;
         }
 
         private async Task<List<OSMLineDTO>> CreateCacheLines(string reference, OSMRouteType? routeType, string network, ICacheEntry entry, DateTime? dateTime)
         {
             entry.SetSlidingExpiration(TimeSpan.FromMinutes(15));
-            return await CreateRoutesListAsync(reference, routeType, network, dateTime);
+            entry.SetSize(1);
+            var lines = await CreateRoutesListAsync(reference, routeType, network, dateTime);
+            entry.SetSize(lines?.Count ?? 1);
+            return lines;
         }
 
         private async Task<List<OSMLineDTO>> CreateCacheLinesNetwork(string network, DateTime? dateTime, ICacheEntry entry)
         {
             entry.SetSlidingExpiration(TimeSpan.FromMinutes(15));
-            return await CreateNetworkRoutesListAsync(network, dateTime);
+            entry.SetSize(1);
+            var lines = await CreateNetworkRoutesListAsync(network, dateTime);
+            entry.SetSize(lines?.Count ?? 1);
+            return lines;
         }
 
         private async Task<List<OSMLineDTO>> CreateNetworkRoutesListAsync(string network, DateTime? dateTime)
         {
-            var query = $"<osm-script output=\"json\"><query type=\"relation\">";
+            var query = $"<osm-script output=\"json\" timeout=\"60\"><query type=\"relation\">";
             if (dateTime.HasValue)
-                query = $"<osm-script output=\"json\" date=\"{dateTime.Value.ToUniversalTime():o}\"><query type=\"relation\">";
+                query = $"<osm-script output=\"json\" timeout=\"60\" date=\"{dateTime.Value.ToUniversalTime():o}\"><query type=\"relation\">";
             query += $"<has-kv k=\"network\" modv=\"\" regv=\"" + SecurityElement.Escape(network) + "\"/>";
             query += $"<has-kv k=\"route\"/>";
             query += $"</query><print mode=\"tags\" order=\"quadtile\"/></osm-script>";
-            string text = null;
-            var httpClient = _httpClientFactory.CreateClient("OSM");
-
-            using (var content = new StringContent(query))
+            var text = await _overpassService.QueryAsync(query);
+            if (text == null)
             {
-                var response = await httpClient.PostAsync("https://overpass-api.de/api/interpreter", content);
-                if (response.StatusCode == System.Net.HttpStatusCode.TooManyRequests || !response.IsSuccessStatusCode)
-                {
-                    return null;
-                }
-                text = await response.Content.ReadAsStringAsync();
+                return null;
             }
 
             var lines = JsonConvert.DeserializeObject<OsmLinesList>(text);
@@ -556,10 +524,10 @@ namespace OV_DB.Controllers
 
         private async Task<List<OSMLineDTO>> CreateRoutesListAsync(string reference, OSMRouteType? routeType, string network, DateTime? dateTime)
         {
-            var query = $"<osm-script output=\"json\"><query type=\"relation\">";
+            var query = $"<osm-script output=\"json\" timeout=\"60\"><query type=\"relation\">";
             if (dateTime.HasValue)
             {
-                query = $"<osm-script output=\"json\" date=\"{dateTime.Value.ToUniversalTime():o}\"><query type=\"relation\">";
+                query = $"<osm-script output=\"json\" timeout=\"60\" date=\"{dateTime.Value.ToUniversalTime():o}\"><query type=\"relation\">";
             }
             query += $"<has-kv k=\"ref\" v=\"" + SecurityElement.Escape(reference) + "\"/>";
             if (routeType != null && routeType != OSMRouteType.not_specified)
@@ -571,26 +539,10 @@ namespace OV_DB.Controllers
                 query += $"<has-kv k=\"network\" modv=\"\" regv=\"" + SecurityElement.Escape(network) + "\"/>";
             }
             query += $"</query><print mode=\"tags\" geometry=\"center\" order=\"quadtile\"/></osm-script>";
-            string text = null;
-            var httpClient = _httpClientFactory.CreateClient("OSM");
-
-            try
+            var text = await _overpassService.QueryAsync(query);
+            if (text == null)
             {
-                using (var content = new StringContent(query))
-                {
-                    var response = await httpClient.PostAsync("https://overpass-api.de/api/interpreter", content);
-
-                    if (response.StatusCode == System.Net.HttpStatusCode.TooManyRequests || !response.IsSuccessStatusCode)
-                    {
-                        return null;
-                    }
-                    text = await response.Content.ReadAsStringAsync();
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex);
-                throw;
+                return null;
             }
 
             var lines = JsonConvert.DeserializeObject<OsmLinesList>(text);

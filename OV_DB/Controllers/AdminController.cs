@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using System.Net.Http;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -24,13 +23,13 @@ namespace OV_DB.Controllers
     {
         private readonly IConfiguration _configuration;
         private readonly OVDBDatabaseContext _dbContext;
-        private readonly IHttpClientFactory _httpClientFactory;
+        private readonly IOverpassService _overpassService;
 
-        public AdminController(OVDBDatabaseContext dbContext, IConfiguration configuration, IHttpClientFactory httpClientFactory)
+        public AdminController(OVDBDatabaseContext dbContext, IConfiguration configuration, IOverpassService overpassService)
         {
             _configuration = configuration;
             _dbContext = dbContext;
-            _httpClientFactory = httpClientFactory;
+            _overpassService = overpassService;
         }
 
         [HttpPost("AddMissingGuidsForRoute")]
@@ -301,23 +300,16 @@ namespace OV_DB.Controllers
 
         private async Task<Dictionary<string, string>> GetTagsAsync(long id)
         {
-            var query = $"[out:json]";
+            var query = $"[out:json][timeout:30]";
             query += $";relation({id});";
             query += "out tags;";
-            string text = null;
-            var httpClient = _httpClientFactory.CreateClient("OSM");
-
-            using (var content = new StringContent(query))
+            var text = await _overpassService.QueryAsync(query);
+            if (text == null)
             {
-                var response = await httpClient.PostAsync("https://overpass-api.de/api/interpreter", content);
-                if (response.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
-                {
-                    return null;
-                }
-                text = await response.Content.ReadAsStringAsync();
+                return null;
             }
-            
-            var parsed = JsonConvert.DeserializeObject<OSM>(text.ToString());
+
+            var parsed = JsonConvert.DeserializeObject<OSM>(text);
             return parsed.Elements.Single().Tags;
         }
     }

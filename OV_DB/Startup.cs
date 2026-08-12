@@ -162,7 +162,18 @@ namespace OV_DB
             {
                 client.DefaultRequestHeaders.Add("User-Agent", "OVDB/1.0 (contact-me jaapslootbeek@gmail.com)");
                 client.Timeout = TimeSpan.FromSeconds(240);
+            }).ConfigurePrimaryHttpMessageHandler(() => new System.Net.Http.SocketsHttpHandler
+            {
+                // Overpass responses are large JSON bodies that compress ~10x.
+                AutomaticDecompression = System.Net.DecompressionMethods.All
             });
+            // Singleton so the per-endpoint failure cooldowns are shared across requests.
+            services.AddSingleton<IOverpassService, OverpassService>();
+            // Bounded cache for parsed OSM relation data; entries are sized by element
+            // count so a handful of huge routes can't grow memory without limit.
+            services.AddKeyedSingleton<Microsoft.Extensions.Caching.Memory.IMemoryCache>("OsmCache",
+                (_, _) => new Microsoft.Extensions.Caching.Memory.MemoryCache(
+                    new Microsoft.Extensions.Caching.Memory.MemoryCacheOptions { SizeLimit = 100_000 }));
 
             services.AddHostedService<UpdateRegionService>();
             services.AddHostedService<RefreshRoutesService>();

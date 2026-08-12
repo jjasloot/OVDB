@@ -28,7 +28,15 @@ export class HttpErrorInterceptor implements HttpInterceptor {
       catchError((error: HttpErrorResponse) => {
         // 401s are handled by the AuthInterceptor (token refresh / login redirect).
         if (error.status !== 401 && !req.context.get(SKIP_ERROR_TOAST)) {
-          const key = error.status === 0 ? "ERRORS.NETWORK" : "ERRORS.GENERIC";
+          // Importer endpoints return 502 when every Overpass mirror failed.
+          const isOsmOutage =
+            (error.status === 502 || error.status === 504) &&
+            /\/api\/(station)?importer\//i.test(req.url);
+          const key = isOsmOutage
+            ? "ERRORS.OSM_UNAVAILABLE"
+            : error.status === 0
+              ? "ERRORS.NETWORK"
+              : "ERRORS.GENERIC";
           this.snackBar.open(
             this.translateService.instant(key),
             this.translateService.instant("CLOSE"),

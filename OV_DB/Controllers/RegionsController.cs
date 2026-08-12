@@ -26,17 +26,15 @@ namespace OV_DB.Controllers
     [Route("api/[controller]")]
     [ApiController]
     [Authorize]
-    public class RegionsController(IMemoryCache memoryCache, OVDBDatabaseContext context, IHubContext<MapGenerationHub> hubContext, IHttpClientFactory httpClientFactory) : ControllerBase
+    public class RegionsController(IMemoryCache memoryCache, OVDBDatabaseContext context, IHubContext<MapGenerationHub> hubContext, IHttpClientFactory httpClientFactory, IOverpassService overpassService) : ControllerBase
     {
         private IMemoryCache _cache = memoryCache;
         private OVDBDatabaseContext _context = context;
         private readonly IHttpClientFactory _httpClientFactory = httpClientFactory;
+        private readonly IOverpassService _overpassService = overpassService;
 
         private async Task<string> GetPolygonAsync(long id)
         {
-            var query = $"[out:json]";
-            query += $";relation({id});";
-            query += "._;>;out;";
             string text = null;
             var httpClient = _httpClientFactory.CreateClient("OSM");
 
@@ -59,23 +57,16 @@ namespace OV_DB.Controllers
 
         private async Task<Dictionary<string, string>> GetTagsAsync(long id)
         {
-            var query = $"[out:json]";
+            var query = $"[out:json][timeout:30]";
             query += $";relation({id});";
             query += "out tags;";
-            string text = null;
-            var httpClient = _httpClientFactory.CreateClient("OSM");
-
-            using (var content = new StringContent(query))
+            var text = await _overpassService.QueryAsync(query);
+            if (text == null)
             {
-                var response = await httpClient.PostAsync("https://overpass-api.de/api/interpreter", content);
-                if (!response.IsSuccessStatusCode)
-                {
-                    return null;
-                }
-                text = await response.Content.ReadAsStringAsync();
+                return null;
             }
 
-            var parsed = JsonConvert.DeserializeObject<OSM>(text.ToString());
+            var parsed = JsonConvert.DeserializeObject<OSM>(text);
             // Overpass returns an empty element list for a nonexistent relation id — don't throw.
             return parsed?.Elements?.FirstOrDefault()?.Tags;
         }

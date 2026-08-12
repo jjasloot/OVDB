@@ -10,16 +10,15 @@ using OVDB_database.Models;
 using System;
 using System.Globalization;
 using System.Linq;
-using System.Net.Http;
 using System.Threading.Tasks;
 
 namespace OV_DB.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class StationImporterController(OVDBDatabaseContext dbContext, IStationRegionsService stationRegionsService, IHubContext<MapGenerationHub> mapGenerationHubContext, IHttpClientFactory httpClientFactory) : ControllerBase
+    public class StationImporterController(OVDBDatabaseContext dbContext, IStationRegionsService stationRegionsService, IHubContext<MapGenerationHub> mapGenerationHubContext, IOverpassService overpassService) : ControllerBase
     {
-        private readonly IHttpClientFactory _httpClientFactory = httpClientFactory;
+        private readonly IOverpassService _overpassService = overpassService;
         [HttpPost("region/{regionId}")]
         public async Task<IActionResult> UpdateRegionAsync(int regionId)
         {
@@ -46,11 +45,11 @@ namespace OV_DB.Controllers
             }
 
             var list = await GetStationAsync(stationId);
-            var tryCount = 1;
-            while (list == null && tryCount < 6)
+            // One quick retry is enough: each attempt already fails over across all mirrors,
+            // and this runs inside an HTTP request that shouldn't block for minutes.
+            if (list == null)
             {
-                tryCount++;
-                await Task.Delay((int)(10000 * (Math.Pow(2, tryCount))));
+                await Task.Delay(TimeSpan.FromSeconds(5));
                 list = await GetStationAsync(stationId);
             }
 
@@ -58,20 +57,20 @@ namespace OV_DB.Controllers
             {
                 var parsedList = JsonConvert.DeserializeObject<OSMStationList>(list);
 
+                var osmIds = parsedList.Elements.Select(e => e.Id).ToList();
+                var existingStations = await dbContext.Stations
+                    .Where(s => osmIds.Contains(s.OsmId))
+                    .ToDictionaryAsync(s => s.OsmId);
+
                 foreach (var station in parsedList.Elements)
                 {
                     if (station.Tags.ContainsKey("name") && !string.IsNullOrWhiteSpace(station.Tags["name"]) && !(station.Lat == 0 && station.Lon == 0))
                     {
-                        Station stationToUpdate = null;
-
-                        if (await dbContext.Stations.AnyAsync(s => s.OsmId == station.Id))
-                        {
-                            stationToUpdate = await dbContext.Stations.FirstOrDefaultAsync(s => s.OsmId == station.Id);
-                        }
-                        else
+                        if (!existingStations.TryGetValue(station.Id, out var stationToUpdate))
                         {
                             stationToUpdate = new Station { OsmId = station.Id };
                             dbContext.Add(stationToUpdate);
+                            existingStations[station.Id] = stationToUpdate;
                         }
                         stationToUpdate.Lattitude = station.Lat;
                         stationToUpdate.Longitude = station.Lon;
@@ -99,61 +98,22 @@ namespace OV_DB.Controllers
         [NonAction]
         public async Task<string> GetStationListAsync(string osmId)
         {
-            var query = $"[out:json][timeout:240];area({osmId})->.searchArea;(node[\"railway\"=\"station\"][!\"subway\"][!\"funicular\"][!\"tram\"][\"station\"!=\"monorail\"][\"station\"!=\"subway\"][\"station\"!=\"tram\"](area.searchArea);node[\"railway\"=\"station\"][\"train\"=\"yes\"](area.searchArea);node[\"railway\"=\"halt\"][!\"subway\"][!\"funicular\"][!\"tram\"][\"station\"!=\"monorail\"][\"station\"!=\"subway\"][\"station\"!=\"tram\"](area.searchArea);node[\"railway\"=\"halt\"][\"train\"=\"yes\"](area.searchArea););out body;";
-            string text = null;
-            var httpClient = _httpClientFactory.CreateClient("OSM");
-
-            using (var content = new StringContent(query))
-            {
-                var response = await httpClient.PostAsync("https://overpass-api.de/api/interpreter", content);
-                if (response.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
-                {
-                    return null;
-                }
-                text = await response.Content.ReadAsStringAsync();
-            }
-
-            return text;
+            var query = $"[out:json][timeout:180];area({osmId})->.searchArea;(node[\"railway\"=\"station\"][!\"subway\"][!\"funicular\"][!\"tram\"][\"station\"!=\"monorail\"][\"station\"!=\"subway\"][\"station\"!=\"tram\"](area.searchArea);node[\"railway\"=\"station\"][\"train\"=\"yes\"](area.searchArea);node[\"railway\"=\"halt\"][!\"subway\"][!\"funicular\"][!\"tram\"][\"station\"!=\"monorail\"][\"station\"!=\"subway\"][\"station\"!=\"tram\"](area.searchArea);node[\"railway\"=\"halt\"][\"train\"=\"yes\"](area.searchArea););out body;";
+            return await _overpassService.QueryAsync(query);
         }
 
         [NonAction]
         public async Task<string> GetStationAsync(long osmId)
         {
-            var query = $"[out:json][timeout:240];\r\nnode({osmId});out body;";
-            string text = null;
-            var httpClient = _httpClientFactory.CreateClient("OSM");
-
-            using (var content = new StringContent(query))
-            {
-                var response = await httpClient.PostAsync("https://overpass-api.de/api/interpreter", content);
-                if (!response.IsSuccessStatusCode)
-                {
-                    return null;
-                }
-                text = await response.Content.ReadAsStringAsync();
-            }
-
-            return text;
+            var query = $"[out:json][timeout:30];\r\nnode({osmId});out body;";
+            return await _overpassService.QueryAsync(query);
         }
 
         [NonAction]
         public async Task<string> GetStationWayList(string osmId)
         {
-            var query = $"[out:json][timeout:240];area({osmId})->.searchArea;(way[\"railway\"=\"station\"][!\"subway\"][!\"funicular\"][!\"tram\"][\"station\"!=\"monorail\"][\"station\"!=\"subway\"][\"station\"!=\"tram\"](area.searchArea);node[\"railway\"=\"station\"][\"train\"=\"yes\"](area.searchArea);node[\"railway\"=\"halt\"][!\"subway\"][!\"funicular\"][!\"tram\"][\"station\"!=\"monorail\"][\"station\"!=\"subway\"][\"station\"!=\"tram\"](area.searchArea);way[\"railway\"=\"halt\"][\"train\"=\"yes\"](area.searchArea););out center;";
-            string text = null;
-            var httpClient = _httpClientFactory.CreateClient("OSM");
-
-            using (var content = new StringContent(query))
-            {
-                var response = await httpClient.PostAsync("https://overpass-api.de/api/interpreter", content);
-                if (response.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
-                {
-                    return null;
-                }
-                text = await response.Content.ReadAsStringAsync();
-            }
-
-            return text;
+            var query = $"[out:json][timeout:180];area({osmId})->.searchArea;(way[\"railway\"=\"station\"][!\"subway\"][!\"funicular\"][!\"tram\"][\"station\"!=\"monorail\"][\"station\"!=\"subway\"][\"station\"!=\"tram\"](area.searchArea);node[\"railway\"=\"station\"][\"train\"=\"yes\"](area.searchArea);node[\"railway\"=\"halt\"][!\"subway\"][!\"funicular\"][!\"tram\"][\"station\"!=\"monorail\"][\"station\"!=\"subway\"][\"station\"!=\"tram\"](area.searchArea);way[\"railway\"=\"halt\"][\"train\"=\"yes\"](area.searchArea););out center;";
+            return await _overpassService.QueryAsync(query);
         }
     }
 }

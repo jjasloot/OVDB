@@ -48,6 +48,7 @@
   "ERROR": "Error...",
   "ERRORS.GENERIC": "Something went wrong. Please try again.",
   "ERRORS.NETWORK": "Could not reach the server. Check your connection.",
+  "ERRORS.OSM_UNAVAILABLE": "OpenStreetMap could not be reached. Please try again later.",
   "ERRORS.SEARCH_FAILED": "The search failed. The OpenStreetMap service may be busy.",
   "RETRY": "Try again",
   "WIZARD.STEP_SEARCH": "Search",

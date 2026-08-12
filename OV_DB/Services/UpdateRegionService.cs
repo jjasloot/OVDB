@@ -12,18 +12,17 @@ using System;
 using System.Collections.Concurrent;
 using System.Globalization;
 using System.Linq;
-using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace OV_DB.Services
 {
-    public class UpdateRegionService(IServiceProvider serviceProvider, IHubContext<MapGenerationHub> hubContext, IHttpClientFactory httpClientFactory, ILogger<UpdateRegionService> logger) : IHostedService, IDisposable
+    public class UpdateRegionService(IServiceProvider serviceProvider, IHubContext<MapGenerationHub> hubContext, IOverpassService overpassService, ILogger<UpdateRegionService> logger) : IHostedService, IDisposable
     {
         public static readonly ConcurrentQueue<int> RegionQueue = new ConcurrentQueue<int>();
         private Task _backgroundTask;
         private CancellationTokenSource _cancellationTokenSource;
-        private readonly IHttpClientFactory _httpClientFactory = httpClientFactory;
+        private readonly IOverpassService _overpassService = overpassService;
 
         public Task StartAsync(CancellationToken cancellationToken)
         {
@@ -76,11 +75,13 @@ namespace OV_DB.Services
 
             var regionOSMId = await dbContext.Regions.Where(r => r.Id == regionId).Select(r => r.OsmRelationId).FirstAsync(cancellationToken) + 3600_000_000;
             var list = await GetStationListAsync(regionOSMId, cancellationToken);
-            var tryCount = 1;
-            while (list == null && tryCount < 6)
+            // Each attempt already fails over across all mirrors; the delays just need to
+            // outlast a typical endpoint cooldown, not implement backoff themselves.
+            var tryCount = 0;
+            while (list == null && tryCount < 3)
             {
                 tryCount++;
-                await Task.Delay((int)(10000 * (Math.Pow(2, tryCount))), cancellationToken);
+                await Task.Delay(TimeSpan.FromSeconds(30 * tryCount), cancellationToken);
                 list = await GetStationListAsync(regionOSMId, cancellationToken);
             }
 
@@ -89,6 +90,12 @@ namespace OV_DB.Services
                 await hubContext.Clients.All.SendAsync(MapGenerationHub.RegionStationUpdateMethod, regionId, 20);
                 var parsedList = JsonConvert.DeserializeObject<OSMStationList>(list);
 
+                // One roundtrip for all existing stations instead of two queries per station.
+                var osmIds = parsedList.Elements.Select(e => e.Id).ToList();
+                var existingStations = await dbContext.Stations.Include(s => s.Regions)
+                    .Where(s => osmIds.Contains(s.OsmId))
+                    .ToDictionaryAsync(s => s.OsmId, cancellationToken);
+
                 var processedStations = 0;
                 var progress = 0;
                 var totalCount = parsedList.Elements.Count;
@@ -96,16 +103,11 @@ namespace OV_DB.Services
                 {
                     if (station.Tags.ContainsKey("name") && !string.IsNullOrWhiteSpace(station.Tags["name"]) && !(station.Lat == 0 && station.Lon == 0))
                     {
-                        Station stationToUpdate = null;
-
-                        if (await dbContext.Stations.AnyAsync(s => s.OsmId == station.Id))
-                        {
-                            stationToUpdate = await dbContext.Stations.Include(s => s.Regions).FirstOrDefaultAsync(s => s.OsmId == station.Id);
-                        }
-                        else
+                        if (!existingStations.TryGetValue(station.Id, out var stationToUpdate))
                         {
                             stationToUpdate = new Station { OsmId = station.Id };
                             dbContext.Add(stationToUpdate);
+                            existingStations[station.Id] = stationToUpdate;
                         }
                         stationToUpdate.Lattitude = station.Lat;
                         stationToUpdate.Longitude = station.Lon;
@@ -152,23 +154,8 @@ namespace OV_DB.Services
 
         public async Task<string> GetStationListAsync(long osmId, CancellationToken cancellationToken = default)
         {
-            var query = $"[out:json][timeout:240];area({osmId})->.searchArea;(node[\"railway\"=\"station\"][!\"subway\"][!\"funicular\"][!\"tram\"][\"station\"!=\"monorail\"][\"station\"!=\"subway\"][\"station\"!=\"tram\"](area.searchArea);node[\"railway\"=\"station\"][\"train\"=\"yes\"](area.searchArea);node[\"railway\"=\"halt\"][!\"subway\"][!\"funicular\"][!\"tram\"][\"station\"!=\"monorail\"][\"station\"!=\"subway\"][\"station\"!=\"tram\"](area.searchArea);node[\"railway\"=\"halt\"][\"train\"=\"yes\"](area.searchArea););out body;";
-            string text = null;
-            var httpClient = _httpClientFactory.CreateClient("OSM");
-
-            using (var content = new StringContent(query))
-            {
-                var response = await httpClient.PostAsync("https://overpass-api.de/api/interpreter", content, cancellationToken);
-                // Treat any non-success status (429, 504 gateway timeout, 5xx, …) as a retryable failure
-                // rather than feeding an HTML error body into the JSON deserializer.
-                if (!response.IsSuccessStatusCode)
-                {
-                    return null;
-                }
-                text = await response.Content.ReadAsStringAsync(cancellationToken);
-            }
-
-            return text;
+            var query = $"[out:json][timeout:180];area({osmId})->.searchArea;(node[\"railway\"=\"station\"][!\"subway\"][!\"funicular\"][!\"tram\"][\"station\"!=\"monorail\"][\"station\"!=\"subway\"][\"station\"!=\"tram\"](area.searchArea);node[\"railway\"=\"station\"][\"train\"=\"yes\"](area.searchArea);node[\"railway\"=\"halt\"][!\"subway\"][!\"funicular\"][!\"tram\"][\"station\"!=\"monorail\"][\"station\"!=\"subway\"][\"station\"!=\"tram\"](area.searchArea);node[\"railway\"=\"halt\"][\"train\"=\"yes\"](area.searchArea););out body;";
+            return await _overpassService.QueryAsync(query, cancellationToken);
         }
     }
 }
