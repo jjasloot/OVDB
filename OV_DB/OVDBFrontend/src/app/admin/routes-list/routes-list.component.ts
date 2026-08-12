@@ -87,8 +87,8 @@ export class RoutesListComponent implements OnInit, AfterViewInit {
 
   private readonly TABLE_ID = 'routes-list';
   
-  routes: Route[];
-  loading: boolean;
+  routes!: Route[];
+  loading!: boolean;
   displayedColumns: string[] = [
     "select",
     "name",
@@ -99,15 +99,15 @@ export class RoutesListComponent implements OnInit, AfterViewInit {
     "type",
     "edit",
   ];
-  dataSource: RoutesDataSource;
+  dataSource!: RoutesDataSource;
   selectedRoutes: number[] = [];
 
   readonly paginator = viewChild(MatPaginator);
   readonly sort = viewChild(MatSort);
   readonly input = viewChild<ElementRef>("input");
-  count: number;
+  count!: number;
   @HostListener("window:resize", ["$event"])
-  onResize(event) {
+  onResize(event: UIEvent) {
     this.restrictColumnsOnWidth();
   }
   filter$ = new Subject<void>();
@@ -176,12 +176,12 @@ export class RoutesListComponent implements OnInit, AfterViewInit {
     // Apply restored table state to components after they're initialized
     this.applyRestoredState();
 
-    fromEvent(this.input().nativeElement, "keyup")
+    fromEvent(this.input()!.nativeElement, "keyup")
       .pipe(
         debounceTime(150),
         distinctUntilChanged(),
         tap(() => {
-          this.paginator().pageIndex = 0;
+          this.paginator()!.pageIndex = 0;
           this.saveCurrentTableState();
           this.filter$.next();
         }),
@@ -189,20 +189,20 @@ export class RoutesListComponent implements OnInit, AfterViewInit {
       )
       .subscribe();
 
-    this.sort().sortChange
+    this.sort()!.sortChange
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => {
-        this.paginator().pageIndex = 0;
+        this.paginator()!.pageIndex = 0;
         this.saveCurrentTableState();
       });
 
-    this.paginator().page
+    this.paginator()!.page
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => {
         this.saveCurrentTableState();
       });
 
-    merge(this.sort().sortChange, this.paginator().page, this.filter$)
+    merge(this.sort()!.sortChange, this.paginator()!.page, this.filter$)
       .pipe(
         tap(() => {
           this.loading = true;
@@ -241,20 +241,23 @@ export class RoutesListComponent implements OnInit, AfterViewInit {
   private applyRestoredState(): void {
     if (this.restoredState) {
       // Apply pagination state
-      if (this.paginator()) {
-        this.paginator().pageIndex = this.restoredState.pageIndex;
-        this.paginator().pageSize = this.restoredState.pageSize;
+      const paginator = this.paginator();
+      if (paginator) {
+        paginator.pageIndex = this.restoredState.pageIndex;
+        paginator.pageSize = this.restoredState.pageSize;
       }
 
       // Apply sorting state
-      if (this.sort()) {
-        this.sort().active = this.restoredState.sortActive;
-        this.sort().direction = this.restoredState.sortDirection;
+      const sort = this.sort();
+      if (sort) {
+        sort.active = this.restoredState.sortActive;
+        sort.direction = this.restoredState.sortDirection;
       }
 
       // Apply filter state
-      if (this.input() && this.restoredState.filter) {
-        this.input().nativeElement.value = this.restoredState.filter;
+      const input = this.input();
+      if (input && this.restoredState.filter) {
+        input.nativeElement.value = this.restoredState.filter;
       }
 
       this.restoredState = null; // Clear the restored state after applying
@@ -265,10 +268,10 @@ export class RoutesListComponent implements OnInit, AfterViewInit {
     if (!this.paginator() || !this.sort()) return;
 
     const currentState = this.tableStateService.getCurrentState(
-      this.paginator().pageIndex,
-      this.paginator().pageSize,
-      this.sort().active,
-      this.sort().direction,
+      this.paginator()!.pageIndex,
+      this.paginator()!.pageSize,
+      this.sort()!.active,
+      this.sort()!.direction,
       this.filterValue
     );
 
@@ -277,10 +280,10 @@ export class RoutesListComponent implements OnInit, AfterViewInit {
 
   loadRoutesPage() {
     return this.dataSource.loadRoutes(
-      this.paginator().pageIndex * this.paginator().pageSize,
-      this.paginator().pageSize,
-      this.sort().active,
-      this.sort().direction === "desc",
+      this.paginator()!.pageIndex * this.paginator()!.pageSize,
+      this.paginator()!.pageSize,
+      this.sort()!.active,
+      this.sort()!.direction === "desc",
       this.filterValue
     );
   }
@@ -303,8 +306,8 @@ export class RoutesListComponent implements OnInit, AfterViewInit {
     return this.translationService.dateLocale;
   }
 
-  name(item) {
-    return this.translationService.getNameForItem(item);
+  name(item: { name: string; nameNL: string } | undefined) {
+    return this.translationService.getNameForItem(item!);
   }
 
   contrastColour(colour: string) {

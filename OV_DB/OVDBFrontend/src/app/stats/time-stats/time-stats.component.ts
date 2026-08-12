@@ -1,5 +1,5 @@
 import { NgClass } from '@angular/common';
-import { Component, Signal, viewChild, OnInit, inject } from '@angular/core';
+import { Component, Signal, viewChild, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButton } from '@angular/material/button';
 import { MatCard, MatCardContent, MatCardTitle } from '@angular/material/card';
@@ -11,7 +11,7 @@ import { LeafletModule } from '@bluehalo/ngx-leaflet';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { ChartConfiguration } from 'chart.js';
 import saveAs from 'file-saver';
-import { LatLngBounds, LatLng, marker, icon, Rectangle } from 'leaflet';
+import { LatLngBounds, LatLng, marker, icon, Rectangle, Layer } from 'leaflet';
 import { ApiService } from 'src/app/services/api.service';
 import { TranslationService } from 'src/app/services/translation.service';
 import { MapTileLayersService } from 'src/app/services/map-tile-layers.service';
@@ -23,6 +23,7 @@ import { MatTabsModule } from '@angular/material/tabs';
   selector: 'app-time-stats',
   imports: [MatCard, MatCardTitle, MatFormField, MatLabel, MatSelect, MatOption, FormsModule, MatButton, LeafletModule, NgClass, MatProgressSpinner, TranslateModule, BaseChartDirective, MatTabsModule, MatCardContent],
   templateUrl: './time-stats.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './time-stats.component.scss'
 })
 export class TimeStatsComponent implements OnInit {
@@ -31,12 +32,12 @@ export class TimeStatsComponent implements OnInit {
   private mapTileLayersService = inject(MapTileLayersService);
   translateService = inject(TranslateService);
 
-  data: ChartConfiguration['data'];
+  data: ChartConfiguration['data'] | null = null;
   singleData: any;
 
   loadingMap = false;
-  selectedMap: string = null;
-  selectedYear: number = null;
+  selectedMap: string | null = null;
+  selectedYear: number | null = null;
   bounds = new LatLngBounds(new LatLng(50.656245, 2.921360), new LatLng(53.604563, 7.428211));
   years: number[] = [];
   public lineChartOptions: ChartConfiguration['options'] = {
@@ -77,7 +78,7 @@ export class TimeStatsComponent implements OnInit {
     },
   };
   tableData: any;
-  layers = [];
+  layers: Layer[] = [];
   baseLayers = this.mapTileLayersService.createBaseLayers();
 
   options = {
@@ -86,9 +87,9 @@ export class TimeStatsComponent implements OnInit {
   };
   leafletLayersControl = {
     baseLayers: this.baseLayers,
-    // overlays: this.layers
+    overlays: {},
   };
-  maps: Map[];
+  maps: Map[] = [];
 
   ngOnInit(): void {
     this.apiService.getMaps().subscribe(maps => {
@@ -120,17 +121,17 @@ export class TimeStatsComponent implements OnInit {
     });
   }
 
-  getData(year?: number) {
+  getData(year?: number | null) {
     if (year === 0) year = null;
-    this.apiService.getStatsForGraph(this.selectedMap, year).subscribe(stats => {
+    this.apiService.getStatsForGraph(this.selectedMap!, year!).subscribe(stats => {
       this.data = stats.cumulative;
       this.singleData = stats.single;
     });
-    this.apiService.getStats(this.selectedMap, year).subscribe(data => {
+    this.apiService.getStats(this.selectedMap!, year!).subscribe(data => {
       this.tableData = data;
     });
     this.loadingMap = true;
-    this.apiService.getStatsReach(this.selectedMap, year).subscribe((data: any) => {
+    this.apiService.getStatsReach(this.selectedMap!, year!).subscribe((data: any) => {
       this.layers = [];
       const latMin = marker([data.latMin.lat, data.latMin.long], {
         title: 'LatMin', icon: icon({
@@ -198,18 +199,18 @@ export class TimeStatsComponent implements OnInit {
 
   }
 
-  name(item) {
+  name(item: { name: string, nameNL: string }) {
     return this.translationService.getNameForItem(item);
   }
 
   download() {
-    this.apiService.getTripReport(this.selectedMap, this.selectedYear).subscribe(data => {
+    this.apiService.getTripReport(this.selectedMap!, this.selectedYear!).subscribe(data => {
       saveAs(data as Blob, 'tripreport.xlsx');
     });
   }
 
   export() {
-    this.apiService.getCompleteExport(this.selectedMap, this.selectedYear).subscribe(data => {
+    this.apiService.getCompleteExport(this.selectedMap!, this.selectedYear!).subscribe(data => {
       saveAs(data as Blob, 'export.kml');
     });
   }

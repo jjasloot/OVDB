@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, ChangeDetectionStrategy } from '@angular/core';
 
 import { FormsModule } from '@angular/forms';
 import { MatDialogModule, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
@@ -121,6 +121,7 @@ import { DatePipe } from '@angular/common';
       </button>
     </mat-dialog-actions>
     `,
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./route-instance-search-dialog.component.scss']
 })
 export class RouteInstanceSearchDialogComponent implements OnInit {

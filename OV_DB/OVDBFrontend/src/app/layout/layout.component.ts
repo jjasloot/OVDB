@@ -1,4 +1,4 @@
-import { Component, DestroyRef, OnInit, inject } from "@angular/core";
+import { Component, DestroyRef, OnInit, inject, ChangeDetectionStrategy } from "@angular/core";
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from "@angular/router";
 import { AuthenticationService } from "../services/authentication.service";
 import { TranslationService } from "../services/translation.service";
@@ -16,6 +16,7 @@ import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
   selector: "app-layout",
   templateUrl: "./layout.component.html",
   styleUrls: ["./layout.component.scss"],
+  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [
     MatToolbar,
     MatIconButton,

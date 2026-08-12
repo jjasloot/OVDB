@@ -18,11 +18,11 @@ export class AuthenticationService {
   private isLoggedInSubject = new BehaviorSubject<boolean>(false);
   public isLoggedIn$ = this.isLoggedInSubject.asObservable();
 
-  public token: string;
+  public token: string | null;
   public refreshToken: string | null;
   helper = new JwtHelperService();
   refreshTrigger: any;
-  returnUrl: string;
+  returnUrl!: string;
 
   private readonly refreshBufferMs = 5 * 60 * 1000; // refresh this long before expiry
   private refreshInFlight: Promise<boolean> | null = null;
@@ -216,7 +216,7 @@ export class AuthenticationService {
   }
 
   get email() {
-    return this.helper.decodeToken(this.token)['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress'];
+    return this.helper.decodeToken(this.token!)['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress'];
   }
 
   get admin() {

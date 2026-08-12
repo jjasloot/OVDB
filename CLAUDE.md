@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Overview
 
-OVDB (OV Database) is a personal transport-tracking application (routes, stations, maps) running at ovdb.infinityx.nl. It is a .NET 10.0 ASP.NET Core backend (MySQL EF provider: the Microting fork of Pomelo, drop-in compatible) with an Angular 21 frontend, backed by MySQL/MariaDB with spatial data (NetTopologySuite).
+OVDB (OV Database) is a personal transport-tracking application (routes, stations, maps) running at ovdb.infinityx.nl. It is a .NET 10.0 ASP.NET Core backend (MySQL EF provider: the Microting fork of Pomelo, drop-in compatible) with an Angular 22 frontend, backed by MySQL/MariaDB with spatial data (NetTopologySuite).
 
 ## Solution layout
 
@@ -74,7 +74,10 @@ Migrations are applied automatically on application startup (`Startup.Configure`
 
 ### Frontend
 
-Angular 21 with Angular Material, in `OV_DB/OVDBFrontend/src/app/`. Notable aspects:
+Angular 22 with Angular Material, in `OV_DB/OVDBFrontend/src/app/`. Requires Node.js 24 LTS or newer. Notable aspects:
+
+- Full strict mode is enabled (`strict: true` and `strictTemplates: true` in tsconfig) — new code must compile strict-clean.
+- Builds use the native esbuild builders from `@angular/build` (not `@angular-devkit/build-angular`, which was removed together with its vulnerable webpack toolchain).
 
 - Maps are Leaflet (`@bluehalo/ngx-leaflet` + markercluster); charts are chart.js/ng2-charts.
 - i18n via ngx-translate with JSON files in `src/assets/i18n/` (en, nl). New UI strings need entries in both.
@@ -83,8 +86,7 @@ Angular 21 with Angular Material, in `OV_DB/OVDBFrontend/src/app/`. Notable aspe
 
 ## Known issues (pre-existing, don't try to fix in passing)
 
-- Frontend unit tests (`npm test`) fail: karma-jasmine dependencies are missing.
-- `npm run e2e` is dead (Protractor deprecated).
+- The frontend has no unit tests or e2e: the long-broken karma and protractor targets were removed in the Angular 22 upgrade. If tests are ever revived, use the Vitest-based `@angular/build:unit-test` builder.
 - `npm run lint` reports hundreds of existing errors.
 - Docker build currently fails (npm not found during build).
 

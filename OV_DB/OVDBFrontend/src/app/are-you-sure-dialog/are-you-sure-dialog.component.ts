@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
 import { MatDialogRef, MAT_DIALOG_DATA, MatDialogTitle, MatDialogContent, MatDialogActions } from '@angular/material/dialog';
 import { CdkScrollable } from '@angular/cdk/scrolling';
 import { MatButton } from '@angular/material/button';
@@ -8,6 +8,7 @@ import { TranslateModule } from '@ngx-translate/core';
     selector: 'app-are-you-sure-dialog',
     templateUrl: './are-you-sure-dialog.component.html',
     styleUrls: ['./are-you-sure-dialog.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [MatDialogTitle, CdkScrollable, MatDialogContent, MatDialogActions, MatButton, TranslateModule]
 })
 export class AreYouSureDialogComponent implements OnInit {

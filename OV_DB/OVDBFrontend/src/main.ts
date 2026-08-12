@@ -13,6 +13,7 @@ import {
   provideHttpClient,
   withInterceptorsFromDi,
   HttpClient,
+  withXhr
 } from "@angular/common/http";
 import { AuthInterceptor } from "./app/guards/auth.interceptor";
 import { HttpErrorInterceptor } from "./app/guards/http-error.interceptor";
@@ -146,7 +147,7 @@ bootstrapApplication(AppComponent, {
     { provide: HTTP_INTERCEPTORS, useClass: HttpErrorInterceptor, multi: true },
     {
       provide: MatPaginatorIntl,
-      useFactory: (translate) => {
+      useFactory: (translate: TranslateService) => {
         const service = new PaginatorIntlService();
         service.injectTranslateService(translate);
         return service;
@@ -164,7 +165,7 @@ bootstrapApplication(AppComponent, {
       deps: [TranslateService],
     },
     DatePipe,
-    provideHttpClient(withInterceptorsFromDi()),
+    provideHttpClient(withXhr(), withInterceptorsFromDi()),
     provideAnimations(),
     provideRouter(routes, withInMemoryScrolling({ scrollPositionRestoration: "enabled" })),
     provideCharts(withDefaultRegisterables()),

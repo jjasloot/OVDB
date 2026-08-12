@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
 import { UntypedFormBuilder, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { AuthenticationService } from '../services/authentication.service';
 import { RegistrationRequest } from '../models/registrationRequest.model';
@@ -12,6 +12,7 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
     selector: 'app-registration',
     templateUrl: './registration.component.html',
     styleUrls: ['./registration.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [FormsModule, ReactiveFormsModule, MatFormField, MatLabel, MatError, MatInput, MatButton, MatProgressSpinner, TranslateModule]
 })
 export class RegistrationComponent implements OnInit {

@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from "@angular/core";
+import { Component, OnInit, inject, ChangeDetectionStrategy } from "@angular/core";
 import { MatDialog } from "@angular/material/dialog";
 import { MatSnackBar } from "@angular/material/snack-bar";
 import { NewRegion, Region } from "src/app/models/region.model";
@@ -18,6 +18,7 @@ import { FormsModule } from "@angular/forms";
   selector: "app-administrator-regions",
   templateUrl: "./administrator-regions.component.html",
   styleUrl: "./administrator-regions.component.scss",
+  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [
     MatCard,
     MatCardHeader,
@@ -40,7 +41,7 @@ export class AdministratorRegionsComponent implements OnInit {
   private snackBar = inject(MatSnackBar);
   private signalRService = inject(SignalRService);
 
-  regions: Region[];
+  regions!: Region[];
   progressUpdates: Record<number, number> = {};
   updateResult: Record<number, number> = {};
 

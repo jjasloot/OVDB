@@ -1,4 +1,4 @@
-import { Component, computed, effect, inject, OnInit, signal } from "@angular/core";
+import { Component, computed, effect, inject, OnInit, signal, ChangeDetectionStrategy } from "@angular/core";
 import { FormGroup, FormControl, FormBuilder, Validators, FormsModule, ReactiveFormsModule } from "@angular/forms";
 import { MatDialogRef, MAT_DIALOG_DATA, MatDialogTitle, MatDialogContent, MatDialogActions } from "@angular/material/dialog";
 import { Operator } from "src/app/models/operator.model";
@@ -17,6 +17,7 @@ import { MatButton } from "@angular/material/button";
     selector: "app-administrator-operator-edit-dialog",
     templateUrl: "./administrator-operator-edit-dialog.component.html",
     styleUrl: "./administrator-operator-edit-dialog.component.scss",
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [
         MatDialogTitle,
         CdkScrollable,
@@ -80,8 +81,8 @@ export class AdministratorOperatorEditDialogComponent {
     const value = event.value;
 
     if ((value || "").trim()) {
-      this.operatorForm.get("names").value.push(value.trim());
-      this.operatorForm.get("names").updateValueAndValidity();
+      this.operatorForm.get("names")!.value!.push(value.trim());
+      this.operatorForm.get("names")!.updateValueAndValidity();
     }
 
     if (input) {
@@ -90,11 +91,11 @@ export class AdministratorOperatorEditDialogComponent {
   }
 
   removeName(name: string): void {
-    const index = this.operatorForm.get("names").value.indexOf(name);
+    const index = this.operatorForm.get("names")!.value!.indexOf(name);
 
     if (index >= 0) {
-      this.operatorForm.get("names").value.splice(index, 1);
-      this.operatorForm.get("names").updateValueAndValidity();
+      this.operatorForm.get("names")!.value!.splice(index, 1);
+      this.operatorForm.get("names")!.updateValueAndValidity();
     }
   }
 

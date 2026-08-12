@@ -1,4 +1,4 @@
-import { Component, DestroyRef, OnInit, inject, signal, computed } from "@angular/core";
+import { Component, DestroyRef, OnInit, inject, signal, computed, ChangeDetectionStrategy } from "@angular/core";
 import { ActivatedRoute, Router } from "@angular/router";
 import { ApiService } from "src/app/services/api.service";
 import { RouteInstance } from "src/app/models/routeInstance.model";
@@ -27,6 +27,7 @@ import { STANDARD_DIALOG } from "src/app/constants/dialog-sizes";
   selector: "app-route-instances",
   templateUrl: "./route-instances.component.html",
   styleUrls: ["./route-instances.component.scss"],
+  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [
     MatExpansionPanel,
     MatExpansionPanelHeader,
@@ -110,7 +111,7 @@ export class RouteInstancesComponent implements OnInit {
     this.activatedRoute.paramMap
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((p) => {
-        this.routeId.set(+p.get("routeId"));
+        this.routeId.set(+p.get("routeId")!);
         this.getData();
       });
 
@@ -204,7 +205,7 @@ export class RouteInstancesComponent implements OnInit {
     return instance.arrivalDelayMinutes ?? null;
   }
 
-  formatDelay(minutes: number | null): string {
+  formatDelay(minutes: number | null): string | null {
     if (minutes === null) return null;
     const rounded = Math.round(minutes);
     if (rounded === 0) return '+0 min';
@@ -255,7 +256,7 @@ export class RouteInstancesComponent implements OnInit {
     if (!r) {
       return "";
     }
-    return this.translationService.getNameForItem(r.routeType);
+    return this.translationService.getNameForItem(r.routeType!);
   }
   add() {
     // Create new RouteInstance
@@ -263,7 +264,7 @@ export class RouteInstancesComponent implements OnInit {
       routeId: this.routeId(),
       routeInstanceMaps: [],
       routeInstanceProperties: [],
-    } as RouteInstance;
+    } as unknown as RouteInstance;
 
     // Pre-populate with Träwelling data if available
     this.prefillWithTraewellingData(newInstance);
@@ -306,7 +307,7 @@ export class RouteInstancesComponent implements OnInit {
       const tripData = this.trawellingTripData();
       // Use the local calendar date, not the UTC one: toISOString() would roll a late-evening
       // local check-in back to the previous day.
-      newInstance.date = tripData!.date ? this.toLocalDateString(new Date(tripData!.date)) : undefined;
+      newInstance.date = (tripData!.date ? this.toLocalDateString(new Date(tripData!.date)) : undefined)!;
       newInstance.startTime = tripData!.departureTime;
       newInstance.endTime = tripData!.arrivalTime;
       newInstance.scheduledStartTime = tripData!.scheduledDepartureTime;
@@ -319,7 +320,7 @@ export class RouteInstancesComponent implements OnInit {
             key: tag.key,
             value: tag.value,
             bool: null
-          } as RouteInstanceProperty);
+          } as unknown as RouteInstanceProperty);
         });
       }
     }

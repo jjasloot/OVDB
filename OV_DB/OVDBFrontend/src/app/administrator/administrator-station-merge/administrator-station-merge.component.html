@@ -49,7 +49,7 @@
       </div>
     }
 
-    @if (!loading() && currentPair()) {
+    @if (!loading() && currentPair(); as pair) {
       <!-- Map showing both stations -->
       <div
         class="pair-map"
@@ -64,21 +64,21 @@
         <!-- Left station (L) -->
         <div class="station-col">
           <div class="station-badge left-badge">L</div>
-          <div class="station-name">{{ currentPair().station1Name || '(unnamed)' }}</div>
+          <div class="station-name">{{ pair.station1Name || '(unnamed)' }}</div>
           <div class="station-detail">
-            {{ currentPair().station1Lattitude | number:'1.5-5' }},
-            {{ currentPair().station1Longitude | number:'1.5-5' }}
+            {{ pair.station1Lattitude | number:'1.5-5' }},
+            {{ pair.station1Longitude | number:'1.5-5' }}
           </div>
           <div class="station-detail visits">
-            <mat-icon inline>people</mat-icon>&nbsp;{{ currentPair().station1Visits }} visit(s)
+            <mat-icon inline>people</mat-icon>&nbsp;{{ pair.station1Visits }} visit(s)
           </div>
           <div class="station-detail special-row">
-            @if (currentPair().station1Special) {
+            @if (pair.station1Special) {
               <mat-icon inline class="special-icon">museum</mat-icon>&nbsp;<span>Museum / special</span>
               <button
                 mat-icon-button
                 class="toggle-special-btn"
-                (click)="toggleSpecial(currentPair().station1Id, currentPair().station1Special, 1)"
+                (click)="toggleSpecial(pair.station1Id, pair.station1Special, 1)"
                 matTooltip="Unmark as special/museum"
               ><mat-icon>train</mat-icon></button>
             } @else {
@@ -86,13 +86,13 @@
               <button
                 mat-icon-button
                 class="toggle-special-btn"
-                (click)="toggleSpecial(currentPair().station1Id, currentPair().station1Special, 1)"
+                (click)="toggleSpecial(pair.station1Id, pair.station1Special, 1)"
                 matTooltip="Mark as special/museum"
               ><mat-icon>museum</mat-icon></button>
             }
           </div>
           <a
-            [href]="openInOsm(currentPair().station1Lattitude, currentPair().station1Longitude)"
+            [href]="openInOsm(pair.station1Lattitude, pair.station1Longitude)"
             target="_blank"
             rel="noopener noreferrer"
             class="osm-link"
@@ -102,7 +102,7 @@
             color="primary"
             class="keep-btn"
             [disabled]="actionInProgress()"
-            (click)="merge(currentPair().station1Id, currentPair().station2Id)"
+            (click)="merge(pair.station1Id, pair.station2Id)"
             matTooltip="Keep L – hide R and transfer its visits to L"
           >
             <mat-icon>arrow_back</mat-icon> Keep L
@@ -113,7 +113,7 @@
         <div class="center-col">
           <div class="distance-display">
             <mat-icon>swap_horiz</mat-icon>
-            <span>{{ currentPair().distanceMeters | number:'1.0-0' }}&nbsp;m</span>
+            <span>{{ pair.distanceMeters | number:'1.0-0' }}&nbsp;m</span>
           </div>
           @if (stationsMapQueryParams()) {
             <a
@@ -131,7 +131,7 @@
           <button
             mat-stroked-button
             [disabled]="actionInProgress()"
-            (click)="skip(currentPair())"
+            (click)="skip(pair)"
             matTooltip="These are distinct stops – remove this pair from the queue"
           >
             <mat-icon>done_all</mat-icon> Keep Both
@@ -141,20 +141,20 @@
         <!-- Right station (R) -->
         <div class="station-col right">
           <div class="station-badge right-badge">R</div>
-          <div class="station-name">{{ currentPair().station2Name || '(unnamed)' }}</div>
+          <div class="station-name">{{ pair.station2Name || '(unnamed)' }}</div>
           <div class="station-detail">
-            {{ currentPair().station2Lattitude | number:'1.5-5' }},
-            {{ currentPair().station2Longitude | number:'1.5-5' }}
+            {{ pair.station2Lattitude | number:'1.5-5' }},
+            {{ pair.station2Longitude | number:'1.5-5' }}
           </div>
           <div class="station-detail visits">
-            <mat-icon inline>people</mat-icon>&nbsp;{{ currentPair().station2Visits }} visit(s)
+            <mat-icon inline>people</mat-icon>&nbsp;{{ pair.station2Visits }} visit(s)
           </div>
           <div class="station-detail special-row right-special">
-            @if (currentPair().station2Special) {
+            @if (pair.station2Special) {
               <button
                 mat-icon-button
                 class="toggle-special-btn"
-                (click)="toggleSpecial(currentPair().station2Id, currentPair().station2Special, 2)"
+                (click)="toggleSpecial(pair.station2Id, pair.station2Special, 2)"
                 matTooltip="Unmark as special/museum"
               ><mat-icon>train</mat-icon></button>
               <mat-icon inline class="special-icon">museum</mat-icon>&nbsp;<span>Museum / special</span>
@@ -162,14 +162,14 @@
               <button
                 mat-icon-button
                 class="toggle-special-btn"
-                (click)="toggleSpecial(currentPair().station2Id, currentPair().station2Special, 2)"
+                (click)="toggleSpecial(pair.station2Id, pair.station2Special, 2)"
                 matTooltip="Mark as special/museum"
               ><mat-icon>museum</mat-icon></button>
               <mat-icon inline class="normal-icon">train</mat-icon>&nbsp;<span>Regular</span>
             }
           </div>
           <a
-            [href]="openInOsm(currentPair().station2Lattitude, currentPair().station2Longitude)"
+            [href]="openInOsm(pair.station2Lattitude, pair.station2Longitude)"
             target="_blank"
             rel="noopener noreferrer"
             class="osm-link"
@@ -179,7 +179,7 @@
             color="primary"
             class="keep-btn"
             [disabled]="actionInProgress()"
-            (click)="merge(currentPair().station2Id, currentPair().station1Id)"
+            (click)="merge(pair.station2Id, pair.station1Id)"
             matTooltip="Keep R – hide L and transfer its visits to R"
           >
             Keep R <mat-icon>arrow_forward</mat-icon>

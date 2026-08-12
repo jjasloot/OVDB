@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from "@angular/core";
+import { Component, OnInit, inject, ChangeDetectionStrategy } from "@angular/core";
 import { Router, RouterLinkActive, RouterLink, RouterOutlet } from "@angular/router";
 import { TranslateService } from "@ngx-translate/core";
 import { MatTabNav, MatTabLink } from "@angular/material/tabs";
@@ -8,6 +8,7 @@ import { SignalRService } from "src/app/services/signal-r.service";
     selector: "app-administrator-layout",
     templateUrl: "./administrator-layout.component.html",
     styleUrls: ["./administrator-layout.component.scss"],
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [
         MatTabNav,
         MatTabLink,
@@ -22,7 +23,7 @@ export class AdministratorLayoutComponent implements OnInit {
   private signalRServicve = inject(SignalRService);
 
   navLinks: { label: string; link: string; index: number }[];
-  activeLinkIndex: number;
+  activeLinkIndex!: number;
 
   constructor() {
     this.navLinks = [
@@ -67,7 +68,7 @@ export class AdministratorLayoutComponent implements OnInit {
     this.signalRServicve.connect();
     this.router.events.subscribe((res) => {
       this.activeLinkIndex = this.navLinks.indexOf(
-        this.navLinks.find((tab) => tab.link === "." + this.router.url)
+        this.navLinks.find((tab) => tab.link === "." + this.router.url)!
       );
     });
     // this.translateService.onLangChange.subscribe(() => {

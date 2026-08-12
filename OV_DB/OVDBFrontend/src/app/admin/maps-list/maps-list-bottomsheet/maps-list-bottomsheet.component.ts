@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { TranslateService, TranslateModule } from '@ngx-translate/core';
 import { DataUpdateService } from 'src/app/services/data-update.service';
@@ -15,6 +15,7 @@ import { CdkCopyToClipboard } from '@angular/cdk/clipboard';
     selector: 'app-maps-list-bottomsheet',
     templateUrl: './maps-list-bottomsheet.component.html',
     styleUrls: ['./maps-list-bottomsheet.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [MatActionList, MatListItem, MatIcon, CdkCopyToClipboard, TranslateModule]
 })
 export class MapsListBottomsheetComponent implements OnInit {

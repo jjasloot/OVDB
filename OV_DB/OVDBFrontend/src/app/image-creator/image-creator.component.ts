@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, OnInit, inject } from "@angular/core";
+import { ChangeDetectorRef, Component, OnInit, inject, ChangeDetectionStrategy } from "@angular/core";
 import { environment } from "src/environments/environment";
 import { ApiService } from "../services/api.service";
 import { Map } from "../models/map.model";
@@ -13,6 +13,7 @@ import { FormsModule } from "@angular/forms";
   selector: "app-image-creator",
   templateUrl: "./image-creator.component.html",
   styleUrls: ["./image-creator.component.scss"],
+  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [
     MatCard,
     MatCheckbox,
@@ -28,7 +29,7 @@ export class ImageCreatorComponent implements OnInit {
   translateService = inject(TranslateService);
   private cd = inject(ChangeDetectorRef);
 
-  maps: Map[];
+  maps: Map[] = [];
   baseUrl = environment.backend + "api/images/";
   selectedGuids: string[] = [];
   imageSrc: string = environment.backend + "api/images/";

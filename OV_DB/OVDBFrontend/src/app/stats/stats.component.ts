@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { MatTabsModule } from '@angular/material/tabs';
 import { TimeStatsComponent } from "./time-stats/time-stats.component";
 import { TranslateModule } from '@ngx-translate/core';
@@ -9,6 +9,7 @@ import { RegionStatComponent } from './region-stats/region-stat.component';
   selector: 'app-stats',
   templateUrl: './stats.component.html',
   styleUrls: ['./stats.component.scss'],
+  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [MatTabsModule, TimeStatsComponent, TranslateModule, UsedOperatorsComponent, RegionStatComponent]
 })
 export class StatsComponent  {

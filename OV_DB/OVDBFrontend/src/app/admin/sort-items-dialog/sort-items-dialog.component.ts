@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
 import { MatDialogRef, MAT_DIALOG_DATA, MatDialogTitle, MatDialogContent, MatDialogActions } from '@angular/material/dialog';
 import { CdkDragDrop, moveItemInArray, CdkDropList, CdkDrag } from '@angular/cdk/drag-drop';
 import { TranslationService } from 'src/app/services/translation.service';
@@ -10,6 +10,7 @@ import { TranslateModule } from '@ngx-translate/core';
     selector: 'app-sort-items-dialog',
     templateUrl: './sort-items-dialog.component.html',
     styleUrls: ['./sort-items-dialog.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [MatDialogTitle, CdkScrollable, MatDialogContent, CdkDropList, CdkDrag, MatDialogActions, MatButton, TranslateModule]
 })
 export class SortItemsDialogComponent implements OnInit {

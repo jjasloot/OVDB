@@ -1,4 +1,4 @@
-import { Component, OnInit, viewChild, inject } from "@angular/core";
+import { Component, OnInit, viewChild, inject, ChangeDetectionStrategy } from "@angular/core";
 import { UntypedFormBuilder, UntypedFormGroup, Validators, FormsModule, ReactiveFormsModule } from "@angular/forms";
 import { MatCheckboxChange, MatCheckbox } from "@angular/material/checkbox";
 import { DateAdapter } from "@angular/material/core";
@@ -21,6 +21,7 @@ import { TranslateModule } from "@ngx-translate/core";
     selector: "app-station-maps-edit",
     templateUrl: "./station-maps-edit.component.html",
     styleUrls: ["./station-maps-edit.component.scss"],
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [
         MatDialogTitle,
         FormsModule,
@@ -49,7 +50,7 @@ export class StationMapsEditComponent implements OnInit {
   private dialogRef = inject<MatDialogRef<StationMapsEditComponent>>(MatDialogRef);
 
   form: UntypedFormGroup;
-  regions: Region[];
+  regions!: Region[];
   readonly regionsSelection = viewChild<MatSelectionList>("regionsSelection");
   selectedOptions: number[] = [];
   map: StationMap = {} as StationMap;
@@ -120,13 +121,13 @@ export class StationMapsEditComponent implements OnInit {
     if (event.checked && !this.selectedOptions.includes(id)) {
       this.selectedOptions.push(id);
       this.selectedOptions = this.selectedOptions.filter(
-        (i) => !subRegions.map((r) => r.id).includes(i)
+        (i) => !subRegions?.map((r) => r.id).includes(i)
       );
     }
     if (!event.checked && this.selectedOptions.includes(id)) {
       this.selectedOptions = this.selectedOptions.filter((i) => i !== id);
       this.selectedOptions = this.selectedOptions.filter(
-        (i) => !subRegions.map((r) => r.id).includes(i)
+        (i) => !subRegions?.map((r) => r.id).includes(i)
       );
     }
   }

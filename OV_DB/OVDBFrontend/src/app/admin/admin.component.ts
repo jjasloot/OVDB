@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { MatToolbar } from '@angular/material/toolbar';
 import { RouterOutlet } from '@angular/router';
 
@@ -6,6 +6,7 @@ import { RouterOutlet } from '@angular/router';
     selector: 'app-admin',
     templateUrl: './admin.component.html',
     styleUrls: ['./admin.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [MatToolbar, RouterOutlet]
 })
 export class AdminComponent implements OnInit {

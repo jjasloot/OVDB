@@ -1,4 +1,4 @@
-import { Component, inject, Input } from '@angular/core';
+import { Component, inject, Input, ChangeDetectionStrategy } from '@angular/core';
 
 import { MatCardModule } from '@angular/material/card';
 import { MatChipsModule } from '@angular/material/chips';
@@ -80,6 +80,7 @@ import { TranslateModule } from '@ngx-translate/core';
       </mat-card>
     }
     `,
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./traewelling-context-card.component.scss']
 })
 export class TrawellingContextCardComponent {
@@ -107,11 +108,11 @@ export class TrawellingContextCardComponent {
   }
 
   transportIcon() {
-    return this.traewellingService.getTransportIcon(this.tripContext.transportCategory);
+    return this.traewellingService.getTransportIcon(this.tripContext!.transportCategory);
   }
 
   transportColor() {
-    return this.traewellingService.getTransportColor(this.tripContext.transportCategory);
+    return this.traewellingService.getTransportColor(this.tripContext!.transportCategory);
   }
 
   closeCard() {

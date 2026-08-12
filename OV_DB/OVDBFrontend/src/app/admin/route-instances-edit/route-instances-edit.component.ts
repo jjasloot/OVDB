@@ -1,4 +1,4 @@
-import { Component, Inject, OnInit, inject, viewChild, signal, computed } from '@angular/core';
+import { Component, Inject, OnInit, inject, viewChild, signal, computed, ChangeDetectionStrategy } from '@angular/core';
 import { MatDialogRef, MAT_DIALOG_DATA, MatDialogTitle, MatDialogContent, MatDialogActions } from '@angular/material/dialog';
 import { ApiService } from 'src/app/services/api.service';
 import { RouteInstance } from 'src/app/models/routeInstance.model';
@@ -31,11 +31,12 @@ import { TrawellingTripContext } from 'src/app/models/traewelling.model';
   selector: 'app-route-instances-edit',
   templateUrl: './route-instances-edit.component.html',
   styleUrls: ['./route-instances-edit.component.scss'],
+  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [TrawellingContextCardComponent, MatDialogTitle, CdkScrollable, MatDialogContent, MatCard, MatCardContent, MatSlideToggle, MatFormField, MatLabel, MatInput, MatDatepickerInput, FormsModule, MatDatepickerToggle, MatSuffix, MatDatepicker, MatIcon, MatSelect, MatTable, MatColumnDef, MatHeaderCellDef, MatHeaderCell, MatCellDef, MatCell, MatAutocompleteTrigger, MatAutocomplete, MatOption, MatFooterCellDef, MatFooterCell, MatIconButton, MatCheckbox, MatHeaderRowDef, MatHeaderRow, MatRowDef, MatRow, MatFooterRowDef, MatFooterRow, MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle, MatSelectionList, MatListOption, MatDialogActions, MatButton, TranslateModule]
 })
 export class RouteInstancesEditComponent implements OnInit {
   readonly table = viewChild<MatTable<RouteInstanceProperty>>('table');
-  instance: RouteInstance;
+  instance!: RouteInstance;
   new = false;
   options = signal<string[]>([]);
   filteredOptions = signal<string[]>([]);
@@ -183,7 +184,7 @@ export class RouteInstancesEditComponent implements OnInit {
     public dialogRef: MatDialogRef<RouteInstancesEditComponent>,
     private translationService: TranslationService,
     private apiService: ApiService,
-    @Inject(MAT_DIALOG_DATA) data) {
+    @Inject(MAT_DIALOG_DATA) data: { instance?: RouteInstance; new?: boolean; traewellingTripData?: TrawellingTripContext | null }) {
     if (!!data && data.instance) {
       this.instance = Object.assign({}, data.instance);
       this.instance.routeInstanceProperties = Object.assign([], data.instance.routeInstanceProperties);
@@ -268,7 +269,7 @@ export class RouteInstancesEditComponent implements OnInit {
         this.instance.routeInstanceProperties.slice(0, this.instance.routeInstanceProperties.length - 1);
     }
     this.instance.routeInstanceMaps = this.selectedMaps().map(s => { return { mapId: s } });
-    if (this.instance.date['_isAMomentObject']) {
+    if ((this.instance.date as any)['_isAMomentObject']) {
       this.instance.date = (this.instance.date as unknown as Moment).format('YYYY-MM-DD');
     }
     if(!this.enterScheduledTimes()){
@@ -286,7 +287,7 @@ export class RouteInstancesEditComponent implements OnInit {
   }
   addRow() {
     this.instance.routeInstanceProperties.push({} as RouteInstanceProperty);
-    this.table().renderRows();
+    this.table()?.renderRows();
   }
 
   get canAddNewRow() {
@@ -295,7 +296,7 @@ export class RouteInstancesEditComponent implements OnInit {
 
   removeRow(index: number) {
     this.instance.routeInstanceProperties.splice(index, 1);
-    this.table().renderRows();
+    this.table()?.renderRows();
   }
 
   rowIsEmpty(prop: RouteInstanceProperty) {

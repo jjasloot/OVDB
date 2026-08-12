@@ -74,14 +74,14 @@
     </mat-expansion-panel>
 
     } @else {
-    <h3 (click)="selectedStation.set(null)">{{ selectedStation().name }}
+    <h3 (click)="selectedStation.set(null)">{{ selectedStation()!.name }}
       <button style="float:right" mat-icon-button (click)="selectedStation.set(null)">
         <mat-icon>close</mat-icon>
       </button>
     </h3>
-    <div>Visits: {{selectedStation().stationVisits}}</div>
+    <div>Visits: {{selectedStation()!.stationVisits}}</div>
     <div>
-      Hidden:@if(!selectedStation().hidden){
+      Hidden:@if(!selectedStation()!.hidden){
       <button mat-icon-button color="warn" (click)="updateStation(true,false)">
         <mat-icon>delete</mat-icon>
       </button>
@@ -93,7 +93,7 @@
     </div>
     <div>
       Museum/special:
-      @if(!selectedStation().special){
+      @if(!selectedStation()!.special){
       <button mat-icon-button color="warn" (click)="updateStation(false,true)">
         <mat-icon>train</mat-icon>
       </button>

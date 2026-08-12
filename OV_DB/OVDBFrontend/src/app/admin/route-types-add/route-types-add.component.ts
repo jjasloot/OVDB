@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from "@angular/core";
+import { Component, OnInit, inject, ChangeDetectionStrategy } from "@angular/core";
 import { MatDialogRef, MAT_DIALOG_DATA, MatDialogTitle, MatDialogContent, MatDialogActions } from "@angular/material/dialog";
 import { ApiService } from "src/app/services/api.service";
 import { RouteType } from "src/app/models/routeType.model";
@@ -15,6 +15,7 @@ import { MatSelectModule } from '@angular/material/select';
     selector: "app-route-types-add",
     templateUrl: "./route-types-add.component.html",
     styleUrls: ["./route-types-add.component.scss"],
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [
         MatDialogTitle,
         CdkScrollable,
@@ -35,14 +36,14 @@ export class RouteTypesAddComponent implements OnInit {
   private translateService = inject(TranslateService);
   private apiService = inject(ApiService);
 
-  routeTypeName: string;
-  routeTypeNameNL: string;
-  loading: boolean;
-  error: string;
-  colour: string;
-  id: number;
+  routeTypeName!: string;
+  routeTypeNameNL!: string;
+  loading!: boolean;
+  error!: string;
+  colour!: string;
+  id!: number;
   isTrain = false;
-  trainlogType: string;
+  trainlogType!: string;
   constructor() {
     const data = inject(MAT_DIALOG_DATA);
 

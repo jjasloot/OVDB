@@ -1,4 +1,4 @@
-import { Component, inject } from "@angular/core";
+import { Component, inject, ChangeDetectionStrategy } from "@angular/core";
 import { LeafletModule } from "@bluehalo/ngx-leaflet";
 import { LatLng, LatLngBounds, Layer, latLngBounds, polyline } from "leaflet";
 import { RouterLink } from "@angular/router";
@@ -95,6 +95,7 @@ const SAMPLE_LINES: SampleLine[] = [
   standalone: true,
   imports: [LeafletModule, RouterLink, TranslateModule],
   templateUrl: "./demo-map.component.html",
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ["./demo-map.component.scss"],
 })
 export class DemoMapComponent {

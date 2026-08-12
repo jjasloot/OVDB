@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
 import { ActivatedRoute, ParamMap } from '@angular/router';
 import { ApiService } from '../services/api.service';
 import { MapComponent } from '../map/map.component';
@@ -9,20 +9,21 @@ import { TranslateModule } from '@ngx-translate/core';
     selector: 'app-link',
     templateUrl: './link.component.html',
     styleUrls: ['./link.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [MapComponent, MatProgressSpinner, TranslateModule]
 })
 export class LinkComponent implements OnInit {
   private activatedRoute = inject(ActivatedRoute);
   private apiService = inject(ApiService);
 
-  guid: string;
+  guid!: string;
   error = false;
   loading = true;
 
   ngOnInit() {
     this.activatedRoute.paramMap.subscribe((paramMap: ParamMap) => {
       const name = paramMap.get('name');
-      this.apiService.getGuidFromMapName(name).subscribe(guid => {
+      this.apiService.getGuidFromMapName(name!).subscribe(guid => {
         this.guid = guid;
         this.loading = false;
       }, err => {

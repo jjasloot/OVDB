@@ -1,4 +1,4 @@
-import { Component, DestroyRef, OnInit, AfterViewInit, ElementRef, HostListener, viewChild, inject, computed } from "@angular/core";
+import { Component, DestroyRef, OnInit, AfterViewInit, ElementRef, HostListener, viewChild, inject, computed, ChangeDetectionStrategy } from "@angular/core";
 import { ApiService } from "src/app/services/api.service";
 import { Router } from "@angular/router";
 import { MatPaginator } from "@angular/material/paginator";
@@ -45,6 +45,7 @@ import { contrastTextColour } from "src/app/utils/colour";
   selector: "app-route-instances-list",
   templateUrl: "./route-instances-list.component.html",
   styleUrls: ["./route-instances-list.component.scss"],
+  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [
     MatProgressSpinner,
     MatFormField,
@@ -89,14 +90,14 @@ export class RouteInstancesListComponent implements OnInit, AfterViewInit {
   private userPreferenceService = inject(UserPreferenceService);
   private readonly TABLE_ID = 'route-instances-list';
 
-  instancesDataSource: RouteInstancesDataSource;
+  instancesDataSource!: RouteInstancesDataSource;
   selectedInstanceIds: number[] = [];
   displayedColumns: string[] = ["select", "date", "time", "delay", "name", "type", "from", "to", "distance", "edit"];
 
   readonly paginator = viewChild(MatPaginator);
   readonly sort = viewChild(MatSort);
   readonly input = viewChild<ElementRef>("input");
-  count: number;
+  count!: number;
   loading: boolean = true;
   filter$ = new Subject<void>();
 
@@ -145,20 +146,23 @@ export class RouteInstancesListComponent implements OnInit, AfterViewInit {
   private applyRestoredState(): void {
     if (this.restoredState) {
       // Apply pagination state
-      if (this.paginator()) {
-        this.paginator().pageIndex = this.restoredState.pageIndex;
-        this.paginator().pageSize = this.restoredState.pageSize;
+      const paginator = this.paginator();
+      if (paginator) {
+        paginator.pageIndex = this.restoredState.pageIndex;
+        paginator.pageSize = this.restoredState.pageSize;
       }
 
       // Apply sorting state
-      if (this.sort()) {
-        this.sort().active = this.restoredState.sortActive;
-        this.sort().direction = this.restoredState.sortDirection;
+      const sort = this.sort();
+      if (sort) {
+        sort.active = this.restoredState.sortActive;
+        sort.direction = this.restoredState.sortDirection;
       }
 
       // Apply filter state
-      if (this.input() && this.restoredState.filter) {
-        this.input().nativeElement.value = this.restoredState.filter;
+      const input = this.input();
+      if (input && this.restoredState.filter) {
+        input.nativeElement.value = this.restoredState.filter;
       }
 
       this.restoredState = null; // Clear the restored state after applying
@@ -169,10 +173,10 @@ export class RouteInstancesListComponent implements OnInit, AfterViewInit {
     if (!this.paginator() || !this.sort()) return;
 
     const currentState = this.tableStateService.getCurrentState(
-      this.paginator().pageIndex,
-      this.paginator().pageSize,
-      this.sort().active,
-      this.sort().direction,
+      this.paginator()!.pageIndex,
+      this.paginator()!.pageSize,
+      this.sort()!.active,
+      this.sort()!.direction,
       this.filterValue
     );
 
@@ -182,9 +186,9 @@ export class RouteInstancesListComponent implements OnInit, AfterViewInit {
 
   ngAfterViewInit() {
     this.applyRestoredState();
-    this.sort().sortChange.subscribe(() => { this.paginator().pageIndex = 0; this.saveCurrentTableState(); });
+    this.sort()!.sortChange.subscribe(() => { this.paginator()!.pageIndex = 0; this.saveCurrentTableState(); });
 
-    merge(this.sort().sortChange, this.paginator().page, this.filter$)
+    merge(this.sort()!.sortChange, this.paginator()!.page, this.filter$)
       .pipe(
         tap(() => {
           this.loading = true;
@@ -202,13 +206,13 @@ export class RouteInstancesListComponent implements OnInit, AfterViewInit {
         },
       });
 
-    fromEvent(this.input().nativeElement, "keyup")
+    fromEvent(this.input()!.nativeElement, "keyup")
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         debounceTime(150),
         distinctUntilChanged(),
         tap(() => {
-          this.paginator().pageIndex = 0;
+          this.paginator()!.pageIndex = 0;
           this.filter$.next();
         })
       )
@@ -217,16 +221,16 @@ export class RouteInstancesListComponent implements OnInit, AfterViewInit {
 
   loadInstancesPage() {
     return this.instancesDataSource.loadInstances(
-      this.paginator().pageIndex * this.paginator().pageSize,
-      this.paginator().pageSize,
-      this.sort().active,
-      this.sort().direction === "desc",
+      this.paginator()!.pageIndex * this.paginator()!.pageSize,
+      this.paginator()!.pageSize,
+      this.sort()!.active,
+      this.sort()!.direction === "desc",
       this.filterValue
     );
   }
 
   get filterValue() {
-    return this.input().nativeElement.value;
+    return this.input()!.nativeElement.value;
   }
 
   toggleInstance(element: RouteInstanceListDTO, event: MatCheckboxChange) {
@@ -293,7 +297,7 @@ export class RouteInstancesListComponent implements OnInit, AfterViewInit {
     return element.arrivalDelayMinutes ?? null;
   }
 
-  formatDelay(minutes: number | null): string {
+  formatDelay(minutes: number | null): string | null {
     if (minutes === null) return null;
     const rounded = Math.round(minutes);
     if (rounded === 0) return '+0 min';
@@ -333,5 +337,5 @@ export class RouteInstancesListComponent implements OnInit, AfterViewInit {
     });
   }
 
-  currentLocale: string;
+  currentLocale!: string;
 }

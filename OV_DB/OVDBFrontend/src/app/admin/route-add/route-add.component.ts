@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
 import { ApiService } from 'src/app/services/api.service';
 import { Router, ActivatedRoute } from '@angular/router';
 import { Route } from 'src/app/models/route.model';
@@ -16,6 +16,7 @@ import { TrawellingContextCardComponent } from "src/app/traewelling/context-card
   selector: 'app-route-add',
   templateUrl: './route-add.component.html',
   styleUrls: ['./route-add.component.scss'],
+  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [MatButton, MatIcon, NgClass, MatProgressSpinner, TranslateModule, TrawellingContextCardComponent]
 })
 export class RouteAddComponent implements OnInit {
@@ -25,11 +26,11 @@ export class RouteAddComponent implements OnInit {
   private translateService = inject(TranslateService);
   private dataUpdateService = inject(DataUpdateService);
 
-  inputString: string;
-  fileToUpload: FileList;
-  text: string;
-  filesLoading: boolean;
-  files: FileUpload[];
+  inputString!: string;
+  fileToUpload!: FileList | null;
+  text!: string;
+  filesLoading!: boolean;
+  files!: FileUpload[];
   fromTraewelling = false;
   trawellingTripData: TrawellingTripContext | null = null;
 
@@ -52,7 +53,7 @@ export class RouteAddComponent implements OnInit {
 
 
 
-  handleFileInput(files: FileList) {
+  handleFileInput(files: FileList | null) {
     this.fileToUpload = files;
   }
 

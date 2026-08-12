@@ -131,14 +131,14 @@ export class ApiService {
       environment.backend + "api/routes/" + routeId
     );
   }
-  getRouteInstances(routeId: number, from?, to?) {
+  getRouteInstances(routeId: number, from?: string, to?: string) {
     let url = environment.backend + "api/routes/instances/" + routeId;
     if (!!from && !!to) {
       url += `?from=${from}&to=${to}`;
     }
     return this.httpClient.get<Route>(url);
   }
-  getRouteInstancesForMap(mapGuid: string, routeId: number, from?, to?) {
+  getRouteInstancesForMap(mapGuid: string, routeId: number, from?: string, to?: string) {
     let url =
       environment.backend + "api/routes/instances/" + mapGuid + "/" + routeId;
     if (!!from && !!to) {
@@ -267,8 +267,8 @@ export class ApiService {
     for (let i = 0; i < fileToUpload.length; i++) {
       formData.append(
         i.toString(),
-        fileToUpload.item(i),
-        fileToUpload.item(i).name
+        fileToUpload.item(i)!,
+        fileToUpload.item(i)!.name
       );
     }
     return this.httpClient.post(
@@ -378,9 +378,9 @@ export class ApiService {
 
   importerGetLine(
     id: any,
-    from: number = null,
-    to: number = null,
-    dateTime: Moment = null
+    from: number | null = null,
+    to: number | null = null,
+    dateTime: Moment | null = null
   ) {
     let url = environment.backend + "api/importer/" + id;
     if (!!from && !!to) {
@@ -397,7 +397,7 @@ export class ApiService {
   }
   importerGetStops(
     id: any,
-    dateTime: Moment = null
+    dateTime: Moment | null = null
   ): Observable<OSMLineStop[]> {
     let url = environment.backend + "api/importer/" + id + "/stops";
     if (dateTime) {
@@ -459,7 +459,7 @@ export class ApiService {
     return this.httpClient.get<string[]>(url);
   }
 
-  getStationMap(guid) {
+  getStationMap(guid: string) {
     const url = environment.backend + "api/stationmaps/map/" + guid;
     return this.httpClient.get<StationView>(url);
   }
@@ -478,7 +478,7 @@ export class ApiService {
     return this.httpClient.put(url, { value });
   }
 
-  updateStationAdmin(id: any, special: any, hidden) {
+  updateStationAdmin(id: any, special: any, hidden: boolean) {
     const url = environment.backend + "api/station/admin/" + id;
     return this.httpClient.put(url, { special, hidden });
   }

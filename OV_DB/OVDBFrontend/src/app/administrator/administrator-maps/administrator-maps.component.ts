@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
 import { ApiService } from 'src/app/services/api.service';
 import { AdminMap } from 'src/app/models/adminMap.model';
 import { Router } from '@angular/router';
@@ -10,13 +10,14 @@ import { MatIcon } from '@angular/material/icon';
     selector: 'app-administrator-maps',
     templateUrl: './administrator-maps.component.html',
     styleUrls: ['./administrator-maps.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [MatTable, MatColumnDef, MatHeaderCellDef, MatHeaderCell, MatCellDef, MatCell, MatIconButton, MatIcon, MatHeaderRowDef, MatHeaderRow, MatRowDef, MatRow]
 })
 export class AdministratorMapsComponent implements OnInit {
   private apiService = inject(ApiService);
   private router = inject(Router);
 
-  data: AdminMap[];
+  data!: AdminMap[];
   displayedColumns: string[] = ['id', 'name', 'user', 'link', 'routes', 'buttons'];
 
   ngOnInit(): void {

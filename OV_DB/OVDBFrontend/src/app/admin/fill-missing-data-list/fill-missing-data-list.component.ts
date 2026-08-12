@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
 import { ApiService } from 'src/app/services/api.service';
 import { Route } from 'src/app/models/route.model';
 import { Router } from '@angular/router';
@@ -11,13 +11,14 @@ import { TranslateModule } from '@ngx-translate/core';
     selector: 'app-fill-missing-data-list',
     templateUrl: './fill-missing-data-list.component.html',
     styleUrls: ['./fill-missing-data-list.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [MatProgressSpinner, MatList, MatListItem, MatButton, TranslateModule]
 })
 export class FillMissingDataListComponent implements OnInit {
   private apiService = inject(ApiService);
   private router = inject(Router);
 
-  data: Route[];
+  data!: Route[];
   loading = false;
 
   ngOnInit() {

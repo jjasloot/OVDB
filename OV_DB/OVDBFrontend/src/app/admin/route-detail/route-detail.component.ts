@@ -1,4 +1,4 @@
-import { Component, DestroyRef, OnInit, signal, viewChild, inject, computed } from "@angular/core";
+import { Component, DestroyRef, OnInit, signal, viewChild, inject, computed, ChangeDetectionStrategy } from "@angular/core";
 import { ActivatedRoute, Router } from "@angular/router";
 import { Route } from "src/app/models/route.model";
 import { ApiService } from "src/app/services/api.service";
@@ -36,6 +36,7 @@ import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
   selector: "app-route-detail",
   templateUrl: "./route-detail.component.html",
   styleUrls: ["./route-detail.component.scss"],
+  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [
     MatButton,
     FormsModule,
@@ -96,8 +97,8 @@ export class RouteDetailComponent implements OnInit {
   readonly countriesSelection = viewChild<MatSelectionList>("countriesSelection");
   readonly mapsSelection = viewChild<MatSelectionList>("mapsSelection");
 
-  selectedOptions: number[];
-  selectedMaps: number[];
+  selectedOptions!: number[];
+  selectedMaps!: number[];
 
   constructor() {
     this.dateAdapter.setLocale(this.translationService.dateLocale);
@@ -140,7 +141,7 @@ export class RouteDetailComponent implements OnInit {
     this.activatedRoute.paramMap
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((p) => {
-        this.routeId.set(+p.get("routeId"));
+        this.routeId.set(+p.get("routeId")!);
         this.loadData();
       });
 
@@ -181,12 +182,12 @@ export class RouteDetailComponent implements OnInit {
     });
   }
 
-  onSubmit(values, goToInstances: boolean) {
+  onSubmit(values: any, goToInstances: boolean) {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
     }
-    const mapsSelection = this.mapsSelection();
+    const mapsSelection = this.mapsSelection()!;
     if (mapsSelection.selectedOptions.selected.length === 0) {
       this.snackBar.open(
         this.translateService.instant("ROUTES.SELECTMAP"),
@@ -252,7 +253,7 @@ export class RouteDetailComponent implements OnInit {
     }
     const countries = this.countries()
       .filter((c) =>
-        this.countriesSelection().selectedOptions.selected.some(
+        this.countriesSelection()!.selectedOptions.selected.some(
           (rc) => rc.value === c.countryId
         )
       )
@@ -274,7 +275,7 @@ export class RouteDetailComponent implements OnInit {
     }
     const maps = this.maps()
       .filter((m) =>
-        this.mapsSelection().selectedOptions.selected.some(
+        this.mapsSelection()!.selectedOptions.selected.some(
           (rm) => rm.value === m.mapId
         )
       )

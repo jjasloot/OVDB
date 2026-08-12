@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
 import { ActivatedRoute, ParamMap } from '@angular/router';
 import { MapComponent } from '../map/map.component';
 
@@ -6,12 +6,13 @@ import { MapComponent } from '../map/map.component';
     selector: 'app-map-view',
     templateUrl: './map-view.component.html',
     styleUrls: ['./map-view.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [MapComponent]
 })
 export class MapViewComponent implements OnInit {
   private activatedRoute = inject(ActivatedRoute);
 
-  guid: string;
+  guid: string | null = null;
 
   ngOnInit() {
     this.activatedRoute.paramMap.subscribe((paramMap: ParamMap) => {

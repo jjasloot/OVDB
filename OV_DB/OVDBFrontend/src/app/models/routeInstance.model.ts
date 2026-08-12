@@ -6,8 +6,8 @@ export interface RouteInstance {
   date: string;
   startTime?: string;
   endTime?: string;
-  scheduledStartTime?: string;
-  scheduledEndTime?: string;
+  scheduledStartTime?: string | null;
+  scheduledEndTime?: string | null;
   departureDelayMinutes?: number;
   arrivalDelayMinutes?: number;
   durationHours?: number;

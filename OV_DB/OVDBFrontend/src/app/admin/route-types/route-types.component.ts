@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
 import { RouteType } from 'src/app/models/routeType.model';
 import { ApiService } from 'src/app/services/api.service';
 import { Router } from '@angular/router';
@@ -21,6 +21,7 @@ import { MatIcon } from '@angular/material/icon';
     selector: 'app-route-types',
     templateUrl: './route-types.component.html',
     styleUrls: ['./route-types.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [MatProgressSpinner, MatList, MatListItem, MatChipListbox, MatChipOption, MatButton, MatIconButton, MatIcon, MatFabButton, TranslateModule]
 })
 export class RouteTypesComponent implements OnInit {
@@ -31,7 +32,7 @@ export class RouteTypesComponent implements OnInit {
   private dataUpdateService = inject(DataUpdateService);
 
 
-  data: RouteType[];
+  data!: RouteType[];
   loading = false;
 
   ngOnInit() {
@@ -71,7 +72,7 @@ export class RouteTypesComponent implements OnInit {
       if (data === false) {
         return;
       }
-      this.apiService.updateRouteTypeOrder(data.map(d => d.typeId)).subscribe(() => this.loadData());
+      this.apiService.updateRouteTypeOrder(data.map(d => d.typeId!)).subscribe(() => this.loadData());
 
 
     });
@@ -104,7 +105,7 @@ export class RouteTypesComponent implements OnInit {
     });
     dialogRef.afterClosed().subscribe((result: boolean) => {
       if (result) {
-        this.apiService.deleteRouteType(routeType.typeId).subscribe(() => {
+        this.apiService.deleteRouteType(routeType.typeId!).subscribe(() => {
           this.loadData();
           this.dataUpdateService.requestUpdate();
         });

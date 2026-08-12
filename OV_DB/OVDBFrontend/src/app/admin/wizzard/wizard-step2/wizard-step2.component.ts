@@ -1,10 +1,10 @@
-import { Component, OnInit, inject } from "@angular/core";
+import { Component, OnInit, inject, ChangeDetectionStrategy } from "@angular/core";
 import { ActivatedRoute, Router } from "@angular/router";
 import { ApiService } from "src/app/services/api.service";
 import { MapTileLayersService } from "src/app/services/map-tile-layers.service";
 import { WizardStepsComponent } from "../wizard-steps/wizard-steps.component";
 import { OSMDataLine } from "src/app/models/osmDataLine.model";
-import { LatLngBounds, geoJSON } from "leaflet";
+import { LatLngBounds, Layer, geoJSON } from "leaflet";
 import { OSMLineStop } from "src/app/models/osmLineStop.model";
 import { saveAs } from "file-saver";
 import { TranslateService, TranslateModule } from "@ngx-translate/core";
@@ -29,6 +29,7 @@ import { STANDARD_DIALOG } from "src/app/constants/dialog-sizes";
   selector: "app-wizard-step2",
   templateUrl: "./wizard-step2.component.html",
   styleUrls: ["./wizard-step2.component.scss"],
+  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [
     WizardStepsComponent,
     MatIconButton,
@@ -55,29 +56,29 @@ export class WizzardStep2Component implements OnInit {
   private router = inject(Router);
   private mapTileLayersService = inject(MapTileLayersService);
 
-  id: string;
-  data: OSMDataLine;
+  id!: string;
+  data!: OSMDataLine;
 
   options = {
     layers: [this.mapTileLayersService.createThemedLayer(0.5)],
     zoom: 5,
   };
   leafletLayersControl = {};
-  layers = [];
-  bounds: LatLngBounds;
-  stops: OSMLineStop[];
+  layers: Layer[] = [];
+  bounds!: LatLngBounds;
+  stops!: OSMLineStop[];
   loading = false;
   error = false;
-  from: number;
-  to: number;
-  dateTime: Moment;
+  from!: number;
+  to!: number;
+  dateTime: Moment | null = null;
   fromTraewelling = false;
   trawellingTripData: TrawellingTripContext | null = null;
   constructor() {
     this.activatedRoute.params.subscribe((p) => (this.id = p.id));
     this.activatedRoute.queryParamMap.subscribe((p) => {
       if (p.has("date")) {
-        this.dateTime = moment.unix(+p.get("date"));
+        this.dateTime = moment.unix(+p.get("date")!);
       } else {
         this.dateTime = null;
       }
@@ -88,7 +89,7 @@ export class WizzardStep2Component implements OnInit {
         const tripDataStr = sessionStorage.getItem('traewellingTripContext');
         if (tripDataStr) {
           const trawellingTripData = JSON.parse(tripDataStr) as TrawellingTripContext;
-          if (trawellingTripData.tripId === +p.get('traewellingTripId')) {
+          if (trawellingTripData.tripId === +p.get('traewellingTripId')!) {
             // If the IDs match, use the data
             this.trawellingTripData = trawellingTripData;
           }
@@ -105,11 +106,11 @@ export class WizzardStep2Component implements OnInit {
     this.loading = true;
     this.error = false;
     this.apiService
-      .importerGetLine(this.id, null, null, this.dateTime)
+      .importerGetLine(this.id, undefined, undefined, this.dateTime ?? undefined)
       .subscribe({
         next: (data) => {
           this.data = data;
-          this.apiService.importerGetStops(this.id, this.dateTime).subscribe({
+          this.apiService.importerGetStops(this.id, this.dateTime ?? undefined).subscribe({
             next: (stops) => {
               this.loading = false;
               this.stops = stops;
@@ -212,7 +213,7 @@ export class WizzardStep2Component implements OnInit {
     this.loading = true;
 
     this.apiService
-      .importerGetLine(this.id, this.from, this.to, this.dateTime)
+      .importerGetLine(this.id, this.from, this.to, this.dateTime ?? undefined)
       .subscribe(
         (data) => {
           this.data = data;
@@ -229,7 +230,7 @@ export class WizzardStep2Component implements OnInit {
     this.loading = true;
 
     this.apiService
-      .importerGetLine(this.id, null, null, this.dateTime)
+      .importerGetLine(this.id, undefined, undefined, this.dateTime ?? undefined)
       .subscribe(
         (data) => {
           this.data = data;

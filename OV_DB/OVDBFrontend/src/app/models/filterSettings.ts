@@ -5,8 +5,8 @@ export class FilterSettings {
     name: string,
     includeLineColours: boolean,
     limitToSelectedAreas: boolean,
-    from?: Moment,
-    to?: Moment,
+    from?: Moment | null,
+    to?: Moment | null,
     selectedCountries?: number[],
     selectedTypes?: number[],
     selectedYears?: number[]
@@ -21,8 +21,8 @@ export class FilterSettings {
     this.limitToSelectedAreas = limitToSelectedAreas;
   }
   name: string;
-  from: Moment;
-  to: Moment;
+  from: Moment | null;
+  to: Moment | null;
   selectedCountries: number[] = [];
   selectedTypes: number[] = [];
   selectedYears: number[] = [];

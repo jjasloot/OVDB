@@ -1,7 +1,7 @@
-import { Component, OnInit, AfterViewInit, ChangeDetectorRef, NgZone, EventEmitter, OnDestroy, input, viewChild, signal, inject } from "@angular/core";
+import { Component, OnInit, AfterViewInit, ChangeDetectorRef, NgZone, EventEmitter, OnDestroy, input, viewChild, signal, inject, ChangeDetectionStrategy } from "@angular/core";
 import moment from "moment";
 import { ApiService } from "../services/api.service";
-import { LatLngBounds, LatLng, geoJSON, LatLngLiteral } from "leaflet";
+import { LatLngBounds, LatLng, geoJSON, LatLngLiteral, Layer } from "leaflet";
 import { FilterSettings } from "../models/filterSettings";
 import { MatDialog } from "@angular/material/dialog";
 import { Country } from "../models/country.model";
@@ -37,6 +37,7 @@ import { STANDARD_DIALOG, WIDE_DIALOG } from "src/app/constants/dialog-sizes";
   selector: "app-map",
   templateUrl: "./map.component.html",
   styleUrls: ["./map.component.scss"],
+  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [
     NgTemplateOutlet,
     MatExpansionPanel,
@@ -63,20 +64,20 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
   private cd = inject(ChangeDetectorRef);
   private mapTileLayersService = inject(MapTileLayersService);
 
-  readonly guid = input<string>(undefined);
+  readonly guid = input<string | null>(null);
   readonly mapContainer = viewChild<HTMLElement>("mapContainer");
   loading = signal<boolean | number>(false);
   private subscriptions = new Subscription();
-  from: moment.Moment;
-  to: moment.Moment;
+  from: moment.Moment | null = null;
+  to: moment.Moment | null = null;
   selectedRegion: number[] = [];
   selectedTypes: number[] = [];
-  layers = [];
-  countries: Country[];
-  selectedYears: number[];
-  error: boolean;
+  layers: Layer[] = [];
+  countries: Country[] = [];
+  selectedYears!: number[];
+  error = false;
   active = signal<string>("");
-  selectedRoute;
+  selectedRoute: any;
   includeLineColours = true;
   requestIdentifier?: string;
   limitToSelectedArea = false;
@@ -93,7 +94,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
       );
     }
   }
-   private _bounds: LatLngBounds;
+   private _bounds!: LatLngBounds;
 
   defaults = new Map<string, FilterSettings>([
     [
@@ -113,8 +114,8 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
         "ThisYear",
         true,
         false,
-        null,
-        null,
+        undefined,
+        undefined,
         [],
         [],
         [moment().year()]
@@ -137,14 +138,14 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
         "LastYear",
         true,
         false,
-        null,
-        null,
+        undefined,
+        undefined,
         [],
         [],
         [moment().year() - 1]
       ),
     ],
-    ["All", new FilterSettings("All", true, false, null, null, [])],
+    ["All", new FilterSettings("All", true, false, undefined, undefined, [])],
   ]);
 
   get mapHeight() {
@@ -163,7 +164,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
   };
   leafletLayersControl = {
     baseLayers: this.baseLayers,
-    // overlays: this.layers
+    overlays: {},
   };
 
   getRoutes$ = new EventEmitter<string>();
@@ -171,7 +172,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
   constructor() {
        const ngZone = inject(NgZone);
 
-       window["angularComponentRef"] = { component: this, zone: ngZone };
+       (window as any)["angularComponentRef"] = { component: this, zone: ngZone };
   }
   ngAfterViewInit(): void {
     this.cd.detectChanges();
@@ -220,30 +221,30 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
   readFromQueryParams() {
     const queryParams = this.activatedRoute.snapshot.queryParamMap;
     if (queryParams.keys.length === 0) {
-      this.setOption(this.defaults.get("All"));
+      this.setOption(this.defaults.get("All")!);
       return;
     }
     if (queryParams.has("from")) {
-      this.from = moment(+queryParams.get("from"));
+      this.from = moment(+queryParams.get("from")!);
     }
     if (queryParams.has("to")) {
-      this.to = moment(+queryParams.get("to"));
+      this.to = moment(+queryParams.get("to")!);
     }
     if (queryParams.has("types")) {
       this.selectedTypes = queryParams
-        .get("types")
+        .get("types")!
         .split(",")
         .map((c) => +c);
     }
     if (queryParams.has("countries")) {
       this.selectedRegion = queryParams
-        .get("countries")
+        .get("countries")!
         .split(",")
         .map((c) => +c);
     }
     if (queryParams.has("years")) {
       this.selectedYears = queryParams
-        .get("years")
+        .get("years")!
         .split(",")
         .map((c) => +c);
     }
@@ -260,11 +261,11 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
 
     // Join the SignalR group for this request before issuing it, so progress events for this
     // generation reach only us and we don't miss the early ones.
-    return from(this.signalRService.joinGenerationGroup(this.requestIdentifier)).pipe(
+    return from(this.signalRService.joinGenerationGroup(this.requestIdentifier!)).pipe(
       switchMap(() =>
         this.apiService.getRoutes(
           filter,
-          this.guid(),
+          this.guid()!,
           this.translationService.language,
           this.includeLineColours,
           this.limitToSelectedArea,
@@ -278,7 +279,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     const track = geoJSON(data.routes, {
       style: (feature) => {
         return {
-          color: feature.properties.stroke,
+          color: feature!.properties.stroke,
           weight: 3,
         };
       },
@@ -388,7 +389,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     this.loading.set(false);
   }
   private getFilter() {
-    const queryParams = {};
+    const queryParams: { [key: string]: string | number } = {};
        if (!!this.to && !!this.from) {
       queryParams["to"] = this.to.valueOf();
       queryParams["from"] = this.from.valueOf();
@@ -493,8 +494,8 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
       "",
       this.includeLineColours,
       this.limitToSelectedArea,
-      this.from,
-      this.to,
+      this.from ?? undefined,
+      this.to ?? undefined,
       this.selectedRegion,
       this.selectedTypes,
       this.selectedYears

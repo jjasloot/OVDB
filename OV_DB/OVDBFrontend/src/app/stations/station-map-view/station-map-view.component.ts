@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
 import { ActivatedRoute, ParamMap } from '@angular/router';
 import { ApiService } from 'src/app/services/api.service';
 import { StationMapComponent } from '../station-map/station-map.component';
@@ -7,13 +7,14 @@ import { StationMapComponent } from '../station-map/station-map.component';
     selector: 'app-station-map-view',
     templateUrl: './station-map-view.component.html',
     styleUrls: ['./station-map-view.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [StationMapComponent]
 })
 export class StationMapViewComponent implements OnInit {
   private activatedRoute = inject(ActivatedRoute);
   private apiService = inject(ApiService);
 
-  guid: string;
+  guid: string | null = null;
 
   ngOnInit() {
     this.activatedRoute.paramMap.subscribe((paramMap: ParamMap) => {

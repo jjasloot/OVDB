@@ -9,7 +9,7 @@
     <mat-form-field>
       <mat-label>{{ "ROUTEDETAILS.NAME" | translate }}</mat-label>
       <input matInput formControlName="name" required />
-      @if (form.get('name').hasError('required')) {
+      @if (form.get('name')?.hasError('required')) {
       <mat-error>{{ "VALIDATION.REQUIRED" | translate }}</mat-error>
       }
     </mat-form-field>
@@ -42,7 +42,7 @@
       <input matInput formControlName="lineNumber" />
     </mat-form-field>
     <div style="display: flex">
-      <app-route-detail-operator-selection [formField]="form.controls['operatingCompany']" [routeId]="routeId()"
+      <app-route-detail-operator-selection [formField]="$any(form.controls['operatingCompany'])" [routeId]="routeId()"
         (activeOperators)="activeOperators.set($event)"></app-route-detail-operator-selection>
     </div>
     <div class="row">
@@ -69,7 +69,7 @@
         </mat-option>
         }
       </mat-select>
-      @if (form.get('routeTypeId').hasError('required')) {
+      @if (form.get('routeTypeId')?.hasError('required')) {
       <mat-error>{{ "VALIDATION.REQUIRED" | translate }}</mat-error>
       }
     </mat-form-field>

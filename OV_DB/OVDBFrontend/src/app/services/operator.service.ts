@@ -73,7 +73,7 @@ export class OperatorService {
 
   getOperatorLogo(id: number): Observable<string> {
     if (this.logos.has(id)) {
-      return this.logos.get(id);
+      return this.logos.get(id)!;
     }
     this.logos.set(
       id,
@@ -86,7 +86,7 @@ export class OperatorService {
           shareReplay()
         )
     );
-    return this.logos.get(id);
+    return this.logos.get(id)!;
   }
 
   connectRoutesToOperator(id: number) {

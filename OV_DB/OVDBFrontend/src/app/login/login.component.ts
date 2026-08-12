@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
 import { UntypedFormBuilder, Validators, UntypedFormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { AuthenticationService } from '../services/authentication.service';
 import { ActivatedRoute, Data, RouterLink } from '@angular/router';
@@ -13,6 +13,7 @@ import { UserPreferenceService } from '../services/user-preference.service';
   selector: 'app-login',
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.scss'],
+  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [FormsModule, ReactiveFormsModule, MatFormField, MatLabel, MatError, MatInput, MatButton, MatProgressSpinner, TranslateModule, RouterLink]
 })
 export class LoginComponent implements OnInit {
@@ -21,9 +22,9 @@ export class LoginComponent implements OnInit {
   private userPreferenceService = inject(UserPreferenceService);
   private activatedRoute = inject(ActivatedRoute);
 
-  form: UntypedFormGroup;
-  failed: boolean;
-  loading: boolean;
+  form!: UntypedFormGroup;
+  failed = false;
+  loading = false;
   error: any;
 
   ngOnInit() {

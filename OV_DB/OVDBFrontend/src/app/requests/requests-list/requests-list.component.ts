@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from "@angular/core";
+import { Component, OnInit, inject, ChangeDetectionStrategy } from "@angular/core";
 import { RequestForUser } from "src/app/models/requests.model";
 import { RequestsService } from "src/app/services/requests.service";
 import { TranslationService } from "src/app/services/translation.service";
@@ -15,6 +15,7 @@ import { TranslateModule } from "@ngx-translate/core";
     selector: "app-requests-list",
     templateUrl: "./requests-list.component.html",
     styleUrl: "./requests-list.component.scss",
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [
         MatCard,
         MatCardTitle,
@@ -32,7 +33,7 @@ export class RequestsListComponent implements OnInit {
   private requestsService = inject(RequestsService);
   private translationService = inject(TranslationService);
 
-  requests: RequestForUser[];
+  requests!: RequestForUser[];
   newRequest?: string;
   loading = false;
   sending = false;

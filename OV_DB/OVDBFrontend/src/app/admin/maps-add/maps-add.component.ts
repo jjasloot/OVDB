@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
 import { MatDialogRef, MAT_DIALOG_DATA, MatDialogTitle, MatDialogContent, MatDialogActions } from '@angular/material/dialog';
 import { ApiService } from 'src/app/services/api.service';
 import { Country } from 'src/app/models/country.model';
@@ -15,6 +15,7 @@ import { MatButton } from '@angular/material/button';
     selector: 'app-maps-add',
     templateUrl: './maps-add.component.html',
     styleUrls: ['./maps-add.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [MatDialogTitle, CdkScrollable, MatDialogContent, MatFormField, MatLabel, MatInput, FormsModule, MatCheckbox, MatDialogActions, MatButton, TranslateModule]
 })
 export class MapsAddComponent implements OnInit {
@@ -22,16 +23,16 @@ export class MapsAddComponent implements OnInit {
   private translateService = inject(TranslateService);
   private apiService = inject(ApiService);
 
-  mapName: string;
-  mapSharingLink: string;
-  mapDefault: boolean;
+  mapName!: string;
+  mapSharingLink!: string;
+  mapDefault!: boolean;
   showRouteInfo = true;
   showRouteOutline = true;
   mapCompleted = false;
 
-  id: number;
-  loading: boolean;
-  error: string;
+  id!: number;
+  loading!: boolean;
+  error!: string;
   constructor() {
     const data = inject(MAT_DIALOG_DATA);
 

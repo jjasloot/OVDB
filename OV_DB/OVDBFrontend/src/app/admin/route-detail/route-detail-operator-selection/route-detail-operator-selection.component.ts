@@ -47,7 +47,7 @@ export class RouteDetailOperatorSelectionComponent implements OnInit {
   operators = signal<OperatorMinimal[]>([]);
   operatorService = inject(OperatorService);
   filteredOperators = signal<OperatorMinimal[]>([]);
-  otherSelectedOperators = signal<string>(null);
+  otherSelectedOperators = signal<string | null>(null);
   updateEffect = effect(
     () => {
       this.activeOperators.next(this.selectedOperators());
@@ -89,7 +89,7 @@ export class RouteDetailOperatorSelectionComponent implements OnInit {
         this.filteredOperators.set(this.operators());
         return;
       }
-      const lastOperator = this.formField().value.split(";").pop().trim();
+      const lastOperator = this.formField().value.split(";").pop()!.trim();
       if (lastOperator.length < 3) {
         this.filteredOperators.set(
           this.operators().filter(

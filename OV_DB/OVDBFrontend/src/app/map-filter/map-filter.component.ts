@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal, computed, effect } from "@angular/core";
+import { Component, OnInit, inject, signal, computed, effect, ChangeDetectionStrategy } from "@angular/core";
 import { MatCheckboxChange, MatCheckbox } from "@angular/material/checkbox";
 import { MatDialogRef, MAT_DIALOG_DATA, MatDialogTitle, MatDialogContent, MatDialogActions } from "@angular/material/dialog";
 import { FilterSettings } from "../models/filterSettings";
@@ -24,6 +24,7 @@ import { MatButton } from "@angular/material/button";
   selector: "app-map-filter",
   templateUrl: "./map-filter.component.html",
   styleUrls: ["./map-filter.component.scss"],
+  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [
     MatDialogTitle,
     CdkScrollable,
@@ -82,7 +83,7 @@ export class MapFilterComponent implements OnInit {
 
   typesString = computed(() => {
     const typesNames = this.routeTypes()
-      .filter((c) => this.selectedTypes().includes(c.typeId))
+      .filter((c) => this.selectedTypes().includes(c.typeId!))
       .map((c) => this.name(c));
     let typesString = typesNames.join(", ");
     if (typesNames.length > 2) {
@@ -177,13 +178,13 @@ export class MapFilterComponent implements OnInit {
     if (this.selectedCountries().length === 0) {
       this.limitToSelectedAreas.set(false);
     }
-    if (this.from() !== null && this.from().isValid()) {
+    if (this.from() !== null && this.from()!.isValid()) {
       const settings = new FilterSettings(
         "filter",
         this.includeLineColours(),
         this.limitToSelectedAreas(),
-        this.from(),
-        this.to(),
+        this.from()!,
+        this.to() ?? undefined,
         this.selectedCountries(),
         this.selectedTypes(),
         []
@@ -194,8 +195,8 @@ export class MapFilterComponent implements OnInit {
         "filter",
         this.includeLineColours(),
         this.limitToSelectedAreas(),
-        null,
-        null,
+        undefined,
+        undefined,
         this.selectedCountries(),
         this.selectedTypes(),
         this.selectedYears()
@@ -216,7 +217,7 @@ export class MapFilterComponent implements OnInit {
       ]);
       this.selectedCountries.update((countries) =>
         countries.filter(
-          (i) => !subRegions.map((r) => r.id).includes(i)
+          (i) => !(subRegions ?? []).map((r) => r.id).includes(i)
         )
       );
     }
@@ -226,7 +227,7 @@ export class MapFilterComponent implements OnInit {
       );
       this.selectedCountries.update((countries) =>
         countries.filter(
-          (i) => !subRegions.map((r) => r.id).includes(i)
+          (i) => !(subRegions ?? []).map((r) => r.id).includes(i)
         )
       );
     }

@@ -4,13 +4,13 @@ import { TranslateService } from '@ngx-translate/core';
 
 @Injectable()
 export class PaginatorIntlService  extends MatPaginatorIntl {
-  translate: TranslateService;
+  translate!: TranslateService;
   itemsPerPageLabel = 'Items per page';
   nextPageLabel     = 'Next page';
   previousPageLabel = 'Previous page';
   firstPageLabel = 'First page';
   lastPageLabel = 'Last page';
-  getRangeLabel = function(page, pageSize, length) {
+  getRangeLabel = (page: number, pageSize: number, length: number) => {
     const of = this.translate ? this.translate.instant('PAGINATOR.OF') : 'of';
     if (length === 0 || pageSize === 0) {
       return '0 ' + of + ' ' + length;

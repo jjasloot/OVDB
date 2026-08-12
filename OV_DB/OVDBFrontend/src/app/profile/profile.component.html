@@ -16,7 +16,7 @@
         <!-- Email (readonly) -->
         <mat-form-field>
           <mat-label>{{ 'PROFILE.EMAIL' | translate }}</mat-label>
-          <input matInput [value]="userProfile?.email" readonly>
+          <input matInput [value]="userProfile?.email ?? ''" readonly>
           <mat-icon matSuffix>email</mat-icon>
         </mat-form-field>
 

@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, signal, computed, inject } from '@angular/core';
+import { Component, Input, Output, EventEmitter, signal, computed, inject, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -29,6 +29,7 @@ import { ApiService } from '../../../services/api.service';
     TranslateModule
   ],
   templateUrl: './operator-mapping.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./operator-mapping.component.scss']
 })
 export class OperatorMappingComponent {

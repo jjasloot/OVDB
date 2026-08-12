@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import { TranslateModule } from '@ngx-translate/core';
@@ -7,6 +7,7 @@ import { TranslateModule } from '@ngx-translate/core';
     selector: 'app-help',
     templateUrl: './help.component.html',
     styleUrls: ['./help.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [TranslateModule, RouterLink]
 })
 export class HelpComponent {

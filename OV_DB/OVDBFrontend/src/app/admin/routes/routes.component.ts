@@ -1,4 +1,4 @@
-import { Component, OnInit, effect, inject, signal } from "@angular/core";
+import { Component, OnInit, effect, inject, signal, ChangeDetectionStrategy } from "@angular/core";
 import { Router, RouterLinkActive, RouterLink, RouterOutlet } from "@angular/router";
 import { TranslateService } from "@ngx-translate/core";
 import { MatTabNav, MatTabLink, MatTabNavPanel } from "@angular/material/tabs";
@@ -9,6 +9,7 @@ import { toSignal } from "@angular/core/rxjs-interop";
   selector: "app-routes",
   templateUrl: "./routes.component.html",
   styleUrls: ["./routes.component.scss"],
+  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [
     MatTabNav,
     MatTabLink,
@@ -23,7 +24,7 @@ export class RoutesComponent implements OnInit {
   private translateService = inject(TranslateService);
   private userPreferenceService = inject(UserPreferenceService);
   navLinks = signal<{ label: string; link: string; index: number }[]>([]);
-  activeLinkIndex: number;
+  activeLinkIndex!: number;
 
   language = toSignal(this.translateService.onLangChange);
 
@@ -89,7 +90,7 @@ export class RoutesComponent implements OnInit {
   ngOnInit(): void {
     this.router.events.subscribe((res) => {
       this.activeLinkIndex = this.navLinks().indexOf(
-        this.navLinks().find((tab) => tab.link === "." + this.router.url)
+        this.navLinks().find((tab) => tab.link === "." + this.router.url)!
       );
     });
 

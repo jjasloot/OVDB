@@ -3,16 +3,16 @@
   <mat-form-field>
     <mat-label>{{'REGISTER.EMAIL'|translate}}</mat-label>
     <input matInput type="email" autocomplete="username" formControlName="email">
-    @if (form.get('email').hasError('required')) {
+    @if (form.get('email')?.hasError('required')) {
     <mat-error>{{'VALIDATION.EMAIL_REQUIRED'|translate}}</mat-error>
-    } @else if (form.get('email').hasError('email')) {
+    } @else if (form.get('email')?.hasError('email')) {
     <mat-error>{{'VALIDATION.EMAIL_INVALID'|translate}}</mat-error>
     }
   </mat-form-field>
   <mat-form-field>
     <mat-label>{{'REGISTER.PASSWORD'|translate}}</mat-label>
     <input matInput type="password" autocomplete="new-password" formControlName="password">
-    @if (form.get('password').hasError('required')) {
+    @if (form.get('password')?.hasError('required')) {
     <mat-error>{{'VALIDATION.PASSWORD_REQUIRED'|translate}}</mat-error>
     }
   </mat-form-field>

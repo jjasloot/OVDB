@@ -1,4 +1,4 @@
-import { Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, DestroyRef, OnInit, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { UntypedFormBuilder, UntypedFormGroup, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { ApiService } from '../services/api.service';
 import { UserProfile, UpdateProfile, ChangePassword, TraewellingTagMapping, TrainlogOperatorMapping } from '../models/user-profile.model';
@@ -29,6 +29,7 @@ import { TrawellingService } from '../traewelling/services/traewelling.service';
   selector: 'app-profile',
   templateUrl: './profile.component.html',
   styleUrls: ['./profile.component.scss'],
+  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [
     FormsModule,
     ReactiveFormsModule,

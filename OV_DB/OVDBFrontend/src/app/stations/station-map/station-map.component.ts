@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, OnInit, input, inject, signal, computed } from "@angular/core";
+import { ChangeDetectorRef, Component, OnInit, input, inject, signal, computed, ChangeDetectionStrategy } from "@angular/core";
 import {
   LatLngBounds,
   LatLng,
@@ -18,6 +18,7 @@ import { createMarkerClusterGroup } from "src/app/leaflet-markercluster-loader";
     selector: "app-station-map",
     templateUrl: "./station-map.component.html",
     styleUrls: ["./station-map.component.scss"],
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [
         LeafletModule,
         NgClass,
@@ -31,12 +32,12 @@ export class StationMapComponent implements OnInit {
   private mapTileLayersService = inject(MapTileLayersService);
 
   baseLayers = this.mapTileLayersService.createBaseLayers();
-  readonly guid = input<string>(undefined);
+  readonly guid = input<string>();
   options = {
     layers: [this.mapTileLayersService.defaultLayer(this.baseLayers)],
     zoom: 5,
   };
-  private _bounds = signal<LatLngBounds>(null);
+  private _bounds = signal<LatLngBounds | null>(null);
   total = signal<number>(0);
   visited = signal<number>(0);
   names = signal<{ name: any; nameNL: any }>({ name: null, nameNL: null });
@@ -51,7 +52,7 @@ export class StationMapComponent implements OnInit {
   });
 
   get bounds(): LatLngBounds {
-    return this._bounds();
+    return this._bounds()!;
   }
   set bounds(value: LatLngBounds) {
     if (!!value && value.isValid()) {
@@ -65,7 +66,7 @@ export class StationMapComponent implements OnInit {
   }
   leafletLayersControl = {
     baseLayers: this.baseLayers,
-    // overlays: this.layers
+    overlays: {},
   };
   ngOnInit(): void {
     this.getData();
@@ -74,7 +75,7 @@ export class StationMapComponent implements OnInit {
   async getData() {
     this.loading.set(true);
 
-    const text = await this.apiService.getStationMap(this.guid()).toPromise();
+    const text = await this.apiService.getStationMap(this.guid()!).toPromise();
     const parent = this;
     this.total.set(text.total);
     this.visited.set(text.visited);
@@ -88,11 +89,11 @@ export class StationMapComponent implements OnInit {
           html: "<b>" + cluster.getChildCount() + "</b>",
           className: cluster
             .getAllChildMarkers()
-            .every((r) => r.feature.properties.visited)
+            .every((r) => r.feature!.properties.visited)
             ? "green"
             : cluster
                 .getAllChildMarkers()
-                .every((r) => !r.feature.properties.visited)
+                .every((r) => !r.feature!.properties.visited)
             ? "red"
             : "orange",
         });
@@ -102,7 +103,7 @@ export class StationMapComponent implements OnInit {
     });
     text.stations.forEach((station) => {
       const marker = circleMarker(
-        new LatLng(station.lattitude, station.longitude, station.elevation),
+        new LatLng(station.lattitude, station.longitude, station.elevation!),
         {
           radius: station.visited ? 8 : 4,
           fillColor: station.visited ? "#00FF00" : "#FF0000",
@@ -118,7 +119,7 @@ export class StationMapComponent implements OnInit {
           visited: station.visited,
         },
         type: "Feature",
-        geometry: null,
+        geometry: null!,
       };
       markers.addLayer(marker);
     });
@@ -161,7 +162,7 @@ export class StationMapComponent implements OnInit {
     this.loading.set(false);
   }
 
-  getName(object) {
+  getName(object: { name: string; nameNL: string }) {
     return this.translationService.getNameForItem(object);
   }
 }

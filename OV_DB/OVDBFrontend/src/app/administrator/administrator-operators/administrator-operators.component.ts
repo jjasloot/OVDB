@@ -5,6 +5,7 @@ import {
   model,
   OnInit,
   signal,
+  ChangeDetectionStrategy
 } from "@angular/core";
 import { MatDialog } from "@angular/material/dialog";
 import { MatSnackBar } from "@angular/material/snack-bar";
@@ -52,6 +53,7 @@ import { EXTRA_WIDE_DIALOG } from "src/app/constants/dialog-sizes";
   selector: "app-administrator-operators",
   templateUrl: "./administrator-operators.component.html",
   styleUrl: "./administrator-operators.component.scss",
+  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [
     MatCard,
     MatCardHeader,
@@ -98,7 +100,7 @@ export class AdministratorOperatorsComponent implements OnInit {
   ];
   reconnecting = signal<number[]>([]);
   updating = signal<number[]>([]);
-  selectedRegion = model<number>(null);
+  selectedRegion = model<number | null>(null);
   regions = signal<Region[]>([]);
   openOperators = signal<string[]>([]);
 
@@ -110,7 +112,7 @@ export class AdministratorOperatorsComponent implements OnInit {
     () => {
       if (this.selectedRegion()) {
         this.operatorService
-          .getOpenOperatorsForRegion(this.selectedRegion())
+          .getOpenOperatorsForRegion(this.selectedRegion()!)
           .subscribe((data) => {
             this.openOperators.set(data);
           });

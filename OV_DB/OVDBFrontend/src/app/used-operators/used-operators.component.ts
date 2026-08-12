@@ -1,4 +1,4 @@
-import { Component, OnInit, computed, inject, signal } from "@angular/core";
+import { Component, OnInit, computed, inject, signal, ChangeDetectionStrategy } from "@angular/core";
 import { ApiService } from "src/app/services/api.service";
 import { MatCardModule } from "@angular/material/card";
 import { MatIconModule } from "@angular/material/icon";
@@ -20,6 +20,7 @@ import { TranslateModule } from "@ngx-translate/core";
   templateUrl: "./used-operators.component.html",
   styleUrls: ["./used-operators.component.scss"],
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [
     MatCardModule,
     MatIconModule,

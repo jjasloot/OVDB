@@ -2,7 +2,10 @@
   "compileOnSave": false,
   "compilerOptions": {
     "baseUrl": "./",
+    "ignoreDeprecations": "6.0",
     "outDir": "./dist/out-tsc",
+    "strict": true,
+    "noUncheckedSideEffectImports": false,
     "sourceMap": true,
     "esModuleInterop": true,
     "declaration": false,
@@ -26,7 +29,7 @@
     }
   },
   "angularCompilerOptions": {
-    "fullTemplateTypeCheck": true,
+    "strictTemplates": true,
     "strictInjectionParameters": true
   }
 }

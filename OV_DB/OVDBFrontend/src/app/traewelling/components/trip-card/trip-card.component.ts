@@ -1,4 +1,4 @@
-import { Component, Input, inject, output } from '@angular/core';
+import { Component, Input, inject, output, ChangeDetectionStrategy } from '@angular/core';
 
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
@@ -35,6 +35,7 @@ import { AreYouSureDialogComponent } from '../../../are-you-sure-dialog/are-you-
     TranslateModule
   ],
   templateUrl: './trip-card.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./trip-card.component.scss']
 })
 export class TripCardComponent {

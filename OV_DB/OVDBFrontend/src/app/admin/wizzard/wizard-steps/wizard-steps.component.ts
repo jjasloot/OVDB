@@ -1,4 +1,4 @@
-import { Component, input } from "@angular/core";
+import { Component, input, ChangeDetectionStrategy } from "@angular/core";
 import { TranslateModule } from "@ngx-translate/core";
 
 /**
@@ -21,6 +21,7 @@ import { TranslateModule } from "@ngx-translate/core";
       }
     </ol>
   `,
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ["./wizard-steps.component.scss"],
 })
 export class WizardStepsComponent {

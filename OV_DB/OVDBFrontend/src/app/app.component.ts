@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { UserPreferenceService } from './services/user-preference.service';
 import { ThemeService } from './services/theme.service';
@@ -6,6 +6,7 @@ import { ThemeService } from './services/theme.service';
   selector: 'app-root',
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss'],
+  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [RouterOutlet]
 })
 export class AppComponent implements OnInit {

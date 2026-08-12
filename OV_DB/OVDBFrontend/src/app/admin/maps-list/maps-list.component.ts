@@ -49,7 +49,7 @@ export class MapsListComponent implements OnInit {
   private destroyRef = inject(DestroyRef);
   private cdr = inject(ChangeDetectorRef);
 
-  data: Map[];
+  data!: Map[];
   loading = false;
 
   ngOnInit() {

@@ -4,11 +4,12 @@ import {
   OnInit,
   inject,
   input,
-  signal
+  signal,
+  ChangeDetectionStrategy
 } from "@angular/core";
 import { ActivatedRoute } from "@angular/router";
 import { MatCheckboxChange, MatCheckbox } from "@angular/material/checkbox";
-import { LatLngBounds, LatLng, divIcon, circleMarker } from "leaflet";
+import { LatLngBounds, LatLng, divIcon, circleMarker, Layer } from "leaflet";
 import { Region } from "src/app/models/region.model";
 import { StationAdminProperties } from "src/app/models/stationAdminProperties.model";
 import { ApiService } from "src/app/services/api.service";
@@ -35,6 +36,7 @@ import { createMarkerClusterGroup } from "src/app/leaflet-markercluster-loader";
   selector: "app-admin-stations-map",
   templateUrl: "./admin-stations-map.component.html",
   styleUrls: ["./admin-stations-map.component.scss"],
+  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [
     LeafletModule,
     NgClass,
@@ -67,14 +69,14 @@ export class AdminStationsMapComponent implements OnInit {
   signalRService = inject(SignalRService);
   private mapTileLayersService = inject(MapTileLayersService);
   baseLayers = this.mapTileLayersService.createBaseLayers();
-  readonly guid = input<string>(undefined);
+  readonly guid = input<string>();
   options = {
     layers: [this.mapTileLayersService.defaultLayer(this.baseLayers)],
     zoom: 5,
   };
-  private _bounds: LatLngBounds;
-  total: number;
-  visited: number;
+  private _bounds!: LatLngBounds;
+  total!: number;
+  visited!: number;
   regions: Region[] = [];
   selectedRegions: number[] = [];
   selectedStation = signal<StationAdminProperties | null>(null);
@@ -96,9 +98,9 @@ export class AdminStationsMapComponent implements OnInit {
   }
   leafletLayersControl = {
     baseLayers: this.baseLayers,
-    // overlays: this.layers
+    overlays: {},
   };
-  layers = [];
+  layers: Layer[] = [];
 
   loading = true;
 
@@ -120,8 +122,8 @@ export class AdminStationsMapComponent implements OnInit {
     return Math.round((this.visited / this.total) * 1000) / 10;
   }
   ngOnInit(): void {
-    const lat = parseFloat(this.route.snapshot.queryParamMap.get('lat'));
-    const lon = parseFloat(this.route.snapshot.queryParamMap.get('lon'));
+    const lat = parseFloat(this.route.snapshot.queryParamMap.get('lat') ?? '');
+    const lon = parseFloat(this.route.snapshot.queryParamMap.get('lon') ?? '');
     if (isFinite(lat) && isFinite(lon)) {
       // Set initial bounds to a ~1 km box around the requested location so the
       // map opens centred there rather than fitting all markers.
@@ -149,7 +151,8 @@ export class AdminStationsMapComponent implements OnInit {
   }
 
   getNameById(regionId: number) {
-    return this.name(this.regions.find(r => r.id == regionId));
+    const region = this.regions.find(r => r.id == regionId);
+    return region ? this.name(region) : '';
   }
 
   async getData(updateBounds = false) {
@@ -165,11 +168,11 @@ export class AdminStationsMapComponent implements OnInit {
           html: "<b>" + cluster.getChildCount() + "</b>",
           className: cluster
             .getAllChildMarkers()
-            .every((r) => r.feature.properties.visited)
+            .every((r) => r.feature!.properties.visited)
             ? "green"
             : cluster
               .getAllChildMarkers()
-              .every((r) => !r.feature.properties.visited)
+              .every((r) => !r.feature!.properties.visited)
               ? "red"
               : "orange",
         });
@@ -196,7 +199,7 @@ export class AdminStationsMapComponent implements OnInit {
       marker.feature = {
         properties: station,
         type: "Feature",
-        geometry: null,
+        geometry: null!,
       };
       markers.addLayer(marker);
     });
@@ -221,13 +224,13 @@ export class AdminStationsMapComponent implements OnInit {
     if (event.checked && !this.selectedRegions.includes(id)) {
       this.selectedRegions.push(id);
       this.selectedRegions = this.selectedRegions.filter(
-        (i) => !subRegions.map((r) => r.id).includes(i)
+        (i) => !subRegions?.map((r) => r.id).includes(i)
       );
     }
     if (!event.checked && this.selectedRegions.includes(id)) {
       this.selectedRegions = this.selectedRegions.filter((i) => i !== id);
       this.selectedRegions = this.selectedRegions.filter(
-        (i) => !subRegions.map((r) => r.id).includes(i)
+        (i) => !subRegions?.map((r) => r.id).includes(i)
       );
     }
   }
@@ -242,7 +245,7 @@ export class AdminStationsMapComponent implements OnInit {
 
   deleteStation() {
     this.apiService
-      .deleteStationAdmin(this.selectedStation().id)
+      .deleteStationAdmin(this.selectedStation()!.id)
       .subscribe(() => {
         this.getData();
         this.selectedStation.set(null);
@@ -277,9 +280,9 @@ export class AdminStationsMapComponent implements OnInit {
     if (!this.selectedStation()) {
       return;
     }
-    this.apiService.updateStationAdmin(this.selectedStation().id, special, hidden).subscribe(() => {
+    this.apiService.updateStationAdmin(this.selectedStation()!.id, special, hidden).subscribe(() => {
       this.getData();
-      const station = this.selectedStation();
+      const station = this.selectedStation()!;
       station.hidden = hidden;
       station.special = special;
       this.selectedStation.set(station);

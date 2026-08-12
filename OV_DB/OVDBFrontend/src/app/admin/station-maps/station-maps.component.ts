@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from "@angular/core";
+import { Component, OnInit, inject, ChangeDetectionStrategy } from "@angular/core";
 import { MatBottomSheet } from "@angular/material/bottom-sheet";
 import { MatDialog } from "@angular/material/dialog";
 import { Router } from "@angular/router";
@@ -24,6 +24,7 @@ import { CdkCopyToClipboard } from "@angular/cdk/clipboard";
   selector: "app-station-maps",
   templateUrl: "./station-maps.component.html",
   styleUrls: ["./station-maps.component.scss"],
+  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [
     MatProgressSpinner,
     MatList,
@@ -45,7 +46,7 @@ export class StationMapsComponent implements OnInit {
   private dataUpdateService = inject(DataUpdateService);
   private bottomSheet = inject(MatBottomSheet);
 
-  data: StationMap[];
+  data!: StationMap[];
   loading = false;
 
   ngOnInit() {
@@ -63,7 +64,7 @@ export class StationMapsComponent implements OnInit {
     });
   }
 
-  getName(object) {
+  getName(object: StationMap) {
     return this.translationService.getNameForItem(object);
   }
 

@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
@@ -29,6 +29,7 @@ import { TripCardComponent } from './components/trip-card/trip-card.component';
     TripCardComponent
   ],
   templateUrl: './traewelling.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./traewelling.component.scss']
 })
 export class TrawellingComponent implements OnInit {

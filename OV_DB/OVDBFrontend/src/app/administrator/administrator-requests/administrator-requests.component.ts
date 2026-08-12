@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from "@angular/core";
+import { Component, OnInit, inject, ChangeDetectionStrategy } from "@angular/core";
 import { RequestForAdmin } from "src/app/models/requests.model";
 import { RequestsService } from "src/app/services/requests.service";
 import { MatCard } from "@angular/material/card";
@@ -11,6 +11,7 @@ import { DatePipe } from "@angular/common";
     selector: "app-administrator-requests",
     templateUrl: "./administrator-requests.component.html",
     styleUrl: "./administrator-requests.component.scss",
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [
         MatCard,
         MatInput,
@@ -31,7 +32,7 @@ export class AdministratorRequestsComponent implements OnInit {
 
   sendResponse(request: RequestForAdmin) {
     this.requestsService
-      .respondToRequest(request.id, { message: request.response })
+      .respondToRequest(request.id, { message: request.response ?? "" })
       .subscribe(() => this.getData());
   }
 

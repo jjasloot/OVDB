@@ -1,5 +1,5 @@
-import { Component, OnInit, viewChild, inject } from '@angular/core';
-import { LatLngBounds, LatLng, geoJSON } from 'leaflet';
+import { Component, OnInit, viewChild, inject, ChangeDetectionStrategy } from '@angular/core';
+import { LatLngBounds, LatLng, geoJSON, Layer } from 'leaflet';
 import { TranslateService, TranslateModule } from '@ngx-translate/core';
 import { TranslationService } from '../services/translation.service';
 import { ApiService } from '../services/api.service';
@@ -13,6 +13,7 @@ import { MatProgressSpinner } from '@angular/material/progress-spinner';
     selector: 'app-single-route-map',
     templateUrl: './single-route-map.component.html',
     styleUrls: ['./single-route-map.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [LeafletModule, NgClass, MatProgressSpinner, TranslateModule]
 })
 export class SingleRouteMapComponent implements OnInit {
@@ -24,11 +25,11 @@ export class SingleRouteMapComponent implements OnInit {
 
   readonly mapContainer = viewChild<HTMLElement>('mapContainer');
   loading = false;
-  layers = [];
-  error: boolean;
-  active: string;
-  guid: string;
-  routeId: number;
+  layers: Layer[] = [];
+  error = false;
+  active = '';
+  guid!: string;
+  routeId!: number;
   get bounds(): LatLngBounds {
     return this._bounds;
   }
@@ -39,7 +40,7 @@ export class SingleRouteMapComponent implements OnInit {
       this.bounds = new LatLngBounds(new LatLng(50.656245, 2.921360), new LatLng(53.604563, 7.428211));
     }
   }
-   private _bounds: LatLngBounds;
+   private _bounds!: LatLngBounds;
 
   get mapHeight() {
     const mapContainer = this.mapContainer();
@@ -57,7 +58,7 @@ export class SingleRouteMapComponent implements OnInit {
   };
   leafletLayersControl = {
     baseLayers: this.baseLayers,
-    // overlays: this.layers
+    overlays: {},
   };
 
 
@@ -65,8 +66,8 @@ export class SingleRouteMapComponent implements OnInit {
 
   ngOnInit() {
     this.activatedRoute.paramMap.subscribe(p => {
-      this.routeId = +p.get('routeId');
-      this.guid = p.get('guid');
+      this.routeId = +p.get('routeId')!;
+      this.guid = p.get('guid')!;
       this.getRoute();
     });
     this.translationService.languageChanged.subscribe(() => this.getRoute());
@@ -83,7 +84,7 @@ export class SingleRouteMapComponent implements OnInit {
       const track = geoJSON(text as any, {
         style: feature => {
           return {
-            color: feature.properties.stroke,
+            color: feature!.properties.stroke,
             weight: 3
           };
         },

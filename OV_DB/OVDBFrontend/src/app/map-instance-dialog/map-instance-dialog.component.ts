@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectorRef, AfterViewInit, inject } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, AfterViewInit, inject, ChangeDetectionStrategy } from '@angular/core';
 import { MatDialogRef, MAT_DIALOG_DATA, MatDialogTitle, MatDialogContent, MatDialogActions } from '@angular/material/dialog';
 import { merge } from 'rxjs';
 import { ApiService } from '../services/api.service';
@@ -17,6 +17,7 @@ import { MatButton } from '@angular/material/button';
     selector: 'app-map-instance-dialog',
     templateUrl: './map-instance-dialog.component.html',
     styleUrls: ['./map-instance-dialog.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [MatDialogTitle, CdkScrollable, MatDialogContent, MatProgressSpinner, MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle, MatExpansionPanelDescription, MatList, MatListItem, MatDialogActions, MatButton, LowerCasePipe, DatePipe, TranslateModule]
 })
 export class MapInstanceDialogComponent implements OnInit {

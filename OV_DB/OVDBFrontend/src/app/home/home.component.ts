@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, DestroyRef, signal } from "@angular/core";
+import { Component, OnInit, inject, DestroyRef, signal, ChangeDetectionStrategy } from "@angular/core";
 import { AuthenticationService } from "../services/authentication.service";
 import { ApiService } from "../services/api.service";
 import { Map } from "../models/map.model";
@@ -23,6 +23,7 @@ import { DemoMapComponent } from "./demo-map/demo-map.component";
   selector: "app-home",
   templateUrl: "./home.component.html",
   styleUrls: ["./home.component.scss"],
+  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [
     MatButton,
     RouterLink,

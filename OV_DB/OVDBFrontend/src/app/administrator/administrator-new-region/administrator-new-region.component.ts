@@ -1,4 +1,4 @@
-import { Component, computed, model, signal, inject } from "@angular/core";
+import { Component, computed, model, signal, inject, ChangeDetectionStrategy } from "@angular/core";
 import { MatDialogRef, MAT_DIALOG_DATA, MatDialogTitle, MatDialogContent, MatDialogActions } from "@angular/material/dialog";
 import { NewRegion, Region } from "src/app/models/region.model";
 import { CdkScrollable } from "@angular/cdk/scrolling";
@@ -14,6 +14,7 @@ import { TranslateModule } from "@ngx-translate/core";
   selector: "app-administrator-new-region",
   templateUrl: "./administrator-new-region.component.html",
   styleUrl: "./administrator-new-region.component.scss",
+  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [
     MatDialogTitle,
     CdkScrollable,
@@ -59,7 +60,7 @@ export class AdministratorNewRegionComponent {
       return [];
     }
     console.log(this.parentRegionId(), this.regions, this.regions.find(r => r.id == this.parentRegionId())?.subRegions);
-    return this.regions.find(r => r.id == this.parentRegionId()).subRegions.filter(sr => sr.subRegions.length > 0 || this.showAllRegionsForIntermediate());
+    return this.regions.find(r => r.id == this.parentRegionId())!.subRegions.filter(sr => sr.subRegions.length > 0 || this.showAllRegionsForIntermediate());
   });
 
   showAllRegions() {

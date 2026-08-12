@@ -1,5 +1,5 @@
 import { NgClass } from '@angular/common';
-import { Component, computed, inject, input } from '@angular/core';
+import { Component, computed, inject, input, ChangeDetectionStrategy } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
@@ -13,6 +13,7 @@ import { TranslationService } from 'src/app/services/translation.service';
   selector: 'app-region-stats-display',
   imports: [MatListModule, MatIconModule, MatProgressBarModule, MatCardModule, NgClass, TranslateModule],
   templateUrl: './region-stats-display.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './region-stats-display.component.scss'
 })
 export class RegionStatsDisplayComponent {

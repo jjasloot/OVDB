@@ -1,6 +1,5 @@
 import { Injectable, inject } from '@angular/core';
 import { MomentDateAdapter } from '@angular/material-moment-adapter';
-import { MAT_DATE_LOCALE } from '@angular/material/core';
 import { TranslationService } from '../services/translation.service';
 import * as moment from 'moment';
 import 'moment/locale/nl';
@@ -11,9 +10,7 @@ export class DynamicMomentDateAdapter extends MomentDateAdapter {
     private translationService = inject(TranslationService);
 
     constructor() {
-        const matDateLocale = inject(MAT_DATE_LOCALE, { optional: true });
-
-        super(matDateLocale);
+        super();
         this.translationService.languageChanged.subscribe(() => {
             const newLocale = this.translationService.dateLocale;
             this.setLocale(newLocale);

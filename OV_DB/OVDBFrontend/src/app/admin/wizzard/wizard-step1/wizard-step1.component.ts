@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
 import { UntypedFormBuilder, UntypedFormGroup, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { ApiService } from 'src/app/services/api.service';
 import { OSMDataLine } from 'src/app/models/osmDataLine.model';
@@ -25,6 +25,7 @@ import { WizardStepsComponent } from '../wizard-steps/wizard-steps.component';
   selector: 'app-wizard-step1',
   templateUrl: './wizard-step1.component.html',
   styleUrls: ['./wizard-step1.component.scss'],
+  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [TrawellingContextCardComponent, WizardStepsComponent, MatProgressSpinner, FormsModule, ReactiveFormsModule, MatFormField, MatLabel, MatInput, MatSelect, MatOption, MatCheckbox, NgClass, MatDatepickerInput, MatDatepickerToggle, MatSuffix, MatDatepicker, MatButton, MatIconButton, MatIcon, MatChipListbox, MatChipOption, TranslateModule]
 })
 export class WizzardStep1Component implements OnInit {
@@ -36,13 +37,13 @@ export class WizzardStep1Component implements OnInit {
   private translationService = inject(TranslationService);
 
   form: UntypedFormGroup;
-  lines: OSMDataLine[];
+  lines!: OSMDataLine[];
   step = 1;
   loading = false;
   differentTimeLeft = false;
   differentTimeRight = false;
-  dateTime: moment.Moment = null;
-  error: boolean;
+  dateTime: moment.Moment | null = null;
+  error!: boolean;
   // Which search to repeat when the user hits retry.
   private lastSearch: (() => void) | null = null;
   fromTraewelling = false;
@@ -170,7 +171,7 @@ export class WizzardStep1Component implements OnInit {
     this.loading = true;
     this.error = false;
     this.lastSearch = () => this.getNetwork();
-    this.apiService.importerGetNetwork(this.selectedNetwork, this.dateTime).subscribe({
+    this.apiService.importerGetNetwork(this.selectedNetwork, this.dateTime!).subscribe({
       next: (data) => {
         this.lines = data;
         this.step = 2;
@@ -194,7 +195,7 @@ export class WizzardStep1Component implements OnInit {
     }
 
     if (this.fromTraewelling) {
-      queryParams.traewellingTripId = this.trawellingTripData.tripId;
+      queryParams.traewellingTripId = this.trawellingTripData!.tripId;
     }
 
     this.router.navigate(['/', 'admin', 'wizard', line.id], { queryParams });
@@ -246,7 +247,7 @@ export class WizzardStep1Component implements OnInit {
       sessionStorage.setItem('trawellingTripDataForGpx', JSON.stringify(this.trawellingTripData));
     }
     this.router.navigate(['/admin/addRoute'], {
-      queryParams: { traewellingTripId: this.trawellingTripData.tripId }
+      queryParams: { traewellingTripId: this.trawellingTripData!.tripId }
     });
   }
 
