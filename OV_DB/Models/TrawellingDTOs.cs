@@ -169,33 +169,17 @@ namespace OV_DB.Models
         [JsonProperty("createdAt")]
         public DateTimeOffset CreatedAt { get; set; }
 
-        // Deprecated (2026-07-31): use Checkin instead
-        [JsonProperty("train")]
-        public TrawellingTransport Train { get; set; }
-
-        // Replaces deprecated Train field
         [JsonProperty("checkin")]
         public TrawellingTransport Checkin { get; set; }
 
         [JsonProperty("event")]
         public TrawellingEvent Event { get; set; }
 
-        // Deprecated (2026-07-31): use User instead
-        [JsonProperty("userDetails")]
-        public TrawellingLightUser UserDetails { get; set; }
-
-        // Replaces deprecated UserDetails field
         [JsonProperty("user")]
         public TrawellingLightUser User { get; set; }
 
         [JsonProperty("tags")]
         public List<TrawellingStatusTag> Tags { get; set; }
-
-        [JsonIgnore]
-        public TrawellingTransport EffectiveTransport => Checkin ?? Train;
-
-        [JsonIgnore]
-        public TrawellingLightUser EffectiveUser => User ?? UserDetails;
     }
 
     public class TrawellingMention
@@ -273,20 +257,13 @@ namespace OV_DB.Models
 
     public class TrawellingStopover
     {
-        [JsonProperty("id")]
-        public int Id { get; set; }
+        // Stable identifier of this stopover (the numeric "id" is deprecated upstream and
+        // changes meaning after 2026-11-30, so it is intentionally not mapped here)
+        [JsonProperty("uuid")]
+        public string Uuid { get; set; }
 
-        [JsonProperty("name")]
-        public string Name { get; set; }
-
-        [JsonProperty("rilIdentifier")]
-        public string RilIdentifier { get; set; }
-
-        [JsonProperty("evaIdentifier")]
-        public string EvaIdentifier { get; set; }
-
-        [JsonProperty("arrival")]
-        public DateTimeOffset? Arrival { get; set; }
+        [JsonProperty("station")]
+        public TrawellingStation Station { get; set; }
 
         [JsonProperty("arrivalPlanned")]
         public DateTimeOffset? ArrivalPlanned { get; set; }
@@ -299,9 +276,6 @@ namespace OV_DB.Models
 
         [JsonProperty("arrivalPlatformReal")]
         public string ArrivalPlatformReal { get; set; }
-
-        [JsonProperty("departure")]
-        public DateTimeOffset? Departure { get; set; }
 
         [JsonProperty("departurePlanned")]
         public DateTimeOffset? DeparturePlanned { get; set; }
@@ -318,25 +292,24 @@ namespace OV_DB.Models
         [JsonProperty("platform")]
         public string Platform { get; set; }
 
-        [JsonProperty("isArrivalDelayed")]
-        public bool IsArrivalDelayed { get; set; }
-
-        [JsonProperty("isDepartureDelayed")]
-        public bool IsDepartureDelayed { get; set; }
-
         [JsonProperty("cancelled")]
         public bool Cancelled { get; set; }
+
+        // The upstream isArrivalDelayed/isDepartureDelayed flags are deprecated; delay is
+        // derived from planned vs real times as the API documentation recommends
+        [JsonIgnore]
+        public bool IsArrivalDelayed => ArrivalReal.HasValue && ArrivalPlanned.HasValue && ArrivalReal > ArrivalPlanned;
+
+        [JsonIgnore]
+        public bool IsDepartureDelayed => DepartureReal.HasValue && DeparturePlanned.HasValue && DepartureReal > DeparturePlanned;
     }
 
     public class TrawellingOperator
     {
-        // Will become a UUID after 2026-09-30; using string for forward compatibility
-        [JsonProperty("id")]
-        public string Id { get; set; }
-
-        // Deprecated (2026-09-30): always null for new operators
-        [JsonProperty("identifier")]
-        public string Identifier { get; set; }
+        // The numeric "id" is deprecated upstream (becomes a UUID after 2026-09-30) and the
+        // legacy "identifier" is always null for new operators, so only uuid/name are mapped
+        [JsonProperty("uuid")]
+        public string Uuid { get; set; }
 
         [JsonProperty("name")]
         public string Name { get; set; }
@@ -461,8 +434,13 @@ namespace OV_DB.Models
 
     public class TrawellingStation
     {
+        // Deprecated upstream in favour of uuid, but still the stable key today
         [JsonProperty("id")]
         public int Id { get; set; }
+
+        // Stable identifier; will become the primary key upstream
+        [JsonProperty("uuid")]
+        public string Uuid { get; set; }
 
         [JsonProperty("name")]
         public string Name { get; set; }
@@ -472,12 +450,6 @@ namespace OV_DB.Models
 
         [JsonProperty("longitude")]
         public double? Longitude { get; set; }
-
-        [JsonProperty("ibnr")]
-        public string Ibnr { get; set; }
-
-        [JsonProperty("rilIdentifier")]
-        public string RilIdentifier { get; set; }
 
         [JsonProperty("areas")]
         public List<TrawellingArea> Areas { get; set; }
@@ -574,7 +546,6 @@ namespace OV_DB.Models
 
     public class TrawellingStopoverDto
     {
-        public int Id { get; set; }
         public string Name { get; set; }
         
         // Scheduled times (local timezone)
@@ -601,7 +572,6 @@ namespace OV_DB.Models
     public class TrawellingOperatorDto
     {
         public string Name { get; set; }
-        public string Identifier { get; set; }
     }
 
     public class TrawellingLightUserDto
@@ -626,34 +596,6 @@ namespace OV_DB.Models
         public TrawellingPaginationLinks Links { get; set; }
         public TrawellingPaginationMeta Meta { get; set; }
         public bool HasMorePages { get; set; }
-    }
-
-    // Station response from Träwelling API
-    public class TrawellingStationResponse
-    {
-        [JsonProperty("data")]
-        public TrawellingStationData Data { get; set; }
-    }
-
-    public class TrawellingStationData
-    {
-        [JsonProperty("id")]
-        public int Id { get; set; }
-
-        [JsonProperty("name")]
-        public string Name { get; set; }
-
-        [JsonProperty("latitude")]
-        public double? Latitude { get; set; }
-
-        [JsonProperty("longitude")]
-        public double? Longitude { get; set; }
-
-        [JsonProperty("ibnr")]
-        public string Ibnr { get; set; }
-
-        [JsonProperty("rilIdentifier")]
-        public string RilIdentifier { get; set; }
     }
 
     public class LinkToRouteInstanceRequest
@@ -704,6 +646,4 @@ namespace OV_DB.Models
         public string ConnectedSince { get; set; }
     }
 
-    // Legacy aliases for backward compatibility (will be removed)
-    public class TrawellingUserData : TrawellingUserAuthData { }
 }

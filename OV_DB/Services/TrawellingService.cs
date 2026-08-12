@@ -347,11 +347,6 @@ namespace OV_DB.Services
 
                     if (statusesResponse?.Data != null)
                     {
-                        foreach (var status in statusesResponse.Data)
-                        {
-                            _memoryCache.Set("TraewellingStatus|" + status.Id, status, TimeSpan.FromMinutes(30));
-                        }
-
                         // Filter out statuses that are already imported or ignored — scoped to THIS user,
                         // otherwise two accounts linked to the same Träwelling account hide each other's trips.
                         var existingTrawellingIds = await _dbContext.RouteInstances
@@ -453,78 +448,6 @@ namespace OV_DB.Services
             }
         }
 
-        private async Task<TrawellingStationData> GetStationDataAsync(User user, int stationId)
-        {
-            try
-            {
-                // First check if we have the station data in our database
-                var cachedStation = await _dbContext.TrawellingStations
-                    .FirstOrDefaultAsync(ts => ts.TrawellingId == stationId);
-
-                if (cachedStation != null)
-                {
-                    return new TrawellingStationData
-                    {
-                        Id = cachedStation.TrawellingId,
-                        Name = cachedStation.Name,
-                        Latitude = cachedStation.Latitude,
-                        Longitude = cachedStation.Longitude,
-                        Ibnr = cachedStation.Ibnr,
-                        RilIdentifier = cachedStation.RilIdentifier
-                    };
-                }
-
-                // If not cached, fetch from API
-                if (!await EnsureValidTokenAsync(user))
-                    return null;
-
-                if (!_httpClient.DefaultRequestHeaders.Contains("Authorization"))
-                    _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {user.TrawellingAccessToken}");
-                else _httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", user.TrawellingAccessToken);
-
-                var response = await ExecuteWithExponentialBackoffAsync(() =>
-                    _httpClient.GetAsync($"{_baseUrl}/stations/{stationId}"));
-
-                if (!response.IsSuccessStatusCode)
-                {
-                    _logger.LogError("Failed to get station {StationId}. Status: {StatusCode}", stationId, response.StatusCode);
-                    return null;
-                }
-
-                var responseContent = await response.Content.ReadAsStringAsync();
-                var stationResponse = JsonConvert.DeserializeObject<TrawellingStationResponse>(responseContent);
-
-                var stationData = stationResponse?.Data;
-                if (stationData != null)
-                {
-                    // Store in database for future use
-                    var dbStation = new OVDB_database.Models.TrawellingStation
-                    {
-                        TrawellingId = stationData.Id,
-                        Name = stationData.Name,
-                        Latitude = stationData.Latitude,
-                        Longitude = stationData.Longitude,
-                        Ibnr = stationData.Ibnr,
-                        RilIdentifier = stationData.RilIdentifier,
-                        CreatedAt = DateTime.UtcNow,
-                        UpdatedAt = DateTime.UtcNow
-                    };
-
-                    _dbContext.TrawellingStations.Add(dbStation);
-                    await _dbContext.SaveChangesAsync();
-
-                    _logger.LogInformation("Cached station data for station {StationId}: {StationName}", stationId, stationData.Name);
-                }
-
-                return stationData;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting station data for station {StationId}", stationId);
-                return null;
-            }
-        }
-
         public async Task<bool> IgnoreStatusAsync(User user, int statusId)
         {
             try
@@ -613,15 +536,15 @@ namespace OV_DB.Services
         {
             try
             {
-                var transport = status.EffectiveTransport;
-                if (transport?.Origin == null || transport?.Destination == null)
+                var transport = status.Checkin;
+                if (transport?.Origin?.Station == null || transport?.Destination?.Station == null)
                 {
                     _logger.LogWarning("Status {StatusId} missing origin or destination data", status.Id);
                     return null;
                 }
 
-                var originName = transport.Origin.Name;
-                var destinationName = transport.Destination.Name;
+                var originName = transport.Origin.Station.Name;
+                var destinationName = transport.Destination.Station.Name;
                 var lineName = transport.LineName ?? $"{transport.Category} {transport.Number}";
 
                 // Try to find existing route by name pattern
@@ -674,12 +597,12 @@ namespace OV_DB.Services
         {
             try
             {
-                var transport = status.EffectiveTransport;
-                if (transport?.Origin == null || transport?.Destination == null)
+                var transport = status.Checkin;
+                if (transport?.Origin?.Station == null || transport?.Destination?.Station == null)
                     return false;
 
-                var originName = transport.Origin.Name;
-                var destinationName = transport.Destination.Name;
+                var originName = transport.Origin.Station.Name;
+                var destinationName = transport.Destination.Station.Name;
                 var tripDate = status.CreatedAt.Date;
 
                 // Find RouteInstances on the same date that might match this trip
@@ -953,12 +876,12 @@ namespace OV_DB.Services
         {
             try
             {
-                var transport = status.EffectiveTransport;
-                if (transport?.Origin == null || transport?.Destination == null)
+                var transport = status.Checkin;
+                if (transport?.Origin?.Station == null || transport?.Destination?.Station == null)
                     return null;
 
-                var origin = await MapStopoverToDto(user, transport.Origin, transport.ManualDeparture?.UtcDateTime, isArrival: false);
-                var destination = await MapStopoverToDto(user, transport.Destination, transport.ManualArrival?.UtcDateTime, isArrival: true);
+                var origin = await MapStopoverToDto(transport.Origin, transport.ManualDeparture?.UtcDateTime, isArrival: false);
+                var destination = await MapStopoverToDto(transport.Destination, transport.ManualArrival?.UtcDateTime, isArrival: true);
 
                 return new TrawellingTripDto
                 {
@@ -979,16 +902,15 @@ namespace OV_DB.Services
                         Destination = destination,
                         Operator = transport.Operator != null ? new TrawellingOperatorDto
                         {
-                            Name = transport.Operator.Name,
-                            Identifier = transport.Operator.Identifier
+                            Name = transport.Operator.Name
                         } : null
                     },
-                    UserDetails = status.EffectiveUser != null ? new TrawellingLightUserDto
+                    UserDetails = status.User != null ? new TrawellingLightUserDto
                     {
-                        Id = status.EffectiveUser.Id,
-                        DisplayName = status.EffectiveUser.DisplayName,
-                        Username = status.EffectiveUser.Username,
-                        ProfilePicture = status.EffectiveUser.ProfilePicture
+                        Id = status.User.Id,
+                        DisplayName = status.User.DisplayName,
+                        Username = status.User.Username,
+                        ProfilePicture = status.User.ProfilePicture
                     } : null,
                     Tags = status.Tags?.Select(t => new TrawellingStatusTagDto
                     {
@@ -1005,13 +927,11 @@ namespace OV_DB.Services
             }
         }
 
-        private async Task<TrawellingStopoverDto> MapStopoverToDto(User user, TrawellingStopover stopover, DateTime? manualTime, bool isArrival)
+        private async Task<TrawellingStopoverDto> MapStopoverToDto(TrawellingStopover stopover, DateTime? manualTime, bool isArrival)
         {
+            var station = stopover.Station;
             try
             {
-                // Get station data with coordinates for timezone conversion
-                var stationData = await GetStationDataAsync(user, stopover.Id);
-
                 // Determine the best real times (manual times take precedence)
                 DateTime? realArrival = null;
                 DateTime? realDeparture = null;
@@ -1032,19 +952,19 @@ namespace OV_DB.Services
                 DateTime? localArrivalReal = null;
                 DateTime? localDepartureReal = null;
 
-                if (stationData?.Latitude.HasValue == true && stationData?.Longitude.HasValue == true)
+                if (station.Latitude.HasValue && station.Longitude.HasValue)
                 {
                     if (stopover.ArrivalPlanned.HasValue)
-                        localArrivalScheduled = await _timezoneService.ConvertUtcToLocalTimeAsync(stopover.ArrivalPlanned.Value.UtcDateTime, stationData.Latitude.Value, stationData.Longitude.Value);
+                        localArrivalScheduled = await _timezoneService.ConvertUtcToLocalTimeAsync(stopover.ArrivalPlanned.Value.UtcDateTime, station.Latitude.Value, station.Longitude.Value);
 
                     if (stopover.DeparturePlanned.HasValue)
-                        localDepartureScheduled = await _timezoneService.ConvertUtcToLocalTimeAsync(stopover.DeparturePlanned.Value.UtcDateTime, stationData.Latitude.Value, stationData.Longitude.Value);
+                        localDepartureScheduled = await _timezoneService.ConvertUtcToLocalTimeAsync(stopover.DeparturePlanned.Value.UtcDateTime, station.Latitude.Value, station.Longitude.Value);
 
                     if (realArrival.HasValue)
-                        localArrivalReal = await _timezoneService.ConvertUtcToLocalTimeAsync(realArrival.Value, stationData.Latitude.Value, stationData.Longitude.Value);
+                        localArrivalReal = await _timezoneService.ConvertUtcToLocalTimeAsync(realArrival.Value, station.Latitude.Value, station.Longitude.Value);
 
                     if (realDeparture.HasValue)
-                        localDepartureReal = await _timezoneService.ConvertUtcToLocalTimeAsync(realDeparture.Value, stationData.Latitude.Value, stationData.Longitude.Value);
+                        localDepartureReal = await _timezoneService.ConvertUtcToLocalTimeAsync(realDeparture.Value, station.Latitude.Value, station.Longitude.Value);
                 }
                 else
                 {
@@ -1054,13 +974,12 @@ namespace OV_DB.Services
                     localArrivalReal = realArrival;
                     localDepartureReal = realDeparture;
 
-                    _logger.LogWarning("No coordinates available for station {StationId}, using UTC times", stopover.Id);
+                    _logger.LogWarning("No coordinates available for station {StationName}, using UTC times", station.Name);
                 }
 
                 return new TrawellingStopoverDto
                 {
-                    Id = stopover.Id,
-                    Name = stopover.Name,
+                    Name = station.Name,
                     ArrivalScheduled = localArrivalScheduled,
                     DepartureScheduled = localDepartureScheduled,
                     ArrivalPlatformPlanned = stopover.ArrivalPlatformPlanned,
@@ -1077,12 +996,11 @@ namespace OV_DB.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error mapping stopover {StopoverId} to DTO", stopover.Id);
+                _logger.LogError(ex, "Error mapping stopover at {StationName} to DTO", station?.Name);
                 // Return basic DTO without timezone conversion on error
                 return new TrawellingStopoverDto
                 {
-                    Id = stopover.Id,
-                    Name = stopover.Name,
+                    Name = station?.Name,
                     ArrivalScheduled = stopover.ArrivalPlanned?.DateTime,
                     DepartureScheduled = stopover.DeparturePlanned?.DateTime,
                     ArrivalReal = (stopover.ArrivalReal ?? stopover.ArrivalPlanned)?.DateTime,

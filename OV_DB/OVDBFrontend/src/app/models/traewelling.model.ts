@@ -60,7 +60,6 @@ export enum TrawellingTransportCategory {
 }
 
 export interface TrawellingStopover {
-  id: number;
   name: string;
   // Scheduled times (local timezone)
   arrivalScheduled?: string;
@@ -76,7 +75,6 @@ export interface TrawellingStopover {
 
 export interface TrawellingOperator {
   name: string;
-  identifier?: string;
 }
 
 export interface TrawellingTag {
