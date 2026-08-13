@@ -363,9 +363,7 @@ namespace OV_DB.Controllers
                     EstimatedTripDuration = duration.ToString("F0"),
                     ManualTripDuration = "",
                     TripLength = lengthMeters.ToString("F0"),
-                    Operator = operatorMappingDict.TryGetValue(route.OperatingCompany ?? "", out var mappedOperator)
-                        ? mappedOperator
-                        : route.OperatingCompany ?? "",
+                    Operator = MapOperators(route.OperatingCompany, operatorMappingDict),
                     Countries = countriesJson,
                     UtcStartDatetime = exportStart == exportEnd ? exportStart.ToString("yyyy-MM-dd") : exportStart.ToUniversalTime().ToString("yyyy-MM-dd HH:mm:ss"),
                     UtcEndDatetime = exportStart == exportEnd ? exportStart.ToString("yyyy-MM-dd") : exportEnd.ToUniversalTime().ToString("yyyy-MM-dd HH:mm:ss"),
@@ -401,6 +399,26 @@ namespace OV_DB.Controllers
             // Find region containing point with a flag
             var match = regions.FirstOrDefault(r => !string.IsNullOrEmpty(r.FlagEmoji) && r.Geometry != null && r.Geometry.Contains(point));
             return match?.FlagEmoji ?? "🇺🇳";
+        }
+
+        /// <summary>
+        /// Maps OVDB operator names to their Trainlog equivalents. Since Trainlog's July 2026
+        /// operators rework, the CSV `operator` column is a comma-separated list (split on ','
+        /// and trimmed on import), so multi-operator routes are mapped name-by-name. A mapping
+        /// keyed on the complete string still wins, so existing whole-string mappings keep working.
+        /// </summary>
+        private static string MapOperators(string operatingCompany, Dictionary<string, string> mappings)
+        {
+            if (string.IsNullOrWhiteSpace(operatingCompany))
+                return "";
+            if (mappings.TryGetValue(operatingCompany.Trim(), out var wholeStringMatch))
+                return wholeStringMatch;
+
+            var parts = operatingCompany.Split(',')
+                .Select(p => p.Trim())
+                .Where(p => p.Length > 0)
+                .Select(p => mappings.TryGetValue(p, out var mapped) ? mapped : p);
+            return string.Join(", ", parts);
         }
 
         private string AppendFlag(string flag, string name)
