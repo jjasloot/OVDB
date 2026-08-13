@@ -64,11 +64,37 @@ export class ConflictCardComponent {
     return this.timesDiffer(this.conflict.instanceEndTime, this.newEnd);
   }
 
+  get fromChanged(): boolean {
+    return this.stationsDiffer(this.conflict.routeFrom, this.conflict.newTrip?.transport?.origin?.name);
+  }
+
+  get toChanged(): boolean {
+    return this.stationsDiffer(this.conflict.routeTo, this.conflict.newTrip?.transport?.destination?.name);
+  }
+
+  /**
+   * When the journey's endpoints changed, copying times onto the existing route would be
+   * wrong — the geometry no longer matches. Apply-times is replaced by a re-import hint.
+   */
+  get locationChanged(): boolean {
+    return this.fromChanged || this.toChanged;
+  }
+
   private timesDiffer(current?: string, upstream?: string): boolean {
     if (!current || !upstream) {
       return !!current !== !!upstream;
     }
     // Compare at minute precision; sub-minute serialization noise is not a change
     return Math.floor(new Date(current).getTime() / 60000) !== Math.floor(new Date(upstream).getTime() / 60000);
+  }
+
+  private stationsDiffer(current?: string, upstream?: string): boolean {
+    // Only claim a location change when both sides are known and clearly different;
+    // OVDB route endpoints are user-editable text, so compare normalized
+    if (!current || !upstream) {
+      return false;
+    }
+    const normalize = (value: string) => value.toLowerCase().replace(/\s+/g, ' ').trim();
+    return normalize(current) !== normalize(upstream);
   }
 }

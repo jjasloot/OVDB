@@ -43,6 +43,16 @@
     opacity: 0.85;
   }
 
+  .route-changed-hint {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin: 8px 0 0;
+    font-size: 0.9em;
+    font-weight: 500;
+    color: #e65100;
+  }
+
   .deleted-explanation {
     margin: 0;
     font-size: 0.9em;
@@ -57,6 +67,10 @@
 
 :host-context(.dark-theme) {
   .conflict-card .diff-table tr.changed td:last-child {
+    color: #ffb74d;
+  }
+
+  .conflict-card .route-changed-hint {
     color: #ffb74d;
   }
 }

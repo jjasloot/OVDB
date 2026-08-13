@@ -611,6 +611,9 @@ namespace OV_DB.Services
                 _logger.LogError(ex, "Could not parse conflict payload for status {StatusId}, user {UserId}", row.TrawellingStatusId, user.Id);
             }
 
+            var hasSiblingInstances = await _dbContext.RouteInstances
+                .AnyAsync(ri => ri.RouteId == instance.RouteId && ri.RouteInstanceId != instance.RouteInstanceId);
+
             return new TrawellingConflictDto
             {
                 StatusId = row.TrawellingStatusId,
@@ -623,6 +626,7 @@ namespace OV_DB.Services
                 InstanceDate = instance.Date,
                 InstanceStartTime = instance.StartTime,
                 InstanceEndTime = instance.EndTime,
+                IsLastInstanceOnRoute = !hasSiblingInstances,
                 NewTrip = newTrip,
             };
         }
@@ -707,10 +711,24 @@ namespace OV_DB.Services
             if (row == null || instance == null)
                 return false;
 
-            _dbContext.RouteInstances.Remove(instance);
+            var hasSiblingInstances = await _dbContext.RouteInstances
+                .AnyAsync(ri => ri.RouteId == instance.RouteId && ri.RouteInstanceId != instance.RouteInstanceId);
+            if (hasSiblingInstances)
+            {
+                _dbContext.RouteInstances.Remove(instance);
+            }
+            else
+            {
+                // The route's only trip: an instance-less route is dead weight, remove it
+                // along with the instance (announced in the confirmation dialog via
+                // IsLastInstanceOnRoute on the conflict DTO)
+                _dbContext.Routes.Remove(instance.Route);
+            }
+
             _dbContext.TrawellingInboxStatuses.Remove(row);
             await _dbContext.SaveChangesAsync();
-            _logger.LogInformation("Deleted RouteInstance {RouteInstanceId} following upstream deletion of status {StatusId}", instance.RouteInstanceId, statusId);
+            _logger.LogInformation("Deleted RouteInstance {RouteInstanceId}{RouteNote} following upstream deletion of status {StatusId}",
+                instance.RouteInstanceId, hasSiblingInstances ? "" : " and its route " + instance.RouteId, statusId);
             return true;
         }
 

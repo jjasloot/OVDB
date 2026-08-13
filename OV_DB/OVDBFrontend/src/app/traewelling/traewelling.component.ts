@@ -149,9 +149,14 @@ export class TrawellingComponent implements OnInit, OnDestroy {
     if (this.conflictBusy) return;
 
     if (action === 'delete-instance') {
+      // When this is the route's only trip, the backend removes the route as well —
+      // say so before asking for confirmation
+      const confirmKey = conflict.isLastInstanceOnRoute
+        ? 'TRAEWELLING.CONFLICT_DELETE_CONFIRM_WITH_ROUTE'
+        : 'TRAEWELLING.CONFLICT_DELETE_CONFIRM';
       const dialogRef = this.dialog.open(AreYouSureDialogComponent, {
         ...STANDARD_DIALOG,
-        data: { item: this.translateService.instant('TRAEWELLING.CONFLICT_DELETE_CONFIRM') },
+        data: { item: this.translateService.instant(confirmKey) },
       });
       const confirmed = await dialogRef.afterClosed().pipe(first()).toPromise();
       if (!confirmed) return;

@@ -39,6 +39,7 @@ export interface TrawellingConflict {
   instanceDate: string;
   instanceStartTime?: string;
   instanceEndTime?: string;
+  isLastInstanceOnRoute: boolean;
   newTrip?: TrawellingTrip;
 }
 

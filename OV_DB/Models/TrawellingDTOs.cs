@@ -662,6 +662,8 @@ namespace OV_DB.Models
         public DateTime InstanceDate { get; set; }
         public DateTime? InstanceStartTime { get; set; }
         public DateTime? InstanceEndTime { get; set; }
+        /// <summary>True when this is the route's only trip, so deleting it deletes the route too</summary>
+        public bool IsLastInstanceOnRoute { get; set; }
         /// <summary>The upstream status as it is now (null only for unparsable payloads)</summary>
         public TrawellingTripDto NewTrip { get; set; }
     }
