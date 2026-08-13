@@ -7,16 +7,23 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import { MatDialog } from '@angular/material/dialog';
+import { first } from 'rxjs/operators';
 import { TrawellingService } from './services/traewelling.service';
 import { TraewellingLiveService } from './services/traewelling-live.service';
 import {
   TrawellingConnectionStatus,
   TrawellingTripsResponse,
   TrawellingTrip,
+  TrawellingConflict,
+  TrawellingConflictAction,
   TraewellingAlert,
   TraewellingAlertTranslation
 } from '../models/traewelling.model';
 import { TripCardComponent } from './components/trip-card/trip-card.component';
+import { ConflictCardComponent } from './components/conflict-card/conflict-card.component';
+import { AreYouSureDialogComponent } from '../are-you-sure-dialog/are-you-sure-dialog.component';
+import { STANDARD_DIALOG } from '../constants/dialog-sizes';
 
 @Component({
   selector: 'app-traewelling',
@@ -28,7 +35,8 @@ import { TripCardComponent } from './components/trip-card/trip-card.component';
     MatIconModule,
     MatProgressSpinnerModule,
     TranslateModule,
-    TripCardComponent
+    TripCardComponent,
+    ConflictCardComponent
   ],
   templateUrl: './traewelling.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
@@ -39,20 +47,23 @@ export class TrawellingComponent implements OnInit, OnDestroy {
   private liveService = inject(TraewellingLiveService);
   private snackBar = inject(MatSnackBar);
   private translateService = inject(TranslateService);
+  private dialog = inject(MatDialog);
 
   connectionStatus: TrawellingConnectionStatus | null = null;
   trips: TrawellingTrip[] = [];
+  conflicts: TrawellingConflict[] = [];
   alerts: TraewellingAlert[] = [];
   isLoading = true;
   isLoadingMore = false;
   hasMorePages = false;
   currentPage = 1;
+  conflictBusy = false;
   private liveSubscriptions: Subscription[] = [];
 
   async ngOnInit() {
     await this.loadConnectionStatus();
     if (this.connectionStatus?.connected) {
-      await Promise.all([this.loadTrips(), this.loadAlerts()]);
+      await Promise.all([this.loadTrips(), this.loadAlerts(), this.loadConflicts()]);
       if (this.connectionStatus.liveSyncEnabled) {
         this.startLiveUpdates();
       }
@@ -111,6 +122,50 @@ export class TrawellingComponent implements OnInit, OnDestroy {
       this.alerts = await this.trawellingService.getAlerts() ?? [];
     } catch {
       // Alerts are non-critical; ignore errors silently
+    }
+  }
+
+  private async loadConflicts() {
+    try {
+      this.conflicts = await this.trawellingService.getConflicts() ?? [];
+    } catch {
+      // The conflicts section simply stays empty; the global error toast already fired
+    }
+  }
+
+  async resolveConflict(conflict: TrawellingConflict, action: TrawellingConflictAction) {
+    if (this.conflictBusy) return;
+
+    if (action === 'delete-instance') {
+      const dialogRef = this.dialog.open(AreYouSureDialogComponent, {
+        ...STANDARD_DIALOG,
+        data: { item: this.translateService.instant('TRAEWELLING.CONFLICT_DELETE_CONFIRM') },
+      });
+      const confirmed = await dialogRef.afterClosed().pipe(first()).toPromise();
+      if (!confirmed) return;
+    }
+
+    this.conflictBusy = true;
+    try {
+      const success = await this.trawellingService.resolveConflict(conflict.statusId, action);
+      if (success) {
+        this.conflicts = this.conflicts.filter(c => c.statusId !== conflict.statusId);
+        if (action === 'reimport') {
+          // The status is pending again — show it in the list below
+          await this.loadTrips();
+        }
+        const messageKey = {
+          'apply-times': 'TRAEWELLING.CONFLICT_APPLIED',
+          'reimport': 'TRAEWELLING.CONFLICT_REIMPORTED',
+          'dismiss': 'TRAEWELLING.CONFLICT_DISMISSED',
+          'delete-instance': 'TRAEWELLING.CONFLICT_INSTANCE_DELETED',
+        }[action];
+        this.snackBar.open(this.translateService.instant(messageKey), this.translateService.instant('CLOSE'), { duration: 4000 });
+      }
+    } catch {
+      // The global error interceptor already showed a toast
+    } finally {
+      this.conflictBusy = false;
     }
   }
 

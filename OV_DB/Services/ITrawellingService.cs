@@ -91,6 +91,35 @@ namespace OV_DB.Services
         Task RemoveFromInboxAsync(int userId, int statusId);
 
         /// <summary>
+        /// List imported trips whose Träwelling status was edited or deleted upstream,
+        /// awaiting the user's decision
+        /// </summary>
+        /// <param name="user">User to list conflicts for</param>
+        Task<List<TrawellingConflictDto>> GetConflictsAsync(User user);
+
+        /// <summary>
+        /// Apply the upstream time changes of a ChangedAfterImport conflict to the linked
+        /// RouteInstance and resolve the conflict
+        /// </summary>
+        Task<bool> ApplyConflictTimesAsync(User user, int statusId);
+
+        /// <summary>
+        /// Unlink the RouteInstance and put the status back in the unimported list
+        /// </summary>
+        Task<bool> ReimportConflictAsync(User user, int statusId);
+
+        /// <summary>
+        /// Dismiss a conflict; a dismissed change won't re-flag unless the journey facts
+        /// change again
+        /// </summary>
+        Task<bool> DismissConflictAsync(User user, int statusId);
+
+        /// <summary>
+        /// Delete the linked RouteInstance following an upstream deletion (DeletedUpstream)
+        /// </summary>
+        Task<bool> DeleteInstanceForConflictAsync(User user, int statusId);
+
+        /// <summary>
         /// Check whether the user's stored webhook still exists and is enabled upstream
         /// </summary>
         /// <param name="user">User to check</param>

@@ -48,6 +48,20 @@
 
   @else{
 
+  <!-- Upstream conflicts: imported trips edited or deleted on Träwelling -->
+  @if (conflicts.length > 0) {
+  <div class="conflicts-container">
+    <h3 class="conflicts-title">
+      <mat-icon>sync_problem</mat-icon>
+      {{ 'TRAEWELLING.CONFLICTS_TITLE' | translate }}
+    </h3>
+    @for (conflict of conflicts; track conflict.statusId) {
+    <app-conflict-card [conflict]="conflict" [busy]="conflictBusy"
+      (resolve)="resolveConflict(conflict, $event)" />
+    }
+  </div>
+  }
+
   @if(trips.length===0){
   <!-- Empty State -->
   <mat-card class="empty-card">

@@ -645,6 +645,27 @@ namespace OV_DB.Models
         public bool HasMorePages { get; set; }
     }
 
+    /// <summary>
+    /// An imported trip whose Träwelling status was edited or deleted upstream after import,
+    /// awaiting the user's decision.
+    /// </summary>
+    public class TrawellingConflictDto
+    {
+        public int StatusId { get; set; }
+        /// <summary>ChangedAfterImport or DeletedUpstream</summary>
+        public string State { get; set; }
+        public DateTime LastEventAt { get; set; }
+        public int RouteInstanceId { get; set; }
+        public string RouteName { get; set; }
+        public string RouteFrom { get; set; }
+        public string RouteTo { get; set; }
+        public DateTime InstanceDate { get; set; }
+        public DateTime? InstanceStartTime { get; set; }
+        public DateTime? InstanceEndTime { get; set; }
+        /// <summary>The upstream status as it is now (null only for unparsable payloads)</summary>
+        public TrawellingTripDto NewTrip { get; set; }
+    }
+
     public class LinkToRouteInstanceRequest
     {
         public int StatusId { get; set; }

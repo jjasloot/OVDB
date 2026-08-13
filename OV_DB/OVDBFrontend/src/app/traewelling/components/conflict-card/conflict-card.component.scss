@@ -1,0 +1,62 @@
+.conflict-card {
+  margin-bottom: 12px;
+
+  &.conflict-changed {
+    border-left: 4px solid #ff9800;
+  }
+
+  &.conflict-deleted {
+    border-left: 4px solid #f44336;
+  }
+
+  .conflict-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+  }
+
+  .diff-table {
+    border-collapse: collapse;
+
+    th,
+    td {
+      text-align: left;
+      padding: 2px 16px 2px 0;
+      font-size: 0.9em;
+    }
+
+    th {
+      font-weight: 500;
+      opacity: 0.7;
+    }
+
+    tr.changed td:last-child {
+      font-weight: 600;
+      color: #e65100;
+    }
+  }
+
+  .new-route {
+    margin: 8px 0 0;
+    font-size: 0.9em;
+    opacity: 0.85;
+  }
+
+  .deleted-explanation {
+    margin: 0;
+    font-size: 0.9em;
+  }
+
+  mat-card-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+}
+
+:host-context(.dark-theme) {
+  .conflict-card .diff-table tr.changed td:last-child {
+    color: #ffb74d;
+  }
+}

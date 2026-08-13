@@ -568,6 +568,155 @@ namespace OV_DB.Services
                 .ExecuteDeleteAsync();
         }
 
+        public async Task<List<TrawellingConflictDto>> GetConflictsAsync(User user)
+        {
+            var rows = await _dbContext.TrawellingInboxStatuses
+                .Where(s => s.UserId == user.Id
+                    && (s.State == TrawellingInboxState.ChangedAfterImport || s.State == TrawellingInboxState.DeletedUpstream))
+                .OrderByDescending(s => s.LastEventAt)
+                .ToListAsync();
+
+            var conflicts = new List<TrawellingConflictDto>();
+            foreach (var row in rows)
+            {
+                var instance = await FindImportedInstanceAsync(user, row.TrawellingStatusId);
+                if (instance == null)
+                {
+                    // The user deleted the trip through the normal UI in the meantime;
+                    // there is nothing left to resolve
+                    _dbContext.TrawellingInboxStatuses.Remove(row);
+                    continue;
+                }
+
+                TrawellingTripDto newTrip = null;
+                try
+                {
+                    var status = JsonConvert.DeserializeObject<TrawellingStatus>(row.PayloadJson);
+                    newTrip = await MapStatusToTripDtoAsync(user, status);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Could not parse conflict payload for status {StatusId}, user {UserId}", row.TrawellingStatusId, user.Id);
+                }
+
+                conflicts.Add(new TrawellingConflictDto
+                {
+                    StatusId = row.TrawellingStatusId,
+                    State = row.State.ToString(),
+                    LastEventAt = row.LastEventAt,
+                    RouteInstanceId = instance.RouteInstanceId,
+                    RouteName = instance.Route.Name,
+                    RouteFrom = instance.Route.From,
+                    RouteTo = instance.Route.To,
+                    InstanceDate = instance.Date,
+                    InstanceStartTime = instance.StartTime,
+                    InstanceEndTime = instance.EndTime,
+                    NewTrip = newTrip,
+                });
+            }
+            await _dbContext.SaveChangesAsync();
+            return conflicts;
+        }
+
+        public async Task<bool> ApplyConflictTimesAsync(User user, int statusId)
+        {
+            var row = await GetConflictRowAsync(user, statusId, TrawellingInboxState.ChangedAfterImport);
+            var instance = await FindImportedInstanceAsync(user, statusId);
+            if (row == null || instance == null)
+                return false;
+
+            var status = JsonConvert.DeserializeObject<TrawellingStatus>(row.PayloadJson);
+            var trip = await MapStatusToTripDtoAsync(user, status);
+            if (trip?.Transport == null)
+                return false;
+
+            // Same semantics as linking a status: real times win, scheduled as fallback,
+            // all already converted to local time by the mapping
+            instance.StartTime = trip.Transport.Origin.DepartureReal ?? trip.Transport.Origin.DepartureScheduled;
+            instance.EndTime = trip.Transport.Destination.ArrivalReal ?? trip.Transport.Destination.ArrivalScheduled;
+            instance.ScheduledStartTime = trip.Transport.Origin.DepartureScheduled;
+            instance.ScheduledEndTime = trip.Transport.Destination.ArrivalScheduled;
+            if (instance.StartTime.HasValue)
+                instance.Date = instance.StartTime.Value.Date;
+            if (instance.StartTime.HasValue && instance.EndTime.HasValue)
+            {
+                instance.DurationHours = _timezoneService.CalculateDurationInHours(
+                    instance.StartTime.Value,
+                    instance.EndTime.Value,
+                    instance.Route.LineString);
+            }
+
+            _dbContext.TrawellingInboxStatuses.Remove(row);
+            await _dbContext.SaveChangesAsync();
+            _logger.LogInformation("Applied upstream time changes of status {StatusId} to RouteInstance {RouteInstanceId}", statusId, instance.RouteInstanceId);
+            return true;
+        }
+
+        public async Task<bool> ReimportConflictAsync(User user, int statusId)
+        {
+            var row = await GetConflictRowAsync(user, statusId, TrawellingInboxState.ChangedAfterImport);
+            var instance = await FindImportedInstanceAsync(user, statusId);
+            if (row == null || instance == null)
+                return false;
+
+            // Unlink and hand the status back to the unimported list for a fresh import
+            instance.TrawellingStatusId = null;
+            row.State = TrawellingInboxState.Pending;
+            row.LastEventAt = DateTime.UtcNow;
+            await _dbContext.SaveChangesAsync();
+            _logger.LogInformation("Unlinked status {StatusId} from RouteInstance {RouteInstanceId} for re-import", statusId, instance.RouteInstanceId);
+            return true;
+        }
+
+        public async Task<bool> DismissConflictAsync(User user, int statusId)
+        {
+            var row = await _dbContext.TrawellingInboxStatuses
+                .SingleOrDefaultAsync(s => s.UserId == user.Id && s.TrawellingStatusId == statusId
+                    && (s.State == TrawellingInboxState.ChangedAfterImport || s.State == TrawellingInboxState.DeletedUpstream));
+            if (row == null)
+                return false;
+
+            if (row.State == TrawellingInboxState.DeletedUpstream)
+            {
+                // The status is gone upstream, no further events can arrive — nothing to remember
+                _dbContext.TrawellingInboxStatuses.Remove(row);
+            }
+            else
+            {
+                // Keep the dismissed payload so the same change can't re-flag (fingerprint check)
+                row.State = TrawellingInboxState.ConflictDismissed;
+                row.LastEventAt = DateTime.UtcNow;
+            }
+            await _dbContext.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<bool> DeleteInstanceForConflictAsync(User user, int statusId)
+        {
+            var row = await GetConflictRowAsync(user, statusId, TrawellingInboxState.DeletedUpstream);
+            var instance = await FindImportedInstanceAsync(user, statusId);
+            if (row == null || instance == null)
+                return false;
+
+            _dbContext.RouteInstances.Remove(instance);
+            _dbContext.TrawellingInboxStatuses.Remove(row);
+            await _dbContext.SaveChangesAsync();
+            _logger.LogInformation("Deleted RouteInstance {RouteInstanceId} following upstream deletion of status {StatusId}", instance.RouteInstanceId, statusId);
+            return true;
+        }
+
+        private Task<TrawellingInboxStatus> GetConflictRowAsync(User user, int statusId, TrawellingInboxState state)
+            => _dbContext.TrawellingInboxStatuses
+                .SingleOrDefaultAsync(s => s.UserId == user.Id && s.TrawellingStatusId == statusId && s.State == state);
+
+        private Task<RouteInstance> FindImportedInstanceAsync(User user, int statusId)
+            => _dbContext.RouteInstances
+                .Include(ri => ri.Route)
+                .Where(ri => ri.TrawellingStatusId == statusId)
+                .Where(ri => ri.RouteInstanceMaps.Any(rim => rim.Map.UserId == user.Id)
+                    || ri.Route.RouteMaps.Any(rm => rm.Map.UserId == user.Id))
+                .FirstOrDefaultAsync();
+
         public async Task<TrawellingWebhookHealth> GetWebhookHealthAsync(User user)
         {
             if (!user.TraewellingWebhookId.HasValue)
@@ -685,7 +834,14 @@ namespace OV_DB.Services
                     {
                         // Curated data is never auto-changed; flag the upstream edit for review
                         if (eventType == "checkin_update")
+                        {
+                            if (inboxRow?.State == TrawellingInboxState.ConflictDismissed
+                                && DismissedFingerprintMatches(inboxRow, status))
+                            {
+                                break; // the same change the user already dismissed — don't nag
+                            }
                             UpsertInboxRow(inboxRow, user.Id, statusId, statusJson, status, TrawellingInboxState.ChangedAfterImport);
+                        }
                         break;
                     }
                     // Pending or unknown: (re)store as pending — an update for a status we
@@ -789,6 +945,39 @@ namespace OV_DB.Services
                 _logger.LogError(ex, "Error fetching full status {StatusId} for user {UserId}", statusId, user.Id);
                 return (null, null);
             }
+        }
+
+        private bool DismissedFingerprintMatches(TrawellingInboxStatus dismissedRow, TrawellingStatus incoming)
+        {
+            try
+            {
+                var dismissed = JsonConvert.DeserializeObject<TrawellingStatus>(dismissedRow.PayloadJson);
+                return dismissed != null && ConflictFingerprint(dismissed) == ConflictFingerprint(incoming);
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// The journey facts a conflict flag is about: line and the stations/times of both
+        /// ends. Social fields (likes, tags, body) deliberately don't count — a change there
+        /// must not re-flag a dismissed conflict.
+        /// </summary>
+        private static string ConflictFingerprint(TrawellingStatus status)
+        {
+            var checkin = status?.Checkin;
+            return string.Join("|",
+                checkin?.LineName,
+                checkin?.Origin?.Station?.Name,
+                checkin?.Destination?.Station?.Name,
+                checkin?.ManualDeparture?.UtcDateTime.ToString("o"),
+                checkin?.Origin?.DeparturePlanned?.UtcDateTime.ToString("o"),
+                checkin?.Origin?.DepartureReal?.UtcDateTime.ToString("o"),
+                checkin?.ManualArrival?.UtcDateTime.ToString("o"),
+                checkin?.Destination?.ArrivalPlanned?.UtcDateTime.ToString("o"),
+                checkin?.Destination?.ArrivalReal?.UtcDateTime.ToString("o"));
         }
 
         private void UpsertInboxRow(TrawellingInboxStatus row, int userId, int statusId, string payloadJson, TrawellingStatus status, TrawellingInboxState state)

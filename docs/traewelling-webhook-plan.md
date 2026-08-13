@@ -1,6 +1,6 @@
 # Träwelling webhooks — live check-in sync plan
 
-Status: **phases 1 (inbox + sweep) and 2 (webhook) implemented** (2026-08-13); phase 3 (conflict UX) planned
+Status: **all phases implemented** (1+2 on 2026-08-13, 3 on 2026-08-14; Telegram skipped)
 
 Goal: new Träwelling check-ins appear in OVDB's "unimported trips" list on their own,
 without paging through the statuses API. The manual review-before-import flow stays
@@ -160,7 +160,13 @@ New `User` columns: `TraewellingWebhookId` (long?), `TraewellingWebhookSecret`
    Payloads are pre-serialized with the REST API's Newtonsoft settings so the shape
    matches the list endpoint exactly. Conflict states still have no live push (phase 3).
 3. **Conflict UX** — `ChangedAfterImport` / `DeletedUpstream` sections and actions on
-   the unimported page.
+   the unimported page. **Implemented 2026-08-14**: a "Changed on Träwelling" section
+   with per-conflict cards (OVDB vs upstream diff of departure/arrival, minute
+   precision) and the planned actions. Dismissal keeps the row as `ConflictDismissed`
+   with its payload; a later delivery only re-flags when the *conflict fingerprint*
+   (line, station names, all six time fields) differs — likes/tags/body edits never
+   re-flag. Deleting the OVDB trip asks for confirmation; upstream-deleted dismissals
+   drop the row entirely (no further events can arrive).
 4. ~~(Optional) Telegram ping~~ — **skipped for now** (2026-08-13). If ever revisited: conflict
    alerts + webhook-health alerts with inline action buttons, no per-check-in pings.
 

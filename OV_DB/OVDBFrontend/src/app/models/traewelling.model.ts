@@ -28,6 +28,22 @@ export interface TrawellingTripsResponse {
   hasMorePages: boolean;
 }
 
+export interface TrawellingConflict {
+  statusId: number;
+  state: 'ChangedAfterImport' | 'DeletedUpstream';
+  lastEventAt: string;
+  routeInstanceId: number;
+  routeName?: string;
+  routeFrom?: string;
+  routeTo?: string;
+  instanceDate: string;
+  instanceStartTime?: string;
+  instanceEndTime?: string;
+  newTrip?: TrawellingTrip;
+}
+
+export type TrawellingConflictAction = 'apply-times' | 'reimport' | 'dismiss' | 'delete-instance';
+
 export interface TrawellingTrip {
   id: number;
   body?: string;

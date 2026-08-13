@@ -386,6 +386,83 @@ namespace OV_DB.Controllers
         }
 
         /// <summary>
+        /// Imported trips whose Träwelling status changed or disappeared upstream
+        /// </summary>
+        [HttpGet("conflicts")]
+        public async Task<IActionResult> GetConflicts()
+        {
+            var user = await GetAuthorizedUserAsync();
+            if (user == null)
+                return Unauthorized();
+
+            try
+            {
+                return Ok(await _trawellingService.GetConflictsAsync(user));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching Träwelling conflicts");
+                return StatusCode(500, "Error fetching conflicts");
+            }
+        }
+
+        [HttpPost("conflicts/{statusId:int}/apply-times")]
+        public async Task<IActionResult> ApplyConflictTimes(int statusId)
+        {
+            var user = await GetAuthorizedUserAsync();
+            if (user == null)
+                return Unauthorized();
+
+            return await _trawellingService.ApplyConflictTimesAsync(user, statusId)
+                ? Ok(new { success = true })
+                : BadRequest("Conflict not found or times could not be applied");
+        }
+
+        [HttpPost("conflicts/{statusId:int}/reimport")]
+        public async Task<IActionResult> ReimportConflict(int statusId)
+        {
+            var user = await GetAuthorizedUserAsync();
+            if (user == null)
+                return Unauthorized();
+
+            return await _trawellingService.ReimportConflictAsync(user, statusId)
+                ? Ok(new { success = true })
+                : BadRequest("Conflict not found");
+        }
+
+        [HttpPost("conflicts/{statusId:int}/dismiss")]
+        public async Task<IActionResult> DismissConflict(int statusId)
+        {
+            var user = await GetAuthorizedUserAsync();
+            if (user == null)
+                return Unauthorized();
+
+            return await _trawellingService.DismissConflictAsync(user, statusId)
+                ? Ok(new { success = true })
+                : BadRequest("Conflict not found");
+        }
+
+        [HttpPost("conflicts/{statusId:int}/delete-instance")]
+        public async Task<IActionResult> DeleteInstanceForConflict(int statusId)
+        {
+            var user = await GetAuthorizedUserAsync();
+            if (user == null)
+                return Unauthorized();
+
+            return await _trawellingService.DeleteInstanceForConflictAsync(user, statusId)
+                ? Ok(new { success = true })
+                : BadRequest("Conflict not found");
+        }
+
+        private async Task<User> GetAuthorizedUserAsync()
+        {
+            var userId = GetCurrentUserId();
+            if (!userId.HasValue)
+                return null;
+            return await _dbContext.Users.FindAsync(userId.Value);
+        }
+
+        /// <summary>
         /// Get statistics about user's Träwelling integration
         /// </summary>
         [HttpGet("stats")]

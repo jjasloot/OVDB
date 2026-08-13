@@ -16,7 +16,9 @@ import {
   TrawellingTripContext,
   TrawellingTransportCategory,
   RoutesListResponse,
-  TraewellingAlert
+  TraewellingAlert,
+  TrawellingConflict,
+  TrawellingConflictAction
 } from '../../models/traewelling.model';
 import { TraewellingTagMapping } from '../../models/user-profile.model';
 import { ApiService } from '../../services/api.service';
@@ -54,6 +56,20 @@ export class TrawellingService {
     return this.http.get<TrawellingTripsResponse>(`${this.baseUrl}/unimported`, { params })
       .pipe(first())
       .toPromise();
+  }
+
+  async getConflicts(): Promise<TrawellingConflict[]> {
+    return this.http.get<TrawellingConflict[]>(`${this.baseUrl}/conflicts`)
+      .pipe(first())
+      .toPromise();
+  }
+
+  async resolveConflict(statusId: number, action: TrawellingConflictAction): Promise<boolean> {
+    const response = await this.http.post<{ success: boolean }>(
+      `${this.baseUrl}/conflicts/${statusId}/${action}`, {})
+      .pipe(first())
+      .toPromise();
+    return response?.success ?? false;
   }
 
   async ignoreTrip(tripId: number): Promise<TrawellingIgnoreResponse> {

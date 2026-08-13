@@ -1,0 +1,68 @@
+<mat-card class="conflict-card" [ngClass]="isDeleted ? 'conflict-deleted' : 'conflict-changed'">
+  <mat-card-header>
+    <mat-icon mat-card-avatar class="conflict-icon">{{ isDeleted ? 'delete_forever' : 'edit_note' }}</mat-icon>
+    <mat-card-title>{{ title }}</mat-card-title>
+    <mat-card-subtitle>
+      {{ (isDeleted ? 'TRAEWELLING.CONFLICT_DELETED_SUBTITLE' : 'TRAEWELLING.CONFLICT_CHANGED_SUBTITLE') | translate }}
+      · {{ conflict.instanceDate | date:'mediumDate' }}
+    </mat-card-subtitle>
+  </mat-card-header>
+
+  <mat-card-content>
+    @if (!isDeleted) {
+    <table class="diff-table">
+      <thead>
+        <tr>
+          <th></th>
+          <th>{{ 'TRAEWELLING.CONFLICT_CURRENT' | translate }}</th>
+          <th>{{ 'TRAEWELLING.CONFLICT_UPSTREAM' | translate }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr [class.changed]="startChanged">
+          <td>{{ 'TRAEWELLING.CONFLICT_DEPARTURE' | translate }}</td>
+          <td>{{ (conflict.instanceStartTime | date:'short') || '—' }}</td>
+          <td>{{ (newStart | date:'short') || '—' }}</td>
+        </tr>
+        <tr [class.changed]="endChanged">
+          <td>{{ 'TRAEWELLING.CONFLICT_ARRIVAL' | translate }}</td>
+          <td>{{ (conflict.instanceEndTime | date:'short') || '—' }}</td>
+          <td>{{ (newEnd | date:'short') || '—' }}</td>
+        </tr>
+      </tbody>
+    </table>
+    @if (newRoute) {
+    <p class="new-route">
+      @if (newLine) { <strong>{{ newLine }}</strong> }
+      {{ newRoute }}
+    </p>
+    }
+    } @else {
+    <p class="deleted-explanation">{{ 'TRAEWELLING.CONFLICT_DELETED_EXPLANATION' | translate }}</p>
+    }
+  </mat-card-content>
+
+  <mat-card-actions>
+    @if (!isDeleted) {
+    <button mat-stroked-button color="primary" [disabled]="busy" (click)="resolve.emit('apply-times')">
+      <mat-icon>schedule</mat-icon>
+      {{ 'TRAEWELLING.CONFLICT_APPLY_TIMES' | translate }}
+    </button>
+    <button mat-stroked-button [disabled]="busy" (click)="resolve.emit('reimport')">
+      <mat-icon>replay</mat-icon>
+      {{ 'TRAEWELLING.CONFLICT_REIMPORT' | translate }}
+    </button>
+    <button mat-button [disabled]="busy" (click)="resolve.emit('dismiss')">
+      {{ 'TRAEWELLING.CONFLICT_DISMISS' | translate }}
+    </button>
+    } @else {
+    <button mat-stroked-button color="warn" [disabled]="busy" (click)="resolve.emit('delete-instance')">
+      <mat-icon>delete</mat-icon>
+      {{ 'TRAEWELLING.CONFLICT_DELETE_INSTANCE' | translate }}
+    </button>
+    <button mat-stroked-button [disabled]="busy" (click)="resolve.emit('dismiss')">
+      {{ 'TRAEWELLING.CONFLICT_KEEP' | translate }}
+    </button>
+    }
+  </mat-card-actions>
+</mat-card>

@@ -9,6 +9,12 @@ namespace OVDB_database.Models
         Pending = 0,
         ChangedAfterImport = 1,
         DeletedUpstream = 2,
+        /// <summary>
+        /// The user dismissed a ChangedAfterImport flag. The row is kept (with the dismissed
+        /// payload) so an identical later delivery doesn't re-flag, while a genuinely new
+        /// change still does — compared via the conflict fingerprint.
+        /// </summary>
+        ConflictDismissed = 3,
     }
 
     public enum TrawellingInboxSource
