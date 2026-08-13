@@ -32,11 +32,16 @@ export class HttpErrorInterceptor implements HttpInterceptor {
           const isOsmOutage =
             (error.status === 502 || error.status === 504) &&
             /\/api\/(station)?importer\//i.test(req.url);
+          // Träwelling endpoints return 429 when its API rate limit is exhausted.
+          const isTraewellingRateLimit =
+            error.status === 429 && /\/api\/traewelling\//i.test(req.url);
           const key = isOsmOutage
             ? "ERRORS.OSM_UNAVAILABLE"
-            : error.status === 0
-              ? "ERRORS.NETWORK"
-              : "ERRORS.GENERIC";
+            : isTraewellingRateLimit
+              ? "ERRORS.TRAEWELLING_RATE_LIMITED"
+              : error.status === 0
+                ? "ERRORS.NETWORK"
+                : "ERRORS.GENERIC";
           this.snackBar.open(
             this.translateService.instant(key),
             this.translateService.instant("CLOSE"),

@@ -47,6 +47,7 @@
   "ERRORS.NETWORK": "Kan de server niet bereiken. Controleer je verbinding.",
   "ERRORS.OSM_UNAVAILABLE": "OpenStreetMap is niet bereikbaar. Probeer het later opnieuw.",
   "ERRORS.SEARCH_FAILED": "Zoeken is mislukt. Mogelijk is de OpenStreetMap-service druk.",
+  "ERRORS.TRAEWELLING_RATE_LIMITED": "Träwelling beperkt tijdelijk het aantal verzoeken. Probeer het over een minuut opnieuw.",
   "RETRY": "Opnieuw proberen",
   "WIZARD.STEP_SEARCH": "Zoeken",
   "WIZARD.STEP_PICK_LINE": "Lijn kiezen",

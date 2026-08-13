@@ -55,6 +55,8 @@ namespace OV_DB.Services
                 cancellationToken.ThrowIfCancellationRequested();
                 if (await trawellingService.EnsureValidTokenAsync(user))
                     refreshed++;
+                // Daily job, so latency is free — don't burst through the shared rate limit
+                await Task.Delay(TimeSpan.FromSeconds(2), cancellationToken);
             }
 
             logger.LogInformation("Träwelling token refresh: {Refreshed}/{Total} idle connections refreshed",

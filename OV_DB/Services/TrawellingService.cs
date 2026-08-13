@@ -33,20 +33,15 @@ namespace OV_DB.Services
         private readonly string _authorizeUrl;
         private readonly string _tokenUrl;
         private readonly IMemoryCache _memoryCache;
+        private readonly ITraewellingRateLimiter _rateLimiter;
 
         // Simple in-memory cache for OAuth states - in production, use Redis or database
         private static readonly Dictionary<string, (int UserId, DateTime Expiry)> _oauthStates = new();
         private static readonly object _statelock = new object();
 
 
-        // Rate limiting tracking
-        private int? _rateLimitLimit;
-        private int? _rateLimitRemaining;
-        private DateTime _rateLimitUpdated;
-
-
         public TrawellingService(IHttpClientFactory httpClientFactory, IConfiguration configuration, ITimezoneService timezoneService,
-            OVDBDatabaseContext dbContext, ILogger<TrawellingService> logger, IMemoryCache memoryCache)
+            OVDBDatabaseContext dbContext, ILogger<TrawellingService> logger, IMemoryCache memoryCache, ITraewellingRateLimiter rateLimiter)
         {
             _httpClient = httpClientFactory.CreateClient(HTTP_CLIENT_NAME);
             _configuration = configuration;
@@ -54,6 +49,7 @@ namespace OV_DB.Services
             _dbContext = dbContext;
             _logger = logger;
             _memoryCache = memoryCache;
+            _rateLimiter = rateLimiter;
             _baseUrl = _configuration["Traewelling:BaseUrl"];
             _clientId = _configuration["Traewelling:ClientId"];
             _clientSecret = _configuration["Traewelling:ClientSecret"];
@@ -131,16 +127,17 @@ namespace OV_DB.Services
         {
             try
             {
-                var tokenRequest = new FormUrlEncodedContent(new[]
+                var response = await SendAsync(() => new HttpRequestMessage(HttpMethod.Post, _tokenUrl)
                 {
-                    new KeyValuePair<string, string>("grant_type", "authorization_code"),
-                    new KeyValuePair<string, string>("client_id", _clientId),
-                    new KeyValuePair<string, string>("client_secret", _clientSecret),
-                    new KeyValuePair<string, string>("redirect_uri", _redirectUri),
-                    new KeyValuePair<string, string>("code", code)
+                    Content = new FormUrlEncodedContent(new[]
+                    {
+                        new KeyValuePair<string, string>("grant_type", "authorization_code"),
+                        new KeyValuePair<string, string>("client_id", _clientId),
+                        new KeyValuePair<string, string>("client_secret", _clientSecret),
+                        new KeyValuePair<string, string>("redirect_uri", _redirectUri),
+                        new KeyValuePair<string, string>("code", code)
+                    })
                 });
-
-                var response = await _httpClient.PostAsync(_tokenUrl, tokenRequest);
 
                 if (!response.IsSuccessStatusCode)
                 {
@@ -196,15 +193,16 @@ namespace OV_DB.Services
                     return false;
                 }
 
-                var refreshRequest = new FormUrlEncodedContent(new[]
+                var response = await SendAsync(() => new HttpRequestMessage(HttpMethod.Post, _tokenUrl)
                 {
-                    new KeyValuePair<string, string>("grant_type", "refresh_token"),
-                    new KeyValuePair<string, string>("client_id", _clientId),
-                    new KeyValuePair<string, string>("client_secret", _clientSecret),
-                    new KeyValuePair<string, string>("refresh_token", user.TrawellingRefreshToken)
+                    Content = new FormUrlEncodedContent(new[]
+                    {
+                        new KeyValuePair<string, string>("grant_type", "refresh_token"),
+                        new KeyValuePair<string, string>("client_id", _clientId),
+                        new KeyValuePair<string, string>("client_secret", _clientSecret),
+                        new KeyValuePair<string, string>("refresh_token", user.TrawellingRefreshToken)
+                    })
                 });
-
-                var response = await _httpClient.PostAsync(_tokenUrl, refreshRequest);
 
                 if (!response.IsSuccessStatusCode)
                 {
@@ -265,14 +263,7 @@ namespace OV_DB.Services
                 if (!await EnsureValidTokenAsync(user))
                     return null;
 
-                if (!_httpClient.DefaultRequestHeaders.Contains("Authorization"))
-                    _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {user.TrawellingAccessToken}");
-                else _httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", user.TrawellingAccessToken);
-
-                var response = await _httpClient.GetAsync($"{_baseUrl}/auth/user");
-
-                // Update rate limit tracking
-                UpdateRateLimitInfo(response);
+                var response = await SendAsync(() => CreateApiRequest(HttpMethod.Get, $"{_baseUrl}/auth/user", user));
 
                 if (!response.IsSuccessStatusCode)
                 {
@@ -317,23 +308,14 @@ namespace OV_DB.Services
                     }
                 }
 
-                if (!_httpClient.DefaultRequestHeaders.Contains("Authorization"))
-                    _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {user.TrawellingAccessToken}");
-                else _httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", user.TrawellingAccessToken);
-
                 TrawellingStatusesResponse statusesResponse = null;
                 int currentPage = page;
 
                 // Loop through pages until we find one with unimported trips or reach the end
                 do
                 {
-                    if (_rateLimitRemaining.HasValue && _rateLimitRemaining.Value < 5)
-                    {
-                        await Task.Delay(1000);
-                    }
-
-                    var response = await ExecuteWithExponentialBackoffAsync(() =>
-                        _httpClient.GetAsync($"{_baseUrl}/user/{user.TrawellingUsername}/statuses?page={currentPage}"));
+                    var response = await SendAsync(() =>
+                        CreateApiRequest(HttpMethod.Get, $"{_baseUrl}/user/{user.TrawellingUsername}/statuses?page={currentPage}", user));
 
                     if (!response.IsSuccessStatusCode)
                     {
@@ -845,11 +827,8 @@ namespace OV_DB.Services
                 if (!await EnsureValidTokenAsync(user))
                     return null;
 
-                _httpClient.DefaultRequestHeaders.Authorization =
-                    new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", user.TrawellingAccessToken);
-
-                var response = await ExecuteWithExponentialBackoffAsync(() =>
-                    _httpClient.GetAsync($"{_baseUrl}/status/{statusId}"));
+                var response = await SendAsync(() =>
+                    CreateApiRequest(HttpMethod.Get, $"{_baseUrl}/status/{statusId}", user));
 
                 response.EnsureSuccessStatusCode();
 
@@ -1019,11 +998,7 @@ namespace OV_DB.Services
                 if (!await EnsureValidTokenAsync(user))
                     return new List<TrawellingAlert>();
 
-                if (!_httpClient.DefaultRequestHeaders.Contains("Authorization"))
-                    _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {user.TrawellingAccessToken}");
-                else _httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", user.TrawellingAccessToken);
-
-                var response = await _httpClient.GetAsync($"{_baseUrl}/alerts");
+                var response = await SendAsync(() => CreateApiRequest(HttpMethod.Get, $"{_baseUrl}/alerts", user));
 
                 if (!response.IsSuccessStatusCode)
                 {
@@ -1097,18 +1072,28 @@ namespace OV_DB.Services
             return (found, updated, failed);
         }
 
-        private async Task<HttpResponseMessage> ExecuteWithExponentialBackoffAsync(Func<Task<HttpResponseMessage>> request, int maxRetries = 5)
+        /// <summary>
+        /// Central pipeline for every Träwelling HTTP call: waits for the shared rate-limit
+        /// window when exhausted, builds a fresh request per attempt (auth header included,
+        /// no shared-client header mutation), records rate-limit headers from every response
+        /// and retries on 429/503.
+        /// </summary>
+        private static HttpRequestMessage CreateApiRequest(HttpMethod method, string url, User user)
+        {
+            var request = new HttpRequestMessage(method, url);
+            request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", user.TrawellingAccessToken);
+            return request;
+        }
+
+        private async Task<HttpResponseMessage> SendAsync(Func<HttpRequestMessage> requestFactory, int maxRetries = 5)
         {
             int attempt = 0;
             while (true)
             {
-                var response = await request();
-                UpdateRateLimitInfo(response);
-
-                if (_rateLimitRemaining < 10)
-                {
-                    await Task.Delay(1000 * 10);
-                }
+                await _rateLimiter.WaitIfLimitedAsync();
+                using var request = requestFactory();
+                var response = await _httpClient.SendAsync(request);
+                _rateLimiter.RecordResponse(response);
 
                 if (response.StatusCode != System.Net.HttpStatusCode.TooManyRequests &&
                     response.StatusCode != System.Net.HttpStatusCode.ServiceUnavailable)
@@ -1120,63 +1105,15 @@ namespace OV_DB.Services
                     return response;
                 }
 
-                // Honour Retry-After header if present, else use exponential backoff
-                TimeSpan delay;
-                if (response.Headers.TryGetValues("Retry-After", out var retryAfterValues) &&
-                    int.TryParse(retryAfterValues.FirstOrDefault(), out var retryAfterSeconds))
-                {
-                    delay = TimeSpan.FromSeconds(retryAfterSeconds);
-                }
-                else
-                {
-                    delay = TimeSpan.FromSeconds(Math.Pow(2, attempt)); // 1s, 2s, 4s, 8s, 16s
-                }
-
-                _logger.LogWarning("Träwelling API returned {StatusCode}. Retrying in {Delay}s (attempt {Attempt}/{MaxRetries}).",
-                    (int)response.StatusCode, delay.TotalSeconds, attempt + 1, maxRetries);
-
-                await Task.Delay(delay);
                 attempt++;
-            }
-        }
+                _logger.LogWarning("Träwelling API returned {StatusCode}. Retrying (attempt {Attempt}/{MaxRetries}).",
+                    (int)response.StatusCode, attempt, maxRetries);
+                response.Dispose();
 
-        private void UpdateRateLimitInfo(HttpResponseMessage response)
-        {
-            try
-            {
-                if (response.Headers.TryGetValues("x-ratelimit-limit", out var limitValues))
-                {
-                    if (int.TryParse(limitValues.FirstOrDefault(), out var limit))
-                    {
-                        _rateLimitLimit = limit;
-                    }
-                }
-
-                if (response.Headers.TryGetValues("x-ratelimit-remaining", out var remainingValues))
-                {
-                    if (int.TryParse(remainingValues.FirstOrDefault(), out var remaining))
-                    {
-                        _rateLimitRemaining = remaining;
-                    }
-                }
-
-                _rateLimitUpdated = DateTime.UtcNow;
-
-                if (_rateLimitLimit.HasValue && _rateLimitRemaining.HasValue)
-                {
-                    _logger.LogDebug("Träwelling API rate limit: {Remaining}/{Limit} remaining",
-                        _rateLimitRemaining.Value, _rateLimitLimit.Value);
-
-                    if (_rateLimitRemaining.Value < 10)
-                    {
-                        _logger.LogWarning("Träwelling API rate limit is low: {Remaining}/{Limit} remaining",
-                            _rateLimitRemaining.Value, _rateLimitLimit.Value);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogDebug(ex, "Error parsing rate limit headers");
+                // The limiter recorded the Retry-After, so WaitIfLimitedAsync at the top of the
+                // loop does the waiting; fall back to exponential backoff if there was none.
+                if (!_rateLimiter.IsLimited)
+                    await Task.Delay(TimeSpan.FromSeconds(Math.Pow(2, attempt)));
             }
         }
     }

@@ -23,13 +23,15 @@ namespace OV_DB.Controllers
         private readonly ITrawellingService _trawellingService;
         private readonly OVDBDatabaseContext _dbContext;
         private readonly ILogger<TraewellingController> _logger;
+        private readonly ITraewellingRateLimiter _rateLimiter;
 
-        public TraewellingController(ITrawellingService trawellingService, 
-            OVDBDatabaseContext dbContext, ILogger<TraewellingController> logger)
+        public TraewellingController(ITrawellingService trawellingService,
+            OVDBDatabaseContext dbContext, ILogger<TraewellingController> logger, ITraewellingRateLimiter rateLimiter)
         {
             _trawellingService = trawellingService;
             _dbContext = dbContext;
             _logger = logger;
+            _rateLimiter = rateLimiter;
         }
 
         /// <summary>
@@ -220,7 +222,10 @@ namespace OV_DB.Controllers
                     return BadRequest("Träwelling account not connected or tokens expired");
 
                 var tripsResponse = await _trawellingService.GetOptimizedTripsAsync(user, page);
-                
+
+                if (tripsResponse == null && _rateLimiter.IsLimited)
+                    return StatusCode(429, "Träwelling is rate limiting us, please try again in a minute");
+
                 if (tripsResponse == null)
                     return StatusCode(500, "Failed to fetch trips from Träwelling");
 

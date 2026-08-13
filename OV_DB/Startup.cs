@@ -155,6 +155,8 @@ namespace OV_DB
                 client.DefaultRequestHeaders.Add("User-Agent", "OVDB/1.0 (https://github.com/jjasloot/OVDB; contact-me jaapslootbeek@gmail.com)");
             });
             services.AddScoped<ITrawellingService, TrawellingService>();
+            // Singleton so the Träwelling rate-limit budget is shared across request scopes.
+            services.AddSingleton<ITraewellingRateLimiter, TraewellingRateLimiter>();
             services.AddHostedService<TraewellingTokenRefreshService>();
 
             // Register named HttpClients for different services to avoid socket exhaustion
