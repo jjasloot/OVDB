@@ -579,43 +579,52 @@ namespace OV_DB.Services
             var conflicts = new List<TrawellingConflictDto>();
             foreach (var row in rows)
             {
-                var instance = await FindImportedInstanceAsync(user, row.TrawellingStatusId);
-                if (instance == null)
+                var conflict = await BuildConflictDtoAsync(user, row);
+                if (conflict == null)
                 {
                     // The user deleted the trip through the normal UI in the meantime;
                     // there is nothing left to resolve
                     _dbContext.TrawellingInboxStatuses.Remove(row);
                     continue;
                 }
-
-                TrawellingTripDto newTrip = null;
-                try
-                {
-                    var status = JsonConvert.DeserializeObject<TrawellingStatus>(row.PayloadJson);
-                    newTrip = await MapStatusToTripDtoAsync(user, status);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Could not parse conflict payload for status {StatusId}, user {UserId}", row.TrawellingStatusId, user.Id);
-                }
-
-                conflicts.Add(new TrawellingConflictDto
-                {
-                    StatusId = row.TrawellingStatusId,
-                    State = row.State.ToString(),
-                    LastEventAt = row.LastEventAt,
-                    RouteInstanceId = instance.RouteInstanceId,
-                    RouteName = instance.Route.Name,
-                    RouteFrom = instance.Route.From,
-                    RouteTo = instance.Route.To,
-                    InstanceDate = instance.Date,
-                    InstanceStartTime = instance.StartTime,
-                    InstanceEndTime = instance.EndTime,
-                    NewTrip = newTrip,
-                });
+                conflicts.Add(conflict);
             }
             await _dbContext.SaveChangesAsync();
             return conflicts;
+        }
+
+        /// <summary>Builds the conflict DTO for one row; null when its RouteInstance no longer exists.</summary>
+        private async Task<TrawellingConflictDto> BuildConflictDtoAsync(User user, TrawellingInboxStatus row)
+        {
+            var instance = await FindImportedInstanceAsync(user, row.TrawellingStatusId);
+            if (instance == null)
+                return null;
+
+            TrawellingTripDto newTrip = null;
+            try
+            {
+                var status = JsonConvert.DeserializeObject<TrawellingStatus>(row.PayloadJson);
+                newTrip = await MapStatusToTripDtoAsync(user, status);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Could not parse conflict payload for status {StatusId}, user {UserId}", row.TrawellingStatusId, user.Id);
+            }
+
+            return new TrawellingConflictDto
+            {
+                StatusId = row.TrawellingStatusId,
+                State = row.State.ToString(),
+                LastEventAt = row.LastEventAt,
+                RouteInstanceId = instance.RouteInstanceId,
+                RouteName = instance.Route.Name,
+                RouteFrom = instance.Route.From,
+                RouteTo = instance.Route.To,
+                InstanceDate = instance.Date,
+                InstanceStartTime = instance.StartTime,
+                InstanceEndTime = instance.EndTime,
+                NewTrip = newTrip,
+            };
         }
 
         public async Task<bool> ApplyConflictTimesAsync(User user, int statusId)
@@ -823,6 +832,7 @@ namespace OV_DB.Services
 
             var pendingUpserted = false;
             var pendingRemoved = false;
+            TrawellingInboxStatus conflictRow = null;
 
             switch (eventType)
             {
@@ -840,7 +850,7 @@ namespace OV_DB.Services
                             {
                                 break; // the same change the user already dismissed — don't nag
                             }
-                            UpsertInboxRow(inboxRow, user.Id, statusId, statusJson, status, TrawellingInboxState.ChangedAfterImport);
+                            conflictRow = UpsertInboxRow(inboxRow, user.Id, statusId, statusJson, status, TrawellingInboxState.ChangedAfterImport);
                         }
                         break;
                     }
@@ -854,7 +864,7 @@ namespace OV_DB.Services
                     if (imported)
                     {
                         // OVDB is the archive: flag it, never auto-delete the RouteInstance
-                        UpsertInboxRow(inboxRow, user.Id, statusId, statusJson, status, TrawellingInboxState.DeletedUpstream);
+                        conflictRow = UpsertInboxRow(inboxRow, user.Id, statusId, statusJson, status, TrawellingInboxState.DeletedUpstream);
                     }
                     else
                     {
@@ -884,6 +894,29 @@ namespace OV_DB.Services
             _logger.LogInformation("Processed Träwelling webhook {Event} for status {StatusId}, user {UserId}", eventType, statusId, user.Id);
 
             await PublishPendingTripChangeAsync(user, statusId, status, pendingUpserted, pendingRemoved);
+            await PublishConflictChangeAsync(user, conflictRow);
+        }
+
+        /// <summary>
+        /// Pushes a new or updated conflict to the owning user's open pages so the
+        /// "Changed on Träwelling" section updates without a reload.
+        /// </summary>
+        private async Task PublishConflictChangeAsync(User user, TrawellingInboxStatus conflictRow)
+        {
+            if (conflictRow == null)
+                return;
+            try
+            {
+                var conflict = await BuildConflictDtoAsync(user, conflictRow);
+                if (conflict == null)
+                    return;
+                await _traewellingHubContext.Clients.User(user.Id.ToString())
+                    .SendAsync(TraewellingHub.ConflictUpsertedMethod, JsonConvert.SerializeObject(conflict, ApiJsonSettings));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error publishing live Träwelling conflict for status {StatusId}, user {UserId}", conflictRow.TrawellingStatusId, user.Id);
+            }
         }
 
         /// <summary>
@@ -980,7 +1013,7 @@ namespace OV_DB.Services
                 checkin?.Destination?.ArrivalReal?.UtcDateTime.ToString("o"));
         }
 
-        private void UpsertInboxRow(TrawellingInboxStatus row, int userId, int statusId, string payloadJson, TrawellingStatus status, TrawellingInboxState state)
+        private TrawellingInboxStatus UpsertInboxRow(TrawellingInboxStatus row, int userId, int statusId, string payloadJson, TrawellingStatus status, TrawellingInboxState state)
         {
             if (row == null)
             {
@@ -997,6 +1030,7 @@ namespace OV_DB.Services
             row.Source = TrawellingInboxSource.Webhook;
             row.DepartureAt = GetStatusDeparture(status);
             row.LastEventAt = DateTime.UtcNow;
+            return row;
         }
 
         public async Task<bool> IgnoreStatusAsync(User user, int statusId)

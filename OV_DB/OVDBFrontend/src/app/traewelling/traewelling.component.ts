@@ -86,7 +86,19 @@ export class TrawellingComponent implements OnInit, OnDestroy {
     this.liveSubscriptions.push(
       this.liveService.tripUpserted$.subscribe(trip => this.upsertTrip(trip)),
       this.liveService.tripRemoved$.subscribe(statusId => this.removeTrip(statusId)),
+      this.liveService.conflictUpserted$.subscribe(conflict => this.upsertConflict(conflict)),
     );
+  }
+
+  private upsertConflict(conflict: TrawellingConflict): void {
+    const index = this.conflicts.findIndex(c => c.statusId === conflict.statusId);
+    if (index >= 0) {
+      const updated = [...this.conflicts];
+      updated[index] = conflict;
+      this.conflicts = updated;
+    } else {
+      this.conflicts = [conflict, ...this.conflicts];
+    }
   }
 
   private upsertTrip(trip: TrawellingTrip): void {

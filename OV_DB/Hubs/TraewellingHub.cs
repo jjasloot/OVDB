@@ -16,4 +16,5 @@ public class TraewellingHub : Hub
     // so the client can JSON.parse it into the exact same shape the list endpoint returns.
     public const string PendingTripUpsertedMethod = "PendingTripUpserted";
     public const string PendingTripRemovedMethod = "PendingTripRemoved";
+    public const string ConflictUpsertedMethod = "ConflictUpserted";
 }

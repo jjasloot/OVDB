@@ -158,7 +158,9 @@ New `User` columns: `TraewellingWebhookId` (long?), `TraewellingWebhookSecret`
    changes to the user's open unimported page via the JWT-authenticated `TraewellingHub`
    (`/traewellingHub`, `Clients.User`); trips appear/update/disappear without a reload.
    Payloads are pre-serialized with the REST API's Newtonsoft settings so the shape
-   matches the list endpoint exactly. Conflict states still have no live push (phase 3).
+   matches the list endpoint exactly. Conflicts push live too (2026-08-14): new or
+   updated `ChangedAfterImport`/`DeletedUpstream` rows arrive as `ConflictUpserted`
+   with the full conflict DTO.
 3. **Conflict UX** — `ChangedAfterImport` / `DeletedUpstream` sections and actions on
    the unimported page. **Implemented 2026-08-14**: a "Changed on Träwelling" section
    with per-conflict cards (OVDB vs upstream diff of departure/arrival, minute

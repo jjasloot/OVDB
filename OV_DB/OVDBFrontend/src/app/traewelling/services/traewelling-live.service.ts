@@ -3,7 +3,7 @@ import { HubConnection, HubConnectionBuilder } from '@microsoft/signalr';
 import { Subject } from 'rxjs';
 import { environment } from 'src/environments/environment';
 import { AuthenticationService } from '../../services/authentication.service';
-import { TrawellingTrip } from '../../models/traewelling.model';
+import { TrawellingConflict, TrawellingTrip } from '../../models/traewelling.model';
 
 /**
  * Live updates for the unimported-trips list, pushed by the backend when Träwelling
@@ -17,6 +17,7 @@ export class TraewellingLiveService {
 
   tripUpserted$ = new Subject<TrawellingTrip>();
   tripRemoved$ = new Subject<number>();
+  conflictUpserted$ = new Subject<TrawellingConflict>();
 
   connect(): void {
     if (this.connection) {
@@ -39,6 +40,13 @@ export class TraewellingLiveService {
     });
     connection.on('PendingTripRemoved', (statusId: number) => {
       this.tripRemoved$.next(statusId);
+    });
+    connection.on('ConflictUpserted', (conflictJson: string) => {
+      try {
+        this.conflictUpserted$.next(JSON.parse(conflictJson) as TrawellingConflict);
+      } catch (err) {
+        console.error('Could not parse live Träwelling conflict payload', err);
+      }
     });
 
     connection
