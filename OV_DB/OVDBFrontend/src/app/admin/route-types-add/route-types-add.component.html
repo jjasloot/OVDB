@@ -25,19 +25,26 @@
   }}</mat-checkbox>
   <mat-form-field style="width: 100%">
     <mat-label>Trainlog Type</mat-label>
+    <!-- Keep in sync with Trainlog's TripTypes enum (src/consts.py); the
+         stationary types (accomodation, restaurant, poi) are omitted since
+         OVDB route types are always journeys. -->
     <mat-select [(ngModel)]="trainlogType">
       <mat-option value="train">Train</mat-option>
-      <mat-option value="bus">Bus</mat-option>
+      <mat-option value="rail">Rail</mat-option>
       <mat-option value="tram">Tram</mat-option>
       <mat-option value="metro">Metro</mat-option>
-      <mat-option value="ferry">Ferry</mat-option>
-      <mat-option value="flight">Flight</mat-option>
+      <mat-option value="funicular">Funicular</mat-option>
+      <mat-option value="bus">Bus</mat-option>
       <mat-option value="car">Car</mat-option>
       <mat-option value="cycle">Cycle</mat-option>
+      <mat-option value="scooter">Scooter</mat-option>
       <mat-option value="walk">Walk</mat-option>
-      <mat-option value="aerialway">Aerialway</mat-option>
+      <mat-option value="ferry">Ferry</mat-option>
       <mat-option value="air">Air</mat-option>
       <mat-option value="helicopter">Helicopter</mat-option>
+      <mat-option value="aerialway">Aerialway</mat-option>
+      <mat-option value="ski">Ski</mat-option>
+      <mat-option value="other">Other</mat-option>
     </mat-select>
   </mat-form-field>
   {{ error }}
