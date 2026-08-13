@@ -154,6 +154,11 @@ New `User` columns: `TraewellingWebhookId` (long?), `TraewellingWebhookSecret`
    `POST /api/traewelling/webhook`, health surfaced in the profile card; requires
    `Traewelling:WebhookUrl` in production config + webhook registration on the OAuth
    client in Träwelling's dashboard, then a reconnect via "Enable live sync").
+   **Extended 2026-08-14 with SignalR inline updates**: webhook events push pending-list
+   changes to the user's open unimported page via the JWT-authenticated `TraewellingHub`
+   (`/traewellingHub`, `Clients.User`); trips appear/update/disappear without a reload.
+   Payloads are pre-serialized with the REST API's Newtonsoft settings so the shape
+   matches the list endpoint exactly. Conflict states still have no live push (phase 3).
 3. **Conflict UX** — `ChangedAfterImport` / `DeletedUpstream` sections and actions on
    the unimported page.
 4. ~~(Optional) Telegram ping~~ — **skipped for now** (2026-08-13). If ever revisited: conflict

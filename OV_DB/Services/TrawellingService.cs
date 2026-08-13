@@ -1,9 +1,12 @@
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Newtonsoft.Json.Serialization;
+using OV_DB.Hubs;
 using OV_DB.Models;
 using OVDB_database.Database;
 using OVDB_database.Models;
@@ -36,14 +39,23 @@ namespace OV_DB.Services
         private readonly string _webhookUrl;
         private readonly IMemoryCache _memoryCache;
         private readonly ITraewellingRateLimiter _rateLimiter;
+        private readonly IHubContext<TraewellingHub> _traewellingHubContext;
 
         // Simple in-memory cache for OAuth states - in production, use Redis or database
         private static readonly Dictionary<string, (int UserId, DateTime Expiry)> _oauthStates = new();
         private static readonly object _statelock = new object();
 
+        // Matches the REST API's Newtonsoft configuration so hub payloads have the exact
+        // same shape (camelCase, string enums via the DTO attributes) as the list endpoint
+        private static readonly JsonSerializerSettings ApiJsonSettings = new()
+        {
+            ContractResolver = new CamelCasePropertyNamesContractResolver(),
+            ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
+        };
 
         public TrawellingService(IHttpClientFactory httpClientFactory, IConfiguration configuration, ITimezoneService timezoneService,
-            OVDBDatabaseContext dbContext, ILogger<TrawellingService> logger, IMemoryCache memoryCache, ITraewellingRateLimiter rateLimiter)
+            OVDBDatabaseContext dbContext, ILogger<TrawellingService> logger, IMemoryCache memoryCache, ITraewellingRateLimiter rateLimiter,
+            IHubContext<TraewellingHub> traewellingHubContext)
         {
             _httpClient = httpClientFactory.CreateClient(HTTP_CLIENT_NAME);
             _configuration = configuration;
@@ -52,6 +64,7 @@ namespace OV_DB.Services
             _logger = logger;
             _memoryCache = memoryCache;
             _rateLimiter = rateLimiter;
+            _traewellingHubContext = traewellingHubContext;
             _baseUrl = _configuration["Traewelling:BaseUrl"];
             _clientId = _configuration["Traewelling:ClientId"];
             _clientSecret = _configuration["Traewelling:ClientSecret"];
@@ -659,6 +672,9 @@ namespace OV_DB.Services
             var inboxRow = await _dbContext.TrawellingInboxStatuses
                 .SingleOrDefaultAsync(s => s.UserId == user.Id && s.TrawellingStatusId == statusId);
 
+            var pendingUpserted = false;
+            var pendingRemoved = false;
+
             switch (eventType)
             {
                 case "checkin_create":
@@ -675,6 +691,7 @@ namespace OV_DB.Services
                     // Pending or unknown: (re)store as pending — an update for a status we
                     // never saw doubles as the missed create
                     UpsertInboxRow(inboxRow, user.Id, statusId, statusJson, status, TrawellingInboxState.Pending);
+                    pendingUpserted = true;
                     break;
 
                 case "checkin_delete":
@@ -686,7 +703,10 @@ namespace OV_DB.Services
                     else
                     {
                         if (inboxRow != null)
+                        {
                             _dbContext.TrawellingInboxStatuses.Remove(inboxRow);
+                            pendingRemoved = inboxRow.State == TrawellingInboxState.Pending;
+                        }
                         if (ignored)
                         {
                             // Moot now that the status is gone upstream
@@ -706,6 +726,39 @@ namespace OV_DB.Services
             // The 30-minute trip DTO cache would otherwise serve the pre-update payload
             _memoryCache.Remove($"TrawellingTrip|{statusId}");
             _logger.LogInformation("Processed Träwelling webhook {Event} for status {StatusId}, user {UserId}", eventType, statusId, user.Id);
+
+            await PublishPendingTripChangeAsync(user, statusId, status, pendingUpserted, pendingRemoved);
+        }
+
+        /// <summary>
+        /// Pushes a live update for the unimported-trips list to the owning user's open
+        /// pages. Only pending-list changes are pushed; the conflict states get their UI
+        /// in a later phase. Delivery failures are logged and ignored — the list is
+        /// DB-backed, so a missed push only means the change appears on the next load.
+        /// </summary>
+        private async Task PublishPendingTripChangeAsync(User user, int statusId, TrawellingStatus status, bool pendingUpserted, bool pendingRemoved)
+        {
+            try
+            {
+                if (pendingUpserted)
+                {
+                    var trip = await MapStatusToTripDtoAsync(user, status);
+                    if (trip == null)
+                        return;
+                    _memoryCache.Set($"TrawellingTrip|{statusId}", trip, TimeSpan.FromMinutes(30));
+                    await _traewellingHubContext.Clients.User(user.Id.ToString())
+                        .SendAsync(TraewellingHub.PendingTripUpsertedMethod, JsonConvert.SerializeObject(trip, ApiJsonSettings));
+                }
+                else if (pendingRemoved)
+                {
+                    await _traewellingHubContext.Clients.User(user.Id.ToString())
+                        .SendAsync(TraewellingHub.PendingTripRemovedMethod, statusId);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error publishing live Träwelling update for status {StatusId}, user {UserId}", statusId, user.Id);
+            }
         }
 
         /// <summary>

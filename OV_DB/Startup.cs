@@ -103,6 +103,18 @@ namespace OV_DB
                             context.Response.Headers.Append("Token-Expired", "true");
                         }
                         return Task.CompletedTask;
+                    },
+                    // WebSockets cannot send an Authorization header; SignalR passes the JWT
+                    // as an access_token query parameter on the handshake instead
+                    OnMessageReceived = context =>
+                    {
+                        var accessToken = context.Request.Query["access_token"];
+                        if (!string.IsNullOrEmpty(accessToken)
+                            && context.HttpContext.Request.Path.StartsWithSegments("/traewellingHub"))
+                        {
+                            context.Token = accessToken;
+                        }
+                        return Task.CompletedTask;
                     }
                 };
             });
@@ -222,6 +234,7 @@ namespace OV_DB
             app.UseEndpoints(r =>
             {
                 r.MapHub<MapGenerationHub>("/mapGenerationHub");
+                r.MapHub<TraewellingHub>("/traewellingHub");
                 r.MapControllers();
                 r.MapSwagger();
             });

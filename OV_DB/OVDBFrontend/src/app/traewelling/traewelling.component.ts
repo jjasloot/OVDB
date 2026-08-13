@@ -1,4 +1,5 @@
-import { Component, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, ChangeDetectionStrategy } from '@angular/core';
+import { Subscription } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
@@ -7,6 +8,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { TrawellingService } from './services/traewelling.service';
+import { TraewellingLiveService } from './services/traewelling-live.service';
 import {
   TrawellingConnectionStatus,
   TrawellingTripsResponse,
@@ -32,8 +34,9 @@ import { TripCardComponent } from './components/trip-card/trip-card.component';
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./traewelling.component.scss']
 })
-export class TrawellingComponent implements OnInit {
+export class TrawellingComponent implements OnInit, OnDestroy {
   private trawellingService = inject(TrawellingService);
+  private liveService = inject(TraewellingLiveService);
   private snackBar = inject(MatSnackBar);
   private translateService = inject(TranslateService);
 
@@ -44,17 +47,47 @@ export class TrawellingComponent implements OnInit {
   isLoadingMore = false;
   hasMorePages = false;
   currentPage = 1;
+  private liveSubscriptions: Subscription[] = [];
 
   async ngOnInit() {
     await this.loadConnectionStatus();
     if (this.connectionStatus?.connected) {
       await Promise.all([this.loadTrips(), this.loadAlerts()]);
+      if (this.connectionStatus.liveSyncEnabled) {
+        this.startLiveUpdates();
+      }
     }
     this.isLoading = false;
   }
 
+  ngOnDestroy(): void {
+    this.liveSubscriptions.forEach(s => s.unsubscribe());
+    this.liveSubscriptions = [];
+    this.liveService.disconnect();
+  }
+
   removeTrip(tripId: number): void {
     this.trips = this.trips.filter(trip => trip.id !== tripId);
+  }
+
+  private startLiveUpdates(): void {
+    this.liveService.connect();
+    this.liveSubscriptions.push(
+      this.liveService.tripUpserted$.subscribe(trip => this.upsertTrip(trip)),
+      this.liveService.tripRemoved$.subscribe(statusId => this.removeTrip(statusId)),
+    );
+  }
+
+  private upsertTrip(trip: TrawellingTrip): void {
+    const index = this.trips.findIndex(t => t.id === trip.id);
+    if (index >= 0) {
+      const updated = [...this.trips];
+      updated[index] = trip;
+      this.trips = updated;
+    } else {
+      // The list is ordered newest departure first, and a live check-in is the newest
+      this.trips = [trip, ...this.trips];
+    }
   }
 
   getAlertTranslation(alert: TraewellingAlert): TraewellingAlertTranslation {
