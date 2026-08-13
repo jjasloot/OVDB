@@ -13,8 +13,15 @@ namespace OV_DB.Services
         /// </summary>
         /// <param name="userId">OVDB User ID</param>
         /// <param name="state">OAuth state parameter for security</param>
+        /// <param name="withLiveSync">Request webhook creation (live sync) during authorization; only honoured when live sync is configured</param>
         /// <returns>Authorization URL</returns>
-        string GetAuthorizationUrl(int userId, string state);
+        string GetAuthorizationUrl(int userId, string state, bool withLiveSync = false);
+
+        /// <summary>
+        /// True when a webhook URL is configured (Traewelling:WebhookUrl), i.e. this
+        /// environment can offer live sync
+        /// </summary>
+        bool IsLiveSyncAvailable { get; }
 
         /// <summary>
         /// Generate and store OAuth2 state for validation
@@ -82,6 +89,28 @@ namespace OV_DB.Services
         /// <param name="userId">OVDB user id</param>
         /// <param name="statusId">Träwelling status id</param>
         Task RemoveFromInboxAsync(int userId, int statusId);
+
+        /// <summary>
+        /// Check whether the user's stored webhook still exists and is enabled upstream
+        /// </summary>
+        /// <param name="user">User to check</param>
+        /// <returns>Health of the webhook subscription</returns>
+        Task<TrawellingWebhookHealth> GetWebhookHealthAsync(User user);
+
+        /// <summary>
+        /// Delete the user's webhook upstream (best effort) and clear the stored webhook data
+        /// </summary>
+        /// <param name="user">User to remove the webhook for</param>
+        Task RemoveWebhookAsync(User user);
+
+        /// <summary>
+        /// Apply a verified webhook delivery to the inbox: creates/updates pending statuses,
+        /// flags upstream edits/deletes of imported trips, respects ignores. The caller has
+        /// already verified the signature.
+        /// </summary>
+        /// <param name="user">User the webhook belongs to</param>
+        /// <param name="payloadJson">Raw delivery body: {event, status}</param>
+        Task ProcessWebhookEventAsync(User user, string payloadJson);
 
         /// <summary>
         /// Ignore a specific Träwelling status so it doesn't appear in unimported list

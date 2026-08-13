@@ -240,9 +240,18 @@ export class ProfileComponent implements OnInit {
     });
   }
 
-  connectTraewelling(): void {
+  get liveSyncBroken(): boolean {
+    const health = this.trawellingStatus?.liveSyncHealth;
+    return !!this.trawellingStatus?.liveSyncEnabled && (health === 'DisabledUpstream' || health === 'Missing');
+  }
+
+  get liveSyncActive(): boolean {
+    return !!this.trawellingStatus?.liveSyncEnabled && !this.liveSyncBroken;
+  }
+
+  connectTraewelling(liveSync = false): void {
     this.trawellingConnecting = true;
-    this.apiService.getTrawellingConnectUrl().subscribe({
+    this.apiService.getTrawellingConnectUrl(liveSync).subscribe({
       next: (response) => {
         // Open the authorization URL in a new window
         const authWindow = window.open(response.authorizationUrl, '_blank', 'width=600,height=700');

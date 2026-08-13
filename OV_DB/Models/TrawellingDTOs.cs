@@ -64,6 +64,53 @@ namespace OV_DB.Models
 
         [JsonProperty("scope")]
         public string Scope { get; set; }
+
+        // Only present when the authorize request carried trwl_webhook_* parameters;
+        // the token exchange is the only moment Träwelling hands out the secret
+        [JsonProperty("webhook")]
+        public TrawellingTokenWebhook Webhook { get; set; }
+    }
+
+    public class TrawellingWebhooksResponse
+    {
+        [JsonProperty("data")]
+        public List<TrawellingWebhook> Data { get; set; }
+    }
+
+    public class TrawellingWebhook
+    {
+        [JsonProperty("id")]
+        public int Id { get; set; }
+
+        [JsonProperty("url")]
+        public string Url { get; set; }
+
+        [JsonProperty("createdAt")]
+        public DateTimeOffset? CreatedAt { get; set; }
+
+        [JsonProperty("disabledAt")]
+        public DateTimeOffset? DisabledAt { get; set; }
+    }
+
+    public enum TrawellingWebhookHealth
+    {
+        NotEnabled,
+        Active,
+        DisabledUpstream,
+        Missing,
+        Unknown,
+    }
+
+    public class TrawellingTokenWebhook
+    {
+        [JsonProperty("id")]
+        public int Id { get; set; }
+
+        [JsonProperty("secret")]
+        public string Secret { get; set; }
+
+        [JsonProperty("url")]
+        public string Url { get; set; }
     }
 
     // User Authentication Response

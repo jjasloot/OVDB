@@ -138,6 +138,17 @@
               <strong>{{ 'PROFILE.TRAEWELLING_CONNECTED' | translate }}:</strong>
               {{ trawellingStatus.user?.displayName || trawellingStatus.user?.username }}
             </p>
+            @if (trawellingStatus.liveSyncAvailable && liveSyncActive) {
+            <p class="live-sync-status live-sync-active">
+              <mat-icon inline>bolt</mat-icon>
+              {{ 'PROFILE.TRAEWELLING_LIVE_SYNC_ACTIVE' | translate }}
+            </p>
+            } @else if (trawellingStatus.liveSyncAvailable && liveSyncBroken) {
+            <p class="live-sync-status live-sync-broken">
+              <mat-icon inline>warning</mat-icon>
+              {{ 'PROFILE.TRAEWELLING_LIVE_SYNC_BROKEN' | translate }}
+            </p>
+            }
           </div>
           } @else {
           <p class="traewelling-not-connected">{{ 'PROFILE.TRAEWELLING_NOT_CONNECTED' | translate }}</p>
@@ -164,6 +175,17 @@
         <span class="backfill-result">{{ 'PROFILE.TRAEWELLING_BACKFILL_RESULT' | translate : backfillResult }}</span>
         }
 
+        @if (trawellingStatus.liveSyncAvailable && !liveSyncActive) {
+        <button mat-stroked-button color="accent" (click)="connectTraewelling(true)" [disabled]="trawellingConnecting">
+          @if (trawellingConnecting) {
+          <mat-spinner diameter="20"></mat-spinner>
+          } @else {
+          <mat-icon>bolt</mat-icon>
+          }
+          {{ 'PROFILE.TRAEWELLING_ENABLE_LIVE_SYNC' | translate }}
+        </button>
+        }
+
         <button mat-stroked-button color="warn" (click)="disconnectTraewelling()" [disabled]="trawellingDisconnecting">
           @if (trawellingDisconnecting) {
           <mat-spinner diameter="20"></mat-spinner>
@@ -181,6 +203,12 @@
           }
           {{ 'PROFILE.TRAEWELLING_CONNECT' | translate }}
         </button>
+        @if (trawellingStatus?.liveSyncAvailable) {
+        <button mat-stroked-button color="accent" (click)="connectTraewelling(true)" [disabled]="trawellingConnecting">
+          <mat-icon>bolt</mat-icon>
+          {{ 'PROFILE.TRAEWELLING_CONNECT_LIVE_SYNC' | translate }}
+        </button>
+        }
         }
       </div>
 

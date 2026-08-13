@@ -3,6 +3,7 @@ using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using OV_DB.Models;
 using OVDB_database.Database;
 using OVDB_database.Models;
@@ -32,6 +33,7 @@ namespace OV_DB.Services
         private readonly string _redirectUri;
         private readonly string _authorizeUrl;
         private readonly string _tokenUrl;
+        private readonly string _webhookUrl;
         private readonly IMemoryCache _memoryCache;
         private readonly ITraewellingRateLimiter _rateLimiter;
 
@@ -56,9 +58,14 @@ namespace OV_DB.Services
             _redirectUri = _configuration["Traewelling:RedirectUri"];
             _authorizeUrl = _configuration["Traewelling:AuthorizeUrl"];
             _tokenUrl = _configuration["Traewelling:TokenUrl"];
+            // Live sync (webhooks) is only available when this exactly matches the
+            // authorized_webhook_url registered on the OAuth client — production only
+            _webhookUrl = _configuration["Traewelling:WebhookUrl"];
         }
 
-        public string GetAuthorizationUrl(int userId, string state)
+        public bool IsLiveSyncAvailable => !string.IsNullOrEmpty(_webhookUrl);
+
+        public string GetAuthorizationUrl(int userId, string state, bool withLiveSync = false)
         {
             var queryParams = HttpUtility.ParseQueryString(string.Empty);
             queryParams["response_type"] = "code";
@@ -66,6 +73,14 @@ namespace OV_DB.Services
             queryParams["redirect_uri"] = _redirectUri;
             queryParams["scope"] = "read-statuses";
             queryParams["state"] = state;
+
+            if (withLiveSync && IsLiveSyncAvailable)
+            {
+                // Asks Träwelling to create a webhook during authorization; the URL must
+                // exactly equal the authorized_webhook_url stored on the OAuth client
+                queryParams["trwl_webhook_url"] = _webhookUrl;
+                queryParams["trwl_webhook_events"] = "checkin_create,checkin_update,checkin_delete";
+            }
 
             return $"{_authorizeUrl}?{queryParams}";
         }
@@ -159,6 +174,15 @@ namespace OV_DB.Services
                 user.TrawellingAccessToken = tokenResponse.AccessToken;
                 user.TrawellingRefreshToken = tokenResponse.RefreshToken;
                 user.TrawellingTokenExpiresAt = DateTime.UtcNow.AddSeconds(tokenResponse.ExpiresIn);
+
+                if (tokenResponse.Webhook != null)
+                {
+                    // The exchange response is the only moment the webhook secret is issued
+                    user.TraewellingWebhookId = tokenResponse.Webhook.Id;
+                    user.TraewellingWebhookSecret = tokenResponse.Webhook.Secret;
+                    user.TraewellingWebhookCreatedAt = DateTime.UtcNow;
+                    _logger.LogInformation("Stored Träwelling webhook {WebhookId} for user {UserId}", tokenResponse.Webhook.Id, userId);
+                }
 
                 // Fetch and store user information including username
                 var userInfo = await GetUserInfoAsync(user);
@@ -510,6 +534,160 @@ namespace OV_DB.Services
             await _dbContext.TrawellingInboxStatuses
                 .Where(s => s.UserId == userId && s.TrawellingStatusId == statusId)
                 .ExecuteDeleteAsync();
+        }
+
+        public async Task<TrawellingWebhookHealth> GetWebhookHealthAsync(User user)
+        {
+            if (!user.TraewellingWebhookId.HasValue)
+                return TrawellingWebhookHealth.NotEnabled;
+
+            try
+            {
+                if (!await EnsureValidTokenAsync(user))
+                    return TrawellingWebhookHealth.Unknown;
+
+                var response = await SendAsync(() => CreateApiRequest(HttpMethod.Get, $"{_baseUrl}/webhooks", user));
+                if (!response.IsSuccessStatusCode)
+                    return TrawellingWebhookHealth.Unknown;
+
+                var content = await response.Content.ReadAsStringAsync();
+                var webhooks = JsonConvert.DeserializeObject<TrawellingWebhooksResponse>(content);
+                var webhook = webhooks?.Data?.FirstOrDefault(w => w.Id == user.TraewellingWebhookId.Value);
+
+                if (webhook == null)
+                    return TrawellingWebhookHealth.Missing;
+                return webhook.DisabledAt.HasValue
+                    ? TrawellingWebhookHealth.DisabledUpstream
+                    : TrawellingWebhookHealth.Active;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error checking Träwelling webhook health for user {UserId}", user.Id);
+                return TrawellingWebhookHealth.Unknown;
+            }
+        }
+
+        public async Task RemoveWebhookAsync(User user)
+        {
+            if (user.TraewellingWebhookId.HasValue)
+            {
+                // Best effort: deleting the upstream webhook needs a valid token, which may
+                // already be gone; the local columns are cleared regardless.
+                try
+                {
+                    if (await EnsureValidTokenAsync(user))
+                    {
+                        var response = await SendAsync(() =>
+                            CreateApiRequest(HttpMethod.Delete, $"{_baseUrl}/webhooks/{user.TraewellingWebhookId.Value}", user));
+                        _logger.LogInformation("Deleted Träwelling webhook {WebhookId} for user {UserId}: {StatusCode}",
+                            user.TraewellingWebhookId.Value, user.Id, (int)response.StatusCode);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Could not delete Träwelling webhook {WebhookId} for user {UserId}", user.TraewellingWebhookId, user.Id);
+                }
+            }
+
+            user.TraewellingWebhookId = null;
+            user.TraewellingWebhookSecret = null;
+            user.TraewellingWebhookCreatedAt = null;
+            await _dbContext.SaveChangesAsync();
+        }
+
+        public async Task ProcessWebhookEventAsync(User user, string payloadJson)
+        {
+            var envelope = JObject.Parse(payloadJson);
+            var eventType = envelope["event"]?.Value<string>();
+            var statusToken = envelope["status"];
+            if (string.IsNullOrEmpty(eventType) || statusToken is not JObject)
+            {
+                _logger.LogDebug("Träwelling webhook event {Event} without status payload ignored for user {UserId}", eventType, user.Id);
+                return;
+            }
+
+            var status = statusToken.ToObject<TrawellingStatus>();
+            if (status == null || status.Id == 0)
+                return;
+            var statusJson = statusToken.ToString(Formatting.None);
+            var statusId = status.Id;
+
+            var imported = await _dbContext.RouteInstances
+                .Where(ri => ri.TrawellingStatusId == statusId)
+                .Where(ri => ri.RouteInstanceMaps.Any(rim => rim.Map.UserId == user.Id)
+                    || ri.Route.RouteMaps.Any(rm => rm.Map.UserId == user.Id))
+                .AnyAsync();
+            var ignored = await _dbContext.TrawellingIgnoredStatuses
+                .AnyAsync(tis => tis.UserId == user.Id && tis.TrawellingStatusId == statusId);
+            var inboxRow = await _dbContext.TrawellingInboxStatuses
+                .SingleOrDefaultAsync(s => s.UserId == user.Id && s.TrawellingStatusId == statusId);
+
+            switch (eventType)
+            {
+                case "checkin_create":
+                case "checkin_update":
+                    if (ignored)
+                        return; // the user's decision stands
+                    if (imported)
+                    {
+                        // Curated data is never auto-changed; flag the upstream edit for review
+                        if (eventType == "checkin_update")
+                            UpsertInboxRow(inboxRow, user.Id, statusId, statusJson, status, TrawellingInboxState.ChangedAfterImport);
+                        break;
+                    }
+                    // Pending or unknown: (re)store as pending — an update for a status we
+                    // never saw doubles as the missed create
+                    UpsertInboxRow(inboxRow, user.Id, statusId, statusJson, status, TrawellingInboxState.Pending);
+                    break;
+
+                case "checkin_delete":
+                    if (imported)
+                    {
+                        // OVDB is the archive: flag it, never auto-delete the RouteInstance
+                        UpsertInboxRow(inboxRow, user.Id, statusId, statusJson, status, TrawellingInboxState.DeletedUpstream);
+                    }
+                    else
+                    {
+                        if (inboxRow != null)
+                            _dbContext.TrawellingInboxStatuses.Remove(inboxRow);
+                        if (ignored)
+                        {
+                            // Moot now that the status is gone upstream
+                            var ignoreRows = await _dbContext.TrawellingIgnoredStatuses
+                                .Where(tis => tis.UserId == user.Id && tis.TrawellingStatusId == statusId)
+                                .ToListAsync();
+                            _dbContext.TrawellingIgnoredStatuses.RemoveRange(ignoreRows);
+                        }
+                    }
+                    break;
+
+                default:
+                    return; // not subscribed to anything else; ignore defensively
+            }
+
+            await _dbContext.SaveChangesAsync();
+            // The 30-minute trip DTO cache would otherwise serve the pre-update payload
+            _memoryCache.Remove($"TrawellingTrip|{statusId}");
+            _logger.LogInformation("Processed Träwelling webhook {Event} for status {StatusId}, user {UserId}", eventType, statusId, user.Id);
+        }
+
+        private void UpsertInboxRow(TrawellingInboxStatus row, int userId, int statusId, string payloadJson, TrawellingStatus status, TrawellingInboxState state)
+        {
+            if (row == null)
+            {
+                row = new TrawellingInboxStatus
+                {
+                    UserId = userId,
+                    TrawellingStatusId = statusId,
+                    ReceivedAt = DateTime.UtcNow,
+                };
+                _dbContext.TrawellingInboxStatuses.Add(row);
+            }
+            row.PayloadJson = payloadJson;
+            row.State = state;
+            row.Source = TrawellingInboxSource.Webhook;
+            row.DepartureAt = GetStatusDeparture(status);
+            row.LastEventAt = DateTime.UtcNow;
         }
 
         public async Task<bool> IgnoreStatusAsync(User user, int statusId)

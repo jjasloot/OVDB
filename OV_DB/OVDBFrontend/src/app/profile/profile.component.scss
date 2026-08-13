@@ -130,6 +130,18 @@
       padding: 8px 12px;
       border-radius: 4px;
       margin-top: 8px;
+
+      .live-sync-status {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        margin: 4px 0 0;
+        font-size: 0.9em;
+
+        &.live-sync-broken {
+          color: #b71c1c;
+        }
+      }
       
       p {
         margin: 0;
@@ -317,6 +329,10 @@
          background-color: rgba(76, 175, 80, 0.2);
          p {
             color: rgba(255, 255, 255, 0.87);
+         }
+
+         .live-sync-status.live-sync-broken {
+            color: #ef9a9a;
          }
       }
       

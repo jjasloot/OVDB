@@ -43,6 +43,11 @@ namespace OVDB_database.Models
         /// <summary>Last completed reconciliation sweep of the Träwelling inbox.</summary>
         public DateTime? TrawellingLastSweepAt { get; set; }
 
+        // Träwelling webhook (live sync): issued once during the authorization-code exchange
+        public int? TraewellingWebhookId { get; set; }
+        public string TraewellingWebhookSecret { get; set; }
+        public DateTime? TraewellingWebhookCreatedAt { get; set; }
+
         // Trainlog Export Mapping
         public bool EnableTrainlogExport { get; set; }
         [MaxLength(100)]

@@ -590,9 +590,14 @@ export class ApiService {
   }
 
   // Träwelling API methods
-  getTrawellingConnectUrl(): Observable<TrawellingConnectResponse> {
+  getTrawellingConnectUrl(liveSync: boolean = false): Observable<TrawellingConnectResponse> {
+    let params = new HttpParams();
+    if (liveSync) {
+      params = params.set('liveSync', 'true');
+    }
     return this.httpClient.get<TrawellingConnectResponse>(
-      environment.backend + "api/traewelling/connect"
+      environment.backend + "api/traewelling/connect",
+      { params }
     );
   }
 

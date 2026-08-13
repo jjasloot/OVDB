@@ -5,6 +5,9 @@
 export interface TrawellingConnectionStatus {
   connected: boolean;
   user?: TrawellingUser;
+  liveSyncAvailable?: boolean;
+  liveSyncEnabled?: boolean;
+  liveSyncHealth?: 'NotEnabled' | 'Active' | 'DisabledUpstream' | 'Missing' | 'Unknown';
 }
 
 export interface TrawellingUser {

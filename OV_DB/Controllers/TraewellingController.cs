@@ -9,8 +9,11 @@ using OVDB_database.Database;
 using OVDB_database.Models;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Security.Claims;
+using System.Security.Cryptography;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace OV_DB.Controllers
@@ -38,7 +41,7 @@ namespace OV_DB.Controllers
         /// Get OAuth2 authorization URL for connecting Träwelling account
         /// </summary>
         [HttpGet("connect")]
-        public IActionResult GetConnectUrl()
+        public IActionResult GetConnectUrl([FromQuery] bool liveSync = false)
         {
             try
             {
@@ -47,8 +50,8 @@ namespace OV_DB.Controllers
                     return Unauthorized();
 
                 var state = _trawellingService.GenerateAndStoreState(userId.Value);
-                var authUrl = _trawellingService.GetAuthorizationUrl(userId.Value, state);
-                
+                var authUrl = _trawellingService.GetAuthorizationUrl(userId.Value, state, liveSync);
+
                 return Ok(new { authorizationUrl = authUrl });
             }
             catch (Exception ex)
@@ -160,6 +163,69 @@ namespace OV_DB.Controllers
         }
 
         /// <summary>
+        /// Receiver for Träwelling webhook deliveries (live sync). Anonymous: authenticated
+        /// by the per-webhook HMAC secret issued during the OAuth token exchange.
+        /// </summary>
+        [HttpPost("webhook")]
+        [AllowAnonymous]
+        public async Task<IActionResult> ReceiveWebhook()
+        {
+            if (!_trawellingService.IsLiveSyncAvailable)
+                return NotFound();
+
+            // StatusResource payloads are small; anything bigger is not a genuine delivery
+            if (Request.ContentLength > 1024 * 1024)
+                return StatusCode(StatusCodes.Status413PayloadTooLarge);
+
+            if (!Request.Headers.TryGetValue("X-Trwl-Webhook-Id", out var webhookIdHeader)
+                || !int.TryParse(webhookIdHeader.FirstOrDefault(), out var webhookId))
+                return Unauthorized();
+            if (!Request.Headers.TryGetValue("Signature", out var signatureHeader))
+                return Unauthorized();
+
+            string body;
+            using (var reader = new StreamReader(Request.Body, Encoding.UTF8))
+            {
+                body = await reader.ReadToEndAsync();
+            }
+            if (string.IsNullOrEmpty(body))
+                return BadRequest();
+
+            var user = await _dbContext.Users
+                .SingleOrDefaultAsync(u => u.TraewellingWebhookId == webhookId);
+            if (user == null || string.IsNullOrEmpty(user.TraewellingWebhookSecret))
+                return Unauthorized();
+
+            // Spatie's DefaultSigner: lowercase hex HMAC-SHA256 of the raw JSON body
+            var computed = Convert.ToHexString(
+                    HMACSHA256.HashData(
+                        Encoding.UTF8.GetBytes(user.TraewellingWebhookSecret),
+                        Encoding.UTF8.GetBytes(body)))
+                .ToLowerInvariant();
+            var provided = signatureHeader.ToString().Trim().ToLowerInvariant();
+            if (!CryptographicOperations.FixedTimeEquals(
+                    Encoding.UTF8.GetBytes(computed),
+                    Encoding.UTF8.GetBytes(provided)))
+            {
+                _logger.LogWarning("Träwelling webhook delivery with invalid signature for webhook {WebhookId}", webhookId);
+                return Unauthorized();
+            }
+
+            // From here on always return 200: Träwelling counts non-2xx responses as failed
+            // deliveries and auto-disables the webhook after a few. A processing bug must not
+            // kill the subscription — the sweep heals whatever a swallowed error missed.
+            try
+            {
+                await _trawellingService.ProcessWebhookEventAsync(user, body);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error processing Träwelling webhook delivery for user {UserId}", user.Id);
+            }
+            return Ok();
+        }
+
+        /// <summary>
         /// Get connection status and user info from Träwelling
         /// </summary>
         [HttpGet("status")]
@@ -177,7 +243,7 @@ namespace OV_DB.Controllers
 
                 if (!_trawellingService.IsConnected(user))
                 {
-                    return Ok(new { connected = false });
+                    return Ok(new { connected = false, liveSyncAvailable = _trawellingService.IsLiveSyncAvailable });
                 }
 
                 // This refreshes the access token when it has expired; a definitive refresh
@@ -186,13 +252,22 @@ namespace OV_DB.Controllers
 
                 if (userInfo == null && !_trawellingService.IsConnected(user))
                 {
-                    return Ok(new { connected = false });
+                    return Ok(new { connected = false, liveSyncAvailable = _trawellingService.IsLiveSyncAvailable });
+                }
+
+                var webhookHealth = TrawellingWebhookHealth.NotEnabled;
+                if (_trawellingService.IsLiveSyncAvailable && user.TraewellingWebhookId.HasValue)
+                {
+                    webhookHealth = await _trawellingService.GetWebhookHealthAsync(user);
                 }
 
                 return Ok(new
                 {
                     connected = true,
-                    user = userInfo
+                    user = userInfo,
+                    liveSyncAvailable = _trawellingService.IsLiveSyncAvailable,
+                    liveSyncEnabled = user.TraewellingWebhookId.HasValue,
+                    liveSyncHealth = webhookHealth.ToString()
                 });
             }
             catch (Exception ex)
@@ -290,6 +365,9 @@ namespace OV_DB.Controllers
                 var user = await _dbContext.Users.FindAsync(userId.Value);
                 if (user == null)
                     return NotFound("User not found");
+
+                // Remove the webhook first — deleting it upstream needs the tokens
+                await _trawellingService.RemoveWebhookAsync(user);
 
                 user.TrawellingAccessToken = null;
                 user.TrawellingRefreshToken = null;
