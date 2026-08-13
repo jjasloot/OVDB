@@ -518,6 +518,7 @@
     "NO_UNIMPORTED_TRIPS_MESSAGE": "Al je recente Träwelling reizen zijn geïmporteerd of genegeerd. Kom later terug voor nieuwe reizen!",
     "LOAD_MORE": "Meer reizen laden",
     "LOADING_MORE": "Meer reizen laden...",
+    "REFRESH": "Träwelling controleren op nieuwe reizen",
     "LOADING_MORE_TRIPS": "Meer reizen laden...",
     "ADD_TO_EXISTING_ROUTE": "Toevoegen aan bestaande route",
     "CREATE_NEW_ROUTE": "Nieuwe route aanmaken",

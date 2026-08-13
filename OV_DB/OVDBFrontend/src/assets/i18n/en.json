@@ -521,6 +521,7 @@
     "NO_UNIMPORTED_TRIPS_MESSAGE": "All your recent Träwelling trips have been imported or ignored. Check back later for new trips!",
     "LOAD_MORE": "Load more trips",
     "LOADING_MORE": "Loading more trips...",
+    "REFRESH": "Check Träwelling for new trips",
     "LOADING_MORE_TRIPS": "Loading more trips...",
     "ADD_TO_EXISTING_ROUTE": "Add to existing route",
     "CREATE_NEW_ROUTE": "Create new route",

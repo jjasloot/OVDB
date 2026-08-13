@@ -158,6 +158,7 @@ namespace OV_DB
             // Singleton so the Träwelling rate-limit budget is shared across request scopes.
             services.AddSingleton<ITraewellingRateLimiter, TraewellingRateLimiter>();
             services.AddHostedService<TraewellingTokenRefreshService>();
+            services.AddHostedService<TraewellingInboxSweepService>();
 
             // Register named HttpClients for different services to avoid socket exhaustion
             services.AddHttpClient("OSM", client =>

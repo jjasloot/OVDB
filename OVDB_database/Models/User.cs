@@ -40,6 +40,8 @@ namespace OVDB_database.Models
         public string TrawellingRefreshToken { get; set; }
         public DateTime? TrawellingTokenExpiresAt { get; set; }
         public string TrawellingUsername { get; set; }
+        /// <summary>Last completed reconciliation sweep of the Träwelling inbox.</summary>
+        public DateTime? TrawellingLastSweepAt { get; set; }
 
         // Trainlog Export Mapping
         public bool EnableTrainlogExport { get; set; }

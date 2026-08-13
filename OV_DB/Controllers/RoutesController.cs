@@ -1141,6 +1141,14 @@ namespace OV_DB.Controllers
             }
             await _context.SaveChangesAsync();
 
+            if (update.TraewellingStatusId.HasValue)
+            {
+                // The status is imported now; its Träwelling inbox row is no longer pending
+                await _context.TrawellingInboxStatuses
+                    .Where(s => s.UserId == userIdClaim && s.TrawellingStatusId == update.TraewellingStatusId.Value)
+                    .ExecuteDeleteAsync();
+            }
+
             return Ok();
         }
 

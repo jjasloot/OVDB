@@ -284,120 +284,190 @@ namespace OV_DB.Services
             }
         }
 
-        private async Task<TrawellingStatusesResponse> GetUnimportedStatusesAsync(User user, int page = 1)
+        private const int SweepMaxPages = 5;
+        private static readonly TimeSpan SweepStaleness = TimeSpan.FromHours(1);
+
+        public async Task<bool> SweepInboxAsync(User user, bool force = false, CancellationToken cancellationToken = default)
         {
             try
             {
+                if (!force && user.TrawellingLastSweepAt.HasValue &&
+                    DateTime.UtcNow - user.TrawellingLastSweepAt.Value < SweepStaleness)
+                {
+                    return true;
+                }
+
                 if (!await EnsureValidTokenAsync(user))
-                    return null;
+                    return false;
 
                 // Ensure we have the username for this user
                 if (string.IsNullOrEmpty(user.TrawellingUsername))
                 {
                     var userInfo = await GetUserInfoAsync(user);
-                    if (userInfo != null)
-                    {
-                        user.TrawellingUsername = userInfo.Username;
-                        await _dbContext.SaveChangesAsync();
-                        _logger.LogInformation("Fetched and stored Träwelling username {Username} for user {UserId}", userInfo.Username, user.Id);
-                    }
-                    else
+                    if (userInfo == null)
                     {
                         _logger.LogError("Could not fetch Träwelling username for user {UserId}", user.Id);
-                        return null;
+                        return false;
                     }
+                    user.TrawellingUsername = userInfo.Username;
+                    await _dbContext.SaveChangesAsync(cancellationToken);
+                    _logger.LogInformation("Fetched and stored Träwelling username {Username} for user {UserId}", userInfo.Username, user.Id);
                 }
 
-                TrawellingStatusesResponse statusesResponse = null;
-                int currentPage = page;
+                // Everything already known for this user — scoped to THIS user, otherwise two
+                // accounts linked to the same Träwelling account hide each other's trips.
+                var knownIds = new HashSet<int>(await _dbContext.RouteInstances
+                    .Where(ri => ri.TrawellingStatusId.HasValue)
+                    .Where(ri => ri.RouteInstanceMaps.Any(rim => rim.Map.UserId == user.Id)
+                        || ri.Route.RouteMaps.Any(rm => rm.Map.UserId == user.Id))
+                    .Select(ri => ri.TrawellingStatusId.Value)
+                    .ToListAsync(cancellationToken));
+                knownIds.UnionWith(await _dbContext.TrawellingIgnoredStatuses
+                    .Where(tis => tis.UserId == user.Id)
+                    .Select(tis => tis.TrawellingStatusId)
+                    .ToListAsync(cancellationToken));
+                knownIds.UnionWith(await _dbContext.TrawellingInboxStatuses
+                    .Where(s => s.UserId == user.Id)
+                    .Select(s => s.TrawellingStatusId)
+                    .ToListAsync(cancellationToken));
 
-                // Loop through pages until we find one with unimported trips or reach the end
-                do
+                var seenIds = new HashSet<int>();
+                DateTime? oldestSweptDeparture = null;
+                var added = 0;
+
+                for (var page = 1; page <= SweepMaxPages; page++)
                 {
                     var response = await SendAsync(() =>
-                        CreateApiRequest(HttpMethod.Get, $"{_baseUrl}/user/{user.TrawellingUsername}/statuses?page={currentPage}", user));
+                        CreateApiRequest(HttpMethod.Get, $"{_baseUrl}/user/{user.TrawellingUsername}/statuses?page={page}", user));
 
                     if (!response.IsSuccessStatusCode)
                     {
-                        _logger.LogError("Failed to get statuses for user {UserId}. Status: {StatusCode}",
-                            user.Id, response.StatusCode);
-                        return null;
+                        _logger.LogError("Inbox sweep failed for user {UserId}. Status: {StatusCode}", user.Id, response.StatusCode);
+                        return false;
                     }
 
-                    var responseContent = await response.Content.ReadAsStringAsync();
-                    statusesResponse = JsonConvert.DeserializeObject<TrawellingStatusesResponse>(responseContent);
+                    var responseContent = await response.Content.ReadAsStringAsync(cancellationToken);
+                    var statusesResponse = JsonConvert.DeserializeObject<TrawellingStatusesResponse>(responseContent);
+                    if (statusesResponse?.Data == null || statusesResponse.Data.Count == 0)
+                        break;
 
-                    if (statusesResponse?.Data != null)
+                    var newOnPage = 0;
+                    foreach (var status in statusesResponse.Data)
                     {
-                        // Filter out statuses that are already imported or ignored — scoped to THIS user,
-                        // otherwise two accounts linked to the same Träwelling account hide each other's trips.
-                        var existingTrawellingIds = await _dbContext.RouteInstances
-                            .Where(ri => ri.TrawellingStatusId.HasValue)
-                            .Where(ri => ri.RouteInstanceMaps.Any(rim => rim.Map.UserId == user.Id)
-                                || ri.Route.RouteMaps.Any(rm => rm.Map.UserId == user.Id))
-                            .Select(ri => ri.TrawellingStatusId.Value)
-                            .ToListAsync();
+                        seenIds.Add(status.Id);
+                        var departure = GetStatusDeparture(status);
+                        if (departure.HasValue && (!oldestSweptDeparture.HasValue || departure < oldestSweptDeparture))
+                            oldestSweptDeparture = departure;
 
-                        var ignoredTrawellingIds = await _dbContext.TrawellingIgnoredStatuses
-                            .Where(tis => tis.UserId == user.Id)
-                            .Select(tis => tis.TrawellingStatusId)
-                            .ToListAsync();
-
-                        var filteredData = statusesResponse.Data
-                            .Where(status => !existingTrawellingIds.Contains(status.Id) &&
-                                           !ignoredTrawellingIds.Contains(status.Id))
-                            .ToList();
-
-                        // If we found unimported trips or reached the original requested page, return
-                        if (filteredData.Any() || currentPage == page)
-                        {
-                            statusesResponse.Data = filteredData;
-                            return statusesResponse;
-                        }
-
-                        // If this page was empty but there are more pages, continue to next page
-                        if (!string.IsNullOrEmpty(statusesResponse.Links?.Next))
-                        {
-                            currentPage++;
+                        if (knownIds.Contains(status.Id))
                             continue;
-                        }
-                        else
+
+                        _dbContext.TrawellingInboxStatuses.Add(new TrawellingInboxStatus
                         {
-                            // No more pages, return empty result
-                            statusesResponse.Data = new List<TrawellingStatus>();
-                            return statusesResponse;
-                        }
+                            UserId = user.Id,
+                            TrawellingStatusId = status.Id,
+                            PayloadJson = JsonConvert.SerializeObject(status),
+                            State = TrawellingInboxState.Pending,
+                            Source = TrawellingInboxSource.Sweep,
+                            DepartureAt = departure,
+                            ReceivedAt = DateTime.UtcNow,
+                            LastEventAt = DateTime.UtcNow,
+                        });
+                        knownIds.Add(status.Id);
+                        newOnPage++;
+                        added++;
                     }
 
-                    break;
-                } while (statusesResponse?.Meta?.CurrentPage < statusesResponse?.Meta?.Total && !string.IsNullOrWhiteSpace(statusesResponse?.Links.Next));
+                    // Statuses are ordered newest-first: a full page without anything new means
+                    // everything older is already known too.
+                    if (newOnPage == 0 || string.IsNullOrEmpty(statusesResponse.Links?.Next))
+                        break;
+                }
 
-                return statusesResponse;
+                // Heal upstream deletes: a pending row inside the swept departure range that no
+                // longer appears in the listing was deleted on Träwelling. Nothing was curated
+                // yet, so it can simply be dropped.
+                if (seenIds.Count > 0 && oldestSweptDeparture.HasValue)
+                {
+                    var deletedUpstream = await _dbContext.TrawellingInboxStatuses
+                        .Where(s => s.UserId == user.Id
+                            && s.State == TrawellingInboxState.Pending
+                            && s.DepartureAt >= oldestSweptDeparture.Value
+                            && !seenIds.Contains(s.TrawellingStatusId))
+                        .ToListAsync(cancellationToken);
+                    if (deletedUpstream.Count > 0)
+                    {
+                        _dbContext.RemoveRange(deletedUpstream);
+                        _logger.LogInformation("Inbox sweep removed {Count} upstream-deleted statuses for user {UserId}", deletedUpstream.Count, user.Id);
+                    }
+                }
+
+                user.TrawellingLastSweepAt = DateTime.UtcNow;
+                await _dbContext.SaveChangesAsync(cancellationToken);
+
+                if (added > 0)
+                    _logger.LogInformation("Inbox sweep added {Added} statuses for user {UserId}", added, user.Id);
+                return true;
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error getting unimported statuses for user {UserId}", user.Id);
-                return null;
+                _logger.LogError(ex, "Error sweeping Träwelling inbox for user {UserId}", user.Id);
+                return false;
             }
         }
 
-        public async Task<TrawellingTripsResponse> GetOptimizedTripsAsync(User user, int page = 1, int layer = 1)
+        private static DateTime? GetStatusDeparture(TrawellingStatus status)
+        {
+            var departure = status.Checkin?.ManualDeparture
+                ?? status.Checkin?.Origin?.DepartureReal
+                ?? status.Checkin?.Origin?.DeparturePlanned;
+            return departure?.UtcDateTime;
+        }
+
+        public async Task<TrawellingTripsResponse> GetOptimizedTripsAsync(User user, int page = 1, bool refresh = false)
         {
             try
             {
-                var statusesResponse = await GetUnimportedStatusesAsync(user, page);
-                if (statusesResponse?.Data == null)
-                    return null;
+                // The inbox is the source of the list; the statuses API is only touched by the
+                // sweep (skipped when fresh, forced by the frontend's refresh action). A failed
+                // sweep still returns the current — possibly stale — inbox contents.
+                await SweepInboxAsync(user, force: refresh);
+
+                const int pageSize = 15;
+                var query = _dbContext.TrawellingInboxStatuses
+                    .Where(s => s.UserId == user.Id && s.State == TrawellingInboxState.Pending)
+                    .OrderByDescending(s => s.DepartureAt)
+                    .ThenByDescending(s => s.TrawellingStatusId);
+
+                var totalCount = await query.CountAsync();
+                var rows = await query
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync();
 
                 var optimizedTrips = new List<TrawellingTripDto>();
-
-                foreach (var status in statusesResponse.Data)
+                foreach (var row in rows)
                 {
                     // Check if we have timezone-corrected trip cached
-                    var cacheKey = $"TrawellingTrip|{status.Id}";
+                    var cacheKey = $"TrawellingTrip|{row.TrawellingStatusId}";
                     if (_memoryCache.TryGetValue(cacheKey, out TrawellingTripDto cachedTrip))
                     {
                         optimizedTrips.Add(cachedTrip);
+                        continue;
+                    }
+
+                    TrawellingStatus status;
+                    try
+                    {
+                        status = JsonConvert.DeserializeObject<TrawellingStatus>(row.PayloadJson);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Could not parse inbox payload for status {StatusId}, user {UserId}", row.TrawellingStatusId, user.Id);
                         continue;
                     }
 
@@ -410,17 +480,17 @@ namespace OV_DB.Services
                     }
                 }
 
-                if (!optimizedTrips.Any() && layer < 10 && !string.IsNullOrWhiteSpace(statusesResponse.Links.Next))
-                {
-                    return await GetOptimizedTripsAsync(user, page + 1, layer + 1);
-                }
-
+                var lastPage = Math.Max(1, (int)Math.Ceiling(totalCount / (double)pageSize));
                 return new TrawellingTripsResponse
                 {
                     Data = optimizedTrips,
-                    Links = statusesResponse.Links,
-                    Meta = statusesResponse.Meta,
-                    HasMorePages = statusesResponse.Links?.Next != null
+                    Meta = new TrawellingPaginationMeta
+                    {
+                        CurrentPage = page,
+                        Total = totalCount,
+                        PerPage = pageSize,
+                    },
+                    HasMorePages = page < lastPage
                 };
             }
             catch (Exception ex)
@@ -428,6 +498,18 @@ namespace OV_DB.Services
                 _logger.LogError(ex, "Error getting optimized trips for user {UserId}", user.Id);
                 return null;
             }
+        }
+
+        /// <summary>
+        /// The inbox is a queue, not an archive: once a status is imported or ignored its row
+        /// is removed — imported/ignored state lives on RouteInstance.TrawellingStatusId and
+        /// TrawellingIgnoredStatuses.
+        /// </summary>
+        public async Task RemoveFromInboxAsync(int userId, int statusId)
+        {
+            await _dbContext.TrawellingInboxStatuses
+                .Where(s => s.UserId == userId && s.TrawellingStatusId == statusId)
+                .ExecuteDeleteAsync();
         }
 
         public async Task<bool> IgnoreStatusAsync(User user, int statusId)
@@ -454,6 +536,7 @@ namespace OV_DB.Services
 
                 _dbContext.TrawellingIgnoredStatuses.Add(ignoredStatus);
                 await _dbContext.SaveChangesAsync();
+                await RemoveFromInboxAsync(user.Id, statusId);
 
                 _logger.LogInformation("Successfully ignored status {StatusId} for user {UserId}", statusId, user.Id);
                 return true;
@@ -663,6 +746,7 @@ namespace OV_DB.Services
                 // Link to Träwelling status
                 bestMatch.TrawellingStatusId = status.Id;
                 updated = true;
+                await RemoveFromInboxAsync(user.Id, status.Id);
 
                 // Add Träwelling metadata properties if they don't exist
                 var existingKeys = bestMatch.RouteInstanceProperties?.Select(p => p.Key).ToHashSet() ?? new HashSet<string>();
@@ -798,6 +882,7 @@ namespace OV_DB.Services
                 // Link the status
                 routeInstance.TrawellingStatusId = statusId;
                 await _dbContext.SaveChangesAsync();
+                await RemoveFromInboxAsync(user.Id, statusId);
 
                 _logger.LogInformation("Successfully linked Träwelling status {StatusId} to RouteInstance {RouteInstanceId}",
                     statusId, routeInstanceId);

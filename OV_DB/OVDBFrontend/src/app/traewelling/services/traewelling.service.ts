@@ -46,8 +46,11 @@ export class TrawellingService {
   }
 
   // Trip management
-  async getUnimportedTrips(page: number = 1): Promise<TrawellingTripsResponse> {
-    const params = new HttpParams().set('page', page.toString());
+  async getUnimportedTrips(page: number = 1, refresh: boolean = false): Promise<TrawellingTripsResponse> {
+    let params = new HttpParams().set('page', page.toString());
+    if (refresh) {
+      params = params.set('refresh', 'true');
+    }
     return this.http.get<TrawellingTripsResponse>(`${this.baseUrl}/unimported`, { params })
       .pipe(first())
       .toPromise();

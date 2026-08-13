@@ -56,12 +56,32 @@ namespace OV_DB.Services
 
 
         /// <summary>
-        /// Get optimized trip data for frontend with local timezone conversion
+        /// Get optimized trip data for frontend with local timezone conversion, served from
+        /// the local inbox (swept from the Träwelling API when stale or when forced)
         /// </summary>
         /// <param name="user">User with valid tokens</param>
         /// <param name="page">Page number for pagination</param>
+        /// <param name="refresh">Force a sweep of the Träwelling API before reading the inbox</param>
         /// <returns>Optimized trip data with local timing</returns>
-        Task<TrawellingTripsResponse> GetOptimizedTripsAsync(User user, int page = 1, int layer = 1);
+        Task<TrawellingTripsResponse> GetOptimizedTripsAsync(User user, int page = 1, bool refresh = false);
+
+        /// <summary>
+        /// Reconcile the local inbox with the Träwelling statuses API: adds unknown statuses
+        /// as pending, removes pending rows that were deleted upstream. Skipped when the last
+        /// sweep is fresh, unless forced.
+        /// </summary>
+        /// <param name="user">User to sweep for</param>
+        /// <param name="force">Sweep even when the last sweep is recent</param>
+        /// <param name="cancellationToken">Cancellation token</param>
+        /// <returns>True when the sweep completed (or was fresh enough to skip)</returns>
+        Task<bool> SweepInboxAsync(User user, bool force = false, System.Threading.CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Remove a status from the inbox after it has been imported or ignored
+        /// </summary>
+        /// <param name="userId">OVDB user id</param>
+        /// <param name="statusId">Träwelling status id</param>
+        Task RemoveFromInboxAsync(int userId, int statusId);
 
         /// <summary>
         /// Ignore a specific Träwelling status so it doesn't appear in unimported list

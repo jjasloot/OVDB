@@ -1,6 +1,6 @@
 # Träwelling webhooks — live check-in sync plan
 
-Status: **planned, not yet implemented** (2026-08-13)
+Status: **phase 1 (inbox + sweep) implemented** (2026-08-13); phases 2–3 planned
 
 Goal: new Träwelling check-ins appear in OVDB's "unimported trips" list on their own,
 without paging through the statuses API. The manual review-before-import flow stays
@@ -147,12 +147,14 @@ New `User` columns: `TraewellingWebhookId` (long?), `TraewellingWebhookSecret`
 
 1. **Inbox + sweep** — schema migration, sweep service, unimported list reads from the
    inbox. Pure improvement on its own (instant list, minimal API usage), no webhook yet,
-   benefits every user immediately.
+   benefits every user immediately. **Implemented 2026-08-13** (`TrawellingInboxStatus`
+   entity, `SweepInboxAsync`, `TraewellingInboxSweepService`, refresh button).
 2. **Webhook** — receiver endpoint, "connect with live sync" OAuth variant, secret
    storage, health check in connection status.
 3. **Conflict UX** — `ChangedAfterImport` / `DeletedUpstream` sections and actions on
    the unimported page.
-4. **(Optional) Telegram ping** on new `Pending` webhook rows via the existing bot.
+4. ~~(Optional) Telegram ping~~ — **skipped for now** (2026-08-13). If ever revisited: conflict
+   alerts + webhook-health alerts with inline action buttons, no per-check-in pings.
 
 Each phase ships independently; 1 and 3 work without 2 for sweep-only users.
 

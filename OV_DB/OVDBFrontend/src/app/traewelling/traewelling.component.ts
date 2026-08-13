@@ -81,9 +81,19 @@ export class TrawellingComponent implements OnInit {
     }
   }
 
-  private async loadTrips() {
+  async refreshTrips() {
+    if (this.isLoading) return;
+    this.isLoading = true;
     try {
-      const response = await this.trawellingService.getUnimportedTrips(1);
+      await this.loadTrips(true);
+    } finally {
+      this.isLoading = false;
+    }
+  }
+
+  private async loadTrips(refresh = false) {
+    try {
+      const response = await this.trawellingService.getUnimportedTrips(1, refresh);
       this.trips = response.data;
       this.hasMorePages = response.hasMorePages;
       this.currentPage = response.meta.current_page;
