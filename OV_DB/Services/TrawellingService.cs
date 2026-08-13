@@ -484,7 +484,7 @@ namespace OV_DB.Services
                         continue;
                     }
 
-                    TrawellingStatus status;
+                    TrawellingStatus status = null;
                     try
                     {
                         status = JsonConvert.DeserializeObject<TrawellingStatus>(row.PayloadJson);
@@ -492,15 +492,34 @@ namespace OV_DB.Services
                     catch (Exception ex)
                     {
                         _logger.LogError(ex, "Could not parse inbox payload for status {StatusId}, user {UserId}", row.TrawellingStatusId, user.Id);
-                        continue;
                     }
 
-                    var trip = await MapStatusToTripDtoAsync(user, status);
+                    var trip = status != null ? await MapStatusToTripDtoAsync(user, status) : null;
+                    if (trip == null)
+                    {
+                        // Early webhook deliveries were stored without the stopovers' station
+                        // objects, which the mapping requires; refetch the complete status once
+                        // and repair the stored payload.
+                        var (fullJson, fullStatus) = await FetchStatusRawAsync(user, row.TrawellingStatusId);
+                        if (fullJson != null)
+                        {
+                            row.PayloadJson = fullJson;
+                            row.DepartureAt = GetStatusDeparture(fullStatus);
+                            row.LastEventAt = DateTime.UtcNow;
+                            await _dbContext.SaveChangesAsync();
+                            trip = await MapStatusToTripDtoAsync(user, fullStatus);
+                        }
+                    }
+
                     if (trip != null)
                     {
                         // Cache the timezone-corrected trip
                         _memoryCache.Set(cacheKey, trip, TimeSpan.FromMinutes(30));
                         optimizedTrips.Add(trip);
+                    }
+                    else
+                    {
+                        _logger.LogWarning("Inbox status {StatusId} for user {UserId} could not be mapped to a trip and was skipped", row.TrawellingStatusId, user.Id);
                     }
                 }
 
@@ -612,6 +631,24 @@ namespace OV_DB.Services
             var statusJson = statusToken.ToString(Formatting.None);
             var statusId = status.Id;
 
+            // The delivery payload omits relations that happened not to be loaded upstream —
+            // notably the stopovers' station objects, which the trip mapping requires. Treat
+            // the delivery as a trigger and fetch the complete status; keep the delivery
+            // payload only as a fallback when the fetch fails.
+            if (eventType is "checkin_create" or "checkin_update")
+            {
+                var (fullJson, fullStatus) = await FetchStatusRawAsync(user, statusId);
+                if (fullJson != null)
+                {
+                    statusJson = fullJson;
+                    status = fullStatus;
+                }
+                else
+                {
+                    _logger.LogWarning("Could not fetch full status {StatusId} for user {UserId}, storing the webhook delivery payload", statusId, user.Id);
+                }
+            }
+
             var imported = await _dbContext.RouteInstances
                 .Where(ri => ri.TrawellingStatusId == statusId)
                 .Where(ri => ri.RouteInstanceMaps.Any(rim => rim.Map.UserId == user.Id)
@@ -669,6 +706,36 @@ namespace OV_DB.Services
             // The 30-minute trip DTO cache would otherwise serve the pre-update payload
             _memoryCache.Remove($"TrawellingTrip|{statusId}");
             _logger.LogInformation("Processed Träwelling webhook {Event} for status {StatusId}, user {UserId}", eventType, statusId, user.Id);
+        }
+
+        /// <summary>
+        /// Fetch a single status from the API as raw JSON plus its parsed form. Unlike the
+        /// webhook delivery payload, this endpoint returns the complete resource including
+        /// the stopovers' station objects.
+        /// </summary>
+        private async Task<(string Json, TrawellingStatus Status)> FetchStatusRawAsync(User user, int statusId)
+        {
+            try
+            {
+                if (!await EnsureValidTokenAsync(user))
+                    return (null, null);
+
+                var response = await SendAsync(() =>
+                    CreateApiRequest(HttpMethod.Get, $"{_baseUrl}/status/{statusId}", user));
+                if (!response.IsSuccessStatusCode)
+                    return (null, null);
+
+                var content = await response.Content.ReadAsStringAsync();
+                if (JObject.Parse(content)["data"] is not JObject data)
+                    return (null, null);
+
+                return (data.ToString(Formatting.None), data.ToObject<TrawellingStatus>());
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching full status {StatusId} for user {UserId}", statusId, user.Id);
+                return (null, null);
+            }
         }
 
         private void UpsertInboxRow(TrawellingInboxStatus row, int userId, int statusId, string payloadJson, TrawellingStatus status, TrawellingInboxState state)
