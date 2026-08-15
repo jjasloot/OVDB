@@ -996,7 +996,11 @@ namespace OV_DB.Controllers
               .Include(r => r.RouteInstances)
               .ThenInclude(ri => ri.RouteInstanceMaps)
               .ThenInclude(rim => rim.Map)
-              .Where(r => r.RouteMaps.Any(rm => !string.IsNullOrWhiteSpace(rm.Map.SharingLinkName) || rm.Map.UserId == userIdClaim))
+              // The route must actually live on the map identified by mapGuid, and that
+              // map must be shared (or owned by the caller) - otherwise any route on any
+              // shared map anywhere would be readable by id enumeration.
+              .Where(r => r.RouteMaps.Any(rm => rm.Map.MapGuid == mapGuid
+                                                && (!string.IsNullOrWhiteSpace(rm.Map.SharingLinkName) || rm.Map.UserId == userIdClaim)))
               .SingleOrDefaultAsync();
             if (route == null)
             {
@@ -1013,7 +1017,7 @@ namespace OV_DB.Controllers
             }
 
 
-            return MappingExtensions.MapToRouteWithInstancesDTO(route);
+            return MappingExtensions.MapToRouteWithInstancesDTO(route, includeSensitive: false, restrictToMapGuid: mapGuid);
         }
 
         [HttpPut("instances")]

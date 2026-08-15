@@ -115,7 +115,7 @@ namespace OV_DB.Mappings
             return dtos;
         }
 
-        public static RouteWithInstancesDTO MapToRouteWithInstancesDTO(OVDB_database.Models.Route route)
+        public static RouteWithInstancesDTO MapToRouteWithInstancesDTO(OVDB_database.Models.Route route, bool includeSensitive = true, Guid? restrictToMapGuid = null)
         {
             return new RouteWithInstancesDTO
             {
@@ -133,7 +133,7 @@ namespace OV_DB.Mappings
                 RouteType = route.RouteType,
                 CalculatedDistance = route.CalculatedDistance,
                 OverrideDistance = route.OverrideDistance,
-                Share = route.Share,
+                Share = includeSensitive ? route.Share : Guid.Empty,
                 FirstDateTime = route.RouteInstances?.Max(d => (DateTime?)d.Date),
                 RouteInstancesCount = route.RouteInstances?.Count ?? 0,
                 MinAverageSpeedKmh = (route.RouteInstances ?? [])
@@ -146,13 +146,15 @@ namespace OV_DB.Mappings
                     .Select(ri => (double?)((route.OverrideDistance ?? route.CalculatedDistance) / ri.DurationHours!.Value))
                     .DefaultIfEmpty()
                     .Max(),
-                RouteMaps = route.RouteMaps?.Select(rm => new RouteMapDTO
-                {
-                    RouteMapId = rm.RouteMapId,
-                    MapId = rm.MapId,
-                    Name = rm.Map?.Name,
-                    NameNL = rm.Map?.NameNL
-                }).ToList(),
+                RouteMaps = route.RouteMaps?
+                    .Where(rm => includeSensitive || rm.Map != null && rm.Map.MapGuid == restrictToMapGuid)
+                    .Select(rm => new RouteMapDTO
+                    {
+                        RouteMapId = rm.RouteMapId,
+                        MapId = rm.MapId,
+                        Name = rm.Map?.Name,
+                        NameNL = rm.Map?.NameNL
+                    }).ToList(),
                 Regions = route.Regions?.Select(rg => new RegionMinimalDTO
                 {
                     Id = rg.Id,
@@ -181,12 +183,14 @@ namespace OV_DB.Mappings
                         Value = p.Value,
                         Bool = p.Bool
                     }).ToList(),
-                    RouteInstanceMaps = ri.RouteInstanceMaps?.Select(rim => new RouteInstanceMapDTO
-                    {
-                        MapId = rim.MapId,
-                        Name = rim.Map?.Name,
-                        NameNL = rim.Map?.NameNL
-                    }).ToList()
+                    RouteInstanceMaps = ri.RouteInstanceMaps?
+                        .Where(rim => includeSensitive || rim.Map != null && rim.Map.MapGuid == restrictToMapGuid)
+                        .Select(rim => new RouteInstanceMapDTO
+                        {
+                            MapId = rim.MapId,
+                            Name = rim.Map?.Name,
+                            NameNL = rim.Map?.NameNL
+                        }).ToList()
                 }).ToList()
             };
         }
