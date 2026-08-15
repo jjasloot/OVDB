@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -15,6 +16,7 @@ using System.Threading.Tasks;
 namespace OV_DB.Controllers;
 [Route("api/[controller]")]
 [ApiController]
+[Authorize]
 public class RequestsController(OVDBDatabaseContext dbContext, TelegramBotService telegramBotService, ILogger<RequestsController> logger) : ControllerBase
 {
     [HttpGet]

@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using OV_DB.Helpers;
 using OV_DB.Models;
@@ -20,6 +21,7 @@ namespace OV_DB.Controllers
 {
     [Microsoft.AspNetCore.Mvc.Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class ExportController : ControllerBase
     {
         private readonly OVDBDatabaseContext _dbContext;

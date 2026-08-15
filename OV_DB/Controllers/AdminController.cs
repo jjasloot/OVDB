@@ -19,6 +19,7 @@ namespace OV_DB.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class AdminController : ControllerBase
     {
         private readonly IConfiguration _configuration;
@@ -263,7 +264,6 @@ namespace OV_DB.Controllers
         }
 
         [HttpGet("assignRegionsToStations")]
-        [AllowAnonymous]
         public async Task<ActionResult> AssignRegionsToStations([FromServices] IStationRegionsService stationRegionsService, [FromQuery] int? regionId)
         {
             var adminClaim = (User.Claims.SingleOrDefault(c => c.Type == "admin").Value ?? "false");

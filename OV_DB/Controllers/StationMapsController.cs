@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using GeoJSON.Net.Feature;
 using GeoJSON.Net.Geometry;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using OV_DB.Mappings;
@@ -17,6 +18,7 @@ namespace OV_DB.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class StationMapsController : ControllerBase
     {
         private OVDBDatabaseContext _context;

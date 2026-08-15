@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -17,6 +18,7 @@ namespace OV_DB.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
+[Authorize]
 public class OperatorsController : ControllerBase
 {
     private readonly string _storagePath;

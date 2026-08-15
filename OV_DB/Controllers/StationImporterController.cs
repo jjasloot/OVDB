@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
@@ -16,6 +17,7 @@ namespace OV_DB.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class StationImporterController(OVDBDatabaseContext dbContext, IStationRegionsService stationRegionsService, IHubContext<MapGenerationHub> mapGenerationHubContext, IOverpassService overpassService) : ControllerBase
     {
         private readonly IOverpassService _overpassService = overpassService;
