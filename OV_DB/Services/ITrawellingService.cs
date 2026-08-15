@@ -70,7 +70,7 @@ namespace OV_DB.Services
         /// <param name="page">Page number for pagination</param>
         /// <param name="refresh">Force a sweep of the Träwelling API before reading the inbox</param>
         /// <returns>Optimized trip data with local timing</returns>
-        Task<TrawellingTripsResponse> GetOptimizedTripsAsync(User user, int page = 1, bool refresh = false);
+        Task<TrawellingTripsResponse> GetOptimizedTripsAsync(User user, int page = 1, bool refresh = false, System.Threading.CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Reconcile the local inbox with the Träwelling statuses API: adds unknown statuses

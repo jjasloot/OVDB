@@ -10,6 +10,7 @@ using OVDB_database.Models;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading;
 using System.Linq;
 using System.Security.Claims;
 using System.Security.Cryptography;
@@ -281,7 +282,7 @@ namespace OV_DB.Controllers
         /// Get unimported trips from Träwelling (excluding ignored ones)
         /// </summary>
         [HttpGet("unimported")]
-        public async Task<IActionResult> GetUnimportedTrips([FromQuery] int page = 1, [FromQuery] bool refresh = false)
+        public async Task<IActionResult> GetUnimportedTrips([FromQuery] int page = 1, [FromQuery] bool refresh = false, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -296,7 +297,7 @@ namespace OV_DB.Controllers
                 if (!_trawellingService.IsConnected(user))
                     return BadRequest("Träwelling account not connected or tokens expired");
 
-                var tripsResponse = await _trawellingService.GetOptimizedTripsAsync(user, page, refresh);
+                var tripsResponse = await _trawellingService.GetOptimizedTripsAsync(user, page, refresh, cancellationToken);
 
                 if (tripsResponse == null && _rateLimiter.IsLimited)
                     return StatusCode(429, "Träwelling is rate limiting us, please try again in a minute");

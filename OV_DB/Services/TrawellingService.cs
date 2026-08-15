@@ -375,7 +375,8 @@ namespace OV_DB.Services
                 for (var page = 1; page <= SweepMaxPages; page++)
                 {
                     var response = await SendAsync(() =>
-                        CreateApiRequest(HttpMethod.Get, $"{_baseUrl}/user/{user.TrawellingUsername}/statuses?page={page}", user));
+                        CreateApiRequest(HttpMethod.Get, $"{_baseUrl}/user/{user.TrawellingUsername}/statuses?page={page}", user),
+                        cancellationToken: cancellationToken);
 
                     if (!response.IsSuccessStatusCode)
                     {
@@ -465,14 +466,14 @@ namespace OV_DB.Services
             return departure?.UtcDateTime;
         }
 
-        public async Task<TrawellingTripsResponse> GetOptimizedTripsAsync(User user, int page = 1, bool refresh = false)
+        public async Task<TrawellingTripsResponse> GetOptimizedTripsAsync(User user, int page = 1, bool refresh = false, CancellationToken cancellationToken = default)
         {
             try
             {
                 // The inbox is the source of the list; the statuses API is only touched by the
                 // sweep (skipped when fresh, forced by the frontend's refresh action). A failed
                 // sweep still returns the current — possibly stale — inbox contents.
-                await SweepInboxAsync(user, force: refresh);
+                await SweepInboxAsync(user, force: refresh, cancellationToken);
 
                 const int pageSize = 15;
                 var query = _dbContext.TrawellingInboxStatuses
@@ -1709,14 +1710,14 @@ namespace OV_DB.Services
             return request;
         }
 
-        private async Task<HttpResponseMessage> SendAsync(Func<HttpRequestMessage> requestFactory, int maxRetries = 5)
+        private async Task<HttpResponseMessage> SendAsync(Func<HttpRequestMessage> requestFactory, int maxRetries = 5, CancellationToken cancellationToken = default)
         {
             int attempt = 0;
             while (true)
             {
-                await _rateLimiter.WaitIfLimitedAsync();
+                await _rateLimiter.WaitIfLimitedAsync(cancellationToken);
                 using var request = requestFactory();
-                var response = await _httpClient.SendAsync(request);
+                var response = await _httpClient.SendAsync(request, cancellationToken);
                 _rateLimiter.RecordResponse(response);
 
                 if (response.StatusCode != System.Net.HttpStatusCode.TooManyRequests &&
@@ -1737,7 +1738,7 @@ namespace OV_DB.Services
                 // The limiter recorded the Retry-After, so WaitIfLimitedAsync at the top of the
                 // loop does the waiting; fall back to exponential backoff if there was none.
                 if (!_rateLimiter.IsLimited)
-                    await Task.Delay(TimeSpan.FromSeconds(Math.Pow(2, attempt)));
+                    await Task.Delay(TimeSpan.FromSeconds(Math.Pow(2, attempt)), cancellationToken);
             }
         }
     }
