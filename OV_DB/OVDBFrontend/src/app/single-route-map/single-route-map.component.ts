@@ -1,4 +1,5 @@
 import { Component, OnInit, viewChild, inject, ChangeDetectionStrategy } from '@angular/core';
+import { firstValueFrom } from 'rxjs';
 import { LatLngBounds, LatLng, geoJSON, Layer } from 'leaflet';
 import { TranslateService, TranslateModule } from '@ngx-translate/core';
 import { TranslationService } from '../services/translation.service';
@@ -79,7 +80,7 @@ export class SingleRouteMapComponent implements OnInit {
     try {
       this.loading = true;
 
-      const text = await this.apiService.getSingleRoute(this.routeId, this.guid, this.translationService.language).toPromise();
+      const text = await firstValueFrom(this.apiService.getSingleRoute(this.routeId, this.guid, this.translationService.language));
       const parent = this;
       const track = geoJSON(text as any, {
         style: feature => {

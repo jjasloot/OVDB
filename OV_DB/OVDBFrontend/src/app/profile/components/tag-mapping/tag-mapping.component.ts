@@ -1,4 +1,5 @@
 import { Component, Input, Output, EventEmitter, signal, computed, inject, ChangeDetectionStrategy } from '@angular/core';
+import { firstValueFrom } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -127,7 +128,7 @@ export class TagMappingComponent {
     
     try {
       // Use dedicated tag mappings endpoint
-      await this.apiService.updateTagMappings([...this.mappings]).toPromise();
+      await firstValueFrom(this.apiService.updateTagMappings([...this.mappings]));
       
       // Clear the traewelling service tag mappings cache
       this.trawellingService.clearTagMappingsCache();
@@ -136,12 +137,12 @@ export class TagMappingComponent {
       this.mappingsChange.emit([...this.mappings]);
       
       // Show success message
-      const message = await this.translateService.get('PROFILE.TAG_MAPPING_SAVED').toPromise();
+      const message = await firstValueFrom(this.translateService.get('PROFILE.TAG_MAPPING_SAVED'));
       this.snackBar.open(message, '', { duration: 2000 });
       
     } catch (error) {
       console.error('Error saving tag mappings:', error);
-      const message = await this.translateService.get('PROFILE.TAG_MAPPING_ERROR').toPromise();
+      const message = await firstValueFrom(this.translateService.get('PROFILE.TAG_MAPPING_ERROR'));
       this.snackBar.open(message, '', { duration: 4000 });
       
       // Revert changes on error would require keeping previous state

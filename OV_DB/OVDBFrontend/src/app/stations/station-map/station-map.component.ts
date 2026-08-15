@@ -1,4 +1,5 @@
 import { ChangeDetectorRef, Component, OnInit, input, inject, signal, computed, ChangeDetectionStrategy } from "@angular/core";
+import { firstValueFrom } from "rxjs";
 import {
   LatLngBounds,
   LatLng,
@@ -75,7 +76,7 @@ export class StationMapComponent implements OnInit {
   async getData() {
     this.loading.set(true);
 
-    const text = await this.apiService.getStationMap(this.guid()!).toPromise();
+    const text = await firstValueFrom(this.apiService.getStationMap(this.guid()!));
     const parent = this;
     this.total.set(text.total);
     this.visited.set(text.visited);
@@ -135,12 +136,11 @@ export class StationMapComponent implements OnInit {
         radius: 6,
       });
       (this.layers()[0] as any).refreshClusters();
-      await parent.apiService
+      await firstValueFrom(parent.apiService
         .updateStation(
           f.propagatedFrom.feature.properties.id,
           f.propagatedFrom.feature.properties.visited
-        )
-        .toPromise();
+        ));
       if (f.propagatedFrom.feature.properties.visited) {
         parent.visited.update(v => v + 1);
       } else {

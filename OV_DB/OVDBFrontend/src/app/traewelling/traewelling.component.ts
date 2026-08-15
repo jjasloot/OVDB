@@ -1,5 +1,5 @@
 import { Component, OnInit, OnDestroy, inject, ChangeDetectionStrategy } from '@angular/core';
-import { Subscription } from 'rxjs';
+import { Subscription, firstValueFrom } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
@@ -158,7 +158,7 @@ export class TrawellingComponent implements OnInit, OnDestroy {
         ...STANDARD_DIALOG,
         data: { item: this.translateService.instant(confirmKey) },
       });
-      const confirmed = await dialogRef.afterClosed().pipe(first()).toPromise();
+      const confirmed = await firstValueFrom(dialogRef.afterClosed().pipe(first()));
       if (!confirmed) return;
     }
 

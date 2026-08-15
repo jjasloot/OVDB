@@ -1,4 +1,5 @@
 import { Component, Input, Output, EventEmitter, signal, computed, inject, ChangeDetectionStrategy } from '@angular/core';
+import { firstValueFrom } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -97,14 +98,14 @@ export class OperatorMappingComponent {
     this.isSaving.set(true);
 
     try {
-      await this.apiService.updateOperatorMappings([...this.mappings]).toPromise();
+      await firstValueFrom(this.apiService.updateOperatorMappings([...this.mappings]));
       this.mappingsChange.emit([...this.mappings]);
 
-      const message = await this.translateService.get('PROFILE.TRAINLOG_OPERATOR_MAPPING_SAVED').toPromise();
+      const message = await firstValueFrom(this.translateService.get('PROFILE.TRAINLOG_OPERATOR_MAPPING_SAVED'));
       this.snackBar.open(message, '', { duration: 2000 });
     } catch (error) {
       console.error('Error saving operator mappings:', error);
-      const message = await this.translateService.get('PROFILE.TRAINLOG_OPERATOR_MAPPING_ERROR').toPromise();
+      const message = await firstValueFrom(this.translateService.get('PROFILE.TRAINLOG_OPERATOR_MAPPING_ERROR'));
       this.snackBar.open(message, '', { duration: 4000 });
     } finally {
       this.isSaving.set(false);

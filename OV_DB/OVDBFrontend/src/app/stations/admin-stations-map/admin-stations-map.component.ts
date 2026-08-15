@@ -1,3 +1,4 @@
+import { firstValueFrom } from 'rxjs';
 import {
   ChangeDetectorRef,
   Component,
@@ -158,9 +159,8 @@ export class AdminStationsMapComponent implements OnInit {
   async getData(updateBounds = false) {
     this.loading = true;
 
-    const text = await this.apiService
-      .getStationsAdminMap(this.selectedRegions)
-      .toPromise();
+    const text = await firstValueFrom(this.apiService
+      .getStationsAdminMap(this.selectedRegions));
     const parent = this;
     const markers = await createMarkerClusterGroup({
       iconCreateFunction: (cluster) => {

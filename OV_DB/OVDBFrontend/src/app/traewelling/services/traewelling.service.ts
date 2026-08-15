@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, firstValueFrom } from 'rxjs';
 import { map, first } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 import {
@@ -42,9 +42,9 @@ export class TrawellingService {
 
   // Connection management
   async getConnectionStatus(): Promise<TrawellingConnectionStatus> {
-    return this.http.get<TrawellingConnectionStatus>(`${this.baseUrl}/status`)
+    return firstValueFrom(this.http.get<TrawellingConnectionStatus>(`${this.baseUrl}/status`)
       .pipe(first())
-      .toPromise();
+      );
   }
 
   // Trip management
@@ -53,36 +53,35 @@ export class TrawellingService {
     if (refresh) {
       params = params.set('refresh', 'true');
     }
-    return this.http.get<TrawellingTripsResponse>(`${this.baseUrl}/unimported`, { params })
+    return firstValueFrom(this.http.get<TrawellingTripsResponse>(`${this.baseUrl}/unimported`, { params })
       .pipe(first())
-      .toPromise();
+      );
   }
 
   async getConflicts(): Promise<TrawellingConflict[]> {
-    return this.http.get<TrawellingConflict[]>(`${this.baseUrl}/conflicts`)
+    return firstValueFrom(this.http.get<TrawellingConflict[]>(`${this.baseUrl}/conflicts`)
       .pipe(first())
-      .toPromise();
+      );
   }
 
   async resolveConflict(statusId: number, action: TrawellingConflictAction): Promise<boolean> {
-    const response = await this.http.post<{ success: boolean }>(
+    const response = await firstValueFrom(this.http.post<{ success: boolean }>(
       `${this.baseUrl}/conflicts/${statusId}/${action}`, {})
-      .pipe(first())
-      .toPromise();
+      .pipe(first()));
     return response?.success ?? false;
   }
 
   async ignoreTrip(tripId: number): Promise<TrawellingIgnoreResponse> {
     const request: TrawellingIgnoreRequest = { statusId: tripId };
-    return this.http.post<TrawellingIgnoreResponse>(`${this.baseUrl}/ignore`, request)
+    return firstValueFrom(this.http.post<TrawellingIgnoreResponse>(`${this.baseUrl}/ignore`, request)
       .pipe(first())
-      .toPromise();
+      );
   }
 
   async getAlerts(): Promise<TraewellingAlert[]> {
-    return this.http.get<TraewellingAlert[]>(`${this.baseUrl}/alerts`)
+    return firstValueFrom(this.http.get<TraewellingAlert[]>(`${this.baseUrl}/alerts`)
       .pipe(first())
-      .toPromise();
+      );
   }
 
   // Route Instance linking (existing functionality)
@@ -91,16 +90,16 @@ export class TrawellingService {
       .set('date', trip.transport.origin.departureScheduled!.split('T')[0])
       .set('query', trip.transport.origin.name);
     
-    return this.http.get<RouteInstanceSearchResult[]>(`${this.baseUrl}/route-instances`, { params })
+    return firstValueFrom(this.http.get<RouteInstanceSearchResult[]>(`${this.baseUrl}/route-instances`, { params })
       .pipe(first())
-      .toPromise();
+      );
   }
 
   async linkToRouteInstance(tripId: number, routeInstanceId: number): Promise<LinkToRouteInstanceResponse> {
     const request: LinkToRouteInstanceRequest = { statusId: tripId, routeInstanceId };
-    return this.http.post<LinkToRouteInstanceResponse>(`${this.baseUrl}/link`, request)
+    return firstValueFrom(this.http.post<LinkToRouteInstanceResponse>(`${this.baseUrl}/link`, request)
       .pipe(first())
-      .toPromise();
+      );
   }
 
   // Route search for "Add to Existing Route" functionality
@@ -112,12 +111,12 @@ export class TrawellingService {
       .set('sortColumn','date')
       .set('descending',true);
     
-    return this.http.get<RoutesListResponse>(this.routesUrl, { params })
+    return firstValueFrom(this.http.get<RoutesListResponse>(this.routesUrl, { params })
       .pipe(
         map((routes) => routes.routes || []),
         first()
       )
-      .toPromise();
+      );
   }
 
   // Trip context extraction for route creation workflows
@@ -125,7 +124,7 @@ export class TrawellingService {
     // Get tag mappings if not cached
     if (this.tagMappingsCache === null) {
       try {
-        const profile = await this.apiService.getUserProfile().pipe(first()).toPromise();
+        const profile = await firstValueFrom(this.apiService.getUserProfile().pipe(first()));
         this.tagMappingsCache = profile?.traewellingTagMappings || [];
       } catch (error) {
         console.error('Error loading tag mappings:', error);
