@@ -34,7 +34,7 @@ namespace OV_DB.Controllers
         [HttpGet("profile")]
         public async Task<ActionResult<UserProfileDTO>> GetProfileAsync()
         {
-            var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value ?? "-1");
+            var userIdClaim = User.GetUserId();
             if (userIdClaim < 0)
             {
                 return Forbid();
@@ -100,7 +100,7 @@ namespace OV_DB.Controllers
         [HttpPut("profile")]
         public async Task<ActionResult> UpdateProfileAsync([FromBody] UpdateProfileDTO updateProfile)
         {
-            var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value ?? "-1");
+            var userIdClaim = User.GetUserId();
             if (userIdClaim < 0)
             {
                 return Forbid();
@@ -157,7 +157,7 @@ namespace OV_DB.Controllers
         [HttpPost("change-password")]
         public async Task<ActionResult> ChangePasswordAsync([FromBody] ChangePasswordDTO changePassword)
         {
-            var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value ?? "-1");
+            var userIdClaim = User.GetUserId();
             if (userIdClaim < 0)
             {
                 return Forbid();
@@ -204,7 +204,7 @@ namespace OV_DB.Controllers
         [HttpPut("tag-mappings")]
         public async Task<ActionResult> UpdateTagMappingsAsync([FromBody] List<TraewellingTagMappingDTO> tagMappings)
         {
-            var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value ?? "-1");
+            var userIdClaim = User.GetUserId();
             if (userIdClaim < 0)
             {
                 return Forbid();
@@ -235,7 +235,7 @@ namespace OV_DB.Controllers
         [HttpPut("operator-mappings")]
         public async Task<ActionResult> UpdateOperatorMappingsAsync([FromBody] List<TrainlogOperatorMappingDTO> operatorMappings)
         {
-            var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value ?? "-1");
+            var userIdClaim = User.GetUserId();
             if (userIdClaim < 0)
             {
                 return Forbid();
@@ -260,7 +260,7 @@ namespace OV_DB.Controllers
         [HttpGet("maps")]
         public async Task<ActionResult<List<Map>>> GetMapsAsync()
         {
-            var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value ?? "-1");
+            var userIdClaim = User.GetUserId();
             if (userIdClaim < 0)
             {
                 return Forbid();

@@ -587,7 +587,7 @@ namespace OV_DB.Controllers
         [HttpPost("addRoute")]
         public async Task<ActionResult<Route>> ImportRouteToDatabaseAsync([FromBody] OSMLineDTO line)
         {
-            var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value ?? "-1");
+            var userIdClaim = User.GetUserId();
             if (userIdClaim < 0)
             {
                 return Forbid();

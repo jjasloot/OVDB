@@ -74,7 +74,7 @@ namespace OV_DB.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, [FromBody] RegionDTO input)
         {
-            var adminClaim = (User.Claims.SingleOrDefault(c => c.Type == "admin").Value ?? "false");
+            var adminClaim = (User.IsAdmin() ? "true" : "false");
             if (string.Equals(adminClaim, "false", StringComparison.OrdinalIgnoreCase))
             {
                 return Forbid();
@@ -93,7 +93,7 @@ namespace OV_DB.Controllers
         [HttpPost]
         public async Task<ActionResult> CreateNew(NewRegion newRegion)
         {
-            var adminClaim = (User.Claims.SingleOrDefault(c => c.Type == "admin").Value ?? "false");
+            var adminClaim = (User.IsAdmin() ? "true" : "false");
             if (string.Equals(adminClaim, "false", StringComparison.OrdinalIgnoreCase))
             {
                 return Forbid();
@@ -264,7 +264,7 @@ namespace OV_DB.Controllers
         [HttpGet("map/{mapGuid}")]
         public async Task<ActionResult<IEnumerable<RegionDTO>>> GetAllForMap(Guid mapGuid)
         {
-            var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value ?? "-1");
+            var userIdClaim = User.GetUserId();
             if (userIdClaim < 0)
             {
                 return Forbid();
@@ -351,7 +351,7 @@ namespace OV_DB.Controllers
         [HttpGet("refreshAll")]
         public async Task<IActionResult> RefreshAll()
         {
-            var adminClaim = (User.Claims.SingleOrDefault(c => c.Type == "admin").Value ?? "false");
+            var adminClaim = (User.IsAdmin() ? "true" : "false");
             if (string.Equals(adminClaim, "false", StringComparison.OrdinalIgnoreCase))
             {
                 return Forbid();
@@ -379,7 +379,7 @@ namespace OV_DB.Controllers
         [HttpPost("{id}/refreshRoutes")]
         public async Task<IActionResult> RefreshRoutesAsync(int id)
         {
-            var adminClaim = (User.Claims.SingleOrDefault(c => c.Type == "admin").Value ?? "false");
+            var adminClaim = (User.IsAdmin() ? "true" : "false");
             if (string.Equals(adminClaim, "false", StringComparison.OrdinalIgnoreCase))
             {
                 return Forbid();
@@ -394,7 +394,7 @@ namespace OV_DB.Controllers
         [HttpPost("refreshRoutesWithoutRegions")]
         public IActionResult RefreshRoutesWithoutRegions()
         {
-            var adminClaim = (User.Claims.SingleOrDefault(c => c.Type == "admin").Value ?? "false");
+            var adminClaim = (User.IsAdmin() ? "true" : "false");
             if (string.Equals(adminClaim, "false", StringComparison.OrdinalIgnoreCase))
             {
                 return Forbid();

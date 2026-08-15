@@ -29,7 +29,7 @@ namespace OV_DB.Controllers
         [HttpGet]
         public async Task<IActionResult> GetVisitedStations([FromQuery] string countryIds = "")
         {
-            var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value ?? "-1");
+            var userIdClaim = User.GetUserId();
             if (userIdClaim < 0)
             {
                 return Forbid();
@@ -81,7 +81,7 @@ namespace OV_DB.Controllers
         [HttpPut("{id:int}")]
         public async Task<IActionResult> UpdateVisitedStations(int id, [FromBody] BoolValue value)
         {
-            var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value ?? "-1");
+            var userIdClaim = User.GetUserId();
             if (userIdClaim < 0)
             {
                 return Forbid();
@@ -122,7 +122,7 @@ namespace OV_DB.Controllers
         [HttpGet("map")]
         public async Task<IActionResult> GetAdminMap([FromQuery] List<int> regions)
         {
-            var adminClaim = (User.Claims.SingleOrDefault(c => c.Type == "admin").Value ?? "false");
+            var adminClaim = (User.IsAdmin() ? "true" : "false");
             if (string.Equals(adminClaim, "false", StringComparison.OrdinalIgnoreCase))
             {
                 return Forbid();
@@ -150,7 +150,7 @@ namespace OV_DB.Controllers
         [HttpPut("admin/{id:int}")]
         public async Task<IActionResult> AdminUpdateStation(int id, [FromBody] StationVisibilityAdmin stationVisibility)
         {
-            var adminClaim = (User.Claims.SingleOrDefault(c => c.Type == "admin").Value ?? "false");
+            var adminClaim = (User.IsAdmin() ? "true" : "false");
             if (string.Equals(adminClaim, "false", StringComparison.OrdinalIgnoreCase))
             {
                 return Forbid();
@@ -173,7 +173,7 @@ namespace OV_DB.Controllers
         [HttpDelete("admin/{id:int}")]
         public async Task<IActionResult> AdminDeleteStation(int id)
         {
-            var adminClaim = (User.Claims.SingleOrDefault(c => c.Type == "admin").Value ?? "false");
+            var adminClaim = (User.IsAdmin() ? "true" : "false");
             if (string.Equals(adminClaim, "false", StringComparison.OrdinalIgnoreCase))
             {
                 return Forbid();

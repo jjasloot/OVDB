@@ -31,7 +31,7 @@ namespace OV_DB.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<StationMapDTO>>> GetMaps()
         {
-            var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value ?? "-1");
+            var userIdClaim = User.GetUserId();
             if (userIdClaim < 0)
             {
                 return Forbid();
@@ -45,7 +45,7 @@ namespace OV_DB.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<StationMapDTO>> GetMap(int id)
         {
-            var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value ?? "-1");
+            var userIdClaim = User.GetUserId();
             if (userIdClaim < 0)
             {
                 return Forbid();
@@ -65,7 +65,7 @@ namespace OV_DB.Controllers
         [HttpPut]
         public async Task<IActionResult> PutMap(StationMapDTO stationMap)
         {
-            var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value ?? "-1");
+            var userIdClaim = User.GetUserId();
             if (userIdClaim < 0)
             {
                 return Forbid();
@@ -105,7 +105,7 @@ namespace OV_DB.Controllers
         [HttpPost]
         public async Task<ActionResult<Map>> PostMap(StationMapDTO stationMap)
         {
-            var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value ?? "-1");
+            var userIdClaim = User.GetUserId();
             if (userIdClaim < 0)
             {
                 return Forbid();
@@ -132,7 +132,7 @@ namespace OV_DB.Controllers
         [HttpDelete("{id}")]
         public async Task<ActionResult<StationGrouping>> DeleteMap(int id)
         {
-            var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value ?? "-1");
+            var userIdClaim = User.GetUserId();
             if (userIdClaim < 0)
             {
                 return Forbid();
@@ -151,7 +151,7 @@ namespace OV_DB.Controllers
         [HttpPost("order")]
         public async Task<ActionResult> UpdateMapsOrdering([FromBody] List<int> mapOrdering)
         {
-            var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value ?? "-1");
+            var userIdClaim = User.GetUserId();
             if (userIdClaim < 0)
             {
                 return Forbid();
@@ -167,7 +167,7 @@ namespace OV_DB.Controllers
         [HttpGet("map/{id}")]
         public async Task<IActionResult> GetVisitedStations(string id)
         {
-            var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value ?? "-1");
+            var userIdClaim = User.GetUserId();
             if (userIdClaim < 0)
             {
                 return Forbid();

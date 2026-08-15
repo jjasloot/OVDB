@@ -34,13 +34,13 @@ namespace OV_DB.Controllers
         [HttpPost("Trainlog")]
         public async Task<IActionResult> ExportToTrainlog([FromBody] ExportRequest request)
         {
-            var adminClaim = (User.Claims.SingleOrDefault(c => c.Type == "admin")?.Value ?? "false");
+            var adminClaim = (User.IsAdmin() ? "true" : "false");
             if (string.Equals(adminClaim, "false", StringComparison.OrdinalIgnoreCase))
             {
                 return Forbid();
             }
 
-            var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value ?? "-1");
+            var userIdClaim = User.GetUserId();
             var user = await _dbContext.Users.FindAsync(userIdClaim);
 
             if ((request.RouteInstanceIds == null || !request.RouteInstanceIds.Any()) &&

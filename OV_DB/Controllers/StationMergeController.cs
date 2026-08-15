@@ -25,7 +25,7 @@ namespace OV_DB.Controllers
 
         private bool IsAdmin() =>
             string.Equals(
-                User.Claims.SingleOrDefault(c => c.Type == "admin")?.Value ?? "false",
+                User.IsAdmin() ? "true" : "false",
                 "true",
                 StringComparison.OrdinalIgnoreCase);
 

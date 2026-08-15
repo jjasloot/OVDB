@@ -47,8 +47,7 @@ namespace OV_DB.Controllers
         [Produces("application/json")]
         public async Task<ActionResult<MapDataDTO>> GetGeoJsonAsync(string id, ODataQueryOptions<RouteInstance> q, [FromQuery] string language, [FromQuery] bool includeLineColours, [FromQuery] bool limitToSelectedArea = false, [FromQuery] Guid? requestIdentifier = null, [FromQuery] double simplificationTolerance = 0.00001, CancellationToken cancellationToken = default)
         {
-            var userClaim = User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier);
-            var userIdClaim = int.Parse(userClaim != null ? userClaim.Value : "-1");
+            var userIdClaim = User.GetUserId();
 
             var guid = Guid.Parse(id);
             var map = await _context.Maps.SingleOrDefaultAsync(m => m.MapGuid == guid, cancellationToken: cancellationToken);
@@ -56,7 +55,7 @@ namespace OV_DB.Controllers
             {
                 return NotFound();
             }
-            var isAdmin = string.Equals(User.Claims.SingleOrDefault(c => c.Type == "admin")?.Value, "true", StringComparison.OrdinalIgnoreCase);
+            var isAdmin = User.IsAdmin();
             if (string.IsNullOrWhiteSpace(map.SharingLinkName))
             {
                 if (!User.Claims.Any())

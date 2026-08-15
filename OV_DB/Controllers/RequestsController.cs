@@ -22,7 +22,7 @@ public class RequestsController(OVDBDatabaseContext dbContext, TelegramBotServic
     [HttpGet]
     public async Task<IActionResult> GetUserRequests()
     {
-        var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value ?? "-1");
+        var userIdClaim = User.GetUserId();
         if (userIdClaim < 0)
         {
             return Forbid();
@@ -51,7 +51,7 @@ public class RequestsController(OVDBDatabaseContext dbContext, TelegramBotServic
     [HttpGet("admin")]
     public async Task<IActionResult> GetAdminRequests()
     {
-        var adminClaim = (User.Claims.SingleOrDefault(c => c.Type == "admin").Value ?? "false");
+        var adminClaim = (User.IsAdmin() ? "true" : "false");
         if (string.Equals(adminClaim, "false", StringComparison.OrdinalIgnoreCase))
         {
             return Forbid();
@@ -85,7 +85,7 @@ public class RequestsController(OVDBDatabaseContext dbContext, TelegramBotServic
     [HttpPost]
     public async Task<IActionResult> CreateRequest([FromBody] CreateRequestDTO createRequest)
     {
-        var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value ?? "-1");
+        var userIdClaim = User.GetUserId();
         if (userIdClaim < 0)
         {
             return Forbid();
@@ -119,7 +119,7 @@ public class RequestsController(OVDBDatabaseContext dbContext, TelegramBotServic
     [HttpPatch("admin/{id}/respond")]
     public async Task<IActionResult> RespondToRequest(int id, [FromBody] CreateRequestDTO response)
     {
-        var adminClaim = (User.Claims.SingleOrDefault(c => c.Type == "admin").Value ?? "false");
+        var adminClaim = (User.IsAdmin() ? "true" : "false");
         if (string.Equals(adminClaim, "false", StringComparison.OrdinalIgnoreCase))
         {
             return Forbid();
@@ -141,7 +141,7 @@ public class RequestsController(OVDBDatabaseContext dbContext, TelegramBotServic
     [HttpGet("anyUnread")]
     public async Task<IActionResult> AnyUnreadRequests()
     {
-        var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value ?? "-1");
+        var userIdClaim = User.GetUserId();
         if (userIdClaim < 0)
         {
             return Forbid();
@@ -154,7 +154,7 @@ public class RequestsController(OVDBDatabaseContext dbContext, TelegramBotServic
     [HttpGet("admin/anyUnread")]
     public async Task<IActionResult> AnyUnreadAdminRequests()
     {
-        var adminClaim = (User.Claims.SingleOrDefault(c => c.Type == "admin").Value ?? "false");
+        var adminClaim = (User.IsAdmin() ? "true" : "false");
         if (string.Equals(adminClaim, "false", StringComparison.OrdinalIgnoreCase))
         {
             return Forbid();

@@ -30,7 +30,7 @@ namespace OV_DB.Controllers
         [HttpGet("{map}")]
         public async Task<ActionResult> GetStats(Guid map, [FromQuery] int? year)
         {
-            var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value ?? "-1");
+            var userIdClaim = User.GetUserId();
             if (userIdClaim < 0)
             {
                 return Forbid();
@@ -67,7 +67,7 @@ namespace OV_DB.Controllers
         [HttpGet("time/{map}")]
         public async Task<ActionResult> GetTimedStats(Guid map, [FromQuery] int? year, [FromQuery] string language = "nl")
         {
-            var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value ?? "-1");
+            var userIdClaim = User.GetUserId();
             if (userIdClaim < 0)
             {
                 return Forbid();
@@ -165,7 +165,7 @@ namespace OV_DB.Controllers
         [HttpGet("reach/{map}")]
         public async Task<ActionResult> GetReachStats(Guid map, [FromQuery] int? year)
         {
-            var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value ?? "-1");
+            var userIdClaim = User.GetUserId();
             if (userIdClaim < 0)
             {
                 return Forbid();
@@ -273,7 +273,7 @@ namespace OV_DB.Controllers
         [HttpGet("region")]
         public async Task<ActionResult<List<RegionStatDTO>>> GetRegionStats()
         {
-            var userIdClaim = int.Parse(User.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value ?? "-1");
+            var userIdClaim = User.GetUserId();
             if (userIdClaim < 0)
                 return Forbid();
 
