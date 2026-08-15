@@ -23,14 +23,34 @@ public class ImagesController(OVDBDatabaseContext context, IMemoryCache memoryCa
     [HttpGet]
     public async Task<ActionResult> GetImageAsync([FromQuery] List<Guid> guid, [FromQuery] int width = 300, [FromQuery] int height = 100, [FromQuery] string title = null, [FromQuery] bool includeTotal = false, [FromQuery] string language = "NL", [FromQuery] bool hideAttribution = false)
     {
-        var id = "image|" + string.Join(',', guid.Select(g => g.ToString())) + "|" + width + "|" + height + "|" + includeTotal + "|" + title + "|" + language + "|" + hideAttribution;
+        // This endpoint is intentionally anonymous (embeddable badge). Clamp the
+        // attacker-controlled dimensions so a request cannot ask for a multi-GB
+        // allocation, and cap the title length so it can't blow up the cache key.
+        width = Math.Clamp(width, 20, 2000);
+        height = Math.Clamp(height, 20, 2000);
+        if (title is { Length: > 100 })
+        {
+            title = title[..100];
+        }
+
+        // Only render for maps that are actually shared, so the badge can't be used
+        // to read stats for arbitrary (private) map GUIDs by enumeration.
+        var sharedGuids = await context.Maps
+            .Where(m => guid.Contains(m.MapGuid) && !string.IsNullOrWhiteSpace(m.SharingLinkName))
+            .Select(m => m.MapGuid)
+            .ToListAsync();
+        if (sharedGuids.Count == 0)
+        {
+            return NotFound();
+        }
+
+        var id = "image|" + string.Join(',', sharedGuids.Select(g => g.ToString())) + "|" + width + "|" + height + "|" + includeTotal + "|" + title + "|" + language + "|" + hideAttribution;
 
         var fileContents = await memoryCache.GetOrCreateAsync(id, async entry =>
         {
             entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(15);
-            return await GenerateImageAsync(width, height, title, guid, includeTotal, language, hideAttribution);
+            return await GenerateImageAsync(width, height, title, sharedGuids, includeTotal, language, hideAttribution);
         });
-        //var fileContents = await GenerateImageAsync(width, height, title, guid, includeTotal);
         return File(fileContents, "image/png");
     }
 
