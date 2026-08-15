@@ -6,7 +6,6 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.AspNetCore.SignalR;
 using OV_DB.Hubs;
 using OVDB_database.Database;
-using OVDB_database.Models;
 using System.Collections.Concurrent;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
@@ -35,32 +34,61 @@ namespace OV_DB.Services
                 {
                     try
                     {
-                        await RefreshRoutesWithoutRegionsAsync();
+                        await RefreshRoutesWithoutRegionsAsync(cancellationToken);
+                    }
+                    catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+                    {
+                        break;
                     }
                     catch (Exception ex)
                     {
                         // Log instead of silently swallowing, and release the UI which waits for 100%.
+                        // The SignalR call is itself guarded so a hub failure can't kill the loop.
                         logger.LogError(ex, "Error refreshing routes without regions");
-                        await hubContext.Clients.All.SendAsync(MapGenerationHub.RegionUpdateMethod, 0, 100, 0, cancellationToken);
+                        try
+                        {
+                            await hubContext.Clients.All.SendAsync(MapGenerationHub.RegionUpdateMethod, 0, 100, 0, cancellationToken);
+                        }
+                        catch (Exception hubEx)
+                        {
+                            logger.LogWarning(hubEx, "Failed to notify clients after a routes-without-regions failure");
+                        }
                     }
                 }
-                await Task.Delay(10000, cancellationToken);
+                else
+                {
+                    // Only idle-wait when there was nothing to do, instead of after every item.
+                    try
+                    {
+                        await Task.Delay(10000, cancellationToken);
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        break;
+                    }
+                }
             }
         }
 
-        public async Task RefreshRoutesWithoutRegionsAsync()
+        public async Task RefreshRoutesWithoutRegionsAsync(CancellationToken cancellationToken = default)
         {
             using var scope = serviceProvider.CreateScope();
-            using var dbContext = scope.ServiceProvider.GetService<OVDBDatabaseContext>();
+            var dbContext = scope.ServiceProvider.GetService<OVDBDatabaseContext>();
             var routeRegionsService = scope.ServiceProvider.GetService<IRouteRegionsService>();
 
-            var routes = await dbContext.Routes.Where(r => !r.Regions.Any()).ToListAsync();
+            var routes = await dbContext.Routes.Where(r => !r.Regions.Any()).Include(r => r.Regions).ToListAsync(cancellationToken);
             var totalRoutes = routes.Count;
+            if (totalRoutes == 0)
+            {
+                await hubContext.Clients.All.SendAsync(MapGenerationHub.RegionUpdateMethod, 0, 100, 0, cancellationToken);
+                return;
+            }
             var processedRoutes = 0;
             var progress = 0;
             var updatedRoutes = 0;
             foreach (var route in routes)
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 var updated = await routeRegionsService.AssignRegionsToRouteAsync(route);
                 if (updated) updatedRoutes += 1;
                 processedRoutes++;
@@ -68,14 +96,13 @@ namespace OV_DB.Services
                 if (newProgress != progress)
                 {
                     progress = newProgress;
-                    await hubContext.Clients.All.SendAsync(MapGenerationHub.RegionUpdateMethod, 0, progress);
-
+                    await hubContext.Clients.All.SendAsync(MapGenerationHub.RegionUpdateMethod, 0, progress, cancellationToken: cancellationToken);
                 }
             }
 
-            await dbContext.SaveChangesAsync();
+            await dbContext.SaveChangesAsync(cancellationToken);
 
-            await hubContext.Clients.All.SendAsync(MapGenerationHub.RegionUpdateMethod,0, 100, updatedRoutes);
+            await hubContext.Clients.All.SendAsync(MapGenerationHub.RegionUpdateMethod, 0, 100, updatedRoutes, cancellationToken);
         }
 
         public async Task StopAsync(CancellationToken cancellationToken)

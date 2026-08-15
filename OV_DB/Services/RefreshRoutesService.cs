@@ -6,11 +6,9 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.AspNetCore.SignalR;
 using OV_DB.Hubs;
 using OVDB_database.Database;
-using OVDB_database.Models;
 using System.Collections.Concurrent;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using OV_DB.Models;
 using Microsoft.Extensions.Logging;
 
 namespace OV_DB.Services
@@ -36,33 +34,53 @@ namespace OV_DB.Services
                 {
                     try
                     {
-                        await RefreshRoutesAsync(routeId);
+                        await RefreshRoutesAsync(routeId, cancellationToken);
+                    }
+                    catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+                    {
+                        break;
                     }
                     catch (Exception ex)
                     {
-                        logger.LogError(ex, "Error refreshing routes for region {RegionId}", routeId);
+                        // Never let one region's failure kill the queue loop for good.
+                        logger.LogError(ex, "Error refreshing routes for region {RegionId}; continuing with the queue", routeId);
                     }
                 }
                 else
                 {
-                    await Task.Delay(1000, cancellationToken);
+                    try
+                    {
+                        await Task.Delay(1000, cancellationToken);
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        break;
+                    }
                 }
             }
         }
 
-        public async Task RefreshRoutesAsync(int regionId)
+        public async Task RefreshRoutesAsync(int regionId, CancellationToken cancellationToken = default)
         {
+            // The scope owns the resolved DbContext, so it is disposed with the scope; do not
+            // dispose it separately.
             using var scope = serviceProvider.CreateScope();
-            using var dbContext = scope.ServiceProvider.GetService<OVDBDatabaseContext>();
+            var dbContext = scope.ServiceProvider.GetService<OVDBDatabaseContext>();
             var routeRegionsService = scope.ServiceProvider.GetService<IRouteRegionsService>();
 
-            var routes = await dbContext.Routes.Where(r => r.Regions.Any(r => r.Id == regionId)).Include(r=>r.Regions).ToListAsync();
+            var routes = await dbContext.Routes.Where(r => r.Regions.Any(r => r.Id == regionId)).Include(r => r.Regions).ToListAsync(cancellationToken);
             var totalRoutes = routes.Count;
+            if (totalRoutes == 0)
+            {
+                await hubContext.Clients.All.SendAsync(MapGenerationHub.RegionUpdateMethod, regionId, 100, 0, cancellationToken);
+                return;
+            }
             var processedRoutes = 0;
             var progress = 0;
             var updatedRoutes = 0;
             foreach (var route in routes)
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 var updated = await routeRegionsService.AssignRegionsToRouteAsync(route);
                 if (updated) updatedRoutes += 1;
                 processedRoutes++;
@@ -70,14 +88,13 @@ namespace OV_DB.Services
                 if (newProgress != progress)
                 {
                     progress = newProgress;
-                    await hubContext.Clients.All.SendAsync(MapGenerationHub.RegionUpdateMethod, regionId, progress);
-
+                    await hubContext.Clients.All.SendAsync(MapGenerationHub.RegionUpdateMethod, regionId, progress, cancellationToken: cancellationToken);
                 }
             }
 
-            await dbContext.SaveChangesAsync();
+            await dbContext.SaveChangesAsync(cancellationToken);
 
-            await hubContext.Clients.All.SendAsync(MapGenerationHub.RegionUpdateMethod, regionId, 100, updatedRoutes);
+            await hubContext.Clients.All.SendAsync(MapGenerationHub.RegionUpdateMethod, regionId, 100, updatedRoutes, cancellationToken);
         }
 
         public Task StopAsync(CancellationToken cancellationToken)
