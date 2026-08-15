@@ -1,7 +1,10 @@
 ﻿using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using Microsoft.EntityFrameworkCore;
 
 namespace OVDB_database.Models;
+
+[Index(nameof(OsmRelationId))]
 public class Region
 {
     [Key]
