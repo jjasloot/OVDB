@@ -309,25 +309,20 @@ namespace OV_DB.Controllers
 
             if (route.Maps != null)
             {
-                var toDelete = new List<RouteMap>();
-                var toAdd = new List<int>();
-                dbRoute.RouteMaps.ForEach(r =>
-                {
-                    if (!route.Maps.Contains(r.MapId))
-                    {
-                        toDelete.Add(r);
-                    }
-                });
-                if (route.Maps != null)
-                {
-                    route.Maps.ForEach(r =>
-                    {
-                        if (!dbRoute.RouteMaps.Select(r => r.MapId).Contains(r))
-                        {
-                            toAdd.Add(r);
-                        }
-                    });
-                }
+                // Only ever add/remove links to maps the caller owns, so a request
+                // cannot attach this route to (or detach it from) another user's map.
+                var ownedMapIds = await _context.Maps
+                    .Where(m => m.UserId == userIdClaim)
+                    .Select(m => m.MapId)
+                    .ToListAsync();
+                var selectedOwnedMapIds = route.Maps.Where(ownedMapIds.Contains).ToList();
+
+                var toDelete = dbRoute.RouteMaps
+                    .Where(rm => ownedMapIds.Contains(rm.MapId) && !selectedOwnedMapIds.Contains(rm.MapId))
+                    .ToList();
+                var existingMapIds = dbRoute.RouteMaps.Select(rm => rm.MapId).ToHashSet();
+                var toAdd = selectedOwnedMapIds.Where(m => !existingMapIds.Contains(m)).ToList();
+
                 if (toDelete.Any())
                 {
                     _context.RoutesMaps.RemoveRange(toDelete);
