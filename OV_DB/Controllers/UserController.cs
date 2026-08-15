@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using OV_DB.Models;
 using OV_DB.Helpers;
@@ -270,6 +271,7 @@ namespace OV_DB.Controllers
 
         [HttpGet("link/{name}")]
         [AllowAnonymous]
+        [EnableRateLimiting("auth")]
         public async Task<ActionResult<string>> GetGuidFromNameAsync(string name)
         {
             var map = await DatabaseContext.Maps.Where(m => m.SharingLinkName == name).SingleOrDefaultAsync();
@@ -282,6 +284,7 @@ namespace OV_DB.Controllers
 
         [HttpGet("station-link/{name}")]
         [AllowAnonymous]
+        [EnableRateLimiting("auth")]
         public async Task<ActionResult<string>> GetGuidFromNameForStationsAsync(string name)
         {
             var map = await DatabaseContext.StationMaps.Where(m => m.SharingLinkName == name).SingleOrDefaultAsync();

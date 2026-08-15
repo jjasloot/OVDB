@@ -21,6 +21,8 @@ using System.Threading.Tasks;
 using OV_DB.Services;
 using OV_DB.Hubs;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.RateLimiting;
+using System.Threading.RateLimiting;
 using Telegram.Bot.AspNetCore;
 
 namespace OV_DB
@@ -190,6 +192,22 @@ namespace OV_DB
                 (_, _) => new Microsoft.Extensions.Caching.Memory.MemoryCache(
                     new Microsoft.Extensions.Caching.Memory.MemoryCacheOptions { SizeLimit = 100_000 }));
 
+            // Throttle unauthenticated, guessable endpoints (login, refresh, register,
+            // sharing-link name lookup) per client IP to blunt brute force / enumeration.
+            services.AddRateLimiter(options =>
+            {
+                options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+                options.AddPolicy("auth", httpContext =>
+                    RateLimitPartition.GetFixedWindowLimiter(
+                        partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                        factory: _ => new FixedWindowRateLimiterOptions
+                        {
+                            PermitLimit = 10,
+                            Window = TimeSpan.FromMinutes(1),
+                            QueueLimit = 0
+                        }));
+            });
+
             services.AddHostedService<UpdateRegionService>();
             services.AddHostedService<RefreshRoutesService>();
             services.AddHostedService<RefreshRoutesWithoutRegionsService>();
@@ -224,6 +242,7 @@ namespace OV_DB
             }
 
             app.UseRouting();
+            app.UseRateLimiter();
             app.UseCors();
             app.UseXfo(o => o.SameOrigin());
             app.UseXContentTypeOptions();
