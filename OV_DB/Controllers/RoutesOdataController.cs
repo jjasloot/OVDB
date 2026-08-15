@@ -91,12 +91,6 @@ namespace OV_DB.Controllers
             NetTopologySuite.Geometries.Geometry? limitingArea = null;
             if (q.Filter != null)
             {
-                var model = Startup.GetEdmModel();
-                IEdmType type = model.FindDeclaredType("OVDB_database.Models.RouteInstance");
-                IEdmNavigationSource source = model.FindDeclaredEntitySet("Products");
-                var parser = new ODataQueryOptionParser(model, type, source, new Dictionary<string, string> { { "$filter", q.Filter.RawValue } });
-                var context = new ODataQueryContext(model, typeof(RouteInstance), q.Context.Path);
-                var filter = new FilterQueryOption(q.Filter.RawValue, context, parser);
                 routes = q.Filter.ApplyTo(routes, new ODataQuerySettings()) as IQueryable<RouteInstance>;
 
                 if (limitToSelectedArea)
