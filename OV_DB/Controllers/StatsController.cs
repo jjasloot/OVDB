@@ -173,11 +173,18 @@ namespace OV_DB.Controllers
 
             var query = QueryForInstances(map, year, userIdClaim);
 
-            var x = await query.Select(ri => ri.Route).Distinct().ToListAsync();
-            if (!x.Any())
+            // Distinct on the int key instead of on the whole Route entity, which otherwise
+            // makes MySQL run SELECT DISTINCT over every column including the geometry blob.
+            var routeIds = await query.Select(ri => ri.RouteId).Distinct().ToListAsync();
+            if (routeIds.Count == 0)
             {
                 return Ok();
             }
+
+            var x = await _context.Routes
+                .AsNoTracking()
+                .Where(r => routeIds.Contains(r.RouteId))
+                .ToListAsync();
 
             var x2 = x.Select(c =>
             new
@@ -277,13 +284,7 @@ namespace OV_DB.Controllers
                 .Distinct()
                 .ToListAsync();
 
-            // Get all visited station ids for user
-            var visitedStationIds = await _context.StationVisits
-                .Where(sv => sv.UserId == userIdClaim)
-                .Select(sv => sv.StationId)
-                .ToListAsync();
-
-            // Fetch all regions and their minimal station data in one query
+            // Count stations per region in SQL instead of shipping every station row to the app.
             var regions = await _context.Regions
                 .Select(r => new
                 {
@@ -294,7 +295,8 @@ namespace OV_DB.Controllers
                     r.OsmRelationId,
                     r.ParentRegionId,
                     r.FlagEmoji,
-                    Stations = r.Stations.Select(s => new { s.Id, s.Hidden, s.Special }).ToList()
+                    TotalStations = r.Stations.Count(s => !s.Hidden && !s.Special),
+                    VisitedStations = r.Stations.Count(s => !s.Hidden && !s.Special && s.StationVisits.Any(sv => sv.UserId == userIdClaim))
                 })
                 .ToListAsync();
 
@@ -309,8 +311,8 @@ namespace OV_DB.Controllers
                 NameNL = r.NameNL,
                 OriginalName = r.OriginalName,
                 OsmRelationId = r.OsmRelationId,
-                VisitedStations = r.Stations.Count(s => !s.Hidden && !s.Special && visitedStationIds.Contains(s.Id)),
-                TotalStations = r.Stations.Count(s => !s.Hidden && !s.Special),
+                VisitedStations = r.VisitedStations,
+                TotalStations = r.TotalStations,
                 FlagEmoji = r.FlagEmoji,
                 ParentRegionId = r.ParentRegionId,
                 // Visited is now based on user's routes (any route in this region)
