@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using NetTopologySuite.Geometries;
 using NetTopologySuite.IO;
 using Newtonsoft.Json;
@@ -19,6 +20,7 @@ using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Security.Claims;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace OV_DB.Controllers
@@ -26,12 +28,13 @@ namespace OV_DB.Controllers
     [Route("api/[controller]")]
     [ApiController]
     [Authorize]
-    public class RegionsController(IMemoryCache memoryCache, OVDBDatabaseContext context, IHubContext<MapGenerationHub> hubContext, IHttpClientFactory httpClientFactory, IOverpassService overpassService) : ControllerBase
+    public class RegionsController(IMemoryCache memoryCache, OVDBDatabaseContext context, IHubContext<MapGenerationHub> hubContext, IHttpClientFactory httpClientFactory, IOverpassService overpassService, ILogger<RegionsController> logger) : ControllerBase
     {
         private IMemoryCache _cache = memoryCache;
         private OVDBDatabaseContext _context = context;
         private readonly IHttpClientFactory _httpClientFactory = httpClientFactory;
         private readonly IOverpassService _overpassService = overpassService;
+        private readonly ILogger<RegionsController> _logger = logger;
 
         private async Task<string> GetPolygonAsync(long id)
         {
@@ -349,29 +352,29 @@ namespace OV_DB.Controllers
         }
 
         [HttpGet("refreshAll")]
-        public async Task<IActionResult> RefreshAll()
+        public async Task<IActionResult> RefreshAll(CancellationToken cancellationToken)
         {
-            var adminClaim = (User.IsAdmin() ? "true" : "false");
-            if (string.Equals(adminClaim, "false", StringComparison.OrdinalIgnoreCase))
+            if (!User.IsAdmin())
             {
                 return Forbid();
             }
-            var regions = await _context.Regions.AsNoTracking().ToListAsync();
+            var regions = await _context.Regions.AsNoTracking().ToListAsync(cancellationToken);
 
             foreach (var region in regions)
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 var isValidOp = new NetTopologySuite.Operation.Valid.IsValidOp(region.Geometry);
 
                 if (isValidOp.IsValid)
                 {
-                    Console.WriteLine("Region " + region.Name + " is valid");
+                    _logger.LogDebug("Region {RegionName} is valid", region.Name);
                     continue;
                 }
 
 
                 await CreateNew(new NewRegion { OsmRelationId = region.OsmRelationId, ParentRegionId = region.ParentRegionId });
-                Console.WriteLine("Updated region " + region.Name);
-                await Task.Delay(1000);
+                _logger.LogInformation("Updated region {RegionName}", region.Name);
+                await Task.Delay(1000, cancellationToken);
             }
             return Ok();
         }

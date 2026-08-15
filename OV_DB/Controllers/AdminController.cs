@@ -2,12 +2,14 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using NetTopologySuite.Geometries;
 using Newtonsoft.Json;
 using OV_DB.Helpers;
@@ -25,19 +27,20 @@ namespace OV_DB.Controllers
         private readonly IConfiguration _configuration;
         private readonly OVDBDatabaseContext _dbContext;
         private readonly IOverpassService _overpassService;
+        private readonly ILogger<AdminController> _logger;
 
-        public AdminController(OVDBDatabaseContext dbContext, IConfiguration configuration, IOverpassService overpassService)
+        public AdminController(OVDBDatabaseContext dbContext, IConfiguration configuration, IOverpassService overpassService, ILogger<AdminController> logger)
         {
             _configuration = configuration;
             _dbContext = dbContext;
             _overpassService = overpassService;
+            _logger = logger;
         }
 
         [HttpPost("AddMissingGuidsForRoute")]
         public async Task<ActionResult> AddMissingGuidsForRoutes()
         {
-            var adminClaim = (User.IsAdmin() ? "true" : "false");
-            if (string.Equals(adminClaim, "false", StringComparison.OrdinalIgnoreCase))
+            if (!User.IsAdmin())
             {
                 return Forbid();
             }
@@ -53,8 +56,7 @@ namespace OV_DB.Controllers
         [HttpGet("users")]
         public async Task<ActionResult> GetAdministratorUsers()
         {
-            var adminClaim = (User.IsAdmin() ? "true" : "false");
-            if (string.Equals(adminClaim, "false", StringComparison.OrdinalIgnoreCase))
+            if (!User.IsAdmin())
             {
                 return Forbid();
             }
@@ -101,8 +103,7 @@ namespace OV_DB.Controllers
         [HttpGet("maps")]
         public async Task<ActionResult> GetAdministratorMaps()
         {
-            var adminClaim = (User.IsAdmin() ? "true" : "false");
-            if (string.Equals(adminClaim, "false", StringComparison.OrdinalIgnoreCase))
+            if (!User.IsAdmin())
             {
                 return Forbid();
             }
@@ -122,8 +123,7 @@ namespace OV_DB.Controllers
         [HttpGet("distance/{id:int}")]
         public async Task<ActionResult> CalculateDistanceById(int id)
         {
-            var adminClaim = (User.IsAdmin() ? "true" : "false");
-            if (string.Equals(adminClaim, "false", StringComparison.OrdinalIgnoreCase))
+            if (!User.IsAdmin())
             {
                 return Forbid();
             }
@@ -141,8 +141,7 @@ namespace OV_DB.Controllers
         [HttpGet("distance/missing")]
         public async Task<ActionResult> CalculateDistanceForAllMissing()
         {
-            var adminClaim = (User.IsAdmin() ? "true" : "false");
-            if (string.Equals(adminClaim, "false", StringComparison.OrdinalIgnoreCase))
+            if (!User.IsAdmin())
             {
                 return Forbid();
             }
@@ -157,15 +156,14 @@ namespace OV_DB.Controllers
             return Ok();
         }
         [HttpGet("distance/all")]
-        public async Task<ActionResult> CalculateDistanceForAll()
+        public async Task<ActionResult> CalculateDistanceForAll(CancellationToken cancellationToken)
         {
-            var adminClaim = (User.IsAdmin() ? "true" : "false");
-            if (string.Equals(adminClaim, "false", StringComparison.OrdinalIgnoreCase))
+            if (!User.IsAdmin())
             {
                 return Forbid();
             }
 
-            var routes = await _dbContext.Routes.ToListAsync();
+            var routes = await _dbContext.Routes.ToListAsync(cancellationToken);
 
             routes.ForEach(route =>
             {
@@ -175,18 +173,17 @@ namespace OV_DB.Controllers
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine(ex.Message);
+                    _logger.LogWarning(ex, "Failed to compute distance for route {RouteId}", route.RouteId);
                 }
             });
-            await _dbContext.SaveChangesAsync();
+            await _dbContext.SaveChangesAsync(cancellationToken);
             return Ok();
         }
 
         [HttpGet("convertToInstances")]
         public async Task<ActionResult> ConvertToInstances()
         {
-            var adminClaim = (User.IsAdmin() ? "true" : "false");
-            if (string.Equals(adminClaim, "false", StringComparison.OrdinalIgnoreCase))
+            if (!User.IsAdmin())
             {
                 return Forbid();
             }
@@ -209,10 +206,9 @@ namespace OV_DB.Controllers
         }
 
         [HttpGet("addRegions")]
-        public async Task<ActionResult> AddRegionsToAllRoutes([FromServices] IRouteRegionsService routeRegionsService)
+        public async Task<ActionResult> AddRegionsToAllRoutes([FromServices] IRouteRegionsService routeRegionsService, CancellationToken cancellationToken)
         {
-            var adminClaim = (User.IsAdmin() ? "true" : "false");
-            if (string.Equals(adminClaim, "false", StringComparison.OrdinalIgnoreCase))
+            if (!User.IsAdmin())
             {
                 return Forbid();
             }
@@ -222,52 +218,52 @@ namespace OV_DB.Controllers
             var routes = new List<OVDB_database.Models.Route>();
             do
             {
-                routes = await _dbContext.Routes.OrderBy(r => r.Name).Where(r => r.LineString != null).Include(r => r.Regions).Skip(count).Take(batchSize).ToListAsync();
+                routes = await _dbContext.Routes.OrderBy(r => r.Name).Where(r => r.LineString != null).Include(r => r.Regions).Skip(count).Take(batchSize).ToListAsync(cancellationToken);
 
                 foreach (var route in routes)
                 {
+                    cancellationToken.ThrowIfCancellationRequested();
                     var regionsBefore = string.Join(", ", route.Regions.Select(r => r.Name));
                     await routeRegionsService.AssignRegionsToRouteAsync(route);
-                    Console.WriteLine($"Route {route.Name} from {regionsBefore} the following Regions: " + string.Join(", ", route.Regions.Select(r => r.Name)));
+                    _logger.LogDebug("Route {RouteName} regions {Before} => {After}", route.Name, regionsBefore, string.Join(", ", route.Regions.Select(r => r.Name)));
                 }
-                await _dbContext.SaveChangesAsync();
+                await _dbContext.SaveChangesAsync(cancellationToken);
                 count += batchSize;
-                Console.WriteLine($"Added regions to {count} routes");
+                _logger.LogInformation("Added regions to {Count} routes", count);
             } while (routes.Count > 0);
 
             return Ok();
         }
 
         [HttpGet("fixOriginalnames")]
-        public async Task<ActionResult> FixOriginalNames()
+        public async Task<ActionResult> FixOriginalNames(CancellationToken cancellationToken)
         {
-            var adminClaim = (User.IsAdmin() ? "true" : "false");
-            if (string.Equals(adminClaim, "false", StringComparison.OrdinalIgnoreCase))
+            if (!User.IsAdmin())
             {
                 return Forbid();
             }
             _dbContext.Database.SetCommandTimeout(TimeSpan.FromMinutes(3));
-            var regions = await _dbContext.Regions.Where(r => string.IsNullOrWhiteSpace(r.OriginalName)).ToListAsync();
+            var regions = await _dbContext.Regions.Where(r => string.IsNullOrWhiteSpace(r.OriginalName)).ToListAsync(cancellationToken);
             foreach (var region in regions)
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 var tags = await GetTagsAsync(region.OsmRelationId);
                 if (tags != null && tags.ContainsKey("name"))
                 {
                     region.OriginalName = tags["name"];
                 }
-                await _dbContext.SaveChangesAsync();
-                Console.WriteLine($"Region {region.Name} updated with original name {region.OriginalName}");
-                await Task.Delay(250);
+                await _dbContext.SaveChangesAsync(cancellationToken);
+                _logger.LogInformation("Region {RegionName} updated with original name {OriginalName}", region.Name, region.OriginalName);
+                await Task.Delay(250, cancellationToken);
             }
 
             return Ok();
         }
 
         [HttpGet("assignRegionsToStations")]
-        public async Task<ActionResult> AssignRegionsToStations([FromServices] IStationRegionsService stationRegionsService, [FromQuery] int? regionId)
+        public async Task<ActionResult> AssignRegionsToStations([FromServices] IStationRegionsService stationRegionsService, [FromQuery] int? regionId, CancellationToken cancellationToken)
         {
-            var adminClaim = (User.IsAdmin() ? "true" : "false");
-            if (string.Equals(adminClaim, "false", StringComparison.OrdinalIgnoreCase))
+            if (!User.IsAdmin())
             {
                 return Forbid();
             }
@@ -282,17 +278,18 @@ namespace OV_DB.Controllers
             var stations = new List<OVDB_database.Models.Station>();
             do
             {
-                stations = await query.Skip(count).Take(batchSize).ToListAsync();
+                stations = await query.Skip(count).Take(batchSize).ToListAsync(cancellationToken);
 
                 foreach (var station in stations)
                 {
+                    cancellationToken.ThrowIfCancellationRequested();
                     var regionsBefore = string.Join(", ", station.Regions.Select(r => r.Name));
                     await stationRegionsService.AssignRegionsToStationCacheRegionsAsync(station);
-                    Console.WriteLine($"Station {station.Name} from {regionsBefore} the following Regions: " + string.Join(", ", station.Regions.Select(r => r.Name)));
+                    _logger.LogDebug("Station {StationName} regions {Before} => {After}", station.Name, regionsBefore, string.Join(", ", station.Regions.Select(r => r.Name)));
                 }
-                await _dbContext.SaveChangesAsync();
+                await _dbContext.SaveChangesAsync(cancellationToken);
                 count += batchSize;
-                Console.WriteLine($"Added regions to {count} stations");
+                _logger.LogInformation("Added regions to {Count} stations", count);
             } while (stations.Count > 0);
 
             return Ok();
