@@ -1017,7 +1017,7 @@ namespace OV_DB.Services
         /// ends. Social fields (likes, tags, body) deliberately don't count — a change there
         /// must not re-flag a dismissed conflict.
         /// </summary>
-        private static string ConflictFingerprint(TrawellingStatus status)
+        internal static string ConflictFingerprint(TrawellingStatus status)
         {
             var checkin = status?.Checkin;
             return string.Join("|",
