@@ -1,4 +1,4 @@
-import { Component, OnInit, AfterViewInit, ChangeDetectorRef, NgZone, EventEmitter, OnDestroy, input, viewChild, signal, inject, ChangeDetectionStrategy } from "@angular/core";
+import { Component, OnInit, AfterViewInit, ChangeDetectorRef, EventEmitter, OnDestroy, input, viewChild, signal, inject, ChangeDetectionStrategy } from "@angular/core";
 import moment from "moment";
 import { ApiService } from "../services/api.service";
 import { LatLngBounds, LatLng, geoJSON, LatLngLiteral, Layer } from "leaflet";
@@ -169,30 +169,27 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
 
   getRoutes$ = new EventEmitter<string>();
 
-  constructor() {
-       const ngZone = inject(NgZone);
-
-       (window as any)["angularComponentRef"] = { component: this, zone: ngZone };
-  }
   ngAfterViewInit(): void {
     this.cd.detectChanges();
   }
 
   ngOnInit() {
-    this.getRoutes$
-      .pipe(
-        switchMap((filter) => {
-          return this.getRoutes(filter);
+    this.subscriptions.add(
+      this.getRoutes$
+        .pipe(
+          switchMap((filter) => {
+            return this.getRoutes(filter);
+          })
+        )
+        .subscribe({
+          next: (data: MapDataDTO) => {
+            this.showRoutes(data);
+          },
+          error: () => {
+            this.error = true;
+          },
         })
-      )
-      .subscribe({
-        next: (data: MapDataDTO) => {
-          this.showRoutes(data);
-        },
-        error: () => {
-          this.error = true;
-        },
-      });
+    );
 
     this.readFromQueryParams();
     this.subscriptions.add(
@@ -284,73 +281,62 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
         };
       },
       onEachFeature(feature, layer) {
-        if (feature.properties.name) {
-          let popup = "<h2>" + feature.properties.name + "</h2><p>";
-          popup +=
-            `<a href="javascript:void(0)" onclick="
-          parent.angularComponentRef.zone.run(()=>
-          parent.angularComponentRef.component.showDialog(` +
-            feature.properties.id +
-            `))">` +
-            feature.properties.totalInstances +
-            " " +
-            parent.translateService.instant("INSTANCES") +
-            `</a>`;
+        const props = feature.properties;
+        if (props.name) {
+          // Build the popup as DOM nodes with real click handlers instead of an HTML
+          // string with inline onclick="parent.angularComponentRef...". This removes the
+          // window global (a leak) and escapes user-provided route fields (XSS) via
+          // textContent/createTextNode.
+          const container = document.createElement("div");
 
-          popup +=
-            "<br>" +
-            parent.translateService.instant("MAP.POPUP.TYPE") +
-            ": " +
-            feature.properties.type;
-          if (feature.properties.description) {
-            popup +=
-              "<br>" +
-              parent.translateService.instant("MAP.POPUP.REMARK") +
-              ": " +
-              feature.properties.description;
+          const heading = document.createElement("h2");
+          heading.textContent = props.name;
+          container.appendChild(heading);
+
+          const body = document.createElement("p");
+
+          const instancesLink = document.createElement("a");
+          instancesLink.href = "javascript:void(0)";
+          instancesLink.textContent =
+            props.totalInstances + " " + parent.translateService.instant("INSTANCES");
+          instancesLink.addEventListener("click", () => parent.showDialog(props.id));
+          body.appendChild(instancesLink);
+
+          const appendLine = (label: string, value: unknown) => {
+            body.appendChild(document.createElement("br"));
+            body.appendChild(
+              document.createTextNode(
+                parent.translateService.instant(label) + ": " + value
+              )
+            );
+          };
+
+          appendLine("MAP.POPUP.TYPE", props.type);
+          if (props.description) appendLine("MAP.POPUP.REMARK", props.description);
+          if (props.lineNumber) appendLine("MAP.POPUP.LINENUMBER", props.lineNumber);
+          if (props.operatingCompany) appendLine("MAP.POPUP.OPERATINGCOMPANY", props.operatingCompany);
+          if (props.distance) appendLine("ROUTES.DISTANCE", props.distance + " km");
+
+          if (props.owner) {
+            body.appendChild(document.createElement("br"));
+
+            const editLink = document.createElement("a");
+            editLink.href = "javascript:void(0)";
+            editLink.textContent = parent.translateService.instant("EDIT");
+            editLink.addEventListener("click", () => parent.edit(props.id));
+            body.appendChild(editLink);
+
+            body.appendChild(document.createTextNode(" "));
+
+            const editInstancesLink = document.createElement("a");
+            editInstancesLink.href = "javascript:void(0)";
+            editInstancesLink.textContent = parent.translateService.instant("INSTANCES.EDITINSTANCE");
+            editInstancesLink.addEventListener("click", () => parent.editInstances(props.id));
+            body.appendChild(editInstancesLink);
           }
-          if (feature.properties.lineNumber) {
-            popup +=
-              "<br>" +
-              parent.translateService.instant("MAP.POPUP.LINENUMBER") +
-              ": " +
-              feature.properties.lineNumber;
-          }
-          if (feature.properties.operatingCompany) {
-            popup +=
-              "<br>" +
-              parent.translateService.instant("MAP.POPUP.OPERATINGCOMPANY") +
-              ": " +
-              feature.properties.operatingCompany;
-          }
-          if (feature.properties.distance) {
-            popup +=
-              "<br>" +
-              parent.translateService.instant("ROUTES.DISTANCE") +
-              ": " +
-              feature.properties.distance +
-              " km";
-          }
-          if (feature.properties.owner) {
-            popup +=
-              `<br><a href="javascript:void(0)" onclick="
-            parent.angularComponentRef.zone.run(()=>
-            parent.angularComponentRef.component.edit(` +
-              feature.properties.id +
-              `))">` +
-              parent.translateService.instant("EDIT") +
-              `</a>`;
-            popup +=
-              `&nbsp;<a href="javascript:void(0)" onclick="
-            parent.angularComponentRef.zone.run(()=>
-            parent.angularComponentRef.component.editInstances(` +
-              feature.properties.id +
-              `))">` +
-              parent.translateService.instant("INSTANCES.EDITINSTANCE") +
-              `</a>`;
-          }
-          popup += "</p>";
-          layer.bindPopup(popup);
+
+          container.appendChild(body);
+          layer.bindPopup(container);
         }
         if (feature.properties.o) {
           layer.on("click", (f) => {
