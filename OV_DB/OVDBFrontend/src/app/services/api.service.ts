@@ -93,14 +93,14 @@ export class ApiService {
     return this.httpClient.get<Map[]>(environment.backend + "api/maps/");
   }
 
-  addMap(map: Map): Observable<any> {
-    return this.httpClient.post<RouteType>(
+  addMap(map: Map): Observable<Map> {
+    return this.httpClient.post<Map>(
       environment.backend + "api/maps",
       map
     );
   }
   updateMap(map: Map) {
-    return this.httpClient.put<RouteType>(
+    return this.httpClient.put<Map>(
       environment.backend + "api/maps",
       map
     );
@@ -502,20 +502,20 @@ export class ApiService {
   }
 
   updateStationMapOrder(newOrder: number[]) {
-    return this.httpClient.post<Map>(
+    return this.httpClient.post<void>(
       environment.backend + "api/stationmaps/order",
       newOrder
     );
   }
 
-  addStationMap(stationMap: StationMap): Observable<any> {
-    return this.httpClient.post<RouteType>(
+  addStationMap(stationMap: StationMap): Observable<StationMap> {
+    return this.httpClient.post<StationMap>(
       environment.backend + "api/stationmaps",
       stationMap
     );
   }
   updateStationMap(stationMap: StationMap) {
-    return this.httpClient.put<RouteType>(
+    return this.httpClient.put<StationMap>(
       environment.backend + "api/stationmaps",
       stationMap
     );
