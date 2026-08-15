@@ -6,11 +6,13 @@ using Microsoft.AspNetCore.OData.Query;
 using Microsoft.AspNetCore.OData.Routing.Controllers;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.OData.Edm;
 using Microsoft.OData.UriParser;
 using NetTopologySuite.Operation.Overlay;
 using NetTopologySuite.Operation.OverlayNG;
 using NetTopologySuite.Operation.Union;
+using NetTopologySuite.Simplify;
 using OV_DB.Hubs;
 using OV_DB.Models;
 using OVDB_database.Database;
@@ -32,11 +34,13 @@ namespace OV_DB.Controllers
     {
         private readonly OVDBDatabaseContext _context;
         private readonly IHubContext<MapGenerationHub> _mapGenerationHubContext;
+        private readonly IMemoryCache _memoryCache;
 
-        public RoutesOdataController(OVDBDatabaseContext context, IHubContext<MapGenerationHub> mapGenerationHubContext)
+        public RoutesOdataController(OVDBDatabaseContext context, IHubContext<MapGenerationHub> mapGenerationHubContext, IMemoryCache memoryCache)
         {
             _context = context;
             _mapGenerationHubContext = mapGenerationHubContext;
+            _memoryCache = memoryCache;
         }
 
         [HttpGet("{id}")]
@@ -52,19 +56,35 @@ namespace OV_DB.Controllers
             {
                 return NotFound();
             }
+            var isAdmin = string.Equals(User.Claims.SingleOrDefault(c => c.Type == "admin")?.Value, "true", StringComparison.OrdinalIgnoreCase);
             if (string.IsNullOrWhiteSpace(map.SharingLinkName))
             {
                 if (!User.Claims.Any())
                 {
                     return Forbid();
                 }
-                var adminClaim = (User.Claims.SingleOrDefault(c => c.Type == "admin").Value ?? "false");
 
-                if ((userIdClaim < 0 || map.UserId != userIdClaim) && !string.Equals(adminClaim, "true", StringComparison.OrdinalIgnoreCase))
+                if ((userIdClaim < 0 || map.UserId != userIdClaim) && !isAdmin)
                 {
                     return Forbid();
                 }
             }
+
+            // Cache the built GeoJSON for viewers who cannot edit this map (shared/anonymous),
+            // where a brief staleness window is fine. The owner and admins always get a live
+            // build so their edits show immediately. The "owner" feature flag is false for all
+            // non-privileged viewers, so their responses are identical and safe to share.
+            var isPrivileged = isAdmin || (userIdClaim >= 0 && map.UserId == userIdClaim);
+            string cacheKey = null;
+            if (!isPrivileged)
+            {
+                cacheKey = $"mapgeojson|{guid}|{q.Filter?.RawValue}|{language}|{includeLineColours}|{limitToSelectedArea}|{simplificationTolerance}";
+                if (_memoryCache.TryGetValue(cacheKey, out MapDataDTO cached))
+                {
+                    return cached;
+                }
+            }
+
             var routes = _context.RouteInstances
                 .AsNoTracking()
                 .AsQueryable();
@@ -113,7 +133,7 @@ namespace OV_DB.Controllers
                 {
                     if (cancellationToken.IsCancellationRequested)
                         break;
-                    AddLineToCollection(language, includeLineColours, r, r.LineString, userIdClaim, map, collection, routesToReturn);
+                    AddLineToCollection(language, includeLineColours, r, SimplifyLine(r.LineString, simplificationTolerance), userIdClaim, map, collection, routesToReturn);
                     processed++;
                     if (processed % 10 == 0 && requestIdentifier != null)
                         await _mapGenerationHubContext.Clients.Group(requestIdentifier.Value.ToString()).SendAsync(MapGenerationHub.GenerationUpdateMethod, requestIdentifier.Value, 5 + (int)Math.Round(95.0 * processed / total, 0), cancellationToken: cancellationToken);
@@ -128,7 +148,7 @@ namespace OV_DB.Controllers
                     new ParallelOptions { CancellationToken = cancellationToken, MaxDegreeOfParallelism = Environment.ProcessorCount },
                     async (r, ct) =>
                     {
-                        var features = ClipRouteToArea(limitingArea, r, language, includeLineColours, userIdClaim, map, routesToReturn);
+                        var features = ClipRouteToArea(limitingArea, r, language, includeLineColours, userIdClaim, map, routesToReturn, simplificationTolerance);
                         foreach (var f in features)
                             concurrentFeatures.Add(f);
                         var current = Interlocked.Increment(ref processed);
@@ -163,8 +183,23 @@ namespace OV_DB.Controllers
                 Area = area
             };
 
+            if (cacheKey != null && !cancellationToken.IsCancellationRequested)
+            {
+                _memoryCache.Set(cacheKey, response, TimeSpan.FromSeconds(60));
+            }
 
             return response;
+        }
+
+        // Douglas-Peucker reduces the point count of a polyline while keeping its shape within
+        // the given tolerance (in degrees), shrinking the serialized payload and client render cost.
+        private static NetTopologySuite.Geometries.LineString SimplifyLine(NetTopologySuite.Geometries.LineString lineString, double tolerance)
+        {
+            if (tolerance <= 0 || lineString == null)
+                return lineString;
+            if (DouglasPeuckerSimplifier.Simplify(lineString, tolerance) is NetTopologySuite.Geometries.LineString simplified && !simplified.IsEmpty)
+                return simplified;
+            return lineString;
         }
 
         private static List<GeoJSON.Net.Feature.Feature> ClipRouteToArea(
@@ -174,7 +209,8 @@ namespace OV_DB.Controllers
             bool includeLineColours,
             int userIdClaim,
             Map map,
-            Dictionary<int, int> routesToReturn)
+            Dictionary<int, int> routesToReturn,
+            double simplificationTolerance)
         {
             var result = new List<GeoJSON.Net.Feature.Feature>();
             NetTopologySuite.Geometries.Geometry clippedRoute;
@@ -194,6 +230,7 @@ namespace OV_DB.Controllers
                 var geometry = clippedRoute.GetGeometryN(i);
                 if (geometry is NetTopologySuite.Geometries.LineString lineString)
                 {
+                    lineString = SimplifyLine(lineString, simplificationTolerance);
                     var feature = new GeoJSON.Net.Feature.Feature(new GeoJSON.Net.Geometry.LineString(lineString.Coordinates.Select(loc => new Position(Math.Round(loc.Y, 6), Math.Round(loc.X, 6)))));
                     AddFeatures(language, r, userIdClaim, map, routesToReturn, feature, includeLineColours);
                     result.Add(feature);
