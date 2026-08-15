@@ -1,4 +1,4 @@
-import { Component, DestroyRef, OnInit, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, DestroyRef, OnDestroy, OnInit, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { UntypedFormBuilder, UntypedFormGroup, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { ApiService } from '../services/api.service';
 import { UserProfile, UpdateProfile, ChangePassword, TraewellingTagMapping, TrainlogOperatorMapping } from '../models/user-profile.model';
@@ -56,7 +56,7 @@ import { TrawellingService } from '../traewelling/services/traewelling.service';
     OperatorMappingComponent
   ]
 })
-export class ProfileComponent implements OnInit {
+export class ProfileComponent implements OnInit, OnDestroy {
   private formBuilder = inject(UntypedFormBuilder);
   private apiService = inject(ApiService);
   private snackBar = inject(MatSnackBar);
@@ -85,6 +85,7 @@ export class ProfileComponent implements OnInit {
   sessionsLoading = false;
   revokingSessionId: number | null = null;
   private pollingIntervalId: number | null = null;
+  private oauthMessageListener: ((event: MessageEvent) => void) | null = null;
 
   // Tag mappings
   tagMappings = signal<TraewellingTagMapping[]>([]);
@@ -276,6 +277,7 @@ export class ProfileComponent implements OnInit {
           }
         };
 
+        this.oauthMessageListener = messageListener;
         window.addEventListener('message', messageListener);
 
         // Fallback: Poll for the window to be closed (in case postMessage fails)
@@ -453,6 +455,16 @@ export class ProfileComponent implements OnInit {
     if (this.pollingIntervalId !== null) {
       window.clearInterval(this.pollingIntervalId);
       this.pollingIntervalId = null;
+    }
+  }
+
+  ngOnDestroy(): void {
+    // Guard against leaking the OAuth polling interval and window message listener when the
+    // user navigates away mid-connect (or the popup was blocked).
+    this.stopPolling();
+    if (this.oauthMessageListener) {
+      window.removeEventListener('message', this.oauthMessageListener);
+      this.oauthMessageListener = null;
     }
   }
 
