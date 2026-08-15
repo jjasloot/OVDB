@@ -398,7 +398,7 @@ namespace OV_DB.Controllers
                         }
                         if (formFile.FileName.EndsWith(".gpx"))
                         {
-                            routes.AddRange(await PostGpxToDatabase(stream, userIdClaim, formFile.FileName, userIdClaim));
+                            routes.AddRange(await PostGpxToDatabase(stream, formFile.FileName, userIdClaim));
                         }
                         routes.ForEach(route =>
                         {
@@ -577,7 +577,7 @@ namespace OV_DB.Controllers
 
 
 
-        private async Task<List<Route>> PostGpxToDatabase(StreamReader stream, int mapId, string fileName, int userId)
+        private async Task<List<Route>> PostGpxToDatabase(StreamReader stream, string fileName, int userId)
         {
 
             var gpxReader = new GpxReader(stream.BaseStream);
@@ -604,6 +604,14 @@ namespace OV_DB.Controllers
 
             var lineString = new NetTopologySuite.Geometries.LineString(gpxReader.Track.ToGpxPoints().Select(x => new NetTopologySuite.Geometries.Coordinate(x.Longitude, x.Latitude)).ToArray());
 
+            var maps = await _context.Maps.AsNoTracking().Where(m => m.UserId == userId).ToListAsync();
+
+            var defaultMap = maps.Where(m => m.Default == true).SingleOrDefault();
+            if (defaultMap == null)
+            {
+                defaultMap = maps.First();
+            }
+
             var route = new Route
             {
                 LineString = lineString,
@@ -613,7 +621,7 @@ namespace OV_DB.Controllers
                 {
                     new RouteMap
                     {
-                        MapId=mapId
+                        MapId = defaultMap.MapId
                     }
                 },
             };
@@ -623,14 +631,6 @@ namespace OV_DB.Controllers
             }
             if (string.IsNullOrWhiteSpace(route.Name)) route.Name = "Route";
 
-
-            var maps = await _context.Maps.AsNoTracking().Where(m => m.UserId == userId).ToListAsync();
-
-            var defaultMap = maps.Where(m => m.Default == true).SingleOrDefault();
-            if (defaultMap == null)
-            {
-                defaultMap = maps.First();
-            }
             DistanceCalculationHelper.ComputeDistance(route);
             await _routeRegionsService.AssignRegionsToRouteAsync(route);
 
