@@ -4,7 +4,7 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
-    "build": "ng build",
+    "build": "ng build --configuration production",
     "lint": "ng lint",
     "i18n:init": "ngx-translate-extract --input ./src --output ./src/assets/i18n/template.json --key-as-default-value --replace --format json",
     "i18n:extract": "ngx-translate-extract --input ./src --output ./src/assets/i18n/en.json --output ./src/assets/i18n/nl.json --format json",

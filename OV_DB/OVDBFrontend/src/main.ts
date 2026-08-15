@@ -57,11 +57,8 @@ import { AppComponent } from "./app/app.component";
 import { TranslateHttpLoader } from "@ngx-translate/http-loader";
 import localeNl from "@angular/common/locales/nl";
 import localeEnGB from "@angular/common/locales/en-GB";
-import "hammerjs";
-import "chartjs-plugin-zoom";
 import { provideRouter, withInMemoryScrolling } from "@angular/router";
 import { routes } from "./app/app.routes";
-import { provideCharts, withDefaultRegisterables } from "ng2-charts";
 import { MAT_DATE_LOCALE } from "@angular/material/core";
 
 registerLocaleData(localeNl, "nl-NL");
@@ -168,7 +165,6 @@ bootstrapApplication(AppComponent, {
     provideHttpClient(withXhr(), withInterceptorsFromDi()),
     provideAnimations(),
     provideRouter(routes, withInMemoryScrolling({ scrollPositionRestoration: "enabled" })),
-    provideCharts(withDefaultRegisterables()),
     provideZoneChangeDetection(),
   ],
 }).catch((err) => console.error(err));
