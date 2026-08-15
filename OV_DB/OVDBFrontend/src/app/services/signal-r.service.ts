@@ -1,12 +1,14 @@
 import { environment } from "src/environments/environment";
 import { HubConnection, HubConnectionBuilder } from "@microsoft/signalr";
-import { Injectable } from "@angular/core";
+import { Injectable, inject } from "@angular/core";
 import { Subject } from "rxjs";
+import { AuthenticationService } from "./authentication.service";
 
 @Injectable({
   providedIn: "root",
 })
 export class SignalRService {
+  private authService = inject(AuthenticationService);
   private connection?: HubConnection;
   private startPromise?: Promise<void>;
   public connected = false;
@@ -18,7 +20,9 @@ export class SignalRService {
       return;
     }
     const connection = new HubConnectionBuilder()
-      .withUrl(environment.backend + "mapGenerationHub")
+      .withUrl(environment.backend + "mapGenerationHub", {
+        accessTokenFactory: () => this.authService.token ?? "",
+      })
       .withAutomaticReconnect()
       .build();
     this.connection = connection;

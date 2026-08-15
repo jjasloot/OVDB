@@ -1,8 +1,10 @@
 ﻿using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 
 namespace OV_DB.Hubs;
 
+[Authorize]
 public class MapGenerationHub : Hub
 {
     public const string GenerationUpdateMethod = "GenerationUpdate";
