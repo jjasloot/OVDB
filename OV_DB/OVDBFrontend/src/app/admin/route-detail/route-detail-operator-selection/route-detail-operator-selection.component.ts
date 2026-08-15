@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   effect,
   inject,
   input,
@@ -8,6 +9,7 @@ import {
   Output,
   signal,
 } from "@angular/core";
+import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { FormControl, FormsModule, ReactiveFormsModule } from "@angular/forms";
 import { Observable, Subject } from "rxjs";
 import { debounceTime } from "rxjs/operators";
@@ -46,6 +48,7 @@ export class RouteDetailOperatorSelectionComponent implements OnInit {
   selectedOperators = signal<number[]>([]);
   operators = signal<OperatorMinimal[]>([]);
   operatorService = inject(OperatorService);
+  private destroyRef = inject(DestroyRef);
   filteredOperators = signal<OperatorMinimal[]>([]);
   otherSelectedOperators = signal<string | null>(null);
   updateEffect = effect(
@@ -66,7 +69,7 @@ export class RouteDetailOperatorSelectionComponent implements OnInit {
         this.operatorSelected();
       },
     });
-    this.formField().valueChanges.subscribe(() => {
+    this.formField().valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
       if (this.formField().value == null) {
         this.otherSelectedOperators.set(null);
         return;
@@ -84,7 +87,7 @@ export class RouteDetailOperatorSelectionComponent implements OnInit {
         this.operatorSelected();
       });
 
-    this.formField().valueChanges.subscribe(() => {
+    this.formField().valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
       if (this.formField().value == null) {
         this.filteredOperators.set(this.operators());
         return;

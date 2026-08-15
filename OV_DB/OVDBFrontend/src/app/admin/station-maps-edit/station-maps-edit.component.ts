@@ -1,4 +1,5 @@
-import { Component, OnInit, viewChild, inject, ChangeDetectionStrategy } from "@angular/core";
+import { Component, OnInit, viewChild, inject, ChangeDetectionStrategy, DestroyRef } from "@angular/core";
+import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { UntypedFormBuilder, UntypedFormGroup, Validators, FormsModule, ReactiveFormsModule } from "@angular/forms";
 import { MatCheckboxChange, MatCheckbox } from "@angular/material/checkbox";
 import { DateAdapter } from "@angular/material/core";
@@ -45,6 +46,7 @@ export class StationMapsEditComponent implements OnInit {
   private apiService = inject(ApiService);
   private regionsService = inject(RegionsService);
   private translationService = inject(TranslationService);
+  private destroyRef = inject(DestroyRef);
   private formBuilder = inject(UntypedFormBuilder);
   private dateAdapter = inject<DateAdapter<any>>(DateAdapter);
   private dialogRef = inject<MatDialogRef<StationMapsEditComponent>>(MatDialogRef);
@@ -69,7 +71,7 @@ export class StationMapsEditComponent implements OnInit {
   }
 
   ngOnInit() {
-    this.translationService.languageChanged.subscribe(() => {
+    this.translationService.languageChanged.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
       this.sortOrder();
       this.dateAdapter.setLocale(this.translationService.dateLocale);
     });

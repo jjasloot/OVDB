@@ -1,4 +1,5 @@
-import { Component, OnInit, viewChild, inject, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit, viewChild, inject, ChangeDetectionStrategy, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { firstValueFrom } from 'rxjs';
 import { LatLngBounds, LatLng, geoJSON, Layer } from 'leaflet';
 import { TranslateService, TranslateModule } from '@ngx-translate/core';
@@ -20,6 +21,7 @@ import { MatProgressSpinner } from '@angular/material/progress-spinner';
 export class SingleRouteMapComponent implements OnInit {
   private translateService = inject(TranslateService);
   private translationService = inject(TranslationService);
+  private destroyRef = inject(DestroyRef);
   private activatedRoute = inject(ActivatedRoute);
   private apiService = inject(ApiService);
   private mapTileLayersService = inject(MapTileLayersService);
@@ -71,7 +73,7 @@ export class SingleRouteMapComponent implements OnInit {
       this.guid = p.get('guid')!;
       this.getRoute();
     });
-    this.translationService.languageChanged.subscribe(() => this.getRoute());
+    this.translationService.languageChanged.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => this.getRoute());
   }
 
 

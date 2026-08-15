@@ -1,4 +1,5 @@
-import { Component, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectionStrategy, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { UntypedFormBuilder, UntypedFormGroup, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { ApiService } from 'src/app/services/api.service';
 import { OSMDataLine } from 'src/app/models/osmDataLine.model';
@@ -35,6 +36,7 @@ export class WizzardStep1Component implements OnInit {
   private route = inject(ActivatedRoute);
   private dateAdapter = inject<DateAdapter<any>>(DateAdapter);
   private translationService = inject(TranslationService);
+  private destroyRef = inject(DestroyRef);
 
   form: UntypedFormGroup;
   lines!: OSMDataLine[];
@@ -120,7 +122,7 @@ export class WizzardStep1Component implements OnInit {
 
   selectedNetwork = '';
   ngOnInit(): void {
-    this.translationService.languageChanged.subscribe(() => {
+    this.translationService.languageChanged.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
       this.dateAdapter.setLocale(this.translationService.dateLocale);
     });
 

@@ -1,4 +1,5 @@
-import { Component, OnInit, inject, signal, computed, effect, ChangeDetectionStrategy } from "@angular/core";
+import { Component, OnInit, inject, signal, computed, effect, ChangeDetectionStrategy, DestroyRef } from "@angular/core";
+import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { MatCheckboxChange, MatCheckbox } from "@angular/material/checkbox";
 import { MatDialogRef, MAT_DIALOG_DATA, MatDialogTitle, MatDialogContent, MatDialogActions } from "@angular/material/dialog";
 import { FilterSettings } from "../models/filterSettings";
@@ -54,6 +55,7 @@ export class MapFilterComponent implements OnInit {
   private apiService = inject(ApiService);
   private translateService = inject(TranslateService);
   private translationService = inject(TranslationService);
+  private destroyRef = inject(DestroyRef);
   private dateAdapter = inject<DateAdapter<any>>(DateAdapter);
   dialogRef = inject<MatDialogRef<MapFilterComponent>>(MatDialogRef);
   private regionsService = inject(RegionsService);
@@ -117,7 +119,7 @@ export class MapFilterComponent implements OnInit {
 
   ngOnInit() {
     this.dateAdapter.setLocale(this.translationService.dateLocale);
-    this.translationService.languageChanged.subscribe(() => {
+    this.translationService.languageChanged.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
       this.sortNames();
       this.dateAdapter.setLocale(this.translationService.dateLocale);
     });

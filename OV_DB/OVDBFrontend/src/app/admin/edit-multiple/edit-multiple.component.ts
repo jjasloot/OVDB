@@ -1,4 +1,5 @@
-import { Component, OnInit, viewChild, inject, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit, viewChild, inject, ChangeDetectionStrategy, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatDialogRef, MAT_DIALOG_DATA, MatDialogTitle, MatDialogContent, MatDialogActions } from '@angular/material/dialog';
 import { ApiService } from 'src/app/services/api.service';
 import { TranslateService, TranslateModule } from '@ngx-translate/core';
@@ -32,6 +33,7 @@ export class EditMultipleComponent implements OnInit {
   dialogRef = inject<MatDialogRef<EditMultipleComponent>>(MatDialogRef);
   private translationService = inject(TranslationService);
   private translateService = inject(TranslateService);
+  private destroyRef = inject(DestroyRef);
   private dateAdapter = inject<DateAdapter<any>>(DateAdapter);
   private apiService = inject(ApiService);
 
@@ -58,7 +60,7 @@ export class EditMultipleComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.translationService.languageChanged.subscribe(() => {
+    this.translationService.languageChanged.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
       this.dateAdapter.setLocale(this.translationService.dateLocale);
     });
     this.apiService.getTypes().subscribe(types => {
