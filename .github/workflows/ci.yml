@@ -8,12 +8,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: OV_DB/OVDBFrontend/package-lock.json
+      - name: Install dependencies
+        run: npm ci
+        working-directory: OV_DB/OVDBFrontend
       - name: Build frontend
-        run: |
-          cd OV_DB/OVDBFrontend
-          npm install
-          npm run build
-  build-backend:
+        run: npm run build
+        working-directory: OV_DB/OVDBFrontend
+  build-and-test-backend:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -21,7 +28,5 @@ jobs:
         uses: actions/setup-dotnet@v5
         with:
           dotnet-version: 10.0.x
-      - name: Build backend
-        run: |
-          cd OV_DB
-          dotnet build
+      - name: Test (builds the whole solution, including OV_DB.Tests)
+        run: dotnet test OVDB.sln -c Release --logger "trx;LogFileName=test-results.trx"
