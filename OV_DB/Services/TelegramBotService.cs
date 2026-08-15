@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Net.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Telegram.Bot;
@@ -25,12 +26,14 @@ namespace OV_DB.Services
         private readonly OVDBDatabaseContext _dbContext;
         private readonly ILogger<TelegramBotService> _logger;
 
-        public TelegramBotService(IConfiguration configuration, OVDBDatabaseContext dbContext, ILogger<TelegramBotService> logger)
+        public TelegramBotService(IConfiguration configuration, IHttpClientFactory httpClientFactory, OVDBDatabaseContext dbContext, ILogger<TelegramBotService> logger)
         {
             var token = configuration["TelegramBotToken"];
             if (!string.IsNullOrWhiteSpace(token))
             {
-                _botClient = new TelegramBotClient(token);
+                // Use the named HttpClient so the pooled handler is shared instead of creating a
+                // fresh client (and socket) per request scope.
+                _botClient = new TelegramBotClient(token, httpClientFactory.CreateClient("Telegram"));
             }
             _dbContext = dbContext;
             _logger = logger;

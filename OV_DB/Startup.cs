@@ -165,6 +165,7 @@ namespace OV_DB
             services.AddTransient<IStationRegionsService, StationRegionsService>();
             services.AddTransient<ITimezoneService, TimezoneService>();
             services.AddSingleton<IFontLoader, FontLoader>();
+            services.AddHttpClient("Telegram");
             services.AddScoped<TelegramBotService>();
             services.AddScoped<ITrainlogExportService, TrainlogExportService>();
             services.AddHttpClient(TrawellingService.HTTP_CLIENT_NAME,client =>
