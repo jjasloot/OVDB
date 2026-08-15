@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using OV_DB.Services;
+using System.Security.Cryptography;
+using System.Text;
 using System.Threading.Tasks;
 using Telegram.Bot.Types;
 
@@ -27,16 +29,21 @@ namespace OV_DB.Controllers
         [HttpPost("update")]
         public async Task<IActionResult> Update([FromBody] Update update)
         {
-            // Reject forged webhook calls. Enforced only when a secret is configured so the
-            // endpoint keeps working until the webhook is (re)registered with a matching secret_token.
+            // Reject forged webhook calls. The endpoint fails closed: without a configured
+            // secret there is no way to distinguish Telegram from an attacker (who can add or
+            // remove StationVisits for any user by forging callbackQuery.From.Id), so refuse.
             var expectedSecret = _configuration["Telegram:WebhookSecret"];
-            if (!string.IsNullOrEmpty(expectedSecret))
+            if (string.IsNullOrEmpty(expectedSecret))
             {
-                var provided = Request.Headers[TelegramSecretHeader].ToString();
-                if (!string.Equals(provided, expectedSecret, System.StringComparison.Ordinal))
-                {
-                    return Unauthorized();
-                }
+                return Unauthorized();
+            }
+
+            var provided = Request.Headers[TelegramSecretHeader].ToString();
+            var providedBytes = Encoding.UTF8.GetBytes(provided);
+            var expectedBytes = Encoding.UTF8.GetBytes(expectedSecret);
+            if (!CryptographicOperations.FixedTimeEquals(providedBytes, expectedBytes))
+            {
+                return Unauthorized();
             }
 
             await _telegramBotService.HandleUpdateAsync(update);
