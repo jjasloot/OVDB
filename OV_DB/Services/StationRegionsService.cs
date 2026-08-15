@@ -1,8 +1,7 @@
-﻿using Microsoft.AspNetCore.Routing;
 using Microsoft.EntityFrameworkCore;
 using NetTopologySuite.Geometries;
-using NetTopologySuite.Operation.Overlay;
-using NetTopologySuite.Operation.OverlayNG;
+using NetTopologySuite.Geometries.Prepared;
+using NetTopologySuite.Index.Strtree;
 using OVDB_database.Database;
 using OVDB_database.Models;
 using System.Collections.Generic;
@@ -19,7 +18,10 @@ public interface IStationRegionsService
 
 public class StationRegionsService(OVDBDatabaseContext dbContext) : IStationRegionsService
 {
-    private List<Region> _regions;
+    // Spatial index of region envelopes -> (region, prepared geometry), built once per instance so a
+    // batch of stations narrows to a few candidate regions and runs a cheap point-in-polygon test
+    // instead of a full topological overlay against every region.
+    private STRtree<(Region Region, IPreparedGeometry Prepared)> _regionIndex;
 
     public async Task AssignRegionsToStationAsync(Station station)
     {
@@ -36,25 +38,31 @@ public class StationRegionsService(OVDBDatabaseContext dbContext) : IStationRegi
 
     public async Task AssignRegionsToStationCacheRegionsAsync(Station station)
     {
-        if (_regions == null)
-        {
-            await GetAllRegionsAsync();
-        }
-
+        await EnsureRegionIndexAsync();
 
         NetTopologySuite.NtsGeometryServices.Instance = new NetTopologySuite.NtsGeometryServices(GeometryOverlay.NG);
         station.Regions.Clear();
         var location = new Point(station.Longitude, station.Lattitude);
 
-        foreach (var region in _regions)
+        foreach (var (region, prepared) in _regionIndex.Query(location.EnvelopeInternal))
         {
-            if (!OverlayNG.Overlay(region.Geometry, location, SpatialFunction.Intersection).IsEmpty)
+            if (prepared.Intersects(location))
                 station.Regions.Add(region);
         }
     }
 
-    private async Task GetAllRegionsAsync()
+    private async Task EnsureRegionIndexAsync()
     {
-        _regions = await dbContext.Regions.ToListAsync();
+        if (_regionIndex != null)
+            return;
+
+        var regions = await dbContext.Regions.Where(r => r.Geometry != null).ToListAsync();
+        var index = new STRtree<(Region, IPreparedGeometry)>();
+        foreach (var region in regions)
+        {
+            index.Insert(region.Geometry.EnvelopeInternal, (region, PreparedGeometryFactory.Prepare(region.Geometry)));
+        }
+        index.Build();
+        _regionIndex = index;
     }
 }
