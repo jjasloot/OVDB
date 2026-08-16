@@ -157,6 +157,14 @@ different answers:
 So: **Station popup** is the full-control surface, and the only one. Both dates with their trips,
 each settable, changeable or clearable, either by picking a date directly or by choosing from the
 matcher's candidate trips. The quick paths stay quick; anything unusual is fixed here.
+
+**Editing obeys one ordering rule: alighting implies stopping, so the stopped date is pulled back to
+match whenever the entry/exit date is set earlier.** Never refuse the edit. The user asserting they
+got off on a date is also asserting the train stopped then, and the same invariant is already what
+`MarkAsync` enforces when entry/exit fills both levels — an edit dialog that argued instead would be
+enforcing a rule the rest of the system does not. Note this is the one path allowed to move a date
+**later**: `MarkAsync` only ever moves them earlier, so a correction needs its own entry point
+rather than an extra flag on that one.
 - **Marked before the trip exists.** The usual case: you tap at the platform, the Träwelling
   check-in imports later. No pending-status column is needed — when an instance is created or
   imported, the matcher runs over the user's unlinked visits from ±1 day and links what it
@@ -361,11 +369,6 @@ feature.
   `railway=station|halt` and therefore **excludes `tram_stop`** entirely. One number is enough
   today; revisit the moment tram or metro stops are imported as stations, because that assumption is
   doing the work, not the geometry.
-- **The two dates need an ordering rule when edited.** Alighting implies stopping, so setting
-  `FirstEntryExitDate` earlier than `FirstStoppedDate` is incoherent. Pull the stopped date back to
-  match, or refuse. **Now blocking step 4**, since that step is where the dates first become
-  editable — `MarkAsync` cannot answer it, because it only ever moves a date earlier and an edit has
-  to be able to move one later.
 - **`DatingSkipped` can go stale.** A visit skipped because nothing plausible was on offer should
   probably resurface when a newly imported trip provides a candidate; a visit skipped because the
   user genuinely cannot remember should not. Same flag, two meanings — either split it or accept the
