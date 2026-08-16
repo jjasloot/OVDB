@@ -135,6 +135,8 @@ public class ImagesController(OVDBDatabaseContext context, IMemoryCache memoryCa
         var titleFont = new Font(family, 15, FontStyle.Bold);
         var rowFont = new Font(family, 12);
         var valueFont = new Font(family, 12, FontStyle.Bold);
+        // Deliberately smaller than a data row: the overflow count is metadata, not a figure.
+        var overflowFont = new Font(family, 10);
         var footerFont = new Font(family, 9);
 
         var textBrush = Brushes.Solid(palette.Text);
@@ -235,8 +237,8 @@ public class ImagesController(OVDBDatabaseContext context, IMemoryCache memoryCa
             var x = Padding + ((overflowRowIndex / rowsPerColumn) * columnWidth);
             var y = top + ((overflowRowIndex % rowsPerColumn) * rowHeight);
             var moreText = dutch ? $"+{hidden} meer" : $"+{hidden} more";
-            image.Mutate(ctx => ctx.DrawText(moreText, rowFont, mutedBrush,
-                new PointF(x + (DotRadius * 2) + 8, y + 1)));
+            image.Mutate(ctx => ctx.DrawText(moreText, overflowFont, mutedBrush,
+                new PointF(x + (DotRadius * 2) + 8, y + 3)));
         }
 
         var footerTop = height - Padding - footerSpace;
