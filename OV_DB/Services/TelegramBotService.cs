@@ -118,7 +118,17 @@ namespace OV_DB.Services
         private string FormatStation(StationDTO station)
         {
             var flagEmoji = GetCountryFlagEmoji(station.Regions);
-            return $"{station.Name} {flagEmoji} - {(station.Visited ? "✅" : "❌")}";
+            return $"{station.Name} {flagEmoji} - {VisitMarker(station.Visited, station.VisitLevel)}";
+        }
+
+        /// <summary>Three states, the same three the web map paints.</summary>
+        private static string VisitMarker(bool visited, StationVisitLevel? level)
+        {
+            if (!visited)
+            {
+                return "❌";
+            }
+            return level == StationVisitLevel.EntryExit ? "🚉" : "✅";
         }
 
         private async Task HandleCallbackQueryAsync(CallbackQuery callbackQuery)
@@ -146,32 +156,42 @@ namespace OV_DB.Services
             }
 
             var existing = await _stationVisitService.GetAsync(user.Id, stationId);
-            bool visited;
             switch (action)
             {
+                case StationAction.Show:
+                    // Opening an already-visited station changes nothing; the reply carries the
+                    // options. Nothing here is destructive on a stray tap.
+                    break;
                 case StationAction.Remove:
                     await _stationVisitService.UnmarkAsync(user.Id, stationId);
-                    visited = false;
                     break;
                 case StationAction.EntryExit:
                     // Standing on the platform is today's news, so stamp today where the station is.
                     await _stationVisitService.MarkAsync(user.Id, stationId, StationVisitLevel.EntryExit,
                         await _stationVisitService.LocalDateAtStationAsync(station), StationVisitSource.Telegram);
-                    visited = true;
                     break;
-                default:
-                    // A plain tap toggles, and marks the weaker claim: the train stopped here.
-                    // Upgrading to entry/exit is a deliberate second tap.
-                    if (existing != null)
+                case StationAction.Stopped:
+                    if (existing?.FirstEntryExitDate != null)
                     {
-                        await _stationVisitService.UnmarkAsync(user.Id, stationId);
-                        visited = false;
+                        await _stationVisitService.DowngradeToStoppedAsync(user.Id, stationId);
                     }
                     else
                     {
                         await _stationVisitService.MarkAsync(user.Id, stationId, StationVisitLevel.Stopped,
                             await _stationVisitService.LocalDateAtStationAsync(station), StationVisitSource.Telegram);
-                        visited = true;
+                    }
+                    break;
+                default:
+                    // Keyboards sent before the verbs existed still toggle, which is what their
+                    // labels promised at the time.
+                    if (existing != null)
+                    {
+                        await _stationVisitService.UnmarkAsync(user.Id, stationId);
+                    }
+                    else
+                    {
+                        await _stationVisitService.MarkAsync(user.Id, stationId, StationVisitLevel.Stopped,
+                            await _stationVisitService.LocalDateAtStationAsync(station), StationVisitSource.Telegram);
                     }
                     break;
             }
@@ -191,7 +211,7 @@ namespace OV_DB.Services
                 var visit = await _stationVisitService.GetAsync(user.Id, stationId);
                 var level = visit == null
                     ? "❌"
-                    : visit.FirstEntryExitDate.HasValue ? "✅ in-/uitgestapt" : "✅ gestopt";
+                    : visit.FirstEntryExitDate.HasValue ? "🚉 in-/uitgestapt" : "✅ gestopt";
 
                 await _botClient.SendMessage(callbackQuery.Message.Chat.Id,
                     $"{station.Name}: {level}\n\r{percentageMessage}",
@@ -203,13 +223,15 @@ namespace OV_DB.Services
         internal enum StationAction
         {
             Toggle,
+            Stopped,
             EntryExit,
-            Remove
+            Remove,
+            Show
         }
 
         /// <summary>
         /// Callback data is "&lt;verb&gt;:&lt;stationId&gt;", with a bare station id still accepted so
-        /// keyboards sent before this change keep working. Well inside Telegram's 64-byte limit.
+        /// keyboards sent before the verbs existed keep working. Well inside Telegram's 64-byte limit.
         /// </summary>
         internal static bool TryParseStationAction(string data, out StationAction action, out int stationId)
         {
@@ -232,31 +254,32 @@ namespace OV_DB.Services
 
             action = parts[0] switch
             {
+                "st" => StationAction.Stopped,
                 "ee" => StationAction.EntryExit,
                 "rm" => StationAction.Remove,
+                "sh" => StationAction.Show,
                 _ => StationAction.Toggle
             };
             return true;
         }
 
         /// <summary>
-        /// What can be done next: an unvisited station only needs marking, a stopped-at one can be
-        /// upgraded, and anything visited can be removed.
+        /// What can be done next: an unvisited station can be marked at either level, a stopped-at
+        /// one raised, an entry/exit one corrected back down, and anything visited removed.
         /// </summary>
         private static InlineKeyboardMarkup BuildStationActions(int stationId, StationVisit visit)
         {
             var buttons = new List<InlineKeyboardButton>();
             if (visit == null)
             {
-                buttons.Add(InlineKeyboardButton.WithCallbackData("Gestopt", $"{stationId}"));
+                buttons.Add(InlineKeyboardButton.WithCallbackData("Gestopt", $"st:{stationId}"));
                 buttons.Add(InlineKeyboardButton.WithCallbackData("In-/uitgestapt", $"ee:{stationId}"));
             }
             else
             {
-                if (!visit.FirstEntryExitDate.HasValue)
-                {
-                    buttons.Add(InlineKeyboardButton.WithCallbackData("In-/uitgestapt", $"ee:{stationId}"));
-                }
+                buttons.Add(visit.FirstEntryExitDate.HasValue
+                    ? InlineKeyboardButton.WithCallbackData("Alleen gestopt", $"st:{stationId}")
+                    : InlineKeyboardButton.WithCallbackData("In-/uitgestapt", $"ee:{stationId}"));
                 buttons.Add(InlineKeyboardButton.WithCallbackData("Verwijderen", $"rm:{stationId}"));
             }
             return new InlineKeyboardMarkup(buttons);
@@ -290,6 +313,12 @@ namespace OV_DB.Services
                     Network = s.Network,
                     Operator = s.Operator,
                     Visited = s.StationVisits.Any(sv => sv.UserId == userId),
+                    VisitLevel = s.StationVisits
+                        .Where(sv => sv.UserId == userId)
+                        .Select(sv => sv.FirstEntryExitDate.HasValue
+                            ? StationVisitLevel.EntryExit
+                            : (StationVisitLevel?)StationVisitLevel.Stopped)
+                        .FirstOrDefault(),
                     Regions = s.Regions.Select(r => new StationRegionDTO
                     {
                         Id = r.Id,
@@ -303,9 +332,14 @@ namespace OV_DB.Services
             return nearbyStations;
         }
 
+        /// <summary>
+        /// An unvisited station is one tap from being marked as stopped at; a visited one opens its
+        /// options instead, so a mistaken tap in the list can never un-mark anything.
+        /// </summary>
         private InlineKeyboardButton[][] GetStationsInlineKeyboard(List<StationDTO> stations)
         {
-            var inlineKeyboardButtons = stations.Select(s => InlineKeyboardButton.WithCallbackData(FormatStation(s), s.Id.ToString()))
+            var inlineKeyboardButtons = stations
+                .Select(s => InlineKeyboardButton.WithCallbackData(FormatStation(s), $"{(s.Visited ? "sh" : "st")}:{s.Id}"))
                 .Select(b => new InlineKeyboardButton[] { b })
                 .ToArray();
             return inlineKeyboardButtons;

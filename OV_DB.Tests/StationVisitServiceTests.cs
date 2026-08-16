@@ -141,6 +141,65 @@ namespace OV_DB.Tests
         }
 
         [Fact]
+        public async Task Downgrade_DropsTheEntryExitClaimButKeepsTheStop()
+        {
+            using var context = NewContext();
+            var service = NewService(context);
+            await service.MarkAsync(1, 10, StationVisitLevel.Stopped, Earlier, StationVisitSource.Backfill);
+            await service.MarkAsync(1, 10, StationVisitLevel.EntryExit, Day, StationVisitSource.Web);
+
+            // "Actually I only passed through" — the stop is not in doubt, only the getting off.
+            await service.DowngradeToStoppedAsync(1, 10);
+
+            var visit = await context.StationVisits.SingleAsync();
+            Assert.Equal(Earlier, visit.FirstStoppedDate);
+            Assert.Null(visit.FirstEntryExitDate);
+        }
+
+        [Fact]
+        public async Task Downgrade_KeepsTheEntryExitDateWhenItIsTheOnlyOneKnown()
+        {
+            using var context = NewContext();
+            var service = NewService(context);
+            await service.MarkAsync(1, 10, StationVisitLevel.EntryExit, Day, StationVisitSource.Web);
+            var visit = await context.StationVisits.SingleAsync();
+            visit.FirstStoppedDate = null;
+            await context.SaveChangesAsync();
+
+            await service.DowngradeToStoppedAsync(1, 10);
+
+            // Lowering the level must not silently throw away the date the row was carrying.
+            visit = await context.StationVisits.SingleAsync();
+            Assert.Equal(Day, visit.FirstStoppedDate);
+            Assert.Null(visit.FirstEntryExitDate);
+        }
+
+        [Fact]
+        public async Task Downgrade_OnAStoppedVisitChangesNothing()
+        {
+            using var context = NewContext();
+            var service = NewService(context);
+            await service.MarkAsync(1, 10, StationVisitLevel.Stopped, Day, StationVisitSource.Web);
+
+            await service.DowngradeToStoppedAsync(1, 10);
+
+            var visit = await context.StationVisits.SingleAsync();
+            Assert.Equal(Day, visit.FirstStoppedDate);
+            Assert.Null(visit.FirstEntryExitDate);
+        }
+
+        [Fact]
+        public async Task Downgrade_NeverCreatesAVisit()
+        {
+            using var context = NewContext();
+            var service = NewService(context);
+
+            // Nothing may mark a station visited as a side effect, least of all a lowering.
+            Assert.Null(await service.DowngradeToStoppedAsync(1, 10));
+            Assert.Empty(context.StationVisits);
+        }
+
+        [Fact]
         public async Task Unmark_RemovesTheRowEntirely()
         {
             using var context = NewContext();

@@ -12,6 +12,7 @@ namespace OV_DB.Services;
 public interface IStationVisitService
 {
     Task<StationVisit> MarkAsync(int userId, int stationId, StationVisitLevel level, DateTime? localDate, StationVisitSource source, CancellationToken cancellationToken = default);
+    Task<StationVisit> DowngradeToStoppedAsync(int userId, int stationId, CancellationToken cancellationToken = default);
     Task<DateTime> LocalDateAtStationAsync(Station station, CancellationToken cancellationToken = default);
     Task<bool> UnmarkAsync(int userId, int stationId, CancellationToken cancellationToken = default);
     Task<StationVisit> GetAsync(int userId, int stationId, CancellationToken cancellationToken = default);
@@ -80,6 +81,33 @@ public class StationVisitService(OVDBDatabaseContext dbContext, ITimezoneService
             visit.FirstEntryExitRouteInstanceId = visit.FirstStoppedRouteInstanceId;
         }
 
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return visit;
+    }
+
+    /// <summary>
+    /// Lowers a visit back to stopped-at, the one correction <see cref="MarkAsync"/> deliberately
+    /// will not make. The stop itself is not in doubt — only the claim of having got on or off — so
+    /// the stopped date survives and only the entry/exit date and its trip link are dropped.
+    /// </summary>
+    public async Task<StationVisit> DowngradeToStoppedAsync(int userId, int stationId, CancellationToken cancellationToken = default)
+    {
+        var visit = await GetAsync(userId, stationId, cancellationToken);
+        if (visit == null || !visit.FirstEntryExitDate.HasValue)
+        {
+            return visit;
+        }
+
+        // The entry/exit date is also a valid lower bound for the stop, so keep it if it is earlier
+        // rather than throwing away the only date the row has.
+        if (!visit.FirstStoppedDate.HasValue || visit.FirstEntryExitDate < visit.FirstStoppedDate)
+        {
+            visit.FirstStoppedDate = visit.FirstEntryExitDate;
+            visit.FirstStoppedRouteInstanceId = visit.FirstEntryExitRouteInstanceId;
+        }
+
+        visit.FirstEntryExitDate = null;
+        visit.FirstEntryExitRouteInstanceId = null;
         await dbContext.SaveChangesAsync(cancellationToken);
         return visit;
     }

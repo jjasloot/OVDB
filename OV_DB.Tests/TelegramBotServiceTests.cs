@@ -192,4 +192,35 @@ public class TelegramBotServiceTests
         // Assert: both admins were attempted (2 calls total)
         mockBotClient.Verify(c => c.SendRequest(It.IsAny<IRequest<Message>>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
     }
+
+    // Callback data comes back from Telegram unvalidated and can be anything a user cares to send,
+    // so parsing it is worth pinning down — including the bare ids sent by keyboards that are
+    // already out there in old chats.
+    // The expected action travels as a string only because StationAction is internal and this
+    // method has to be public for xUnit.
+    [Theory]
+    [InlineData("st:42", "Stopped", 42)]
+    [InlineData("ee:42", "EntryExit", 42)]
+    [InlineData("rm:42", "Remove", 42)]
+    [InlineData("sh:42", "Show", 42)]
+    [InlineData("42", "Toggle", 42)]
+    [InlineData("zz:42", "Toggle", 42)]
+    public void TryParseStationAction_ReadsVerbAndStation(string data, string expected, int expectedId)
+    {
+        Assert.True(TelegramBotService.TryParseStationAction(data, out var action, out var stationId));
+        Assert.Equal(System.Enum.Parse<TelegramBotService.StationAction>(expected), action);
+        Assert.Equal(expectedId, stationId);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    [InlineData("st:")]
+    [InlineData("st:notanumber")]
+    [InlineData("st:1:2")]
+    [InlineData("drop table stations")]
+    public void TryParseStationAction_RejectsGarbage(string data)
+    {
+        Assert.False(TelegramBotService.TryParseStationAction(data, out _, out _));
+    }
 }

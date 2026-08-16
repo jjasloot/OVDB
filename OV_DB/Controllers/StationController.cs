@@ -89,15 +89,26 @@ namespace OV_DB.Controllers
                 return Forbid();
             }
 
-            if (value.Visited)
+            if (!value.Visited)
             {
-                // The web map sends no date: marking from the sofa says nothing about when, so the
-                // visit joins the backfill queue undated rather than claiming today.
-                await stationVisitService.MarkAsync(userIdClaim, id, value.Level, value.Date, StationVisitSource.Web);
+                await stationVisitService.UnmarkAsync(userIdClaim, id);
             }
             else
             {
-                await stationVisitService.UnmarkAsync(userIdClaim, id);
+                // The level sent here is the level wanted, not merely a floor: the map only ever
+                // sends Stopped for an entry/exit visit from the dialog's "only stopped" button,
+                // which is a correction and has to be able to lower it.
+                var existing = await stationVisitService.GetAsync(userIdClaim, id);
+                if (value.Level == StationVisitLevel.Stopped && existing?.FirstEntryExitDate != null)
+                {
+                    await stationVisitService.DowngradeToStoppedAsync(userIdClaim, id);
+                }
+                else
+                {
+                    // The web map sends no date: marking from the sofa says nothing about when, so
+                    // the visit joins the backfill queue undated rather than claiming today.
+                    await stationVisitService.MarkAsync(userIdClaim, id, value.Level, value.Date, StationVisitSource.Web);
+                }
             }
 
             var visit = await stationVisitService.GetAsync(userIdClaim, id);
