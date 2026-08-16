@@ -17,12 +17,16 @@ import { MatSnackBar, MatSnackBarConfig } from "@angular/material/snack-bar";
 import { MatDialog } from "@angular/material/dialog";
 import { TranslateService } from "@ngx-translate/core";
 import { createMarkerClusterGroup } from "src/app/leaflet-markercluster-loader";
-import { StationVisitLevel } from "src/app/models/stationView.model";
+import { StationVisitDates, StationVisitLevel } from "src/app/models/stationView.model";
 import {
   StationVisitDialogComponent,
   StationVisitDialogData,
   StationVisitDialogResult,
 } from "../station-visit-dialog/station-visit-dialog.component";
+import {
+  StationVisitDateDialogComponent,
+  StationVisitDateDialogData,
+} from "../station-visit-date-dialog/station-visit-date-dialog.component";
 
 /**
  * Three states: red unvisited, green stopped at, blue got on/off. Every visit is at least a stop,
@@ -274,6 +278,51 @@ export class StationMapComponent implements OnInit {
       case 'remove':
         await this.removeStation(marker);
         break;
+      case 'dates':
+        await this.openDateDialog(marker);
+        break;
+    }
+  }
+
+  /**
+   * Dating is deliberately a separate step from marking. Marking says "I have been here" and can
+   * happen from the sofa; a date is a different claim and the user either knows it or picks the
+   * trip that supplies it.
+   */
+  private async openDateDialog(marker: any): Promise<void> {
+    const properties = marker.feature.properties;
+    const dates = await firstValueFrom(
+      this.dialog
+        .open<StationVisitDateDialogComponent, StationVisitDateDialogData, StationVisitDates>(
+          StationVisitDateDialogComponent,
+          {
+            data: {
+              stationId: properties.id,
+              name: properties.name,
+              level: properties.visitLevel,
+              firstStoppedDate: properties.firstStoppedDate,
+              firstStoppedRouteInstanceId: properties.firstStoppedRouteInstanceId ?? null,
+              firstEntryExitDate: properties.firstEntryExitDate,
+              firstEntryExitRouteInstanceId: properties.firstEntryExitRouteInstanceId ?? null,
+            },
+            maxWidth: '95vw',
+            width: '480px',
+          }
+        )
+        .afterClosed()
+    );
+
+    if (!dates) {
+      return;
+    }
+
+    try {
+      const state = await firstValueFrom(this.apiService.updateStationVisitDates(properties.id, dates));
+      this.applyState(marker, state.visited, state.level, state.firstStoppedDate, state.firstEntryExitDate);
+      marker.feature.properties.firstStoppedRouteInstanceId = state.firstStoppedRouteInstanceId;
+      marker.feature.properties.firstEntryExitRouteInstanceId = state.firstEntryExitRouteInstanceId;
+    } catch {
+      // Leave the marker showing what the server last confirmed rather than an optimistic guess.
     }
   }
 

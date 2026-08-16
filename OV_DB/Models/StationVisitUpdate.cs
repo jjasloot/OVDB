@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace OV_DB.Models
 {
@@ -26,12 +27,51 @@ namespace OV_DB.Models
         public DateTime? Date { get; set; }
     }
 
+    /// <summary>
+    /// Both dates as the user says they are, rather than as a floor to be improved on. A trip id
+    /// wins over the date beside it: the server takes the date from the trip, so the pair cannot
+    /// drift apart.
+    /// </summary>
+    public class StationVisitDates
+    {
+        public DateTime? FirstStoppedDate { get; set; }
+        public int? FirstStoppedRouteInstanceId { get; set; }
+        public DateTime? FirstEntryExitDate { get; set; }
+        public int? FirstEntryExitRouteInstanceId { get; set; }
+    }
+
     public class StationVisitStateDTO
     {
         public bool Visited { get; set; }
         public StationVisitLevel? Level { get; set; }
         public DateTime? FirstStoppedDate { get; set; }
+        public int? FirstStoppedRouteInstanceId { get; set; }
         public DateTime? FirstEntryExitDate { get; set; }
+        public int? FirstEntryExitRouteInstanceId { get; set; }
         public double PercentageVisited { get; set; }
+    }
+
+    /// <summary>
+    /// Candidate trips for one station, collapsed to one entry per route. Measured on real data,
+    /// a station averages 60.8 candidate trips across 26.2 routes — a raw list nobody would read —
+    /// and per route only the earliest instance can answer "when did I first come here". The rest
+    /// stay available behind the row rather than in front of it.
+    /// </summary>
+    public class TripCandidateGroupDTO
+    {
+        public int RouteId { get; set; }
+        public string RouteName { get; set; }
+        public string From { get; set; }
+        public string To { get; set; }
+        /// <summary>True when the route starts or ends here, which is the only evidence you were on the platform.</summary>
+        public bool IsEndpoint { get; set; }
+        public double DistanceMetres { get; set; }
+        public List<TripCandidateDTO> Instances { get; set; }
+    }
+
+    public class TripCandidateDTO
+    {
+        public int RouteInstanceId { get; set; }
+        public DateTime Date { get; set; }
     }
 }

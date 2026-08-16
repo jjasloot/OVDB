@@ -28,6 +28,9 @@
       {{ 'STATIONS.VISIT.SET_STOPPED' | translate }}
     </button>
   }
+  <button mat-stroked-button (click)="close('dates')">
+    {{ (date ? 'STATIONS.VISIT.EDIT_DATE' : 'STATIONS.VISIT.ADD_DATE') | translate }}
+  </button>
   <button mat-stroked-button class="danger" (click)="close('remove')">
     {{ 'STATIONS.VISIT.REMOVE' | translate }}
   </button>

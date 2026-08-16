@@ -33,6 +33,40 @@ export interface StationVisitState {
   visited: boolean;
   level: StationVisitLevel | null;
   firstStoppedDate: string | null;
+  firstStoppedRouteInstanceId: number | null;
   firstEntryExitDate: string | null;
+  firstEntryExitRouteInstanceId: number | null;
   percentageVisited: number;
+}
+
+/**
+ * Both dates as the user says they are, rather than as a floor to improve on. A trip id wins over
+ * the date beside it: the server takes the date from the trip so the pair cannot drift apart.
+ */
+export interface StationVisitDates {
+  firstStoppedDate: string | null;
+  firstStoppedRouteInstanceId: number | null;
+  firstEntryExitDate: string | null;
+  firstEntryExitRouteInstanceId: number | null;
+}
+
+/**
+ * Candidate trips for one station, one entry per route. A station averages ~61 candidate trips
+ * across ~26 routes, so the raw list is unreadable; per route only the earliest instance can answer
+ * "when did I first come here", and the rest sit behind the row.
+ */
+export interface TripCandidateGroup {
+  routeId: number;
+  routeName: string;
+  from: string;
+  to: string;
+  /** The route starts or ends here — the only evidence you stood on the platform. */
+  isEndpoint: boolean;
+  distanceMetres: number;
+  instances: TripCandidate[];
+}
+
+export interface TripCandidate {
+  routeInstanceId: number;
+  date: string;
 }

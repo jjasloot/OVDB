@@ -200,6 +200,160 @@ namespace OV_DB.Tests
         }
 
         [Fact]
+        public async Task SetDates_MovesADateLater()
+        {
+            using var context = NewContext();
+            var service = NewService(context);
+            await service.MarkAsync(1, 10, StationVisitLevel.Stopped, Earlier, StationVisitSource.Web);
+
+            // The whole point of the edit path: MarkAsync refuses this, and a correction needs it.
+            await service.SetDatesAsync(1, 10, new StationVisitDates { FirstStoppedDate = Day });
+
+            var visit = await context.StationVisits.SingleAsync();
+            Assert.Equal(Day, visit.FirstStoppedDate);
+        }
+
+        [Fact]
+        public async Task SetDates_ClearsADate()
+        {
+            using var context = NewContext();
+            var service = NewService(context);
+            await service.MarkAsync(1, 10, StationVisitLevel.EntryExit, Day, StationVisitSource.Web);
+
+            await service.SetDatesAsync(1, 10, new StationVisitDates());
+
+            // Still visited, just no longer claiming to know when.
+            var visit = await context.StationVisits.SingleAsync();
+            Assert.Null(visit.FirstStoppedDate);
+            Assert.Null(visit.FirstEntryExitDate);
+        }
+
+        [Fact]
+        public async Task SetDates_PullsTheStoppedDateBackToMeetAnEarlierEntryExit()
+        {
+            using var context = NewContext();
+            var service = NewService(context);
+            await service.MarkAsync(1, 10, StationVisitLevel.Stopped, Day, StationVisitSource.Web);
+
+            // Alighting implies stopping, so this is a correction to accept, not to refuse.
+            await service.SetDatesAsync(1, 10, new StationVisitDates
+            {
+                FirstStoppedDate = Day,
+                FirstEntryExitDate = Earlier
+            });
+
+            var visit = await context.StationVisits.SingleAsync();
+            Assert.Equal(Earlier, visit.FirstStoppedDate);
+            Assert.Equal(Earlier, visit.FirstEntryExitDate);
+        }
+
+        [Fact]
+        public async Task SetDates_KeepsTheDatesApartWhenTheyAreCoherent()
+        {
+            using var context = NewContext();
+            var service = NewService(context);
+            await service.MarkAsync(1, 10, StationVisitLevel.Stopped, Earlier, StationVisitSource.Web);
+
+            // Passed through in 2019, actually got off in 2026: two real dates, both kept.
+            await service.SetDatesAsync(1, 10, new StationVisitDates
+            {
+                FirstStoppedDate = Earlier,
+                FirstEntryExitDate = Day
+            });
+
+            var visit = await context.StationVisits.SingleAsync();
+            Assert.Equal(Earlier, visit.FirstStoppedDate);
+            Assert.Equal(Day, visit.FirstEntryExitDate);
+        }
+
+        [Fact]
+        public async Task SetDates_ClearingTheEntryExitDateLowersTheLevel()
+        {
+            using var context = NewContext();
+            var service = NewService(context);
+            await service.MarkAsync(1, 10, StationVisitLevel.EntryExit, Day, StationVisitSource.Web);
+
+            await service.SetDatesAsync(1, 10, new StationVisitDates { FirstStoppedDate = Day });
+
+            var visit = await context.StationVisits.SingleAsync();
+            Assert.Equal(Day, visit.FirstStoppedDate);
+            Assert.Null(visit.FirstEntryExitDate);
+        }
+
+        [Fact]
+        public async Task SetDates_NeverCreatesAVisit()
+        {
+            using var context = NewContext();
+            var service = NewService(context);
+
+            // A date is a fact about a visit that exists; it may not conjure one.
+            Assert.Null(await service.SetDatesAsync(1, 10, new StationVisitDates { FirstStoppedDate = Day }));
+            Assert.Empty(context.StationVisits);
+        }
+
+        [Fact]
+        public async Task SetDates_TakesTheDateFromTheTripRatherThanTheCaller()
+        {
+            using var context = NewContext();
+            await SeedTripAsync(context, routeInstanceId: 7, ownerUserId: 1, date: Earlier);
+            var service = NewService(context);
+            await service.MarkAsync(1, 10, StationVisitLevel.Stopped, null, StationVisitSource.Web);
+
+            await service.SetDatesAsync(1, 10, new StationVisitDates
+            {
+                FirstStoppedDate = Day,
+                FirstStoppedRouteInstanceId = 7
+            });
+
+            // The trip is the more specific claim, so the pair cannot drift apart.
+            var visit = await context.StationVisits.SingleAsync();
+            Assert.Equal(Earlier, visit.FirstStoppedDate);
+            Assert.Equal(7, visit.FirstStoppedRouteInstanceId);
+        }
+
+        [Fact]
+        public async Task SetDates_RejectsATripTheUserDoesNotOwn()
+        {
+            using var context = NewContext();
+            await SeedTripAsync(context, routeInstanceId: 7, ownerUserId: 99, date: Earlier);
+            var service = NewService(context);
+            await service.MarkAsync(1, 10, StationVisitLevel.Stopped, null, StationVisitSource.Web);
+
+            await Assert.ThrowsAsync<ArgumentException>(() => service.SetDatesAsync(1, 10, new StationVisitDates
+            {
+                FirstStoppedRouteInstanceId = 7
+            }));
+
+            var visit = await context.StationVisits.SingleAsync();
+            Assert.Null(visit.FirstStoppedDate);
+        }
+
+        [Fact]
+        public async Task SetDates_AnsweringTheQuestionRetiresIt()
+        {
+            using var context = NewContext();
+            var service = NewService(context);
+            await service.MarkAsync(1, 10, StationVisitLevel.Stopped, null, StationVisitSource.Web);
+            var visit = await context.StationVisits.SingleAsync();
+            visit.DatingSkipped = true;
+            await context.SaveChangesAsync();
+
+            await service.SetDatesAsync(1, 10, new StationVisitDates { FirstStoppedDate = Day });
+
+            visit = await context.StationVisits.SingleAsync();
+            Assert.False(visit.DatingSkipped);
+        }
+
+        private static async Task SeedTripAsync(OVDBDatabaseContext context, int routeInstanceId, int ownerUserId, DateTime date)
+        {
+            context.Maps.Add(new Map { MapId = 1, UserId = ownerUserId, Name = "Trains", MapGuid = Guid.NewGuid() });
+            context.Routes.Add(new Route { RouteId = 1, Name = "The line", Share = Guid.NewGuid() });
+            context.RoutesMaps.Add(new RouteMap { RouteMapId = 1, RouteId = 1, MapId = 1 });
+            context.RouteInstances.Add(new RouteInstance { RouteInstanceId = routeInstanceId, RouteId = 1, Date = date });
+            await context.SaveChangesAsync();
+        }
+
+        [Fact]
         public async Task Unmark_RemovesTheRowEntirely()
         {
             using var context = NewContext();

@@ -111,7 +111,81 @@ namespace OV_DB.Controllers
                 }
             }
 
-            var visit = await stationVisitService.GetAsync(userIdClaim, id);
+            return Ok(await BuildStateAsync(userIdClaim, id, stationVisitService));
+        }
+
+        /// <summary>
+        /// Sets the dates on an existing visit. Separate from marking because the two are different
+        /// acts: marking only ever adds information, while an edit has to be able to move a date
+        /// later or clear it outright.
+        /// </summary>
+        [HttpPut("{id:int}/dates")]
+        public async Task<IActionResult> UpdateVisitDates(int id, [FromBody] StationVisitDates dates, [FromServices] IStationVisitService stationVisitService)
+        {
+            var userIdClaim = User.GetUserId();
+            if (userIdClaim < 0)
+            {
+                return Forbid();
+            }
+
+            try
+            {
+                var visit = await stationVisitService.SetDatesAsync(userIdClaim, id, dates);
+                if (visit == null)
+                {
+                    // Dating something unvisited would have to invent the visit, which nothing may do.
+                    return NotFound();
+                }
+            }
+            catch (ArgumentException)
+            {
+                return BadRequest();
+            }
+
+            return Ok(await BuildStateAsync(userIdClaim, id, stationVisitService));
+        }
+
+        /// <summary>
+        /// Trips that might explain being at this station, so the user can date a visit by choosing
+        /// one instead of remembering. Proposals only — nothing here marks or dates anything.
+        /// </summary>
+        [HttpGet("{id:int}/candidates")]
+        public async Task<IActionResult> GetVisitCandidates(int id, [FromServices] IStationTripMatcher matcher)
+        {
+            var userIdClaim = User.GetUserId();
+            if (userIdClaim < 0)
+            {
+                return Forbid();
+            }
+
+            var candidates = await matcher.FindTripsForStationAsync(userIdClaim, id);
+
+            var groups = candidates
+                .GroupBy(c => c.RouteId)
+                .Select(g => new TripCandidateGroupDTO
+                {
+                    RouteId = g.Key,
+                    RouteName = g.First().RouteName,
+                    From = g.First().From,
+                    To = g.First().To,
+                    IsEndpoint = g.Any(c => c.Evidence == VisitEvidence.RouteEndpoint),
+                    DistanceMetres = g.Min(c => c.DistanceMetres),
+                    Instances = g.OrderBy(c => c.Date)
+                        .Select(c => new TripCandidateDTO { RouteInstanceId = c.RouteInstanceId, Date = c.Date })
+                        .ToList()
+                })
+                // Endpoint routes first: they are the only evidence you stood on the platform rather
+                // than rolled past it. Within that, earliest wins, because the question is "first".
+                .OrderByDescending(g => g.IsEndpoint)
+                .ThenBy(g => g.Instances[0].Date)
+                .ToList();
+
+            return Ok(groups);
+        }
+
+        private async Task<StationVisitStateDTO> BuildStateAsync(int userId, int stationId, IStationVisitService stationVisitService)
+        {
+            var visit = await stationVisitService.GetAsync(userId, stationId);
             var state = new StationVisitStateDTO
             {
                 Visited = visit != null,
@@ -120,22 +194,24 @@ namespace OV_DB.Controllers
                     ? null
                     : visit.FirstEntryExitDate.HasValue ? StationVisitLevel.EntryExit : StationVisitLevel.Stopped,
                 FirstStoppedDate = visit?.FirstStoppedDate,
-                FirstEntryExitDate = visit?.FirstEntryExitDate
+                FirstStoppedRouteInstanceId = visit?.FirstStoppedRouteInstanceId,
+                FirstEntryExitDate = visit?.FirstEntryExitDate,
+                FirstEntryExitRouteInstanceId = visit?.FirstEntryExitRouteInstanceId
             };
 
-            var station = await DbContext.Stations.Include(s => s.Regions).SingleOrDefaultAsync(s => s.Id == id);
+            var station = await DbContext.Stations.Include(s => s.Regions).SingleOrDefaultAsync(s => s.Id == stationId);
             if (station != null)
             {
                 var regionIds = station.Regions.Select(r => r.Id).ToList();
                 var totalStationsInRegion = await DbContext.Stations.CountAsync(s => s.Regions.Any(r => regionIds.Contains(r.Id)));
                 if (totalStationsInRegion > 0)
                 {
-                    var visitedStationsInRegion = await DbContext.StationVisits.CountAsync(sv => sv.UserId == userIdClaim && sv.Station.Regions.Any(r => regionIds.Contains(r.Id)));
+                    var visitedStationsInRegion = await DbContext.StationVisits.CountAsync(sv => sv.UserId == userId && sv.Station.Regions.Any(r => regionIds.Contains(r.Id)));
                     state.PercentageVisited = (double)visitedStationsInRegion / totalStationsInRegion * 100;
                 }
             }
 
-            return Ok(state);
+            return state;
         }
 
         [HttpGet("map")]

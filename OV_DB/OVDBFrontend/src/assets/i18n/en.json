@@ -17,7 +17,19 @@
       "UNDATED": "No date yet.",
       "SET_ENTRY_EXIT": "Got on/off",
       "SET_STOPPED": "Only stopped",
-      "REMOVE": "Not visited"
+      "REMOVE": "Not visited",
+      "ADD_DATE": "Add date",
+      "EDIT_DATE": "Change date",
+      "DATE_STOPPED": "First stopped here",
+      "DATE_ENTRY_EXIT": "First got on/off here",
+      "CLEAR_DATE": "Clear date",
+      "PULLS_STOPPED_BACK": "Getting on or off means the train stopped, so the stopped date moves back to match.",
+      "CANDIDATES": "Trips that could explain this",
+      "NO_CANDIDATES": "No trip of yours passes this station.",
+      "EVIDENCE_ENDPOINT": "starts or ends here",
+      "EVIDENCE_NEARBY": "passes {{metres}} m away",
+      "MORE_TRIPS": "{{count}} more",
+      "FEWER_TRIPS": "Show fewer"
     }
   },
   "MISSINGDATA.NODATA": "No routes with missing information.",

@@ -16,7 +16,19 @@
       "UNDATED": "Nog geen datum.",
       "SET_ENTRY_EXIT": "In-/uitgestapt",
       "SET_STOPPED": "Alleen gestopt",
-      "REMOVE": "Niet bezocht"
+      "REMOVE": "Niet bezocht",
+      "ADD_DATE": "Datum toevoegen",
+      "EDIT_DATE": "Datum aanpassen",
+      "DATE_STOPPED": "Eerste keer hier gestopt",
+      "DATE_ENTRY_EXIT": "Eerste keer hier in-/uitgestapt",
+      "CLEAR_DATE": "Datum wissen",
+      "PULLS_STOPPED_BACK": "In- of uitstappen betekent dat de trein stopte, dus de stopdatum schuift mee naar voren.",
+      "CANDIDATES": "Ritten die dit kunnen verklaren",
+      "NO_CANDIDATES": "Geen van je ritten komt langs dit station.",
+      "EVIDENCE_ENDPOINT": "begint of eindigt hier",
+      "EVIDENCE_NEARBY": "passeert op {{metres}} m",
+      "MORE_TRIPS": "Nog {{count}}",
+      "FEWER_TRIPS": "Toon minder"
     }
   },
   "SAVE": "Opslaan",

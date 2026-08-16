@@ -1,0 +1,102 @@
+<h2 mat-dialog-title>{{ data.name }}</h2>
+
+<mat-dialog-content>
+  <div class="dates">
+    <mat-form-field>
+      <mat-label>{{ 'STATIONS.VISIT.DATE_STOPPED' | translate }}</mat-label>
+      <input
+        matInput
+        [matDatepicker]="stoppedPicker"
+        [ngModel]="stoppedDate()"
+        (ngModelChange)="setDate('stopped', $event)"
+      />
+      <mat-datepicker-toggle matSuffix [for]="stoppedPicker" />
+      <mat-datepicker #stoppedPicker />
+    </mat-form-field>
+    @if (stoppedDate()) {
+      <button mat-icon-button [attr.aria-label]="'STATIONS.VISIT.CLEAR_DATE' | translate" (click)="clear('stopped')">
+        <mat-icon>backspace</mat-icon>
+      </button>
+    }
+  </div>
+
+  @if (hasEntryExit) {
+    <div class="dates">
+      <mat-form-field>
+        <mat-label>{{ 'STATIONS.VISIT.DATE_ENTRY_EXIT' | translate }}</mat-label>
+        <input
+          matInput
+          [matDatepicker]="entryExitPicker"
+          [ngModel]="entryExitDate()"
+          (ngModelChange)="setDate('entryExit', $event)"
+        />
+        <mat-datepicker-toggle matSuffix [for]="entryExitPicker" />
+        <mat-datepicker #entryExitPicker />
+      </mat-form-field>
+      @if (entryExitDate()) {
+        <button mat-icon-button [attr.aria-label]="'STATIONS.VISIT.CLEAR_DATE' | translate" (click)="clear('entryExit')">
+          <mat-icon>backspace</mat-icon>
+        </button>
+      }
+    </div>
+
+    @if (willPullStoppedBack()) {
+      <p class="note">{{ 'STATIONS.VISIT.PULLS_STOPPED_BACK' | translate }}</p>
+    }
+  }
+
+  <h3>{{ 'STATIONS.VISIT.CANDIDATES' | translate }}</h3>
+
+  @if (loading()) {
+    <mat-spinner diameter="24" />
+  } @else if (candidates().length === 0) {
+    <p class="note">{{ 'STATIONS.VISIT.NO_CANDIDATES' | translate }}</p>
+  } @else {
+    <ul class="candidates">
+      @for (group of candidates(); track group.routeId) {
+        <li>
+          <div class="route">
+            <span class="name">{{ group.routeName }}</span>
+            @if (group.isEndpoint) {
+              <span class="badge endpoint">{{ 'STATIONS.VISIT.EVIDENCE_ENDPOINT' | translate }}</span>
+            } @else {
+              <span class="badge">{{ 'STATIONS.VISIT.EVIDENCE_NEARBY' | translate: { metres: (group.distanceMetres | number: '1.0-0') } }}</span>
+            }
+          </div>
+          @if (group.from || group.to) {
+            <div class="ends">{{ group.from }} → {{ group.to }}</div>
+          }
+
+          @for (instance of expanded() === group.routeId ? group.instances : group.instances.slice(0, 1); track instance.routeInstanceId) {
+            <div class="instance">
+              <span class="date">{{ instance.date | date: 'longDate' }}</span>
+              <button mat-stroked-button (click)="choose('stopped', instance.routeInstanceId, instance.date)">
+                {{ 'STATIONS.VISIT.SET_STOPPED' | translate }}
+              </button>
+              @if (hasEntryExit) {
+                <button mat-stroked-button (click)="choose('entryExit', instance.routeInstanceId, instance.date)">
+                  {{ 'STATIONS.VISIT.SET_ENTRY_EXIT' | translate }}
+                </button>
+              }
+            </div>
+          }
+
+          @if (group.instances.length > 1) {
+            <button mat-button class="more" (click)="toggle(group.routeId)">
+              @if (expanded() === group.routeId) {
+                {{ 'STATIONS.VISIT.FEWER_TRIPS' | translate }}
+              } @else {
+                {{ 'STATIONS.VISIT.MORE_TRIPS' | translate: { count: group.instances.length - 1 } }}
+              }
+            </button>
+          }
+        </li>
+      }
+    </ul>
+  }
+</mat-dialog-content>
+
+<mat-dialog-actions class="actions">
+  <button mat-flat-button (click)="save()">{{ 'SAVE' | translate }}</button>
+  <button mat-button mat-dialog-close>{{ 'CANCEL' | translate }}</button>
+</mat-dialog-actions>

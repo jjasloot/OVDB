@@ -13,7 +13,7 @@ export interface StationVisitDialogData {
 }
 
 /** What the user chose to do with an already-visited station. */
-export type StationVisitDialogResult = 'entryExit' | 'stopped' | 'remove';
+export type StationVisitDialogResult = 'entryExit' | 'stopped' | 'remove' | 'dates';
 
 @Component({
   selector: 'app-station-visit-dialog',

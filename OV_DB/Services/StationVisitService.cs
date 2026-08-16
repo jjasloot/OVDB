@@ -4,6 +4,7 @@ using OVDB_database.Database;
 using OVDB_database.Enums;
 using OVDB_database.Models;
 using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -13,6 +14,7 @@ public interface IStationVisitService
 {
     Task<StationVisit> MarkAsync(int userId, int stationId, StationVisitLevel level, DateTime? localDate, StationVisitSource source, CancellationToken cancellationToken = default);
     Task<StationVisit> DowngradeToStoppedAsync(int userId, int stationId, CancellationToken cancellationToken = default);
+    Task<StationVisit> SetDatesAsync(int userId, int stationId, StationVisitDates dates, CancellationToken cancellationToken = default);
     Task<DateTime> LocalDateAtStationAsync(Station station, CancellationToken cancellationToken = default);
     Task<bool> UnmarkAsync(int userId, int stationId, CancellationToken cancellationToken = default);
     Task<StationVisit> GetAsync(int userId, int stationId, CancellationToken cancellationToken = default);
@@ -110,6 +112,73 @@ public class StationVisitService(OVDBDatabaseContext dbContext, ITimezoneService
         visit.FirstEntryExitRouteInstanceId = null;
         await dbContext.SaveChangesAsync(cancellationToken);
         return visit;
+    }
+
+    /// <summary>
+    /// Sets both dates to exactly what the user says they are. This is the <b>only</b> path allowed
+    /// to move a date later or to clear one: <see cref="MarkAsync"/> deliberately only ever adds
+    /// information, which is right for marking but useless for correcting a mistake.
+    /// </summary>
+    /// <remarks>
+    /// It will not create a visit — a date is a fact about a visit that already exists, and the base
+    /// requirement is that only an explicit mark brings one into being. Returns null if there is
+    /// none.
+    /// </remarks>
+    /// <exception cref="ArgumentException">A trip was named that the user does not own.</exception>
+    public async Task<StationVisit> SetDatesAsync(int userId, int stationId, StationVisitDates dates, CancellationToken cancellationToken = default)
+    {
+        var visit = await GetAsync(userId, stationId, cancellationToken);
+        if (visit == null)
+        {
+            return null;
+        }
+
+        // A named trip decides its own date. Taking the client's word for both invites the pair to
+        // disagree, and the trip is the more specific claim of the two.
+        var stopped = await ResolveAsync(userId, dates.FirstStoppedRouteInstanceId, dates.FirstStoppedDate, cancellationToken);
+        var entryExit = await ResolveAsync(userId, dates.FirstEntryExitRouteInstanceId, dates.FirstEntryExitDate, cancellationToken);
+
+        // Alighting implies stopping, so an entry/exit date that predates the stopped date pulls it
+        // back rather than being refused. Same invariant MarkAsync enforces when entry/exit fills
+        // both levels.
+        if (entryExit.Date.HasValue && (!stopped.Date.HasValue || entryExit.Date < stopped.Date))
+        {
+            stopped = entryExit;
+        }
+
+        visit.FirstStoppedDate = stopped.Date;
+        visit.FirstStoppedRouteInstanceId = stopped.RouteInstanceId;
+        visit.FirstEntryExitDate = entryExit.Date;
+        visit.FirstEntryExitRouteInstanceId = entryExit.RouteInstanceId;
+
+        // Answering the question retires it, however it was answered.
+        if (stopped.Date.HasValue || entryExit.Date.HasValue)
+        {
+            visit.DatingSkipped = false;
+        }
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return visit;
+    }
+
+    private async Task<(DateTime? Date, int? RouteInstanceId)> ResolveAsync(int userId, int? routeInstanceId, DateTime? date, CancellationToken cancellationToken)
+    {
+        if (!routeInstanceId.HasValue)
+        {
+            return (date?.Date, null);
+        }
+
+        var trip = await dbContext.RouteInstances.AsNoTracking()
+            .Where(ri => ri.RouteInstanceId == routeInstanceId.Value)
+            .Where(ri => ri.Route.RouteMaps.Any(rm => rm.Map.UserId == userId))
+            .Select(ri => (DateTime?)ri.Date)
+            .SingleOrDefaultAsync(cancellationToken);
+        if (trip == null)
+        {
+            throw new ArgumentException($"Trip {routeInstanceId} is not available to this user.", nameof(routeInstanceId));
+        }
+
+        return (trip.Value.Date, routeInstanceId);
     }
 
     /// <summary>Today where the station is, which is not always today where the server is.</summary>

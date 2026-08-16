@@ -14,7 +14,13 @@ import { AdminUser } from "../models/adminUser.model";
 import { MultipleEdit } from "../models/multipleEdit.model";
 import { RouteInstance } from "../models/routeInstance.model";
 import { StationMap } from "../models/stationMap.model";
-import { StationView, StationVisitLevel, StationVisitState } from "../models/stationView.model";
+import {
+  StationView,
+  StationVisitDates,
+  StationVisitLevel,
+  StationVisitState,
+  TripCandidateGroup,
+} from "../models/stationView.model";
 import { StationCountry } from "../models/stationCountry.model";
 import { StationAdminProperties } from "../models/stationAdminProperties.model";
 import { MapDataDTO } from "../models/map-data.model";
@@ -532,6 +538,26 @@ export class ApiService {
   ): Observable<StationVisitState> {
     const url = environment.backend + "api/station/" + id;
     return this.httpClient.put<StationVisitState>(url, { visited, level, date });
+  }
+
+  /**
+   * Sets both dates on an existing visit. Separate from updateStation because the two are different
+   * acts: marking only ever adds information, while an edit has to be able to move a date later or
+   * clear it. Sending a routeInstanceId makes the server take that trip's date, so the two cannot
+   * disagree.
+   */
+  updateStationVisitDates(
+    id: number,
+    dates: StationVisitDates
+  ): Observable<StationVisitState> {
+    const url = environment.backend + "api/station/" + id + "/dates";
+    return this.httpClient.put<StationVisitState>(url, dates);
+  }
+
+  /** Trips that might explain being at this station. Proposals only; nothing is recorded. */
+  getStationVisitCandidates(id: number): Observable<TripCandidateGroup[]> {
+    const url = environment.backend + "api/station/" + id + "/candidates";
+    return this.httpClient.get<TripCandidateGroup[]>(url);
   }
 
   updateStationAdmin(id: any, special: any, hidden: boolean) {
