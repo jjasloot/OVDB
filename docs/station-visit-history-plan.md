@@ -210,16 +210,30 @@ Fetch via `GET /stopovers/{ids}` batched per page during the existing sweep, bud
 
 ## Backfill
 
-Same machinery, run over history.
+**Backfill only ever dates visits that already exist. It never creates one.** Marking new stations
+is a separate, manual activity and deliberately not part of this flow. That is not merely a rule:
+it means the whole backfill path is structurally incapable of violating the base requirement, and
+that the ~2,900 passed-but-unmarked stations simply do not appear here.
+
+The goal is **the earliest trip that stopped at the station**.
+
+Evidence, strongest first — note the order is not the obvious one:
+
+1. **Route endpoints** (`From`/`To`). Starting or ending a journey somewhere means standing on the
+   platform, so this is the best evidence of a real visit — better than a calling pattern.
+2. **Calling pattern** (Träwelling stopovers). Proves the train *stopped*; does not prove the user
+   got out. Only available for Träwelling trips going forward, never retroactively.
+3. **Proximity.** Proves only that the line passes. Cannot distinguish stopping from passing, which
+   is exactly why a proximity-derived date may be years too early.
+
+Passes:
 
 - **Pass 1 — route endpoints** (high precision, no API calls, all 12,809 routes): match LineString
-  endpoints and `From`/`To` names to stations, propose the earliest instance's date. These stations
-  are nearly all already marked visited, so this is *dating mode* — confirming adds dates without
-  changing any count. "Confirm all" is defensible here.
-- **Pass 2 — proximity** (recall): stations within ~300 m of the line. Dating mode for the visited
-  remainder; new-station suggestions (~2,900) off by default. Per-item only. Show the two or three
-  earliest candidate trips, not one, because the earliest *passing* trip may predate the first real
-  visit.
+  endpoints and `From`/`To` names to stations, propose the earliest instance's date. "Confirm all"
+  is defensible here.
+- **Pass 2 — proximity** (recall): stations within ~300 m of the line, for the visited remainder
+  that pass 1 did not date. Per-item only, never bulk. Show the two or three earliest candidate
+  trips rather than one, because the earliest *passing* trip may predate the first real visit.
 - One-shot admin-triggered job using the in-memory STRtree + prepared-geometry pattern already in
   `StationRegionsService`. **Do not** take a dependency on the manual spatial indexes in
   `docs/spatial-indexes.md`; a one-shot job does not earn them.
@@ -240,17 +254,17 @@ Turns hundreds of decisions into a handful, and is only offered for propose-tier
   up, but it biases *early* — the earliest trip that passes a station may predate the first time
   the user actually alighted there — so the dates must be prominent enough that an implausible one
   is obvious.
-- **Three outcomes, not two**, because "yes, but I have no idea which trip" is a common and honest
-  answer:
+- **Two outcomes, and neither of them can un-mark a station.** Every station in this queue is
+  already visited; the only question is which trip dates it.
 
-  | | Dating mode (station already visited) | New-station mode (~2,900 passed-but-unmarked) |
-  |---|---|---|
-  | **Confirm** | Set `FirstVisitDate` from the selected trip and link it | Create the visit — this is the user action that satisfies the never-auto-mark invariant — and date it |
-  | **Not this trip** | Leave undated, dismiss these candidates | *(n/a)* |
-  | **Deny** | *(must not un-mark the station)* | Never been there; dismiss permanently |
+  | | Effect |
+  |---|---|
+  | **Confirm** | Set `FirstVisitDate` from the selected trip and link the instance |
+  | **Not this trip** | Leave the visit undated, dismiss these candidates, move on |
 
-  The two modes share a screen but not their consequences: denying a dating candidate must never
-  remove an existing visit.
+  There is deliberately no "deny" here: denial would mean "I have not visited this station", which
+  is not a question this flow asks. Un-marking happens on the map or in Telegram, behind the
+  dialog, never in a bulk review queue.
 
 - Confirming **auto-advances** to the next station; confirming one candidate **resolves its
   siblings** for that station rather than leaving them pending; and a denial writes a dismissed
@@ -311,6 +325,26 @@ limiter exhaustion from stopover fetching (already surfaced by the existing budg
 user-asserted, trip-derived, or null); any auto-marking; a resurrected Träwelling station mapping
 table; Träwelling-API-driven backfill; event-sourced visit state; database spatial indexes for this
 feature; full calling-pattern import for non-Träwelling trips in v1.
+
+## Stopping versus alighting
+
+OVDB has one notion of "visited", asserted by the user. It does not distinguish *the train stopped
+here* from *I got out here*. Decision: **do not split it.**
+
+- The stopped-at set is **derivable, not assertable** — once calling patterns are stored, "stations
+  my trains have called at" is a query over `RouteInstanceStop`, needing no second visit concept,
+  no schema change and no user effort. It can be added whenever it is actually wanted.
+- It would be **radically incomplete**: calling patterns exist only for Träwelling trips (~20% of
+  history) and can never be reconstructed for the rest, so the number would sit misleadingly beside
+  a complete asserted count.
+- Two collections would have to be maintained to answer a question nobody has yet asked.
+
+The distinction still earns its place in *evidence ranking* (see Backfill), just not in the model.
+
+**This becomes measurable once calling patterns land**: count the stations the user has marked
+where a train of theirs called but which were not that trip's origin or destination. A high share
+means "visited" means stopped-at; a low share means it means alighted. Worth checking before
+building anything on the assumption.
 
 ## Still open
 
