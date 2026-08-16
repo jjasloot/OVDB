@@ -130,22 +130,20 @@ are not persisted: their only jobs happen at import, and afterwards nothing read
 
 A mark should be born dated wherever possible, rather than dated later by a chore.
 
-**Manual marking defaults to "got on/off", and does not ask.** If you are standing at a station, or
-picking one deliberately off a map, you almost certainly got on or off it. "Stopped at" arrives
-overwhelmingly from import suggestions and backfill, so the quick paths must not be cluttered with a
-question whose answer is nearly always the same. Correction is one tap away when it is wrong.
+**Marking defaults to "stopped at". Entry/exit costs one more tap.** Stopped is the weaker claim, so
+the default can never over-claim: upgrading to entry/exit is always a deliberate act, and a
+mis-tap records the least it could mean rather than the most. Same principle as preferring an honest
+unknown to a plausible guess.
 
-- **Telegram, at the station.** Tapping a station sets `FirstEntryExitDate` (and
-  `FirstStoppedDate`) to today in the station's timezone — the one surface where "now" is truth. The
-  confirmation message carries **Undo** and **Only stopped** buttons, so the rare correction costs a
-  second tap and the common case costs none.
-- **Web map.** Clicking a marker marks it as got on/off, as now — but with no implicit date, since
-  this is how you retro-mark from the sofa. The matcher runs immediately and the snackbar *offers*
-  the answer — "Marked Zwolle. Got on/off 3 May 2024 on Utrecht → Groningen?" — with **Only
-  stopped**, **Pick a date** and **Undo** beside it. An undated visit is still valid; it simply joins
-  the backfill queue.
-- **Station popup** is the full-control surface: both dates with their trips, each editable or
-  clearable. The quick paths stay quick; this is where anything unusual gets fixed.
+- **Web map.** Tapping a marker marks it visited (stopped at). A snackbar **with no expiry** offers
+  **Undo** and **Entry/exit**, so the correction is available for as long as it takes to notice —
+  not for five seconds. Tapping an already-visited marker opens a small popup: remove it, or toggle
+  between stopped and entry/exit.
+- **Telegram.** Tapping an unvisited station marks it stopped at, and the confirmation message
+  carries an **Entry/exit** button. Tapping an already-visited station replies with its current
+  state and the options — upgrade, downgrade, remove.
+- **Station popup** stays the full-control surface: both dates with their trips, each editable or
+  clearable. The quick paths stay quick; anything unusual is fixed here.
 - **Marked before the trip exists.** The usual case: you tap at the platform, the Träwelling
   check-in imports later. No pending-status column is needed — when an instance is created or
   imported, the matcher runs over the user's unlinked visits from ±1 day and links what it
@@ -207,9 +205,9 @@ The defaults that keep it moving:
 
 - **Trip: the oldest candidate, pre-selected.** Where only one candidate exists, there is nothing to
   choose.
-- **Level: "got on/off", pre-selected.** Every legacy row was marked under a single-level regime
-  where "visited" colloquially meant *I have been here*, so entry/exit is the better prior — and for
-  endpoint matches it is true by definition.
+- **Level: "stopped at", pre-selected** — except on endpoint matches, where entry/exit is true by
+  definition and is pre-selected instead. Defaulting to the weaker claim means a fast tap-through
+  never invents an alighting that did not happen.
 - **Order the queue by candidate trip**, so consecutive stations share a journey. Confirming eight
   stations from the same Utrecht → Groningen run in a row costs far less thought than eight
   unrelated ones. This is ordering, not bulk: still one tap each.
