@@ -337,6 +337,17 @@
     "REGIONS": "Regions",
     "SUBREGIONS_VISITED": "underlying regions",
     "STATIONS_VISITED": "stations",
+    "REPLAY": {
+      "TITLE": "Replay",
+      "NO_ROUTES": "No routes to replay for this selection.",
+      "PLAY": "Play",
+      "PAUSE": "Pause",
+      "RESET": "Reset",
+      "TIMELINE": "Timeline",
+      "DATE": "first ridden",
+      "ROUTES": "routes shown",
+      "DISTANCE": "distance so far"
+    },
     "COMPLETION": {
       "TITLE": "Completion",
       "STATIONS_VISITED": "stations visited",

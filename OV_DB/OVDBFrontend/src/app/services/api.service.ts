@@ -23,6 +23,7 @@ import { RegionStat } from "../models/region.model";
 import { PunctualityStats } from "../models/punctuality.model";
 import { YearInReview } from "../models/year-in-review.model";
 import { MissingStation } from "../models/missing-station.model";
+import { Replay } from "../models/replay.model";
 import { UserProfile, UpdateProfile, ChangePassword, TraewellingTagMapping, TrainlogOperatorMapping } from "../models/user-profile.model";
 import { RouteInstanceListResponseDTO } from "../models/routeInstanceList.model";
 import { 
@@ -462,6 +463,14 @@ export class ApiService {
       url += `?year=${year}`;
     }
     return this.httpClient.get<PunctualityStats>(url);
+  }
+
+  getReplay(map: string, year?: number | null): Observable<Replay> {
+    let url = environment.backend + "api/stats/replay/" + map;
+    if (year) {
+      url += `?year=${year}`;
+    }
+    return this.httpClient.get<Replay>(url);
   }
 
   getMissingStations(regionId: number): Observable<MissingStation[]> {

@@ -1,0 +1,70 @@
+<div class="container">
+  <mat-card appearance="outlined">
+    <mat-card-title>{{ 'SELECTION' | translate }}</mat-card-title>
+    <mat-card-content>
+      <mat-form-field>
+        <mat-label>{{ 'CHOOSEMAP' | translate }}</mat-label>
+        <mat-select [value]="selectedMap()" (selectionChange)="changeMap($event.value)">
+          @for (map of maps(); track map.mapGuid) {
+            <mat-option [value]="map.mapGuid">{{ map.name }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field>
+        <mat-label>{{ 'CHOOSEYEAR' | translate }}</mat-label>
+        <mat-select [value]="selectedYear() ?? 0" (selectionChange)="changeYear($event.value)">
+          <mat-option [value]="0">{{ 'ALL' | translate }}</mat-option>
+          @for (year of years(); track year) {
+            <mat-option [value]="year">{{ year }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+    </mat-card-content>
+  </mat-card>
+
+  @if (loading()) {
+    <div class="loading">
+      <mat-spinner diameter="40" />
+    </div>
+  } @else if (routes().length === 0) {
+    <mat-card appearance="outlined">
+      <mat-card-content>
+        <p>{{ 'STATS.REPLAY.NO_ROUTES' | translate }}</p>
+      </mat-card-content>
+    </mat-card>
+  } @else {
+    <mat-card appearance="outlined">
+      <mat-card-content>
+        <div class="map" leaflet [leafletOptions]="options" [leafletLayers]="layers()"
+          [leafletLayersControl]="leafletLayersControl" [leafletFitBounds]="bounds()"></div>
+
+        <div class="controls">
+          <button mat-icon-button (click)="togglePlay()"
+            [attr.aria-label]="(playing() ? 'STATS.REPLAY.PAUSE' : 'STATS.REPLAY.PLAY') | translate">
+            <mat-icon>{{ playing() ? 'pause' : 'play_arrow' }}</mat-icon>
+          </button>
+          <mat-slider [min]="0" [max]="routes().length" [step]="1" discrete class="slider">
+            <input matSliderThumb [value]="index()" (valueChange)="setIndex($event)"
+              [attr.aria-label]="'STATS.REPLAY.TIMELINE' | translate" />
+          </mat-slider>
+          <button mat-button (click)="reset()">{{ 'STATS.REPLAY.RESET' | translate }}</button>
+        </div>
+
+        <div class="readout">
+          <div class="figure">
+            <span class="value">{{ currentDate() | date: 'mediumDate' }}</span>
+            <span class="label">{{ 'STATS.REPLAY.DATE' | translate }}</span>
+          </div>
+          <div class="figure">
+            <span class="value">{{ index() }} / {{ routes().length }}</span>
+            <span class="label">{{ 'STATS.REPLAY.ROUTES' | translate }}</span>
+          </div>
+          <div class="figure">
+            <span class="value">{{ cumulativeKm() | number: '1.0-0' }} km</span>
+            <span class="label">{{ 'STATS.REPLAY.DISTANCE' | translate }}</span>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  }
+</div>

@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Security.Claims;
+using System.Threading;
 using System.Threading.Tasks;
+using NetTopologySuite.Simplify;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -163,6 +165,82 @@ namespace OV_DB.Controllers
         }
 
         private static readonly string[] DelayBucketKeys = ["EARLY", "ONTIME", "D5_15", "D15_30", "D30_60", "D60PLUS"];
+
+        /// <summary>
+        /// Every route on the map with the date it was first ridden, so the frontend can play the
+        /// map back over time. Geometry is simplified hard: this drives an animation, not analysis.
+        /// </summary>
+        [HttpGet("replay/{map}")]
+        public async Task<ActionResult<ReplayDTO>> GetReplay(Guid map, [FromQuery] int? year, CancellationToken cancellationToken = default)
+        {
+            var userIdClaim = User.GetUserId();
+            if (userIdClaim < 0)
+            {
+                return Forbid();
+            }
+
+            const double simplificationTolerance = 0.002;
+
+            var firstRides = await QueryForInstances(map, year, userIdClaim)
+                .GroupBy(ri => ri.RouteId)
+                .Select(g => new { RouteId = g.Key, FirstDate = g.Min(ri => ri.Date) })
+                .ToListAsync(cancellationToken);
+
+            var result = new ReplayDTO();
+            if (firstRides.Count == 0)
+            {
+                return Ok(result);
+            }
+
+            var routeIds = firstRides.Select(f => f.RouteId).ToList();
+            var routes = await _context.Routes
+                .AsNoTracking()
+                .Where(r => routeIds.Contains(r.RouteId) && r.LineString != null)
+                .Select(r => new
+                {
+                    r.RouteId,
+                    r.Name,
+                    r.NameNL,
+                    r.LineString,
+                    Colour = r.OverrideColour ?? r.RouteType.Colour,
+                    Distance = (double)((r.OverrideDistance.HasValue && r.OverrideDistance > 0) ? r.OverrideDistance : r.CalculatedDistance)
+                })
+                .ToListAsync(cancellationToken);
+
+            var firstDateByRoute = firstRides.ToDictionary(f => f.RouteId, f => f.FirstDate);
+
+            foreach (var route in routes)
+            {
+                var geometry = DouglasPeuckerSimplifier.Simplify(route.LineString, simplificationTolerance);
+                var coordinates = (geometry.IsEmpty ? route.LineString : geometry).Coordinates;
+                if (coordinates.Length < 2)
+                {
+                    continue;
+                }
+
+                result.Routes.Add(new ReplayRouteDTO
+                {
+                    RouteId = route.RouteId,
+                    Name = route.Name,
+                    NameNL = route.NameNL,
+                    Colour = route.Colour,
+                    DistanceKm = Math.Round(route.Distance, 1),
+                    FirstDate = firstDateByRoute[route.RouteId],
+                    Coordinates = coordinates
+                        .Select(c => new[] { Math.Round(c.Y, 5), Math.Round(c.X, 5) })
+                        .ToList()
+                });
+            }
+
+            result.Routes = result.Routes.OrderBy(r => r.FirstDate).ThenBy(r => r.RouteId).ToList();
+            if (result.Routes.Count > 0)
+            {
+                result.Start = result.Routes[0].FirstDate;
+                result.End = result.Routes[^1].FirstDate;
+            }
+
+            return Ok(result);
+        }
 
         /// <summary>
         /// The stations in a region the user has not visited yet. Uses the same hidden/special

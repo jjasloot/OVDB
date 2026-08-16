@@ -334,6 +334,17 @@
     "REGIONS": "Regio's",
     "SUBREGIONS_VISITED": "onderliggende regio's",
     "STATIONS_VISITED": "stations",
+    "REPLAY": {
+      "TITLE": "Afspelen",
+      "NO_ROUTES": "Geen routes om af te spelen voor deze selectie.",
+      "PLAY": "Afspelen",
+      "PAUSE": "Pauzeren",
+      "RESET": "Opnieuw",
+      "TIMELINE": "Tijdlijn",
+      "DATE": "voor het eerst gereden",
+      "ROUTES": "routes getoond",
+      "DISTANCE": "afstand tot nu toe"
+    },
     "COMPLETION": {
       "TITLE": "Volledigheid",
       "STATIONS_VISITED": "stations bezocht",

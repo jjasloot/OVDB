@@ -1,5 +1,4 @@
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
-import { DecimalPipe } from '@angular/common';
 import { MatCard, MatCardContent, MatCardTitle } from '@angular/material/card';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
@@ -27,7 +26,6 @@ interface CompletionRow {
   styleUrl: './station-completion.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    DecimalPipe,
     MatCard,
     MatCardTitle,
     MatCardContent,
