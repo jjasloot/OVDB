@@ -73,24 +73,14 @@ public class AchievementService(OVDBDatabaseContext dbContext) : IAchievementSer
             })
             .ToDictionaryAsync(r => r.RouteId, r => r, cancellationToken);
 
-        // Direct children of any ISO-coded country: provinces, Bundesländer, cantons and so on.
-        // Deeper levels are excluded, so this stays "first level subdivisions" for every country.
-        var subdivisions = await dbContext.Regions
+        // The whole region tree: which level is worth collecting differs per country (Dutch
+        // provinces sit directly under the country, Belgian ones sit under its three regions).
+        var allRegions = await dbContext.Regions
             .AsNoTracking()
-            .Where(r => r.ParentRegion != null && r.ParentRegion.IsoCode != null && r.ParentRegion.IsoCode != "")
-            .Select(r => new
-            {
-                r.Id,
-                ParentId = r.ParentRegionId.Value,
-                ParentName = r.ParentRegion.Name,
-                ParentNameNL = r.ParentRegion.NameNL
-            })
+            .Select(r => new RegionNode(r.Id, r.ParentRegionId, r.Name, r.NameNL, r.IsoCode))
             .ToListAsync(cancellationToken);
 
-        var subdivisionParent = subdivisions.ToDictionary(s => s.Id, s => s.ParentId);
-        var countryInfo = subdivisions
-            .GroupBy(s => s.ParentId)
-            .ToDictionary(g => g.Key, g => (Name: g.First().ParentName, NameNL: g.First().ParentNameNL, Total: g.Count()));
+        var (subdivisionParent, countryInfo) = ResolveCollectibleRegions(allRegions);
 
         var deutscheBahnOperatorIds = await FindDeutscheBahnOperatorIdsAsync(cancellationToken);
 
@@ -293,6 +283,86 @@ public class AchievementService(OVDBDatabaseContext dbContext) : IAchievementSer
         }
 
         return families;
+    }
+
+    internal readonly record struct RegionNode(int Id, int? ParentRegionId, string Name, string NameNL, string IsoCode);
+
+    /// <summary>A collection should be granular enough to be interesting, small enough to finish.</summary>
+    internal const int MinCollectible = 5;
+    internal const int MaxCollectible = 60;
+
+    /// <summary>
+    /// Picks, per country, which level of the region tree to collect, and returns a lookup from
+    /// region id to country id plus the display data for each country.
+    ///
+    /// Countries do not agree on what their "first level" means: the Netherlands has twelve
+    /// provinces directly under it, while Belgium has three regions whose children are the
+    /// provinces people actually collect. Rather than hard-code that, take the deepest level that
+    /// still forms a sensible collection.
+    /// </summary>
+    internal static (Dictionary<int, int> RegionToCountry, Dictionary<int, (string Name, string NameNL, int Total)> Countries)
+        ResolveCollectibleRegions(IReadOnlyList<RegionNode> regions)
+    {
+        var childrenByParent = regions
+            .Where(r => r.ParentRegionId.HasValue)
+            .GroupBy(r => r.ParentRegionId.Value)
+            .ToDictionary(g => g.Key, g => g.ToList());
+
+        var regionToCountry = new Dictionary<int, int>();
+        var countries = new Dictionary<int, (string, string, int)>();
+
+        // A country is a top-level region carrying an ISO code.
+        foreach (var country in regions.Where(r => !r.ParentRegionId.HasValue && !string.IsNullOrWhiteSpace(r.IsoCode)))
+        {
+            var levels = new List<List<RegionNode>>();
+            var current = childrenByParent.TryGetValue(country.Id, out var firstLevel) ? firstLevel : [];
+            while (current.Count > 0 && levels.Count < 3)
+            {
+                levels.Add(current);
+                current = current
+                    .SelectMany(node => childrenByParent.TryGetValue(node.Id, out var kids) ? kids : [])
+                    .ToList();
+            }
+
+            if (levels.Count == 0)
+            {
+                continue;
+            }
+
+            var chosen = levels[ChooseCollectLevel([.. levels.Select(l => l.Count)])];
+            foreach (var region in chosen)
+            {
+                regionToCountry[region.Id] = country.Id;
+            }
+            countries[country.Id] = (country.Name, country.NameNL, chosen.Count);
+        }
+
+        return (regionToCountry, countries);
+    }
+
+    /// <summary>
+    /// Normally the level directly under the country: in this database that is already the level
+    /// people collect (Dutch and Belgian provinces, German Bundesländer, Swiss cantons).
+    ///
+    /// Only when that level is uselessly small - the United Kingdom's four nations - is a deeper
+    /// level considered, and then only the shallowest one that forms a sensible collection.
+    /// Deliberately conservative: a country whose top level is already fine never descends, so
+    /// importing a finer level later cannot silently change what an achievement means.
+    /// </summary>
+    internal static int ChooseCollectLevel(IReadOnlyList<int> countsPerLevel)
+    {
+        if (countsPerLevel.Count == 0 || countsPerLevel[0] >= MinCollectible)
+        {
+            return 0;
+        }
+        for (var index = 1; index < countsPerLevel.Count; index++)
+        {
+            if (countsPerLevel[index] >= MinCollectible && countsPerLevel[index] <= MaxCollectible)
+            {
+                return index;
+            }
+        }
+        return 0;
     }
 
     /// <summary>Quarter, half, three quarters and all of a country's subdivisions.</summary>

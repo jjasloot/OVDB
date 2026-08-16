@@ -155,6 +155,69 @@ namespace OV_DB.Tests
         }
 
         [Theory]
+        [InlineData(new[] { 11 }, 0)]           // Belgium as imported: provinces sit directly under the country
+        [InlineData(new[] { 12, 342 }, 0)]      // Netherlands: provinces are fine, do not descend to municipalities
+        [InlineData(new[] { 26, 140 }, 0)]      // Switzerland: cantons are fine
+        [InlineData(new[] { 4, 101 }, 0)]       // United Kingdom: 101 counties is too many, keep the four nations
+        [InlineData(new[] { 4, 30 }, 1)]        // Too few at the top and a workable level below: descend
+        [InlineData(new[] { 3 }, 0)]            // Nothing deeper to descend into
+        [InlineData(new[] { 2, 3 }, 0)]         // No level qualifies: fall back to the top
+        [InlineData(new[] { 80, 400 }, 0)]      // Top level already too large: descending would not help
+        [InlineData(new[] { 11, 43 }, 0)]       // A finer level imported later must not redefine the achievement
+        [InlineData(new[] { 3, 200, 9 }, 2)]    // Skips an over-large level to reach a workable one
+        public void ChooseCollectLevel_PicksTheDeepestSensibleLevel(int[] countsPerLevel, int expected)
+        {
+            Assert.Equal(expected, AchievementService.ChooseCollectLevel(countsPerLevel));
+        }
+
+        [Fact]
+        public void ResolveCollectibleRegions_CollectsDutchProvincesButBelgianProvinces()
+        {
+            var regions = new List<AchievementService.RegionNode>
+            {
+                new(1, null, "Netherlands", "Nederland", "NL"),
+                new(2, null, "Belgium", "België", "BE"),
+            };
+            // The Netherlands: twelve provinces directly under the country.
+            for (var i = 0; i < 12; i++)
+            {
+                regions.Add(new AchievementService.RegionNode(100 + i, 1, $"Province {i}", $"Provincie {i}", null));
+            }
+            // Belgium: three regions, whose ten provinces are what people collect.
+            regions.Add(new AchievementService.RegionNode(200, 2, "Flanders", "Vlaanderen", null));
+            regions.Add(new AchievementService.RegionNode(201, 2, "Wallonia", "Wallonië", null));
+            regions.Add(new AchievementService.RegionNode(202, 2, "Brussels", "Brussel", null));
+            for (var i = 0; i < 10; i++)
+            {
+                regions.Add(new AchievementService.RegionNode(300 + i, 200 + (i % 2), $"BE province {i}", $"BE provincie {i}", null));
+            }
+
+            var (regionToCountry, countries) = AchievementService.ResolveCollectibleRegions(regions);
+
+            Assert.Equal(12, countries[1].Total);
+            Assert.Equal(10, countries[2].Total);
+            // A Dutch province counts; a Belgian *region* does not - its provinces do.
+            Assert.Equal(1, regionToCountry[100]);
+            Assert.False(regionToCountry.ContainsKey(200));
+            Assert.Equal(2, regionToCountry[300]);
+        }
+
+        [Fact]
+        public void ResolveCollectibleRegions_IgnoresTopLevelRegionsWithoutAnIsoCode()
+        {
+            var regions = new List<AchievementService.RegionNode>
+            {
+                new(1, null, "Not a country", "Geen land", null),
+                new(2, 1, "Child", "Kind", null),
+            };
+
+            var (regionToCountry, countries) = AchievementService.ResolveCollectibleRegions(regions);
+
+            Assert.Empty(regionToCountry);
+            Assert.Empty(countries);
+        }
+
+        [Theory]
         // Thresholds scale to the country, so a 3-region country and a 26-canton one both work.
         [InlineData(12, new double[] { 3, 6, 9, 12 })]
         [InlineData(26, new double[] { 7, 13, 20, 26 })]
