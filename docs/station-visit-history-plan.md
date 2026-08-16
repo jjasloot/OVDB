@@ -13,6 +13,8 @@ database (`dev-db/README.md`). Everything else is a design decision.
    started/ended at.
 4. **Marking a station tries to match it** to a route instance, or to a Träwelling trip that has
    not been imported yet.
+5. **Two levels are recorded: *stopped at* and *got on/off*.** Captured from the start, because the
+   backfill is a human pass over ~5,739 stations and nobody is doing that twice.
 
 Plus one absolute constraint:
 
@@ -38,14 +40,31 @@ it survives someone later adding a well-meaning import path.
 Only `StationVisit` changes. No candidate table, no calling-pattern table.
 
 ```csharp
-public DateTime? FirstVisitDate { get; set; }           // local civil date at midnight; null = not yet dated
-public int? FirstVisitRouteInstanceId { get; set; }     // FK, ON DELETE SET NULL
-public RouteInstance FirstVisitRouteInstance { get; set; }
+// Two levels, as two dates. Getting on or off implies the train stopped, so
+// FirstStoppedDate <= FirstEntryExitDate whenever both are known.
+public DateTime? FirstStoppedDate { get; set; }         // local civil date at midnight
+public DateTime? FirstEntryExitDate { get; set; }       // local civil date at midnight
+
+public int? FirstStoppedRouteInstanceId { get; set; }   // FK, ON DELETE SET NULL
+public int? FirstEntryExitRouteInstanceId { get; set; } // FK, ON DELETE SET NULL
+
 public StationVisitSource Source { get; set; }          // Legacy=0, Web, Telegram, ImportSuggested, Backfill
 public DateTime? CreatedOn { get; set; }                // UTC; null = predates this feature
 public DateTime? UnvisitedOn { get; set; }              // UTC; tombstone
 public bool DatingSkipped { get; set; }                 // "stop offering me dates for this one"
 ```
+
+**The level is derived from which dates are present**, so there is no enum to keep consistent with
+them:
+
+| `FirstStoppedDate` | `FirstEntryExitDate` | Level |
+|---|---|---|
+| null | null | Visited, not yet dated (all 9,260 legacy rows start here) |
+| set | null | Stopped at |
+| set or null | set | Got on/off |
+
+"Visited at all" remains "a row exists", so the global query filter and the nine existing read paths
+are unaffected by the split.
 
 - `DateTime` at midnight, matching `RouteInstance.Date`; **local civil date**, converted via
   `ITimezoneService` at the station's coordinates, so a day-granular statistic never shifts at
@@ -53,7 +72,7 @@ public bool DatingSkipped { get; set; }                 // "stop offering me dat
 - `Source = Legacy (0)` labels all 9,260 existing rows correctly for free.
 - No `VisitCount`, no `LastVisitedOn`: toggles measure taps, not visits, and pre-feature history is
   unrecoverable, so a count could never be honest.
-- Index `(UserId, FirstVisitDate)`.
+- Indexes `(UserId, FirstStoppedDate)` and `(UserId, FirstEntryExitDate)`.
 - **Global query filter** `HasQueryFilter(sv => sv.UnvisitedOn == null)`. This is what makes the
   tombstone safe: all nine existing is-visited predicates keep working unchanged, including
   navigation subqueries, and future queries cannot forget it. The few places that must see
@@ -111,12 +130,15 @@ are not persisted: their only jobs happen at import, and afterwards nothing read
 
 A mark should be born dated wherever possible, rather than dated later by a chore.
 
-- **Telegram, at the station.** Date is today, in the station's timezone — the one surface where
-  "now" is truth. Then match: if exactly one of the day's instances explains it, link silently.
+- **Telegram, at the station.** Standing on the platform *is* entry/exit, so this sets
+  `FirstEntryExitDate` (and `FirstStoppedDate`) to today in the station's timezone — the one surface
+  where "now" is truth. Then match: if exactly one of the day's instances explains it, link
+  silently.
 - **Web map.** No implicit date: this is how you retro-mark from the sofa, so "today" would be a
   lie. Instead, run the matcher immediately and *offer* the answer in the snackbar — "Marked
-  Zwolle. Visited 3 May 2024 on Utrecht → Groningen?" — one tap to accept, or *pick a date*, or
-  ignore. A dateless visit is still valid; it simply joins the backfill queue.
+  Zwolle. Got on/off 3 May 2024 on Utrecht → Groningen?" — with the same two-way split as the
+  backfill, or *pick a date*, or ignore. An undated visit is still valid; it simply joins the
+  backfill queue.
 - **Marked before the trip exists.** The usual case: you tap at the platform, the Träwelling
   check-in imports later. No pending-status column is needed — when an instance is created or
   imported, the matcher runs over the user's unlinked visits from ±1 day and links what it
@@ -135,8 +157,10 @@ evidence:
 - **Passed nearby** — proximity only, listed last and visually distinct.
 
 Every one is off by default. Ticking one **marks the station** (the explicit user action the base
-requirement demands) and dates it from that trip. Leaving it alone does nothing. Explicitly
-dismissing one writes a dateless tombstone, so it is not offered again on the next trip through.
+requirement demands) and dates it from that trip **at the level its group implies** — the first two
+groups set entry/exit and stopped respectively, and a proximity tick asks which. Leaving it alone
+does nothing. Explicitly dismissing one writes an undated tombstone, so it is not offered again on
+the next trip through.
 
 This is the only flow that creates visits from suggestions, and it is opt-in per station.
 
@@ -145,7 +169,7 @@ This is the only flow that creates visits from suggestions, and it is opt-in per
 **Dating only. It never creates a visit**, so this path is structurally incapable of violating the
 base requirement, and the ~2,900 passed-but-unmarked stations do not appear in it at all.
 
-Work the queue of visits where `FirstVisitDate` is null and `DatingSkipped` is false. For each,
+Work the queue of visits with no level yet — both dates null — and `DatingSkipped` false. For each,
 run *station → trips*:
 
 - A **map showing the station with the selected trip's route drawn on it**; changing selection
@@ -153,17 +177,22 @@ run *station → trips*:
 - **Candidate trips oldest first, the oldest selected by default**, each showing its date, route
   name and the evidence tier. The default is usually right; where it is not, the earlier trips are
   visible and one tap away.
-- Two outcomes, and neither can un-mark anything: **Confirm** sets the date and links the trip;
-  **Not this trip** sets `DatingSkipped` and moves on. There is deliberately no "deny" — denial
-  would assert "I have not visited this", which is not a question this flow asks. Un-marking lives
-  on the map and in Telegram, behind the dialog.
+- Three outcomes, none of which can un-mark anything: **Got on/off here** sets
+  `FirstEntryExitDate` (and `FirstStoppedDate` to the same date, since alighting implies stopping);
+  **Only stopped here** sets `FirstStoppedDate`; **Not this trip** sets `DatingSkipped` and moves
+  on. The first two are the same single decision split two ways, so recording the level costs no
+  extra taps.
+- There is deliberately no "deny" — denial would assert "I have not visited this", which is not a
+  question this flow asks. Un-marking lives on the map and in Telegram, behind the dialog.
 - Confirming **auto-advances**.
 
 Two passes over the same queue:
 
 1. **Endpoints first.** Visits whose station matches a route's `From`/`To`. Strongest evidence,
-   available for all 12,809 routes, no API calls. Bulk "confirm all" is defensible here.
-2. **Proximity for the remainder.** Per item only, never bulk.
+   available for all 12,809 routes, no API calls, and **self-classifying**: an endpoint is entry/exit
+   by definition, so no level question is asked. Bulk "confirm all" is defensible here.
+2. **Proximity for the remainder.** Per item only, never bulk, and this is where the level has to be
+   asked — proximity proves neither stopping nor alighting.
 
 Re-running later is free and worth doing: new trips can date stations that had no candidate before.
 `DatingSkipped` is what stops it nagging about the genuinely undatable.
@@ -188,21 +217,29 @@ preserves one they created by accident. Ask rather than infer from elapsed time.
 ### Station merge
 
 `StationMergeController.MergeStations` currently deletes the duplicate visit row outright. Once rows
-carry dates that can destroy the *earlier* first-visit date. It must keep the earliest non-null
-`FirstVisitDate` and its trip link.
+carry dates that can destroy the *earlier* one. It must keep the earliest non-null value of **each**
+date independently, with its matching trip link — the surviving row may take its stopped date from
+one duplicate and its entry/exit date from the other.
 
-## Stopping versus alighting
+## Why both levels, from the start
 
-The distinction is real — a train calling somewhere is not the same as getting out — but it lives in
-**evidence ranking**, not in the model. One visit, one date.
+A train calling somewhere is not the same as getting out, and the two are worth collecting
+separately. The argument for capturing it **now** rather than later is sequencing, not schema:
 
-A second "first stopped here" date was considered and rejected: calling patterns exist only for
-Träwelling trips going forward, are never reconstructable (inbox payloads are deleted on import),
-and are not persisted. The column would be almost entirely null and systematically late where set,
-while straining the invariant that stopping precedes alighting. Backfill cannot produce it either,
-so there is no now-or-never moment.
+- The backfill is a manual pass over ~5,739 stations. Capturing only "visited + date" now and
+  deciding later that entry/exit matters would mean **doing that pass a second time**. Schema
+  changes are cheap and reversible; a human re-review of 5,739 stations is neither.
+- During the review the classification is largely free: an endpoint match (`From`/`To`) *is*
+  entry/exit, so the endpoint pass needs no extra input at all.
+- It costs no extra taps elsewhere either — one Confirm button becomes two.
 
-Requirement 3 still surfaces both, as evidence tiers in the suggestion list.
+The earlier objection — that "stopped at" is only knowable for Träwelling trips, forward-only — is
+weaker than it looked, because asking at import turns transient evidence into a durable **user
+assertion**. The sparseness of the source stops mattering once the answer is recorded.
+
+The remaining honest limitation: legacy rows have no level until they are reviewed, so the UI needs a
+"visited, level unknown" state during the transition. That is the same honest-unknown the rest of
+this plan uses, not a defect.
 
 ## Queries that must change
 
@@ -221,6 +258,20 @@ New consumers: `GetYearInReview` gains `NewStations` plus an honest `UndatedVisi
 figure is never presented as complete while dating is partial. `AchievementService` progressions are
 `(Date, Value)` pairs, so undated visits cannot participate — station achievements count dated
 visits only, and say so.
+
+**The two levels surface as two figures, not as an ambiguous one.** Region completion shows two
+percentages, stopped and entry/exit, and the region overview colours each station:
+
+| Colour | Meaning |
+|---|---|
+| Blue | Got on/off here |
+| Green | Stopped here |
+| Grey | Visited, level not yet known (legacy, pending review) |
+| Red | Nothing |
+
+Grey disappears as the backfill progresses. Everywhere that only needs "visited at all" — the
+admin counts, the Telegram percentage, missing-stations — keeps using row existence and is
+unaffected.
 
 ## Rollout
 
@@ -256,10 +307,11 @@ limiter exhaustion from stopover fetching (already surfaced by the existing budg
 ## Not building
 
 A candidate table (matches are computed on demand, in both directions, by one service); a
-calling-pattern table (used transiently at import, then discarded); `VisitCount`; `LastVisitedOn`; a
-second "first stopped here" date; an approximate-date tier (a date is user-asserted, trip-derived,
-or null); any auto-marking; a resurrected Träwelling station mapping table; Träwelling-API-driven
-backfill; event-sourced visit state; database spatial indexes for this feature.
+calling-pattern table (used transiently at import, then discarded); a level enum (the level is
+derived from which dates are set); `VisitCount`; `LastVisitedOn`; an approximate-date tier (a date is
+user-asserted, trip-derived, or null); any auto-marking; a resurrected Träwelling station mapping
+table; Träwelling-API-driven backfill; event-sourced visit state; database spatial indexes for this
+feature.
 
 ## Still open
 
