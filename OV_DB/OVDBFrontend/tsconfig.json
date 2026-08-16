@@ -1,8 +1,6 @@
 {
   "compileOnSave": false,
   "compilerOptions": {
-    "baseUrl": "./",
-    "ignoreDeprecations": "6.0",
     "outDir": "./dist/out-tsc",
     "strict": true,
     "noUncheckedSideEffectImports": false,
@@ -10,21 +8,26 @@
     "esModuleInterop": true,
     "declaration": false,
     "experimentalDecorators": true,
-    "module": "es2020",
+    "module": "preserve",
     "moduleResolution": "bundler",
     "importHelpers": true,
     "target": "ES2022",
-    "typeRoots": [
-      "node_modules/@types"
-    ],
     "lib": [
       "ES2022",
       "dom"
     ],
+    // Left at false deliberately: this changes emit semantics for class fields at runtime, and
+    // Angular's decorator/DI patterns depend on the assignment behaviour. Not a cosmetic flag.
     "useDefineForClassFields": false,
     "paths": {
+      // Replaces the deprecated baseUrl: the codebase imports as "src/app/...".
+      "src/*": [
+        "./src/*"
+      ],
+      // chart.js ships this file but does not expose it through its "exports" map, so the
+      // bundler resolver cannot see it. Point at the real file instead of patching ng2-charts.
       "chart.js/dist/types/utils": [
-        "node_modules/chart.js/types/utils"
+        "./node_modules/chart.js/dist/types/utils"
       ]
     }
   },
