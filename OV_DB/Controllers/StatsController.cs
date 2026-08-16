@@ -168,12 +168,18 @@ namespace OV_DB.Controllers
         private static readonly string[] DelayBucketKeys = ["EARLY", "ONTIME", "D5_15", "D15_30", "D30_60", "D60PLUS"];
 
         [HttpGet("achievements/{map}")]
-        public async Task<ActionResult<AchievementsDTO>> GetAchievements(Guid map, [FromServices] IAchievementService achievementService, CancellationToken cancellationToken = default)
+        public async Task<ActionResult<AchievementsDTO>> GetAchievements(Guid map, [FromServices] IAchievementService achievementService, [FromServices] IFeatureService featureService, CancellationToken cancellationToken = default)
         {
             var userIdClaim = User.GetUserId();
             if (userIdClaim < 0)
             {
                 return Forbid();
+            }
+
+            // Hiding the tab is presentation; the feature has to be enforced here as well.
+            if (!featureService.IsVisible(featureService.Achievements, User.IsAdmin()))
+            {
+                return NotFound();
             }
 
             return Ok(await achievementService.BuildAsync(map, userIdClaim, cancellationToken));

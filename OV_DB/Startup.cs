@@ -169,6 +169,7 @@ namespace OV_DB
             services.AddScoped<TelegramBotService>();
             services.AddScoped<ITrainlogExportService, TrainlogExportService>();
             services.AddScoped<IAchievementService, AchievementService>();
+            services.AddSingleton<IFeatureService, FeatureService>();
             services.AddHttpClient(TrawellingService.HTTP_CLIENT_NAME,client =>
             {
                 client.DefaultRequestHeaders.Add("User-Agent", "OVDB/1.0 (https://github.com/jjasloot/OVDB; contact-me jaapslootbeek@gmail.com)");

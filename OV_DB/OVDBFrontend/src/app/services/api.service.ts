@@ -25,6 +25,7 @@ import { YearInReview } from "../models/year-in-review.model";
 import { MissingStation } from "../models/missing-station.model";
 import { Replay } from "../models/replay.model";
 import { Achievements } from "../models/achievements.model";
+import { Features } from "../models/features.model";
 import { UserProfile, UpdateProfile, ChangePassword, TraewellingTagMapping, TrainlogOperatorMapping } from "../models/user-profile.model";
 import { RouteInstanceListResponseDTO } from "../models/routeInstanceList.model";
 import { 
@@ -464,6 +465,10 @@ export class ApiService {
       url += `?year=${year}`;
     }
     return this.httpClient.get<PunctualityStats>(url);
+  }
+
+  getFeatures(): Observable<Features> {
+    return this.httpClient.get<Features>(environment.backend + "api/features");
   }
 
   getAchievements(map: string): Observable<Achievements> {
