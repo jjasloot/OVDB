@@ -57,7 +57,7 @@ public class ImagesController(OVDBDatabaseContext context, IMemoryCache memoryCa
     };
 
     [HttpGet]
-    public async Task<ActionResult> GetImageAsync([FromQuery] List<Guid> guid, [FromQuery] int width = 420, [FromQuery] int height = 170, [FromQuery] string title = null, [FromQuery] bool includeTotal = false, [FromQuery] string language = "NL", [FromQuery] bool hideAttribution = false, [FromQuery] string theme = "light")
+    public async Task<ActionResult> GetImageAsync([FromQuery] List<Guid> guid, [FromQuery] int width = 420, [FromQuery] int height = 220, [FromQuery] string title = null, [FromQuery] bool includeTotal = false, [FromQuery] string language = "NL", [FromQuery] bool hideAttribution = false, [FromQuery] string theme = "light")
     {
         // This endpoint is intentionally anonymous (embeddable badge). Clamp the
         // attacker-controlled dimensions so a request cannot ask for a multi-GB
@@ -179,8 +179,16 @@ public class ImagesController(OVDBDatabaseContext context, IMemoryCache memoryCa
         var columns = Math.Max(1, (int)(usableWidth / Math.Max(columnWidth, 1)));
         columnWidth = Math.Min(columnWidth, usableWidth / (float)columns);
 
-        var visible = rows.Take(rowsPerColumn * columns).ToList();
+        // When not everything fits, give up one slot so the overflow can be stated as a normal
+        // list row ("+2 more") instead of a marker squeezed in beside the total or the footer.
+        // Only give up a slot when at least two real rows still remain; on a very short badge the
+        // count falls back to the attribution instead, rather than crowding out the data.
+        var capacity = rowsPerColumn * columns;
+        var useOverflowRow = rows.Count > capacity && capacity >= 3;
+        var shownCount = useOverflowRow ? capacity - 1 : Math.Min(capacity, rows.Count);
+        var visible = rows.Take(shownCount).ToList();
         var hidden = rows.Count - visible.Count;
+        var overflowRowIndex = useOverflowRow ? shownCount : -1;
         var maxDistance = visible.Count == 0 ? 0 : visible.Max(r => r.YearDistance);
 
         for (var index = 0; index < visible.Count; index++)
@@ -221,8 +229,17 @@ public class ImagesController(OVDBDatabaseContext context, IMemoryCache memoryCa
             }
         }
 
+        // Overflow reads as an ordinary, muted list row aligned with the ones above it.
+        if (overflowRowIndex >= 0)
+        {
+            var x = Padding + ((overflowRowIndex / rowsPerColumn) * columnWidth);
+            var y = top + ((overflowRowIndex % rowsPerColumn) * rowHeight);
+            var moreText = dutch ? $"+{hidden} meer" : $"+{hidden} more";
+            image.Mutate(ctx => ctx.DrawText(moreText, rowFont, mutedBrush,
+                new PointF(x + (DotRadius * 2) + 8, y + 1)));
+        }
+
         var footerTop = height - Padding - footerSpace;
-        var markerDrawn = false;
         if (includeTotal && rows.Count > 0)
         {
             var totalYear = Math.Round(rows.Sum(r => r.YearDistance), 1);
@@ -242,35 +259,14 @@ public class ImagesController(OVDBDatabaseContext context, IMemoryCache memoryCa
                 ctx.DrawText(totalMonthText, rowFont, mutedBrush,
                     new PointF(width - Padding - 8 - TextMeasurer.MeasureAdvance(totalMonthText, new TextOptions(rowFont)).Width, labelY));
             });
-
-            // The total covers every type, so say how many are not listed above.
-            if (hidden > 0)
-            {
-                var labelWidthMeasured = TextMeasurer.MeasureAdvance(label, new TextOptions(valueFont)).Width;
-                image.Mutate(ctx => ctx.DrawText($"+{hidden}", footerFont, mutedBrush,
-                    new PointF(Padding + labelWidthMeasured + 6, labelY + 4)));
-                markerDrawn = true;
-            }
-        }
-        else if (hidden > 0)
-        {
-            // No total row to hang the marker off; place it after the last row when it fits.
-            var markerY = top + (rowsPerColumn * rowHeight);
-            if (footerTop - markerY >= 12)
-            {
-                var marker = $"+{hidden}";
-                image.Mutate(ctx => ctx.DrawText(marker, footerFont, mutedBrush,
-                    new PointF(width - Padding - TextMeasurer.MeasureAdvance(marker, new TextOptions(footerFont)).Width, markerY)));
-                markerDrawn = true;
-            }
         }
 
         if (!hideAttribution)
         {
             var stamp = now.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture);
-            // If there was nowhere to put the "+N" marker, fold it into the attribution rather
-            // than silently pretending the listed types are everything.
-            var attribution = hidden > 0 && !markerDrawn ? $"ovdb.infinityx.nl  +{hidden}" : "ovdb.infinityx.nl";
+            // Only when even the overflow row could not be shown (a single-row image) does the
+            // count fall back to the attribution, rather than being dropped silently.
+            var attribution = hidden > 0 && overflowRowIndex < 0 ? $"ovdb.infinityx.nl  +{hidden}" : "ovdb.infinityx.nl";
             image.Mutate(ctx =>
             {
                 ctx.DrawText(attribution, footerFont, mutedBrush, new PointF(Padding, footerTop + 1));

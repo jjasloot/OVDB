@@ -44,7 +44,23 @@ namespace OV_DB.Tests
             var bytes = ImagesController.RenderBadge(
                 rows, Font.Value, width, height, title, includeTotal, dutch: true,
                 hideAttribution: false, ImagesController.GetPalette(theme), new DateTime(2026, 8, 16, 12, 30, 0));
+            DumpForReview(bytes, $"badge-{theme}-{width}x{height}{(includeTotal ? "-total" : string.Empty)}.png");
             return Image.Load<Rgba32>(bytes);
+        }
+
+        /// <summary>
+        /// The badge is a visual artefact, so set OVDB_BADGE_PREVIEW_DIR to have these tests write
+        /// out what they rendered and eyeball the design. No-op otherwise.
+        /// </summary>
+        private static void DumpForReview(byte[] bytes, string fileName)
+        {
+            var directory = Environment.GetEnvironmentVariable("OVDB_BADGE_PREVIEW_DIR");
+            if (string.IsNullOrWhiteSpace(directory))
+            {
+                return;
+            }
+            Directory.CreateDirectory(directory);
+            File.WriteAllBytes(Path.Combine(directory, fileName), bytes);
         }
 
         [Theory]
@@ -54,10 +70,10 @@ namespace OV_DB.Tests
         [InlineData("unknown-theme-falls-back-to-light")]
         public void RenderBadge_ProducesAnImageOfTheRequestedSize(string theme)
         {
-            using var image = Render(SampleRows(), 420, 170, theme);
+            using var image = Render(SampleRows(), 420, 220, theme);
 
             Assert.Equal(420, image.Width);
-            Assert.Equal(170, image.Height);
+            Assert.Equal(220, image.Height);
         }
 
         [Fact]
