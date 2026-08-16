@@ -111,22 +111,19 @@ second idiom.
 Generate a candidate only when the station has no active visit (*new-station mode*) or has one with
 `FirstVisitDate == null` (*dating mode*). A tombstone means the user said no: never re-propose.
 
-### `RouteInstanceStop` — the calling pattern
+### No calling-pattern table
 
-*Judgement call: Fable ran out of budget before settling this.*
+Calling patterns are **not persisted**. Both things they are needed for happen at the same moment —
+when a trip is imported — so they are fetched, used, and discarded:
 
-```csharp
-long Id; int RouteInstanceId; int StationId; int SequenceNumber;
-string UpstreamKey; string UpstreamName;   // Träwelling station uuid + name, for evidence
-```
+1. resolve which of the user's unlinked visits this trip explains, and set the FK;
+2. decide which stations are worth proposing as candidates.
 
-Per **instance**, not per route, because a specific run may skip stops. Rows are only written for
-stopovers that matched an OVDB station; unmatched ones are skipped rather than stored with a null
-`StationId` — simpler, at the cost of not being able to explain why a station is absent.
+Nothing afterwards reads them, so a table would be storage without a reader. The durable artefacts
+are the FK on `StationVisit` and the candidate rows.
 
-Deliberately **Träwelling only in v1**. The same table can later hold OSM route stop lists (which
-would need a nullable `RouteInstanceId` for route-level patterns), which would close the gap that
-currently rules OSM out for backfill — but that is a separate phase, not v1.
+Accepted cost: the candidate logic cannot be re-run over already-imported trips, because the input
+is gone and inbox payloads are deleted on import. The *output* survives, and re-running is rare.
 
 ### Migration
 
@@ -195,7 +192,8 @@ Two uses, neither of which surfaces the word "stopover" in the UI:
 2. **Candidate tiering** — called-at stations are proposable; merely-passed ones are not.
 
 Fetch via `GET /stopovers/{ids}` batched per page during the existing sweep, budgeted through
-`TrawellingService.SendAsync` like every other call.
+`TrawellingService.SendAsync` like every other call, and used transiently at import — see
+"No calling-pattern table".
 
 ## Candidate tiering
 
@@ -299,7 +297,7 @@ either count dated visits only and say so, or wait for backfill.
 4. **Candidates going forward.** Generation at trip save and Träwelling import (endpoints +
    origin/destination + stopovers); the review page; batch undo.
 5. **Backfill.** Endpoint pass with bulk confirm, then a proximity skim.
-6. **Later, if ever.** OSM stop persistence, region completion dates, station achievements.
+6. **Later, if ever.** Region completion dates, station achievements.
 
 ## Failure modes
 
@@ -321,35 +319,41 @@ limiter exhaustion from stopover fetching (already surfaced by the existing budg
 
 ## Not building
 
-`VisitCount`; `LastVisitedOn`; an approximate-date display tier (with confirm-always, a date is
-user-asserted, trip-derived, or null); any auto-marking; a resurrected Träwelling station mapping
-table; Träwelling-API-driven backfill; event-sourced visit state; database spatial indexes for this
-feature; full calling-pattern import for non-Träwelling trips in v1.
+`VisitCount`; `LastVisitedOn`; a second date for "first stopped here"; a table of calling patterns
+(they are used transiently at import and discarded); an approximate-date display tier (with
+confirm-always, a date is user-asserted, trip-derived, or null); any auto-marking; a resurrected
+Träwelling station mapping table; Träwelling-API-driven backfill; event-sourced visit state;
+database spatial indexes for this feature.
 
 ## Stopping versus alighting
 
 OVDB has one notion of "visited", asserted by the user. It does not distinguish *the train stopped
-here* from *I got out here*. Decision: **do not split it.**
+here* from *I got out here*. A nested two-level version was considered — alighting implies
+stopping, so it is a tier rather than a fork — with a second date for the lower level.
 
-- The stopped-at set is **derivable, not assertable** — once calling patterns are stored, "stations
-  my trains have called at" is a query over `RouteInstanceStop`, needing no second visit concept,
-  no schema change and no user effort. It can be added whenever it is actually wanted.
-- It would be **radically incomplete**: calling patterns exist only for Träwelling trips (~20% of
-  history) and can never be reconstructed for the rest, so the number would sit misleadingly beside
-  a complete asserted count.
-- Two collections would have to be maintained to answer a question nobody has yet asked.
+Decision: **one level, one date.** The lower level is not obtainable well enough to be worth a
+column:
 
-The distinction still earns its place in *evidence ranking* (see Backfill), just not in the model.
+- Calling patterns are the only evidence for "stopped here", they exist **only for Träwelling trips
+  going forward**, and they are not persisted. Historically the coverage is zero, and it can never
+  be reconstructed: inbox payloads are deleted on import.
+- So a `FirstStoppedDate` would be almost entirely null, and where set, systematically *late* —
+  showing "first stopped 2026" for a station passed through since 2015. A number that looks
+  authoritative and is not.
+- The coverage runs counterintuitively: the more permissive level has the worse data. Route
+  endpoints give alighting evidence across all 12,809 routes retroactively; calling patterns give
+  stopping evidence for about a fifth of trips, forward-only.
+- It would also strain an invariant. Stopping precedes alighting, so `FirstStopped ≤ FirstAlighted`
+  must hold, yet the sparse case routinely knows only the later one — leaving a choice between
+  inventing a lower bound and storing a violation.
 
-**This becomes measurable once calling patterns land**: count the stations the user has marked
-where a train of theirs called but which were not that trip's origin or destination. A high share
-means "visited" means stopped-at; a low share means it means alighted. Worth checking before
-building anything on the assumption.
+Doing it "while we are backfilling anyway" does not help: the backfill cannot produce the lower
+level either, so this is not a now-or-never moment.
+
+The distinction still earns its place in *evidence ranking* (see Backfill), just not in the model:
+endpoint evidence means alighted, a calling pattern means stopped, proximity means neither.
 
 ## Still open
-
-- Whether `RouteInstanceStop` should carry unmatched stopovers (null `StationId`) so absences are
-  explicable. Currently: no.
 - Whether station achievements wait for backfill or ship counting dated visits only.
 - Whether the "confirm all" bulk action should exist at all on first release, or only after the
   endpoint pass has been eyeballed once.
