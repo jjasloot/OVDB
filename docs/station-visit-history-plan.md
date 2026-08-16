@@ -224,6 +224,38 @@ Same machinery, run over history.
   `StationRegionsService`. **Do not** take a dependency on the manual spatial indexes in
   `docs/spatial-indexes.md`; a one-shot job does not earn them.
 
+### Review UI
+
+Two views over the same queue, because the two passes have very different shapes.
+
+**Trip-centric**, for the endpoint pass: one trip, the stations it explains, confirm the lot.
+Turns hundreds of decisions into a handful, and is only offered for propose-tier candidates.
+
+**Station-centric**, for ambiguous proximity matches — one station at a time:
+
+- A **map showing the station and the currently selected route drawn on it**. Switching selection
+  redraws. Seeing the line sweep through the station is the evidence; a lone pin is not.
+- The **candidate trips listed oldest first, the oldest selected by default**, each showing its
+  date, route name, and distance from the line. The default is usually right and keeps the pace
+  up, but it biases *early* — the earliest trip that passes a station may predate the first time
+  the user actually alighted there — so the dates must be prominent enough that an implausible one
+  is obvious.
+- **Three outcomes, not two**, because "yes, but I have no idea which trip" is a common and honest
+  answer:
+
+  | | Dating mode (station already visited) | New-station mode (~2,900 passed-but-unmarked) |
+  |---|---|---|
+  | **Confirm** | Set `FirstVisitDate` from the selected trip and link it | Create the visit — this is the user action that satisfies the never-auto-mark invariant — and date it |
+  | **Not this trip** | Leave undated, dismiss these candidates | *(n/a)* |
+  | **Deny** | *(must not un-mark the station)* | Never been there; dismiss permanently |
+
+  The two modes share a screen but not their consequences: denying a dating candidate must never
+  remove an existing visit.
+
+- Confirming **auto-advances** to the next station; confirming one candidate **resolves its
+  siblings** for that station rather than leaving them pending; and a denial writes a dismissed
+  candidate that stays reachable behind a "show dismissed" filter, so it is recoverable.
+
 ## Queries that must change
 
 The global query filter means the nine read paths change **zero lines** — that is the point. What
