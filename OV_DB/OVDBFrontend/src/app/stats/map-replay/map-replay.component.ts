@@ -193,13 +193,9 @@ export class MapReplayComponent implements OnInit {
   }
 
   private boundsFor(routes: ReplayRoute[]): LatLngBounds | null {
-    // No flatMap: the frontend tsconfig still targets es2018.
-    const points: LatLngTuple[] = [];
-    for (const route of routes) {
-      for (const coordinate of route.coordinates) {
-        points.push([coordinate[0], coordinate[1]]);
-      }
-    }
+    const points = routes.flatMap((route) =>
+      route.coordinates.map((c) => [c[0], c[1]] as LatLngTuple)
+    );
     return points.length > 0 ? latLngBounds(points) : null;
   }
 }
