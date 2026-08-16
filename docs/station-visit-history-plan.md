@@ -35,6 +35,19 @@ it survives someone later adding a well-meaning import path.
   stations passed but deliberately not marked. Proximity alone is ~66% precise, which is why it may
   propose but never decide.
 
+Measured again once the matcher existed, over 300 real undated visits:
+
+- **294 of 300 (98%) have at least one candidate trip.** Backfill by geometry is not merely viable,
+  it covers nearly the whole queue.
+- **148 of 300 (49%) have at least one endpoint-evidence candidate** — better than the 21%/27%
+  single-signal figures below, because the union of name and geometry catches what either misses.
+- **60.8 candidate trips per station on average, across 26.2 distinct routes.** The candidate list
+  is far too long to show raw; see the preselection rule in Backfill.
+- **The oldest candidate is endpoint-grade only 15% of the time.** This is the finding that changed
+  the design: pre-selecting the oldest trip outright would usually pre-select something that merely
+  passed through.
+- Index cost: 4.5 s cold build, 98 MB peak, 69 MB steady, and ~6 ms per station warm.
+
 ## Model
 
 Only `StationVisit` changes. No candidate table, no calling-pattern table.
@@ -224,8 +237,16 @@ plus the user's memory, which makes the defaults matter more, not less.
 
 The defaults that keep it moving:
 
-- **Trip: the oldest candidate, pre-selected.** Where only one candidate exists, there is nothing to
-  choose.
+- **Trip: the oldest _endpoint-grade_ candidate, pre-selected; the oldest of any grade only when
+  there is no endpoint match at all.** The original rule was simply "oldest", but the matcher's own
+  numbers killed it: the oldest candidate is endpoint-grade only 15% of the time, so "oldest" would
+  usually pre-select a train that passed through without stopping and date the visit too early. An
+  endpoint match exists for 49% of the queue, and where it does it is both strong and specific.
+  Where it does not, the oldest proximity candidate is pre-selected and **labelled as the weak
+  guess it is**.
+- **Collapse the list to one row per route, earliest instance first.** 60.8 candidates across 26.2
+  routes is not a list anyone skims; per route, only the earliest instance can be the answer to
+  "when did I first come here". Other instances stay reachable behind the row, not in front of it.
 - **Level: "stopped at", pre-selected** — except on endpoint matches, where entry/exit is true by
   definition and is pre-selected instead. Defaulting to the weaker claim means a fast tap-through
   never invents an alighting that did not happen.
@@ -376,5 +397,12 @@ feature.
 - **Import suggestions need a volume guard.** A forty-stop journey should not present forty
   proposals; collapse the proximity group behind a count by default.
 - Whether station achievements wait for backfill or ship counting dated visits only.
-- How aggressively to simplify geometry in the STRtree — a measurement, not a decision: check the
-  memory footprint of the prepared geometries before choosing.
+
+**Settled by measurement** (was: how aggressively to simplify the geometry): **50 m Douglas-Peucker,
+indexed as segments rather than whole routes.** Whole-route envelopes are useless as an index — a
+cross-country line's bounding box covers half the country's stations — so the tree holds 476k
+segments. Kept whole, the geometry is 9.9M coordinates and 382 MB; at 50 m it is 65 MB and changes
+what the 300 m threshold finds by about 1%, which is noise against the weakest evidence tier. 25 m
+was also measured: 94 MB for no useful gain. The index is streamed into place rather than loaded and
+then simplified, which holds the peak to 98 MB instead of roughly six times that, and it is dropped
+after 30 idle minutes because the work is bursty.

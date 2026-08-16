@@ -170,6 +170,10 @@ namespace OV_DB
             services.AddScoped<ITrainlogExportService, TrainlogExportService>();
             services.AddScoped<IAchievementService, AchievementService>();
             services.AddScoped<IStationVisitService, StationVisitService>();
+            services.AddScoped<IStationTripMatcher, StationTripMatcher>();
+            // Singleton so the ~65 MB route/station index is built once and shared, then dropped
+            // again once nobody has asked for a match in a while.
+            services.AddSingleton<IMatcherIndexCache, MatcherIndexCache>();
             services.AddSingleton<IFeatureService, FeatureService>();
             services.AddHttpClient(TrawellingService.HTTP_CLIENT_NAME,client =>
             {
