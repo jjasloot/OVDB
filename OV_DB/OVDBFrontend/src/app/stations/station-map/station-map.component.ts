@@ -25,16 +25,15 @@ import {
 } from "../station-visit-dialog/station-visit-dialog.component";
 
 /**
- * Four states, not two: red is unvisited, green is stopped at, blue is got on/off, and grey is
- * visited with the level not yet known — which is every row predating visit history, until the
- * backfill has been through it.
+ * Three states: red unvisited, green stopped at, blue got on/off. Every visit is at least a stop,
+ * so an undated one — including everything predating visit history — is green, not a fourth
+ * "unknown" colour. Whether a visit is dated is a separate question from what it means.
  */
 function markerStyle(visited: boolean, level: StationVisitLevel | null) {
   if (!visited) {
     return { radius: 4, fillColor: "#FF0000", color: "#000", weight: 1, opacity: 1, fillOpacity: 0.5 };
   }
-  const fillColor =
-    level === StationVisitLevel.EntryExit ? "#1E88E5" : level === StationVisitLevel.Stopped ? "#00C853" : "#9E9E9E";
+  const fillColor = level === StationVisitLevel.EntryExit ? "#1E88E5" : "#00C853";
   return { radius: 8, fillColor, color: "#000", weight: 1, opacity: 1, fillOpacity: 0.8 };
 }
 

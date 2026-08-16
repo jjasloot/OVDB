@@ -2,10 +2,10 @@
 
 <mat-dialog-content>
   <p class="current">
-    @switch (data.level) {
-      @case (levels.EntryExit) { {{ 'STATIONS.VISIT.CURRENT_ENTRY_EXIT' | translate }} }
-      @case (levels.Stopped) { {{ 'STATIONS.VISIT.CURRENT_STOPPED' | translate }} }
-      @default { {{ 'STATIONS.VISIT.CURRENT_UNKNOWN' | translate }} }
+    @if (data.level === levels.EntryExit) {
+      {{ 'STATIONS.VISIT.CURRENT_ENTRY_EXIT' | translate }}
+    } @else {
+      {{ 'STATIONS.VISIT.CURRENT_STOPPED' | translate }}
     }
   </p>
 </mat-dialog-content>

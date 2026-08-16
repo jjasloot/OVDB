@@ -16,9 +16,9 @@ namespace OV_DB.Models
         public String Operator { get; set; }
         public bool Visited { get; set; }
         /// <summary>
-        /// What the visit means, when known. Null while <see cref="Visited"/> is true is a real
-        /// state, not a gap: rows that predate visit history are visited with no level yet, and the
-        /// map shows them distinctly until the backfill has been through them.
+        /// What the visit means. Every visit is at least a stop, so an undated row - including all
+        /// those predating visit history - counts as <see cref="StationVisitLevel.Stopped"/> rather
+        /// than as an unknown. Dating is a separate question from level.
         /// </summary>
         public StationVisitLevel? VisitLevel { get; set; }
         public IEnumerable<StationRegionDTO> Regions { get; set; }

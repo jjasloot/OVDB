@@ -104,6 +104,7 @@ namespace OV_DB.Controllers
             var state = new StationVisitStateDTO
             {
                 Visited = visit != null,
+                // Every visit is at least a stop; an undated one is still stopped at, not unknown.
                 Level = visit == null
                     ? null
                     : visit.FirstEntryExitDate.HasValue ? StationVisitLevel.EntryExit : StationVisitLevel.Stopped,

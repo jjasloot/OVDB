@@ -198,7 +198,7 @@ namespace OV_DB.Controllers
                     .Where(sv => sv.UserId == userIdClaim)
                     .Select(sv => sv.FirstEntryExitDate.HasValue
                         ? StationVisitLevel.EntryExit
-                        : sv.FirstStoppedDate.HasValue ? StationVisitLevel.Stopped : (StationVisitLevel?)null)
+                        : (StationVisitLevel?)StationVisitLevel.Stopped)
                     .FirstOrDefault()
             }).ToListAsync();
 

@@ -260,18 +260,19 @@ The earlier objection — that "stopped at" is only knowable for Träwelling tri
 weaker than it looked, because asking at import turns transient evidence into a durable **user
 assertion**. The sparseness of the source stops mattering once the answer is recorded.
 
-The remaining honest limitation: legacy rows have no level until they are reviewed, so the UI needs a
-"visited, level unknown" state during the transition. That is the same honest-unknown the rest of
-this plan uses, not a defect.
+Legacy rows need no third state. **Every visit is at least a stop**, so a row with no dates on it is
+"stopped at", not "level unknown" — the level derives from `FirstEntryExitDate` alone, and the
+9,260 rows that predate visit history are simply stopped-at visits that are not yet dated. Whether a
+visit is dated is a separate question from what it means, and only the first of those is what the
+backfill answers.
 
 ## Queries that must change
 
-The global query filter means the nine read paths change **zero lines** — that is the point. What
-actually changes: `StationController.UpdateVisitedStations` and
-`TelegramBotService.HandleCallbackQueryAsync` (new semantics; `IgnoreQueryFilters()` to find
-tombstones), `StationMergeController` list and `MergeStations` (tombstone-aware, earliest-date
-merge), and the two admin counts in `StationController.GetAdminMap` and `StationMergeController`
-(decide active-only explicitly rather than discovering it).
+The nine read paths that only ask "visited at all" change **zero lines** — row existence still
+answers that. What actually changes: `StationController.UpdateVisitedStations` and
+`TelegramBotService.HandleCallbackQueryAsync` (both go through `StationVisitService`),
+`StationMergeController.MergeStations` (earliest-date merge rather than delete-the-duplicate), and
+the two map projections that now also report the level.
 
 Verify the rest by test rather than by reading: one integration test over
 mark → un-mark → re-mark asserting the map payload, region percentages and missing-stations all
@@ -288,25 +289,26 @@ percentages, stopped and entry/exit, and the region overview colours each statio
 | Colour | Meaning |
 |---|---|
 | Blue | Got on/off here |
-| Green | Stopped here |
-| Grey | Visited, level not yet known (legacy, pending review) |
+| Green | Stopped here (dated or not) |
 | Red | Nothing |
 
-Grey disappears as the backfill progresses. Everywhere that only needs "visited at all" — the
-admin counts, the Telegram percentage, missing-stations — keeps using row existence and is
-unaffected.
+Three colours, not four: an undated visit is green like any other stop, because that is what it is.
+Everywhere that only needs "visited at all" — the admin counts, the Telegram percentage,
+missing-stations — keeps using row existence and is unaffected.
 
 ## Rollout
 
-1. **Migration, tombstone semantics, un-mark dialog.** Columns, global query filter,
-   `IgnoreQueryFilters` in the four spots, merge fix, toggle-cycle test. No visible change except
-   that toggles stop destroying data.
-2. **The matcher.** One service, both directions, cached STRtree. Nothing user-facing yet; testable
+1. **Migration and the write boundary.** Columns, indexes, `StationVisitService` as the only writer,
+   merge fix, architecture test. No visible change.
+2. **Marking at two levels.** Web map three colours, non-expiring snackbar offering the entry/exit
+   upgrade, un-mark dialog; Telegram verbs on the same service.
+3. **The matcher.** One service, both directions, cached STRtree. Nothing user-facing yet; testable
    in isolation.
-3. **Dating at the edges.** Telegram stamps today; the web snackbar offers the matched date;
+4. **Dating at the edges.** Telegram stamps today; the web snackbar offers the matched date;
    the station popup shows date, source and trip, with an edit dialog.
-4. **Backfill.** Endpoint pass with bulk confirm, then a proximity skim.
-5. **Import suggestions.** The post-import list, off by default, dismissals as tombstones.
+5. **Backfill.** One station at a time — map, candidate trips oldest-first with the oldest
+   preselected, confirm or deny. No bulk confirm.
+6. **Import suggestions.** The post-import list, off by default, dismissals recorded separately.
 6. **Consumers.** "New stations this year", discovery timeline, station achievements.
 
 ## Failure modes
