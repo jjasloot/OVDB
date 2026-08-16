@@ -8,6 +8,8 @@ using GeoJSON.Net.Geometry;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using OV_DB.Services;
+using OVDB_database.Enums;
 using Microsoft.EntityFrameworkCore;
 using OV_DB.Models;
 using OVDB_database.Database;
@@ -79,7 +81,7 @@ namespace OV_DB.Controllers
         }
 
         [HttpPut("{id:int}")]
-        public async Task<IActionResult> UpdateVisitedStations(int id, [FromBody] BoolValue value)
+        public async Task<IActionResult> UpdateVisitedStations(int id, [FromBody] StationVisitUpdate value, [FromServices] IStationVisitService stationVisitService)
         {
             var userIdClaim = User.GetUserId();
             if (userIdClaim < 0)
@@ -87,36 +89,41 @@ namespace OV_DB.Controllers
                 return Forbid();
             }
 
-            var stationVisit = await DbContext.StationVisits.Where(sv => sv.StationId == id && sv.UserId == userIdClaim).SingleOrDefaultAsync();
-
-            if (value.Value)
+            if (value.Visited)
             {
-                if (stationVisit == null)
-                {
-                    DbContext.Add(new StationVisit { StationId = id, UserId = userIdClaim });
-                }
+                // The web map sends no date: marking from the sofa says nothing about when, so the
+                // visit joins the backfill queue undated rather than claiming today.
+                await stationVisitService.MarkAsync(userIdClaim, id, value.Level, value.Date, StationVisitSource.Web);
             }
             else
             {
-                if (stationVisit != null)
-                {
-                    DbContext.Remove(stationVisit);
-                }
+                await stationVisitService.UnmarkAsync(userIdClaim, id);
             }
-            await DbContext.SaveChangesAsync();
+
+            var visit = await stationVisitService.GetAsync(userIdClaim, id);
+            var state = new StationVisitStateDTO
+            {
+                Visited = visit != null,
+                Level = visit == null
+                    ? null
+                    : visit.FirstEntryExitDate.HasValue ? StationVisitLevel.EntryExit : StationVisitLevel.Stopped,
+                FirstStoppedDate = visit?.FirstStoppedDate,
+                FirstEntryExitDate = visit?.FirstEntryExitDate
+            };
 
             var station = await DbContext.Stations.Include(s => s.Regions).SingleOrDefaultAsync(s => s.Id == id);
             if (station != null)
             {
                 var regionIds = station.Regions.Select(r => r.Id).ToList();
                 var totalStationsInRegion = await DbContext.Stations.CountAsync(s => s.Regions.Any(r => regionIds.Contains(r.Id)));
-                var visitedStationsInRegion = await DbContext.StationVisits.CountAsync(sv => sv.UserId == userIdClaim && sv.Station.Regions.Any(r => regionIds.Contains(r.Id)));
-                var percentageVisited = (double)visitedStationsInRegion / totalStationsInRegion * 100;
-
-                return Ok(new { Message = "Station visit status updated.", PercentageVisited = percentageVisited });
+                if (totalStationsInRegion > 0)
+                {
+                    var visitedStationsInRegion = await DbContext.StationVisits.CountAsync(sv => sv.UserId == userIdClaim && sv.Station.Regions.Any(r => regionIds.Contains(r.Id)));
+                    state.PercentageVisited = (double)visitedStationsInRegion / totalStationsInRegion * 100;
+                }
             }
 
-            return Ok(new { Message = "Station visit status updated." });
+            return Ok(state);
         }
 
         [HttpGet("map")]

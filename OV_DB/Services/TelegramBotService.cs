@@ -9,6 +9,7 @@ using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using OVDB_database.Database;
+using OVDB_database.Enums;
 using OVDB_database.Models;
 using Microsoft.EntityFrameworkCore;
 using Telegram.Bot.Types.ReplyMarkups;
@@ -25,9 +26,11 @@ namespace OV_DB.Services
         private readonly ITelegramBotClient _botClient;
         private readonly OVDBDatabaseContext _dbContext;
         private readonly ILogger<TelegramBotService> _logger;
+        private readonly IStationVisitService _stationVisitService;
 
-        public TelegramBotService(IConfiguration configuration, IHttpClientFactory httpClientFactory, OVDBDatabaseContext dbContext, ILogger<TelegramBotService> logger)
+        public TelegramBotService(IConfiguration configuration, IHttpClientFactory httpClientFactory, OVDBDatabaseContext dbContext, ILogger<TelegramBotService> logger, IStationVisitService stationVisitService)
         {
+            _stationVisitService = stationVisitService;
             var token = configuration["TelegramBotToken"];
             if (!string.IsNullOrWhiteSpace(token))
             {
@@ -39,11 +42,12 @@ namespace OV_DB.Services
             _logger = logger;
         }
 
-        internal TelegramBotService(ITelegramBotClient botClient, OVDBDatabaseContext dbContext, ILogger<TelegramBotService> logger = null)
+        internal TelegramBotService(ITelegramBotClient botClient, OVDBDatabaseContext dbContext, ILogger<TelegramBotService> logger = null, IStationVisitService stationVisitService = null)
         {
             _botClient = botClient;
             _dbContext = dbContext;
             _logger = logger;
+            _stationVisitService = stationVisitService;
         }
 
         public async Task SendMessageToAdminsAsync(string message)
@@ -120,7 +124,7 @@ namespace OV_DB.Services
         private async Task HandleCallbackQueryAsync(CallbackQuery callbackQuery)
         {
             // callbackQuery.Data is attacker-influenced and Message may be null for old messages.
-            if (!int.TryParse(callbackQuery.Data, out var stationId) || callbackQuery.Message == null)
+            if (!TryParseStationAction(callbackQuery.Data, out var action, out var stationId) || callbackQuery.Message == null)
             {
                 await _botClient.AnswerCallbackQuery(callbackQuery.Id, "❌");
                 return;
@@ -134,22 +138,44 @@ namespace OV_DB.Services
                 return;
             }
 
-            var stationVisit = await _dbContext.StationVisits.SingleOrDefaultAsync(sv => sv.StationId == stationId && sv.UserId == user.Id);
-            var visited = false;
-            if (stationVisit == null)
-            {
-                _dbContext.StationVisits.Add(new StationVisit { StationId = stationId, UserId = user.Id });
-                visited = true;
-            }
-            else
-            {
-                _dbContext.StationVisits.Remove(stationVisit);
-            }
-
-            await _dbContext.SaveChangesAsync();
-
             var station = await _dbContext.Stations.Include(s => s.Regions).SingleOrDefaultAsync(s => s.Id == stationId);
-            if (station != null)
+            if (station == null)
+            {
+                await _botClient.AnswerCallbackQuery(callbackQuery.Id, "❌");
+                return;
+            }
+
+            var existing = await _stationVisitService.GetAsync(user.Id, stationId);
+            bool visited;
+            switch (action)
+            {
+                case StationAction.Remove:
+                    await _stationVisitService.UnmarkAsync(user.Id, stationId);
+                    visited = false;
+                    break;
+                case StationAction.EntryExit:
+                    // Standing on the platform is today's news, so stamp today where the station is.
+                    await _stationVisitService.MarkAsync(user.Id, stationId, StationVisitLevel.EntryExit,
+                        await _stationVisitService.LocalDateAtStationAsync(station), StationVisitSource.Telegram);
+                    visited = true;
+                    break;
+                default:
+                    // A plain tap toggles, and marks the weaker claim: the train stopped here.
+                    // Upgrading to entry/exit is a deliberate second tap.
+                    if (existing != null)
+                    {
+                        await _stationVisitService.UnmarkAsync(user.Id, stationId);
+                        visited = false;
+                    }
+                    else
+                    {
+                        await _stationVisitService.MarkAsync(user.Id, stationId, StationVisitLevel.Stopped,
+                            await _stationVisitService.LocalDateAtStationAsync(station), StationVisitSource.Telegram);
+                        visited = true;
+                    }
+                    break;
+            }
+
             {
                 var regionIds = station.Regions.Select(r => r.Id).ToList();
                 var percentageMessage = string.Empty;
@@ -162,13 +188,78 @@ namespace OV_DB.Services
                     percentageMessage += $"{regionName}: {percentageVisited}%\n\r";
                 }
 
-                await _botClient.SendMessage(callbackQuery.Message.Chat.Id, $"""{station.Name}: {(visited? "✅": "❌")}"""+ $"\n\r{percentageMessage}", replyMarkup: KeyboardButton.WithRequestLocation("Share your location"));
+                var visit = await _stationVisitService.GetAsync(user.Id, stationId);
+                var level = visit == null
+                    ? "❌"
+                    : visit.FirstEntryExitDate.HasValue ? "✅ in-/uitgestapt" : "✅ gestopt";
+
+                await _botClient.SendMessage(callbackQuery.Message.Chat.Id,
+                    $"{station.Name}: {level}\n\r{percentageMessage}",
+                    replyMarkup: BuildStationActions(stationId, visit));
                 await _botClient.AnswerCallbackQuery(callbackQuery.Id, "✅");
+            }
+        }
+
+        internal enum StationAction
+        {
+            Toggle,
+            EntryExit,
+            Remove
+        }
+
+        /// <summary>
+        /// Callback data is "&lt;verb&gt;:&lt;stationId&gt;", with a bare station id still accepted so
+        /// keyboards sent before this change keep working. Well inside Telegram's 64-byte limit.
+        /// </summary>
+        internal static bool TryParseStationAction(string data, out StationAction action, out int stationId)
+        {
+            action = StationAction.Toggle;
+            stationId = 0;
+            if (string.IsNullOrWhiteSpace(data))
+            {
+                return false;
+            }
+
+            var parts = data.Split(':');
+            if (parts.Length == 1)
+            {
+                return int.TryParse(parts[0], out stationId);
+            }
+            if (parts.Length != 2 || !int.TryParse(parts[1], out stationId))
+            {
+                return false;
+            }
+
+            action = parts[0] switch
+            {
+                "ee" => StationAction.EntryExit,
+                "rm" => StationAction.Remove,
+                _ => StationAction.Toggle
+            };
+            return true;
+        }
+
+        /// <summary>
+        /// What can be done next: an unvisited station only needs marking, a stopped-at one can be
+        /// upgraded, and anything visited can be removed.
+        /// </summary>
+        private static InlineKeyboardMarkup BuildStationActions(int stationId, StationVisit visit)
+        {
+            var buttons = new List<InlineKeyboardButton>();
+            if (visit == null)
+            {
+                buttons.Add(InlineKeyboardButton.WithCallbackData("Gestopt", $"{stationId}"));
+                buttons.Add(InlineKeyboardButton.WithCallbackData("In-/uitgestapt", $"ee:{stationId}"));
             }
             else
             {
-                await _botClient.AnswerCallbackQuery(callbackQuery.Id, "❌");
+                if (!visit.FirstEntryExitDate.HasValue)
+                {
+                    buttons.Add(InlineKeyboardButton.WithCallbackData("In-/uitgestapt", $"ee:{stationId}"));
+                }
+                buttons.Add(InlineKeyboardButton.WithCallbackData("Verwijderen", $"rm:{stationId}"));
             }
+            return new InlineKeyboardMarkup(buttons);
         }
 
         private async Task HandleUnknownMessageAsync(Message message)

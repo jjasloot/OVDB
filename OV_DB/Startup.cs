@@ -169,6 +169,7 @@ namespace OV_DB
             services.AddScoped<TelegramBotService>();
             services.AddScoped<ITrainlogExportService, TrainlogExportService>();
             services.AddScoped<IAchievementService, AchievementService>();
+            services.AddScoped<IStationVisitService, StationVisitService>();
             services.AddSingleton<IFeatureService, FeatureService>();
             services.AddHttpClient(TrawellingService.HTTP_CLIENT_NAME,client =>
             {
