@@ -137,10 +137,15 @@ export interface LinkToRouteInstanceRequest {
   routeInstanceId: number;
 }
 
+import { StationSuggestion } from "./stationView.model";
+
 export interface LinkToRouteInstanceResponse {
   success: boolean;
   routeInstance?: RouteInstanceSearchResult;
   message?: string;
+  /** Linking is an import, so it carries the same station suggestions a fresh import would. */
+  routeInstanceId?: number;
+  stationSuggestions?: StationSuggestion[];
 }
 
 // Ignore functionality

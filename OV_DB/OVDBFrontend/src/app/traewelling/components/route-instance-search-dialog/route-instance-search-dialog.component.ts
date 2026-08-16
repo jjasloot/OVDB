@@ -1,7 +1,7 @@
 import { Component, inject, OnInit, ChangeDetectionStrategy } from '@angular/core';
 
 import { FormsModule } from '@angular/forms';
-import { MatDialogModule, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
+import { MatDialog, MatDialogModule, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -9,7 +9,11 @@ import { MatListModule } from '@angular/material/list';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { TrawellingService } from '../../services/traewelling.service';
-import { TrawellingTrip, RouteInstanceSearchResult } from '../../../models/traewelling.model';
+import { TrawellingTrip, RouteInstanceSearchResult, LinkToRouteInstanceResponse } from '../../../models/traewelling.model';
+import {
+  StationSuggestionsComponent,
+  StationSuggestionsDialogData,
+} from '../../../stations/station-suggestions/station-suggestions.component';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { DatePipe } from '@angular/common';
 
@@ -128,6 +132,7 @@ export class RouteInstanceSearchDialogComponent implements OnInit {
   trawellingService = inject(TrawellingService);
   private snackBar = inject(MatSnackBar);
   private dialogRef = inject<MatDialogRef<RouteInstanceSearchDialogComponent>>(MatDialogRef);
+  private dialog = inject(MatDialog);
   data = inject<{
     trip: TrawellingTrip;
   }>(MAT_DIALOG_DATA);
@@ -176,6 +181,7 @@ export class RouteInstanceSearchDialogComponent implements OnInit {
       if (response.success) {
         this.snackBar.open(this.translateService.instant('TRAEWELLING.TRIP_LINKED'), this.translateService.instant('CLOSE'), { duration: 3000 });
         this.dialogRef.close({ success: true, routeInstance: response.routeInstance });
+        this.offerStationSuggestions(response);
       } else {
         this.snackBar.open(response.message || this.translateService.instant('TRAEWELLING.ERROR_LINKING_TRIP'), this.translateService.instant('CLOSE'), { duration: 5000 });
       }
@@ -184,6 +190,31 @@ export class RouteInstanceSearchDialogComponent implements OnInit {
     } finally {
       this.isLinking = false;
     }
+  }
+
+  /**
+   * Opens the station suggestions on the global dialog service after this one has closed, so it
+   * outlives the dialog that produced it. Linking is an import moment like any other: the calling
+   * pattern was fetched once, here, and is not stored.
+   */
+  private offerStationSuggestions(response: LinkToRouteInstanceResponse): void {
+    const stations = response.stationSuggestions;
+    if (!stations?.length) {
+      return;
+    }
+
+    this.dialog.open<StationSuggestionsComponent, StationSuggestionsDialogData>(
+      StationSuggestionsComponent,
+      {
+        maxWidth: '95vw',
+        width: '560px',
+        data: {
+          tripName: response.routeInstance?.routeName ?? '',
+          routeInstanceId: response.routeInstanceId ?? null,
+          stations,
+        },
+      }
+    );
   }
 
   onCancel() {

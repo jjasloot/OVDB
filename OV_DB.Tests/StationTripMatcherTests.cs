@@ -316,6 +316,23 @@ public class StationTripMatcherTests
     }
 
     [Fact]
+    public async Task AmongNamesakesTheNearestWins()
+    {
+        // Measured: 205 active stations (0.78%) have a same-named station within a kilometre —
+        // border stations served by two operators, mostly. The widened name radius must not let a
+        // namesake outrank the one the train actually called at.
+        using var context = await SeedAsync();
+        await AddStationAsync(context, 10, "Hendaye", BaseLat, BaseLon);
+        var acrossTheBorder = Offset(400, 0);
+        await AddStationAsync(context, 11, "Hendaye", acrossTheBorder.Lat, acrossTheBorder.Lon);
+        var stop = Offset(350, 0);
+
+        var matched = await NewMatcher(context).MatchStopsAsync([new StopPoint("Hendaye", stop.Lat, stop.Lon)]);
+
+        Assert.Equal(11, Assert.Single(matched).StationId);
+    }
+
+    [Fact]
     public async Task StopMatchingNeverMarksAnythingVisited()
     {
         using var context = await SeedAsync();

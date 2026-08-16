@@ -571,7 +571,7 @@ namespace OV_DB.Controllers
         /// Link a Träwelling status to an existing RouteInstance
         /// </summary>
         [HttpPost("link")]
-        public async Task<IActionResult> LinkToRouteInstance([FromBody] LinkToRouteInstanceRequest request)
+        public async Task<IActionResult> LinkToRouteInstance([FromBody] LinkToRouteInstanceRequest request, [FromServices] IStationSuggestionService suggestionService)
         {
             try
             {
@@ -583,13 +583,24 @@ namespace OV_DB.Controllers
                 if (user == null)
                     return NotFound("User not found");
 
+                // Linking is an import too, so it earns the same station suggestions. Read the
+                // check-in payload first: linking clears the inbox row, and with it the trip id.
+                var payload = await _dbContext.TrawellingInboxStatuses
+                    .Where(s => s.UserId == userId.Value && s.TrawellingStatusId == request.StatusId)
+                    .Select(s => s.PayloadJson)
+                    .FirstOrDefaultAsync();
+
                 var routeInstance = await _trawellingService.LinkStatusToRouteInstanceAsync(
                     user, request.StatusId, request.RouteInstanceId);
 
                 if (routeInstance == null)
                     return BadRequest("Failed to link status to RouteInstance. Status may already be linked or RouteInstance may not exist.");
 
-                return Ok(new 
+                var suggestions = payload == null
+                    ? []
+                    : await suggestionService.FromTrawellingStatusAsync(user, payload);
+
+                return Ok(new
                 {
                     success = true,
                     routeInstance = new
@@ -599,7 +610,9 @@ namespace OV_DB.Controllers
                         startTime = routeInstance.StartTime,
                         endTime = routeInstance.EndTime,
                         trawellingStatusId = routeInstance.TrawellingStatusId
-                    }
+                    },
+                    routeInstanceId = routeInstance.RouteInstanceId,
+                    stationSuggestions = suggestions
                 });
             }
             catch (Exception ex)
