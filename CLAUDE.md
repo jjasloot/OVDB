@@ -49,6 +49,21 @@ You can still run the two separately (`dotnet run` + `npm start`) — the dev fr
 
 Do not use `spa.UseAngularCliServer` in `Startup.cs`: `SpaServices.Extensions` waits for the webpack-era `open your browser on <url>` line, which Angular's esbuild dev server never prints, so it always times out.
 
+### Running locally without touching production
+
+**`OV_DB/appsettings.json` points `DBCONNECTIONSTRING` at the live NAS database, and migrations are applied automatically on startup.** Starting the app with no local override therefore migrates production as a side effect of pressing F5. `OV_DB/appsettings.Development.json` is **gitignored**, so a fresh clone has to add it back:
+
+```json
+{
+  "DBCONNECTIONSTRING": "Server=127.0.0.1;Port=3307;Database=ovdb;Uid=ovdb;Pwd=ovdb-dev;",
+  "Traewelling": { "EnableBackgroundServices": false, "WebhookUrl": "" }
+}
+```
+
+`dev-db/restore.ps1` brings up a MariaDB container on port 3307 with a restored production dump.
+
+`Traewelling:EnableBackgroundServices` must be `false` locally. `TraewellingTokenRefreshService` and `TraewellingInboxSweepService` start a few minutes after boot and act on live tokens read from the database — and Träwelling **rotates refresh tokens on use**, so a second instance running against a copy of the database silently invalidates the real one.
+
 ### Database migrations (from repo root)
 
 ```powershell

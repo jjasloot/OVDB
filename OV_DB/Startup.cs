@@ -183,8 +183,15 @@ namespace OV_DB
             services.AddScoped<ITrawellingService, TrawellingService>();
             // Singleton so the Träwelling rate-limit budget is shared across request scopes.
             services.AddSingleton<ITraewellingRateLimiter, TraewellingRateLimiter>();
-            services.AddHostedService<TraewellingTokenRefreshService>();
-            services.AddHostedService<TraewellingInboxSweepService>();
+            // Both of these act on live Träwelling tokens shortly after boot, and refresh tokens
+            // rotate on use — so a second instance running against a copy of the database (a
+            // restored dump on a dev machine, say) would silently invalidate the real one. Off by
+            // configuration rather than by remembering not to start the app.
+            if (Configuration.GetValue("Traewelling:EnableBackgroundServices", true))
+            {
+                services.AddHostedService<TraewellingTokenRefreshService>();
+                services.AddHostedService<TraewellingInboxSweepService>();
+            }
 
             // Register named HttpClients for different services to avoid socket exhaustion
             services.AddHttpClient("OSM", client =>
