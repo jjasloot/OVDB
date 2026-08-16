@@ -13,6 +13,14 @@
   <mat-tab [label]="'STATS.REGIONS'|translate">
     <app-region-stat/>
   </mat-tab>
+  <mat-tab [label]="'STATS.ACHIEVEMENTS.TITLE'|translate">
+    @defer (on viewport) {
+    <app-achievements />
+    }
+    @placeholder {
+    <p>{{ 'LOADING' | translate }}</p>
+    }
+  </mat-tab>
   <mat-tab [label]="'STATS.REPLAY.TITLE'|translate">
     @defer (on viewport) {
     <app-map-replay />

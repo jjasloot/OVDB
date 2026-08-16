@@ -1,0 +1,107 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+mat-card-title {
+  padding: 16px 16px 0;
+}
+
+.loading {
+  display: flex;
+  justify-content: center;
+  padding: 32px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+.achievement mat-card-content {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 16px;
+}
+
+// Nothing earned yet: present but visibly dormant.
+.achievement.locked {
+  opacity: 0.72;
+}
+
+.head {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.head mat-icon {
+  flex: 0 0 auto;
+}
+
+.titles {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.name {
+  font-weight: 500;
+}
+
+.desc {
+  font-size: 0.8rem;
+  opacity: 0.7;
+}
+
+.pips {
+  display: flex;
+  gap: 4px;
+}
+
+.pip {
+  width: 22px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--mat-sys-outline-variant, rgba(128, 128, 128, 0.3));
+}
+
+.pip.filled {
+  background: var(--mat-sys-primary, #3f7d3f);
+}
+
+.current {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.current .value {
+  font-size: 1.6rem;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+.unlocked {
+  font-size: 0.78rem;
+  opacity: 0.7;
+}
+
+.next {
+  font-size: 0.85rem;
+  opacity: 0.85;
+}
+
+.next.complete {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  opacity: 1;
+}

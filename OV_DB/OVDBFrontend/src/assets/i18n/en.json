@@ -337,6 +337,51 @@
     "REGIONS": "Regions",
     "SUBREGIONS_VISITED": "underlying regions",
     "STATIONS_VISITED": "stations",
+    "ACHIEVEMENTS": {
+      "TITLE": "Achievements",
+      "NO_DATA": "No trips on this map yet, so there is nothing to unlock.",
+      "UNLOCKED_ON": "unlocked {{date}}",
+      "NEXT": "Next:",
+      "ALL_COMPLETE": "Every tier unlocked",
+      "FAMILY": {
+        "DISTANCE": {
+          "NAME": "Distance travelled",
+          "DESC": "Total kilometres across every trip"
+        },
+        "TRIPS": {
+          "NAME": "Trips logged",
+          "DESC": "How many journeys you have recorded"
+        },
+        "TRAVEL_DAYS": {
+          "NAME": "Days travelling",
+          "DESC": "Distinct days with at least one trip"
+        },
+        "COUNTRIES": {
+          "NAME": "Countries and regions",
+          "DESC": "Distinct areas your routes pass through"
+        },
+        "OPERATORS": {
+          "NAME": "Operators ridden",
+          "DESC": "Distinct operating companies"
+        },
+        "LONGEST_TRIP": {
+          "NAME": "Longest single trip",
+          "DESC": "Your longest journey in one go"
+        },
+        "TOP_SPEED": {
+          "NAME": "Top average speed",
+          "DESC": "Fastest average speed over a whole trip"
+        },
+        "NIGHT_TRAINS": {
+          "NAME": "Night trains",
+          "DESC": "Trips that carried on past midnight"
+        },
+        "DELAY_TIME": {
+          "NAME": "Time spent delayed",
+          "DESC": "Every late arrival, added up"
+        }
+      }
+    },
     "REPLAY": {
       "TITLE": "Replay",
       "NO_ROUTES": "No routes to replay for this selection.",

@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using OV_DB.Models;
 using OV_DB.Models.Graphs;
+using OV_DB.Services;
 using OVDB_database.Database;
 using OVDB_database.Models;
 
@@ -165,6 +166,18 @@ namespace OV_DB.Controllers
         }
 
         private static readonly string[] DelayBucketKeys = ["EARLY", "ONTIME", "D5_15", "D15_30", "D30_60", "D60PLUS"];
+
+        [HttpGet("achievements/{map}")]
+        public async Task<ActionResult<AchievementsDTO>> GetAchievements(Guid map, [FromServices] IAchievementService achievementService, CancellationToken cancellationToken = default)
+        {
+            var userIdClaim = User.GetUserId();
+            if (userIdClaim < 0)
+            {
+                return Forbid();
+            }
+
+            return Ok(await achievementService.BuildAsync(map, userIdClaim, cancellationToken));
+        }
 
         /// <summary>
         /// Every route on the map with the date it was first ridden, so the frontend can play the

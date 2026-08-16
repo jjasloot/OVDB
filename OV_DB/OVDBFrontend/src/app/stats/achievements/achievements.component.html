@@ -1,0 +1,85 @@
+<div class="container">
+  <mat-card appearance="outlined">
+    <mat-card-title>{{ 'SELECTION' | translate }}</mat-card-title>
+    <mat-card-content>
+      <mat-form-field>
+        <mat-label>{{ 'CHOOSEMAP' | translate }}</mat-label>
+        <mat-select [value]="selectedMap()" (selectionChange)="changeMap($event.value)">
+          @for (map of maps(); track map.mapGuid) {
+            <mat-option [value]="map.mapGuid">{{ map.name }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+    </mat-card-content>
+  </mat-card>
+
+  @if (loading()) {
+    <div class="loading">
+      <mat-spinner diameter="40" />
+    </div>
+  } @else if (families().length === 0) {
+    <mat-card appearance="outlined">
+      <mat-card-content>
+        <p>{{ 'STATS.ACHIEVEMENTS.NO_DATA' | translate }}</p>
+      </mat-card-content>
+    </mat-card>
+  } @else {
+    <div class="grid">
+      @for (family of families(); track family.key) {
+        <mat-card appearance="outlined" class="achievement" [class.locked]="family.earnedTiers === 0">
+          <mat-card-content>
+            <div class="head">
+              <mat-icon>{{ family.icon }}</mat-icon>
+              <div class="titles">
+                <span class="name">{{ 'STATS.ACHIEVEMENTS.FAMILY.' + family.key + '.NAME' | translate }}</span>
+                <span class="desc">{{ 'STATS.ACHIEVEMENTS.FAMILY.' + family.key + '.DESC' | translate }}</span>
+              </div>
+            </div>
+
+            <div class="pips" [attr.aria-label]="family.earnedTiers + ' / ' + family.totalTiers">
+              @for (earned of tierPips(family); track $index) {
+                <span class="pip" [class.filled]="earned"></span>
+              }
+            </div>
+
+            <div class="current">
+              <span class="value">
+                @switch (family.unit) {
+                  @case ('km') { {{ family.currentValue | number: '1.0-0' }} km }
+                  @case ('kmh') { {{ family.currentValue | number: '1.0-0' }} km/h }
+                  @case ('hours') { {{ family.currentValue | number: '1.0-1' }} h }
+                  @default { {{ family.currentValue | number: '1.0-0' }} }
+                }
+              </span>
+              @if (family.currentTier?.earnedOn; as earnedOn) {
+                <span class="unlocked">
+                  {{ 'STATS.ACHIEVEMENTS.UNLOCKED_ON' | translate: { date: (earnedOn | date: 'mediumDate') } }}
+                </span>
+              }
+            </div>
+
+            @if (family.nextTier; as next) {
+              <mat-progress-bar mode="determinate" [value]="progressPercentage(family)" />
+              <div class="next">
+                {{ 'STATS.ACHIEVEMENTS.NEXT' | translate }}
+                <strong>
+                  @switch (family.unit) {
+                    @case ('km') { {{ next.threshold | number: '1.0-0' }} km }
+                    @case ('kmh') { {{ next.threshold | number: '1.0-0' }} km/h }
+                    @case ('hours') { {{ next.threshold | number: '1.0-0' }} h }
+                    @default { {{ next.threshold | number: '1.0-0' }} }
+                  }
+                </strong>
+              </div>
+            } @else {
+              <div class="next complete">
+                <mat-icon inline>emoji_events</mat-icon>
+                {{ 'STATS.ACHIEVEMENTS.ALL_COMPLETE' | translate }}
+              </div>
+            }
+          </mat-card-content>
+        </mat-card>
+      }
+    </div>
+  }
+</div>

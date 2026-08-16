@@ -334,6 +334,51 @@
     "REGIONS": "Regio's",
     "SUBREGIONS_VISITED": "onderliggende regio's",
     "STATIONS_VISITED": "stations",
+    "ACHIEVEMENTS": {
+      "TITLE": "Prestaties",
+      "NO_DATA": "Nog geen ritten op deze kaart, dus er valt nog niets te ontgrendelen.",
+      "UNLOCKED_ON": "behaald op {{date}}",
+      "NEXT": "Volgende:",
+      "ALL_COMPLETE": "Alle niveaus behaald",
+      "FAMILY": {
+        "DISTANCE": {
+          "NAME": "Afgelegde afstand",
+          "DESC": "Totaal aantal kilometers over alle ritten"
+        },
+        "TRIPS": {
+          "NAME": "Ritten geregistreerd",
+          "DESC": "Hoeveel ritten je hebt vastgelegd"
+        },
+        "TRAVEL_DAYS": {
+          "NAME": "Reisdagen",
+          "DESC": "Dagen met minstens één rit"
+        },
+        "COUNTRIES": {
+          "NAME": "Landen en regio's",
+          "DESC": "Gebieden waar je routes doorheen gaan"
+        },
+        "OPERATORS": {
+          "NAME": "Vervoerders gereden",
+          "DESC": "Verschillende vervoerders"
+        },
+        "LONGEST_TRIP": {
+          "NAME": "Langste rit",
+          "DESC": "Je langste reis in één keer"
+        },
+        "TOP_SPEED": {
+          "NAME": "Hoogste gemiddelde snelheid",
+          "DESC": "Snelste gemiddelde over een hele rit"
+        },
+        "NIGHT_TRAINS": {
+          "NAME": "Nachttreinen",
+          "DESC": "Ritten die doorliepen na middernacht"
+        },
+        "DELAY_TIME": {
+          "NAME": "Tijd vertraagd",
+          "DESC": "Alle late aankomsten bij elkaar opgeteld"
+        }
+      }
+    },
     "REPLAY": {
       "TITLE": "Afspelen",
       "NO_ROUTES": "Geen routes om af te spelen voor deze selectie.",
