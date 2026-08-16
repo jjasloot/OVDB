@@ -376,6 +376,46 @@
         "DELAY_TIME": {
           "NAME": "Tijd vertraagd",
           "DESC": "Alle late aankomsten bij elkaar opgeteld"
+        },
+        "STREAK": {
+          "NAME": "Op dreef",
+          "DESC": "Langste reeks opeenvolgende reisdagen"
+        },
+        "BORDER_HOPPER": {
+          "NAME": "Grensganger",
+          "DESC": "Ritten die een landsgrens overstaken"
+        },
+        "DUTCH_PROVINCES": {
+          "NAME": "Provinciekampioen",
+          "DESC": "Nederlandse provincies waar je routes doorheen gaan"
+        },
+        "OPERATOR_BINGO": {
+          "NAME": "Vervoerderbingo",
+          "DESC": "Meeste vervoerders op één dag"
+        },
+        "MARATHON_DAY": {
+          "NAME": "Marathondag",
+          "DESC": "Grootste afstand op één dag"
+        },
+        "DEUTSCHEBAHNED": {
+          "NAME": "Deutsche Bahned",
+          "DESC": "Grootste vertraging bij Deutsche Bahn"
+        },
+        "SHORT_HOP": {
+          "NAME": "Had je kunnen lopen",
+          "DESC": "Ritten korter dan twee kilometer"
+        },
+        "BENELUX": {
+          "NAME": "Benelux",
+          "DESC": "Gereden in Nederland, België en Luxemburg"
+        },
+        "DACH": {
+          "NAME": "DACH",
+          "DESC": "Gereden in Duitsland, Oostenrijk en Zwitserland"
+        },
+        "NORDICS": {
+          "NAME": "Scandinavië",
+          "DESC": "Gereden in Zweden, Noorwegen, Denemarken en Finland"
         }
       }
     },

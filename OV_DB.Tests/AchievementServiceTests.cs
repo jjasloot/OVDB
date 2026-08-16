@@ -101,5 +101,73 @@ namespace OV_DB.Tests
         {
             Assert.Equal(["NS", "Arriva", "Blauwnet"], AchievementService.SplitOperators("NS, Arriva ,Blauwnet"));
         }
+
+        [Theory]
+        [InlineData("DB", true)]
+        [InlineData("db", true)]
+        [InlineData("Deutsche Bahn", true)]
+        [InlineData("DB Regio AG Nord", true)]
+        [InlineData("DBUS", false)]      // must not match on a bare prefix
+        [InlineData("Blauwnet", false)]
+        [InlineData("", false)]
+        [InlineData(null, false)]
+        public void IsDeutscheBahnName_MatchesOnlyTheRealThing(string name, bool expected)
+        {
+            Assert.Equal(expected, AchievementService.IsDeutscheBahnName(name));
+        }
+
+        [Fact]
+        public void IsDeutscheBahn_PrefersTheMappedOperatorsOverFreeText()
+        {
+            var dbOperators = new HashSet<int> { 7 };
+
+            // Mapped to a non-DB operator: the free text is not consulted at all.
+            Assert.False(AchievementService.IsDeutscheBahn([3], "Deutsche Bahn", dbOperators));
+            Assert.True(AchievementService.IsDeutscheBahn([3, 7], "Arriva", dbOperators));
+        }
+
+        [Fact]
+        public void IsDeutscheBahn_FallsBackToFreeTextWhenNoOperatorsAreMapped()
+        {
+            var dbOperators = new HashSet<int> { 7 };
+
+            Assert.True(AchievementService.IsDeutscheBahn([], "DB Regio", dbOperators));
+            Assert.False(AchievementService.IsDeutscheBahn(null, "NS", dbOperators));
+        }
+
+        [Fact]
+        public void BuildPerDayProgressions_TracksTheBiggestDayAndLongestStreak()
+        {
+            var trips = new List<(DateTime, double, List<string>)>
+            {
+                (new DateTime(2026, 1, 1), 100, ["NS"]),
+                (new DateTime(2026, 1, 2), 300, ["NS", "Arriva"]),
+                (new DateTime(2026, 1, 3), 50, ["NS"]),
+                // Gap: the streak restarts here.
+                (new DateTime(2026, 1, 10), 20, ["NS"]),
+            };
+
+            var (marathon, bingo, streak) = AchievementService.BuildPerDayProgressions(trips);
+
+            Assert.Equal(300, marathon[^1].Value);
+            Assert.Equal(2, bingo[^1].Value);
+            Assert.Equal(3, streak[^1].Value);
+        }
+
+        [Fact]
+        public void BuildPerDayProgressions_SumsSeveralTripsOnTheSameDay()
+        {
+            var trips = new List<(DateTime, double, List<string>)>
+            {
+                (new DateTime(2026, 1, 1), 200, ["NS"]),
+                (new DateTime(2026, 1, 1), 400, ["Arriva"]),
+            };
+
+            var (marathon, bingo, streak) = AchievementService.BuildPerDayProgressions(trips);
+
+            Assert.Equal(600, marathon[^1].Value);
+            Assert.Equal(2, bingo[^1].Value);
+            Assert.Equal(1, streak[^1].Value);
+        }
     }
 }

@@ -379,6 +379,46 @@
         "DELAY_TIME": {
           "NAME": "Time spent delayed",
           "DESC": "Every late arrival, added up"
+        },
+        "STREAK": {
+          "NAME": "On a roll",
+          "DESC": "Longest run of consecutive travel days"
+        },
+        "BORDER_HOPPER": {
+          "NAME": "Border hopper",
+          "DESC": "Journeys that crossed a national border"
+        },
+        "DUTCH_PROVINCES": {
+          "NAME": "Province collector",
+          "DESC": "Dutch provinces your routes pass through"
+        },
+        "OPERATOR_BINGO": {
+          "NAME": "Operator bingo",
+          "DESC": "Most operators used in a single day"
+        },
+        "MARATHON_DAY": {
+          "NAME": "Marathon day",
+          "DESC": "Longest distance covered in one day"
+        },
+        "DEUTSCHEBAHNED": {
+          "NAME": "Deutsche Bahned",
+          "DESC": "Worst delay on a Deutsche Bahn service"
+        },
+        "SHORT_HOP": {
+          "NAME": "You could have walked",
+          "DESC": "Trips shorter than two kilometres"
+        },
+        "BENELUX": {
+          "NAME": "Benelux",
+          "DESC": "Ridden in the Netherlands, Belgium and Luxembourg"
+        },
+        "DACH": {
+          "NAME": "DACH",
+          "DESC": "Ridden in Germany, Austria and Switzerland"
+        },
+        "NORDICS": {
+          "NAME": "Nordics",
+          "DESC": "Ridden in Sweden, Norway, Denmark and Finland"
         }
       }
     },

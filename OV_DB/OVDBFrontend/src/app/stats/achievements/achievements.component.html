@@ -48,6 +48,7 @@
                   @case ('km') { {{ family.currentValue | number: '1.0-0' }} km }
                   @case ('kmh') { {{ family.currentValue | number: '1.0-0' }} km/h }
                   @case ('hours') { {{ family.currentValue | number: '1.0-1' }} h }
+                  @case ('minutes') { {{ family.currentValue | number: '1.0-0' }} min }
                   @default { {{ family.currentValue | number: '1.0-0' }} }
                 }
               </span>
@@ -67,6 +68,7 @@
                     @case ('km') { {{ next.threshold | number: '1.0-0' }} km }
                     @case ('kmh') { {{ next.threshold | number: '1.0-0' }} km/h }
                     @case ('hours') { {{ next.threshold | number: '1.0-0' }} h }
+                    @case ('minutes') { {{ next.threshold | number: '1.0-0' }} min }
                     @default { {{ next.threshold | number: '1.0-0' }} }
                   }
                 </strong>
