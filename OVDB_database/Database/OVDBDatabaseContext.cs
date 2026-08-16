@@ -27,6 +27,7 @@ namespace OVDB_database.Database
         public DbSet<StationCountry> StationCountries { get; set; }
         public DbSet<Station> Stations { get; set; }
         public DbSet<StationVisit> StationVisits { get; set; }
+        public DbSet<StationSuggestionDismissal> StationSuggestionDismissals { get; set; }
         public DbSet<StationMap> StationMaps { get; set; }
         public DbSet<StationMapCountry> StationMapCountries { get; set; }
         public DbSet<Region> Regions { get; set; }
@@ -53,6 +54,21 @@ namespace OVDB_database.Database
 
             modelBuilder.Entity<Station>().Property(s => s.Hidden).HasDefaultValue(false);
             modelBuilder.Entity<Station>().Property(s => s.Special).HasDefaultValue(false);
+
+            modelBuilder.Entity<StationVisit>(entity =>
+            {
+                // Deleting a trip must not delete visits: the date survives, the evidence link does
+                // not. Two separate links because the two levels can come from different trips.
+                entity.HasOne(sv => sv.FirstStoppedRouteInstance)
+                    .WithMany()
+                    .HasForeignKey(sv => sv.FirstStoppedRouteInstanceId)
+                    .OnDelete(DeleteBehavior.SetNull);
+
+                entity.HasOne(sv => sv.FirstEntryExitRouteInstance)
+                    .WithMany()
+                    .HasForeignKey(sv => sv.FirstEntryExitRouteInstanceId)
+                    .OnDelete(DeleteBehavior.SetNull);
+            });
             // One level below the country suits almost every country, so existing rows and new
             // regions both default to it rather than to 0, which would collect nothing.
             modelBuilder.Entity<Region>().Property(r => r.AchievementRegionDepth).HasDefaultValue(1);

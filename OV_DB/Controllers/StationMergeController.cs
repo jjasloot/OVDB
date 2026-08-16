@@ -348,17 +348,40 @@ namespace OV_DB.Controllers
             if (keepStation == null || deleteStation == null)
                 return NotFound();
 
-            var existingVisitorIds = await DbContext.StationVisits
+            var keptVisits = await DbContext.StationVisits
                 .Where(sv => sv.StationId == request.KeepStationId)
-                .Select(sv => sv.UserId)
-                .ToHashSetAsync();
+                .ToDictionaryAsync(sv => sv.UserId);
 
             foreach (var visit in deleteStation.StationVisits)
             {
-                if (!existingVisitorIds.Contains(visit.UserId))
+                if (!keptVisits.TryGetValue(visit.UserId, out var kept))
+                {
                     visit.StationId = request.KeepStationId;
-                else
-                    DbContext.StationVisits.Remove(visit);
+                    continue;
+                }
+
+                // The duplicate is about to be removed, so fold its history into the survivor first.
+                // Each level keeps its earliest date independently: the two can legitimately come
+                // from different duplicates, and simply deleting the row would silently destroy the
+                // earlier of the two.
+                if (visit.FirstStoppedDate.HasValue
+                    && (!kept.FirstStoppedDate.HasValue || visit.FirstStoppedDate < kept.FirstStoppedDate))
+                {
+                    kept.FirstStoppedDate = visit.FirstStoppedDate;
+                    kept.FirstStoppedRouteInstanceId = visit.FirstStoppedRouteInstanceId;
+                }
+
+                if (visit.FirstEntryExitDate.HasValue
+                    && (!kept.FirstEntryExitDate.HasValue || visit.FirstEntryExitDate < kept.FirstEntryExitDate))
+                {
+                    kept.FirstEntryExitDate = visit.FirstEntryExitDate;
+                    kept.FirstEntryExitRouteInstanceId = visit.FirstEntryExitRouteInstanceId;
+                }
+
+                // Only keep "stop asking me to date this" when both sides had given up on it.
+                kept.DatingSkipped = kept.DatingSkipped && visit.DatingSkipped;
+
+                DbContext.StationVisits.Remove(visit);
             }
 
             deleteStation.Hidden = true;
