@@ -130,15 +130,22 @@ are not persisted: their only jobs happen at import, and afterwards nothing read
 
 A mark should be born dated wherever possible, rather than dated later by a chore.
 
-- **Telegram, at the station.** Standing on the platform *is* entry/exit, so this sets
-  `FirstEntryExitDate` (and `FirstStoppedDate`) to today in the station's timezone — the one surface
-  where "now" is truth. Then match: if exactly one of the day's instances explains it, link
-  silently.
-- **Web map.** No implicit date: this is how you retro-mark from the sofa, so "today" would be a
-  lie. Instead, run the matcher immediately and *offer* the answer in the snackbar — "Marked
-  Zwolle. Got on/off 3 May 2024 on Utrecht → Groningen?" — with the same two-way split as the
-  backfill, or *pick a date*, or ignore. An undated visit is still valid; it simply joins the
-  backfill queue.
+**Manual marking defaults to "got on/off", and does not ask.** If you are standing at a station, or
+picking one deliberately off a map, you almost certainly got on or off it. "Stopped at" arrives
+overwhelmingly from import suggestions and backfill, so the quick paths must not be cluttered with a
+question whose answer is nearly always the same. Correction is one tap away when it is wrong.
+
+- **Telegram, at the station.** Tapping a station sets `FirstEntryExitDate` (and
+  `FirstStoppedDate`) to today in the station's timezone — the one surface where "now" is truth. The
+  confirmation message carries **Undo** and **Only stopped** buttons, so the rare correction costs a
+  second tap and the common case costs none.
+- **Web map.** Clicking a marker marks it as got on/off, as now — but with no implicit date, since
+  this is how you retro-mark from the sofa. The matcher runs immediately and the snackbar *offers*
+  the answer — "Marked Zwolle. Got on/off 3 May 2024 on Utrecht → Groningen?" — with **Only
+  stopped**, **Pick a date** and **Undo** beside it. An undated visit is still valid; it simply joins
+  the backfill queue.
+- **Station popup** is the full-control surface: both dates with their trips, each editable or
+  clearable. The quick paths stay quick; this is where anything unusual gets fixed.
 - **Marked before the trip exists.** The usual case: you tap at the platform, the Träwelling
   check-in imports later. No pending-status column is needed — when an instance is created or
   imported, the matcher runs over the user's unlinked visits from ±1 day and links what it
@@ -186,13 +193,31 @@ run *station → trips*:
   question this flow asks. Un-marking lives on the map and in Telegram, behind the dialog.
 - Confirming **auto-advances**.
 
-Two passes over the same queue:
+**No bulk confirm, anywhere.** One station, one tap. At a generous four seconds each, 5,901 visits
+is a few evenings and it happens once. The speed has to come from **defaults being right**, not from
+operations that decide many stations at once — and dropping bulk confirm also removes any need for
+batch undo.
 
-1. **Endpoints first.** Visits whose station matches a route's `From`/`To`. Strongest evidence,
-   available for all 12,809 routes, no API calls, and **self-classifying**: an endpoint is entry/exit
-   by definition, so no level question is asked. Bulk "confirm all" is defensible here.
-2. **Proximity for the remainder.** Per item only, never bulk, and this is where the level has to be
-   asked — proximity proves neither stopping nor alighting.
+Endpoint evidence is scarcer than it looks (**measured**): of this user's 5,901 visited stations,
+1,220 (21%) match a route's `From`/`To` by exact name, and a 300-station sample puts geometric
+endpoint matching at 27%. Even combined, roughly a third. So most of the queue rests on proximity
+plus the user's memory, which makes the defaults matter more, not less.
+
+The defaults that keep it moving:
+
+- **Trip: the oldest candidate, pre-selected.** Where only one candidate exists, there is nothing to
+  choose.
+- **Level: "got on/off", pre-selected.** Every legacy row was marked under a single-level regime
+  where "visited" colloquially meant *I have been here*, so entry/exit is the better prior — and for
+  endpoint matches it is true by definition.
+- **Order the queue by candidate trip**, so consecutive stations share a journey. Confirming eight
+  stations from the same Utrecht → Groningen run in a row costs far less thought than eight
+  unrelated ones. This is ordering, not bulk: still one tap each.
+- **Show the distance** on proximity candidates, so an implausible 290 m match in a dense tram area
+  is visible rather than assumed.
+
+So the per-station interaction is: glance at the map, tap **Got on/off** (or **Only stopped**, or
+**Skip**), advance.
 
 Re-running later is free and worth doing: new trips can date stations that had no candidate before.
 `DatingSkipped` is what stops it nagging about the genuinely undatable.
@@ -210,8 +235,8 @@ preserves one they created by accident. Ask rather than infer from elapsed time.
 - **Re-visiting a tombstone:** clear `UnvisitedOn`, keep the date, and *show it* — "first visit
   3 May 2024" — so a stale restored date is seen rather than silent.
 - **Edit date** from the station popup is the correction path, not un-mark/re-mark.
-- **Bulk undo:** the endpoint pass writes `Source = Backfill`; a "revert last backfill batch"
-  action clears dates set in that run. A dialog per row would be punishing.
+- **No batch undo is needed**, because there is no bulk confirm: every backfill decision is a single
+  station, correctable from its popup like any other.
 - **Irreversible:** the explicit "by mistake" delete, and station merge.
 
 ### Station merge
@@ -315,8 +340,19 @@ feature.
 
 ## Still open
 
-- Whether the endpoint pass's bulk "confirm all" ships in the first release, or only after the list
-  has been eyeballed once.
+- **The proximity threshold is probably not one number.** ~300 m suits heavy rail, but this database
+  covers trams and metros whose stops are 300–500 m apart, where that radius will match several
+  stops at once and pick the wrong one. Likely needs to vary by route type; needs measuring on a
+  dense city before choosing.
+- **The two dates need an ordering rule when edited.** Alighting implies stopping, so setting
+  `FirstEntryExitDate` earlier than `FirstStoppedDate` is incoherent. Pull the stopped date back to
+  match, or refuse — decide before the edit dialog is built.
+- **`DatingSkipped` can go stale.** A visit skipped because nothing plausible was on offer should
+  probably resurface when a newly imported trip provides a candidate; a visit skipped because the
+  user genuinely cannot remember should not. Same flag, two meanings — either split it or accept the
+  nagging.
+- **Import suggestions need a volume guard.** A forty-stop journey should not present forty
+  proposals; collapse the proximity group behind a count by default.
 - Whether station achievements wait for backfill or ship counting dated visits only.
 - How aggressively to simplify geometry in the STRtree — a measurement, not a decision: check the
   memory footprint of the prepared geometries before choosing.
