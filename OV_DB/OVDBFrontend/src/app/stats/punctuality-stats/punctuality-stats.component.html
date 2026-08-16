@@ -1,0 +1,182 @@
+<div class="container">
+  <mat-card appearance="outlined">
+    <mat-card-title>{{ 'SELECTION' | translate }}</mat-card-title>
+    <mat-card-content>
+      <mat-form-field>
+        <mat-label>{{ 'CHOOSEMAP' | translate }}</mat-label>
+        <mat-select [value]="selectedMap()" (selectionChange)="changeMap($event.value)">
+          @for (map of maps(); track map.mapGuid) {
+            <mat-option [value]="map.mapGuid">{{ map.name }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field>
+        <mat-label>{{ 'CHOOSEYEAR' | translate }}</mat-label>
+        <mat-select [value]="selectedYear()" (selectionChange)="changeYear($event.value)">
+          @for (year of years(); track year) {
+            <mat-option [value]="year">{{ year }}</mat-option>
+          }
+          <mat-option [value]="0">{{ 'ALL' | translate }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+    </mat-card-content>
+  </mat-card>
+
+  @if (loading()) {
+    <div class="loading">
+      <mat-spinner diameter="40" />
+    </div>
+  } @else if (stats(); as s) {
+    @if (!hasArrivalData()) {
+      <mat-card appearance="outlined" class="empty-state">
+        <mat-card-title>{{ 'STATS.PUNCTUALITY.NO_DATA_TITLE' | translate }}</mat-card-title>
+        <mat-card-content>
+          <p>{{ 'STATS.PUNCTUALITY.NO_DATA_BODY' | translate }}</p>
+        </mat-card-content>
+      </mat-card>
+    } @else {
+      <div class="tiles">
+        <mat-card appearance="outlined" class="tile">
+          <mat-card-content>
+            <span class="value">{{ s.onTimePercentage | number: '1.0-1' }}%</span>
+            <span class="label">{{ 'STATS.PUNCTUALITY.ONTIME' | translate }}</span>
+            <span class="hint">
+              {{ 'STATS.PUNCTUALITY.ONTIME_HINT' | translate: { minutes: s.onTimeThresholdMinutes } }}
+            </span>
+          </mat-card-content>
+        </mat-card>
+        <mat-card appearance="outlined" class="tile">
+          <mat-card-content>
+            <span class="value">{{ s.averageArrivalDelayMinutes | number: '1.0-1' }}</span>
+            <span class="label">{{ 'STATS.PUNCTUALITY.AVG_ARRIVAL' | translate }}</span>
+            <span class="hint">{{ 'STATS.PUNCTUALITY.MINUTES' | translate }}</span>
+          </mat-card-content>
+        </mat-card>
+        <mat-card appearance="outlined" class="tile">
+          <mat-card-content>
+            <span class="value">{{ s.averageDepartureDelayMinutes | number: '1.0-1' }}</span>
+            <span class="label">{{ 'STATS.PUNCTUALITY.AVG_DEPARTURE' | translate }}</span>
+            <span class="hint">{{ 'STATS.PUNCTUALITY.MINUTES' | translate }}</span>
+          </mat-card-content>
+        </mat-card>
+        <mat-card appearance="outlined" class="tile">
+          <mat-card-content>
+            <span class="value">{{ s.medianArrivalDelayMinutes | number: '1.0-1' }}</span>
+            <span class="label">{{ 'STATS.PUNCTUALITY.MEDIAN_ARRIVAL' | translate }}</span>
+            <span class="hint">{{ 'STATS.PUNCTUALITY.MINUTES' | translate }}</span>
+          </mat-card-content>
+        </mat-card>
+        <mat-card appearance="outlined" class="tile">
+          <mat-card-content>
+            <span class="value">{{ s.tripsWithArrivalData }}</span>
+            <span class="label">{{ 'STATS.PUNCTUALITY.MEASURED_TRIPS' | translate }}</span>
+            <span class="hint">
+              {{ 'STATS.PUNCTUALITY.COVERAGE' | translate: { total: s.totalTrips } }}
+            </span>
+          </mat-card-content>
+        </mat-card>
+      </div>
+
+      @if (chartData(); as data) {
+        <mat-card appearance="outlined">
+          <mat-card-title>{{ 'STATS.PUNCTUALITY.DISTRIBUTION' | translate }}</mat-card-title>
+          <mat-card-content>
+            <div class="chart">
+              <canvas baseChart type="bar" [data]="data" [options]="chartOptions"></canvas>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      }
+
+      @if (s.byOperator.length > 0) {
+        <mat-card appearance="outlined">
+          <mat-card-title>{{ 'STATS.PUNCTUALITY.BY_OPERATOR' | translate }}</mat-card-title>
+          <mat-card-content>
+            <div class="table-scroll">
+              <table>
+                <thead>
+                  <tr>
+                    <th>{{ 'STATS.PUNCTUALITY.OPERATOR' | translate }}</th>
+                    <th class="numeric">{{ 'STATS.PUNCTUALITY.TRIPS' | translate }}</th>
+                    <th class="numeric">{{ 'STATS.PUNCTUALITY.AVG_DELAY' | translate }}</th>
+                    <th class="numeric">{{ 'STATS.PUNCTUALITY.ONTIME' | translate }}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (row of s.byOperator; track row.label) {
+                    <tr>
+                      <td>{{ row.label }}</td>
+                      <td class="numeric">{{ row.trips }}</td>
+                      <td class="numeric">{{ row.averageArrivalDelayMinutes | number: '1.0-1' }}</td>
+                      <td class="numeric">{{ row.onTimePercentage | number: '1.0-1' }}%</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      }
+
+      @if (s.byYear.length > 1) {
+        <mat-card appearance="outlined">
+          <mat-card-title>{{ 'STATS.PUNCTUALITY.BY_YEAR' | translate }}</mat-card-title>
+          <mat-card-content>
+            <div class="table-scroll">
+              <table>
+                <thead>
+                  <tr>
+                    <th>{{ 'STATS.PUNCTUALITY.YEAR' | translate }}</th>
+                    <th class="numeric">{{ 'STATS.PUNCTUALITY.TRIPS' | translate }}</th>
+                    <th class="numeric">{{ 'STATS.PUNCTUALITY.AVG_DELAY' | translate }}</th>
+                    <th class="numeric">{{ 'STATS.PUNCTUALITY.ONTIME' | translate }}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (row of s.byYear; track row.label) {
+                    <tr>
+                      <td>{{ row.label }}</td>
+                      <td class="numeric">{{ row.trips }}</td>
+                      <td class="numeric">{{ row.averageArrivalDelayMinutes | number: '1.0-1' }}</td>
+                      <td class="numeric">{{ row.onTimePercentage | number: '1.0-1' }}%</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      }
+
+      @if (s.worstTrips.length > 0) {
+        <mat-card appearance="outlined">
+          <mat-card-title>{{ 'STATS.PUNCTUALITY.WORST_TRIPS' | translate }}</mat-card-title>
+          <mat-card-content>
+            <div class="table-scroll">
+              <table>
+                <thead>
+                  <tr>
+                    <th>{{ 'STATS.PUNCTUALITY.DATE' | translate }}</th>
+                    <th>{{ 'NAME' | translate }}</th>
+                    <th>{{ 'STATS.PUNCTUALITY.OPERATOR' | translate }}</th>
+                    <th class="numeric">{{ 'STATS.PUNCTUALITY.DELAY' | translate }}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (trip of s.worstTrips; track trip.routeInstanceId) {
+                    <tr>
+                      <td>{{ trip.date | date: 'shortDate' }}</td>
+                      <td>{{ tripName(trip) }}</td>
+                      <td>{{ trip.operator }}</td>
+                      <td class="numeric delay">{{ trip.delayMinutes | number: '1.0-0' }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      }
+    }
+  }
+</div>

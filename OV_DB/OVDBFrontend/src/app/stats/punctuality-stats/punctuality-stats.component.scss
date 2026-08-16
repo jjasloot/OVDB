@@ -1,0 +1,86 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+mat-card-title {
+  padding: 16px 16px 0;
+}
+
+.loading {
+  display: flex;
+  justify-content: center;
+  padding: 32px;
+}
+
+.empty-state p {
+  margin: 0;
+  max-width: 60ch;
+}
+
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 16px;
+}
+
+.tile mat-card-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-top: 16px;
+}
+
+.tile .value {
+  font-size: 2rem;
+  line-height: 1.1;
+  font-weight: 500;
+}
+
+.tile .label {
+  font-weight: 500;
+}
+
+.tile .hint {
+  font-size: 0.8rem;
+  opacity: 0.7;
+}
+
+.chart {
+  height: 280px;
+}
+
+// Tables can outgrow narrow screens; scroll them instead of the page.
+.table-scroll {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  text-align: left;
+  padding: 6px 12px 6px 0;
+  border-bottom: 1px solid var(--mat-sys-outline-variant, rgba(128, 128, 128, 0.3));
+  white-space: nowrap;
+}
+
+th {
+  font-weight: 500;
+}
+
+.numeric {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+td.delay {
+  font-weight: 500;
+}

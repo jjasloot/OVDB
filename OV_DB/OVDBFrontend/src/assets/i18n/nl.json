@@ -333,7 +333,38 @@
     "PER_DAY": "Per dag",
     "REGIONS": "Regio's",
     "SUBREGIONS_VISITED": "onderliggende regio's",
-    "STATIONS_VISITED": "stations"
+    "STATIONS_VISITED": "stations",
+    "PUNCTUALITY": {
+      "TITLE": "Punctualiteit",
+      "NO_DATA_TITLE": "Nog geen punctualiteitsgegevens",
+      "NO_DATA_BODY": "Punctualiteit wordt berekend uit ritten met zowel een geplande als een werkelijke tijd. Ritten die uit Träwelling zijn geïmporteerd bevatten geplande tijden, handmatig toegevoegde ritten meestal niet.",
+      "ONTIME": "Op tijd",
+      "ONTIME_HINT": "Minder dan {{minutes}} minuten te laat aangekomen",
+      "AVG_ARRIVAL": "Gemiddelde aankomstvertraging",
+      "AVG_DEPARTURE": "Gemiddelde vertrekvertraging",
+      "MEDIAN_ARRIVAL": "Mediane aankomstvertraging",
+      "MEASURED_TRIPS": "Gemeten ritten",
+      "COVERAGE": "van {{total}} ritten",
+      "MINUTES": "minuten",
+      "DISTRIBUTION": "Verdeling aankomstvertraging",
+      "BY_OPERATOR": "Per vervoerder",
+      "BY_YEAR": "Per jaar",
+      "WORST_TRIPS": "Grootste vertragingen",
+      "OPERATOR": "Vervoerder",
+      "YEAR": "Jaar",
+      "TRIPS": "Ritten",
+      "AVG_DELAY": "Gem. vertraging",
+      "DELAY": "Vertraging (min)",
+      "DATE": "Datum",
+      "BUCKET": {
+        "EARLY": "Te vroeg",
+        "ONTIME": "< 5 min",
+        "D5_15": "5-15 min",
+        "D15_30": "15-30 min",
+        "D30_60": "30-60 min",
+        "D60PLUS": "60+ min"
+      }
+    }
   },
   "MENU": {
     "PROFILE": "Profiel",

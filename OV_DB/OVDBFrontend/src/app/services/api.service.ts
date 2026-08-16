@@ -20,6 +20,7 @@ import { StationAdminProperties } from "../models/stationAdminProperties.model";
 import { MapDataDTO } from "../models/map-data.model";
 import { RegionOperators } from "../models/region-operators.model";
 import { RegionStat } from "../models/region.model";
+import { PunctualityStats } from "../models/punctuality.model";
 import { UserProfile, UpdateProfile, ChangePassword, TraewellingTagMapping, TrainlogOperatorMapping } from "../models/user-profile.model";
 import { RouteInstanceListResponseDTO } from "../models/routeInstanceList.model";
 import { 
@@ -451,6 +452,14 @@ export class ApiService {
       url += `?year=${year}`;
     }
     return this.httpClient.get(url);
+  }
+
+  getPunctualityStats(map: string, year?: number | null): Observable<PunctualityStats> {
+    let url = environment.backend + "api/stats/punctuality/" + map;
+    if (year) {
+      url += `?year=${year}`;
+    }
+    return this.httpClient.get<PunctualityStats>(url);
   }
 
   getAutocompleteForTags() {

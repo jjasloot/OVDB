@@ -13,4 +13,12 @@
   <mat-tab [label]="'STATS.REGIONS'|translate">
     <app-region-stat/>
   </mat-tab>
+  <mat-tab [label]="'STATS.PUNCTUALITY.TITLE'|translate">
+    @defer (on viewport) {
+    <app-punctuality-stats />
+    }
+    @placeholder {
+    <p>{{ 'LOADING' | translate }}</p>
+    }
+  </mat-tab>
 </mat-tab-group>

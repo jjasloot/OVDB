@@ -336,7 +336,38 @@
     "PER_DAY": "Per day",
     "REGIONS": "Regions",
     "SUBREGIONS_VISITED": "underlying regions",
-    "STATIONS_VISITED": "stations"
+    "STATIONS_VISITED": "stations",
+    "PUNCTUALITY": {
+      "TITLE": "Punctuality",
+      "NO_DATA_TITLE": "No punctuality data yet",
+      "NO_DATA_BODY": "Punctuality is calculated from trips that have both a scheduled and an actual time. Trips imported from Träwelling include planned times; manually added trips usually do not.",
+      "ONTIME": "On time",
+      "ONTIME_HINT": "Arrived less than {{minutes}} minutes late",
+      "AVG_ARRIVAL": "Average arrival delay",
+      "AVG_DEPARTURE": "Average departure delay",
+      "MEDIAN_ARRIVAL": "Median arrival delay",
+      "MEASURED_TRIPS": "Trips measured",
+      "COVERAGE": "of {{total}} trips",
+      "MINUTES": "minutes",
+      "DISTRIBUTION": "Arrival delay distribution",
+      "BY_OPERATOR": "By operator",
+      "BY_YEAR": "By year",
+      "WORST_TRIPS": "Worst delays",
+      "OPERATOR": "Operator",
+      "YEAR": "Year",
+      "TRIPS": "Trips",
+      "AVG_DELAY": "Avg. delay",
+      "DELAY": "Delay (min)",
+      "DATE": "Date",
+      "BUCKET": {
+        "EARLY": "Early",
+        "ONTIME": "< 5 min",
+        "D5_15": "5-15 min",
+        "D15_30": "15-30 min",
+        "D30_60": "30-60 min",
+        "D60PLUS": "60+ min"
+      }
+    }
   },
   "MENU": {
     "PROFILE": "Profile",

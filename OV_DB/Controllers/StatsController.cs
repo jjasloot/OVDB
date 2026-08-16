@@ -162,6 +162,148 @@ namespace OV_DB.Controllers
             return Ok(new { Cumulative = dataCumulative, Single = dataSingle });
         }
 
+        private static readonly string[] DelayBucketKeys = ["EARLY", "ONTIME", "D5_15", "D15_30", "D30_60", "D60PLUS"];
+
+        [HttpGet("punctuality/{map}")]
+        public async Task<ActionResult<PunctualityStatsDTO>> GetPunctualityStats(Guid map, [FromQuery] int? year)
+        {
+            var userIdClaim = User.GetUserId();
+            if (userIdClaim < 0)
+            {
+                return Forbid();
+            }
+
+            const int onTimeThresholdMinutes = 5;
+            var query = QueryForInstances(map, year, userIdClaim);
+
+            var totalTrips = await query.CountAsync();
+
+            // DepartureDelayMinutes/ArrivalDelayMinutes are computed C# properties, so EF cannot
+            // translate them - pull the raw times for trips that have them and aggregate here.
+            var rows = await query
+                .Where(ri => (ri.StartTime.HasValue && ri.ScheduledStartTime.HasValue)
+                             || (ri.EndTime.HasValue && ri.ScheduledEndTime.HasValue))
+                .Select(ri => new
+                {
+                    ri.RouteInstanceId,
+                    ri.RouteId,
+                    ri.Date,
+                    ri.StartTime,
+                    ri.ScheduledStartTime,
+                    ri.EndTime,
+                    ri.ScheduledEndTime,
+                    ri.Route.Name,
+                    ri.Route.NameNL,
+                    Operator = ri.Route.OperatingCompany
+                })
+                .ToListAsync();
+
+            var departureDelays = rows
+                .Where(r => r.StartTime.HasValue && r.ScheduledStartTime.HasValue)
+                .Select(r => (r.StartTime.Value - r.ScheduledStartTime.Value).TotalMinutes)
+                .ToList();
+
+            var arrivals = rows
+                .Where(r => r.EndTime.HasValue && r.ScheduledEndTime.HasValue)
+                .Select(r => new
+                {
+                    r.RouteInstanceId,
+                    r.RouteId,
+                    r.Date,
+                    r.Name,
+                    r.NameNL,
+                    r.Operator,
+                    Delay = (r.EndTime.Value - r.ScheduledEndTime.Value).TotalMinutes
+                })
+                .ToList();
+
+            var result = new PunctualityStatsDTO
+            {
+                TotalTrips = totalTrips,
+                TripsWithDepartureData = departureDelays.Count,
+                TripsWithArrivalData = arrivals.Count,
+                OnTimeThresholdMinutes = onTimeThresholdMinutes,
+                AverageDepartureDelayMinutes = departureDelays.Count > 0 ? Math.Round(departureDelays.Average(), 1) : null,
+                AverageArrivalDelayMinutes = arrivals.Count > 0 ? Math.Round(arrivals.Average(a => a.Delay), 1) : null,
+                MedianArrivalDelayMinutes = Median(arrivals.Select(a => a.Delay).ToList()),
+                OnTimePercentage = arrivals.Count > 0
+                    ? Math.Round(100.0 * arrivals.Count(a => a.Delay < onTimeThresholdMinutes) / arrivals.Count, 1)
+                    : null,
+                ArrivalDelayDistribution = BucketDelays(arrivals.Select(a => a.Delay))
+            };
+
+            result.ByOperator = arrivals
+                .Where(a => !string.IsNullOrWhiteSpace(a.Operator))
+                .GroupBy(a => a.Operator.Trim())
+                .Select(g => new GroupPunctualityDTO
+                {
+                    Label = g.Key,
+                    Trips = g.Count(),
+                    AverageArrivalDelayMinutes = Math.Round(g.Average(a => a.Delay), 1),
+                    OnTimePercentage = Math.Round(100.0 * g.Count(a => a.Delay < onTimeThresholdMinutes) / g.Count(), 1)
+                })
+                .OrderByDescending(g => g.Trips)
+                .ThenBy(g => g.Label)
+                .Take(15)
+                .ToList();
+
+            result.ByYear = arrivals
+                .GroupBy(a => a.Date.Year)
+                .Select(g => new GroupPunctualityDTO
+                {
+                    Label = g.Key.ToString(CultureInfo.InvariantCulture),
+                    Trips = g.Count(),
+                    AverageArrivalDelayMinutes = Math.Round(g.Average(a => a.Delay), 1),
+                    OnTimePercentage = Math.Round(100.0 * g.Count(a => a.Delay < onTimeThresholdMinutes) / g.Count(), 1)
+                })
+                .OrderBy(g => g.Label)
+                .ToList();
+
+            result.WorstTrips = arrivals
+                .OrderByDescending(a => a.Delay)
+                .Take(10)
+                .Select(a => new DelayedTripDTO
+                {
+                    RouteInstanceId = a.RouteInstanceId,
+                    RouteId = a.RouteId,
+                    Date = a.Date,
+                    Name = a.Name,
+                    NameNL = a.NameNL,
+                    Operator = a.Operator,
+                    DelayMinutes = Math.Round(a.Delay, 1)
+                })
+                .ToList();
+
+            return Ok(result);
+        }
+
+        internal static double? Median(List<double> values)
+        {
+            if (values.Count == 0)
+            {
+                return null;
+            }
+            var sorted = values.OrderBy(v => v).ToList();
+            var mid = sorted.Count / 2;
+            return Math.Round(sorted.Count % 2 == 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid], 1);
+        }
+
+        internal static List<DelayBucketDTO> BucketDelays(IEnumerable<double> delays)
+        {
+            var counts = new int[DelayBucketKeys.Length];
+            foreach (var delay in delays)
+            {
+                var index = delay < -1 ? 0
+                    : delay < 5 ? 1
+                    : delay < 15 ? 2
+                    : delay < 30 ? 3
+                    : delay < 60 ? 4
+                    : 5;
+                counts[index]++;
+            }
+            return DelayBucketKeys.Select((key, i) => new DelayBucketDTO { Key = key, Count = counts[i] }).ToList();
+        }
+
         [HttpGet("reach/{map}")]
         public async Task<ActionResult> GetReachStats(Guid map, [FromQuery] int? year)
         {
