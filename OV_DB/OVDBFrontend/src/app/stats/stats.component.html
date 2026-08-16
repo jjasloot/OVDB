@@ -13,6 +13,14 @@
   <mat-tab [label]="'STATS.REGIONS'|translate">
     <app-region-stat/>
   </mat-tab>
+  <mat-tab [label]="'STATS.COMPLETION.TITLE'|translate">
+    @defer (on viewport) {
+    <app-station-completion />
+    }
+    @placeholder {
+    <p>{{ 'LOADING' | translate }}</p>
+    }
+  </mat-tab>
   <mat-tab [label]="'STATS.YEARREVIEW.TITLE'|translate">
     @defer (on viewport) {
     <app-year-in-review />

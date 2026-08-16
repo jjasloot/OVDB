@@ -164,6 +164,40 @@ namespace OV_DB.Controllers
 
         private static readonly string[] DelayBucketKeys = ["EARLY", "ONTIME", "D5_15", "D15_30", "D30_60", "D60PLUS"];
 
+        /// <summary>
+        /// The stations in a region the user has not visited yet. Uses the same hidden/special
+        /// exclusions as the region completion counts, so the numbers agree with the progress bars.
+        /// </summary>
+        [HttpGet("region/{regionId:int}/missing-stations")]
+        public async Task<ActionResult<List<MissingStationDTO>>> GetMissingStations(int regionId, [FromQuery] int limit = 250)
+        {
+            var userIdClaim = User.GetUserId();
+            if (userIdClaim < 0)
+            {
+                return Forbid();
+            }
+
+            limit = Math.Clamp(limit, 1, 1000);
+
+            var stations = await _context.Stations
+                .AsNoTracking()
+                .Where(s => s.Regions.Any(r => r.Id == regionId))
+                .Where(s => !s.Hidden && !s.Special)
+                .Where(s => !s.StationVisits.Any(sv => sv.UserId == userIdClaim))
+                .OrderBy(s => s.Name)
+                .Take(limit)
+                .Select(s => new MissingStationDTO
+                {
+                    Id = s.Id,
+                    Name = s.Name,
+                    Latitude = s.Lattitude,
+                    Longitude = s.Longitude
+                })
+                .ToListAsync();
+
+            return Ok(stations);
+        }
+
         [HttpGet("year-in-review/{map}")]
         public async Task<ActionResult<YearInReviewDTO>> GetYearInReview(Guid map, [FromQuery] int? year)
         {

@@ -334,6 +334,18 @@
     "REGIONS": "Regio's",
     "SUBREGIONS_VISITED": "onderliggende regio's",
     "STATIONS_VISITED": "stations",
+    "COMPLETION": {
+      "TITLE": "Volledigheid",
+      "STATIONS_VISITED": "stations bezocht",
+      "REGIONS_COMPLETED": "regio's compleet",
+      "REGIONS_IN_PROGRESS": "regio's bezig",
+      "REGIONS_UNTOUCHED": "regio's nog niet begonnen",
+      "CLOSEST": "Bijna compleet",
+      "NOTHING_IN_PROGRESS": "Nog geen regio's bezig. Bezoek een station om te beginnen.",
+      "TO_GO": "nog {{count}}",
+      "NONE_MISSING": "Alle stations in deze regio zijn bezocht.",
+      "TRUNCATED": "{{shown}} van {{total}} ontbrekende stations getoond."
+    },
     "YEARREVIEW": {
       "TITLE": "Jaaroverzicht",
       "NO_TRIPS": "Geen ritten geregistreerd in {{year}}.",

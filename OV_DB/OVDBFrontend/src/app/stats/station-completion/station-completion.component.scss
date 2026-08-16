@@ -1,0 +1,96 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+mat-card-title {
+  padding: 16px 16px 0;
+}
+
+.loading {
+  display: flex;
+  justify-content: center;
+  padding: 32px;
+}
+
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 16px;
+}
+
+.tile mat-card-content {
+  display: flex;
+  flex-direction: column;
+  padding-top: 16px;
+}
+
+.tile .value {
+  font-size: 1.9rem;
+  font-weight: 500;
+  line-height: 1.1;
+}
+
+.tile .label {
+  font-size: 0.8rem;
+  opacity: 0.7;
+}
+
+.region-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.flag {
+  font-size: 1.1rem;
+}
+
+mat-panel-description {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.counts {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+mat-panel-description mat-progress-bar {
+  max-width: 160px;
+}
+
+.remaining {
+  white-space: nowrap;
+  font-size: 0.85rem;
+  opacity: 0.75;
+}
+
+.stations {
+  columns: 220px;
+  margin: 0;
+  padding-left: 20px;
+}
+
+.stations li {
+  break-inside: avoid;
+  padding: 1px 0;
+}
+
+.truncated {
+  font-size: 0.85rem;
+  opacity: 0.7;
+}
+
+// The description column crowds the title on phones; stack instead.
+@media (max-width: 700px) {
+  mat-panel-description {
+    display: none;
+  }
+}

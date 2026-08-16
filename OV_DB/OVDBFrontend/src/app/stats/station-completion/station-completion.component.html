@@ -1,0 +1,90 @@
+<div class="container">
+  @if (loading()) {
+    <div class="loading">
+      <mat-spinner diameter="40" />
+    </div>
+  } @else {
+    <div class="tiles">
+      <mat-card appearance="outlined" class="tile">
+        <mat-card-content>
+          <span class="value">{{ totalVisited() }}</span>
+          <span class="label">{{ 'STATS.COMPLETION.STATIONS_VISITED' | translate }}</span>
+        </mat-card-content>
+      </mat-card>
+      <mat-card appearance="outlined" class="tile">
+        <mat-card-content>
+          <span class="value">{{ completed().length }}</span>
+          <span class="label">{{ 'STATS.COMPLETION.REGIONS_COMPLETED' | translate }}</span>
+        </mat-card-content>
+      </mat-card>
+      <mat-card appearance="outlined" class="tile">
+        <mat-card-content>
+          <span class="value">{{ inProgress().length }}</span>
+          <span class="label">{{ 'STATS.COMPLETION.REGIONS_IN_PROGRESS' | translate }}</span>
+        </mat-card-content>
+      </mat-card>
+      <mat-card appearance="outlined" class="tile">
+        <mat-card-content>
+          <span class="value">{{ untouched().length }}</span>
+          <span class="label">{{ 'STATS.COMPLETION.REGIONS_UNTOUCHED' | translate }}</span>
+        </mat-card-content>
+      </mat-card>
+    </div>
+
+    @if (inProgress().length === 0) {
+      <mat-card appearance="outlined">
+        <mat-card-content>
+          <p>{{ 'STATS.COMPLETION.NOTHING_IN_PROGRESS' | translate }}</p>
+        </mat-card-content>
+      </mat-card>
+    } @else {
+      <mat-card appearance="outlined">
+        <mat-card-title>{{ 'STATS.COMPLETION.CLOSEST' | translate }}</mat-card-title>
+        <mat-card-content>
+          <mat-accordion>
+            @for (row of inProgress(); track row.id) {
+              <mat-expansion-panel (opened)="loadMissing(row.id)">
+                <mat-expansion-panel-header>
+                  <mat-panel-title>
+                    <span class="region-name">
+                      @if (row.flagEmoji) {
+                        <span class="flag">{{ row.flagEmoji }}</span>
+                      }
+                      {{ name(row) }}
+                    </span>
+                  </mat-panel-title>
+                  <mat-panel-description>
+                    <span class="counts">{{ row.visited }} / {{ row.total }}</span>
+                    <mat-progress-bar mode="determinate" [value]="row.percentage" />
+                    <span class="remaining">
+                      {{ 'STATS.COMPLETION.TO_GO' | translate: { count: row.remaining } }}
+                    </span>
+                  </mat-panel-description>
+                </mat-expansion-panel-header>
+
+                @if (loadingMissing()[row.id]) {
+                  <mat-spinner diameter="24" />
+                } @else if (missingStations()[row.id]; as stations) {
+                  @if (stations.length === 0) {
+                    <p>{{ 'STATS.COMPLETION.NONE_MISSING' | translate }}</p>
+                  } @else {
+                    <ul class="stations">
+                      @for (station of stations; track station.id) {
+                        <li>{{ station.name }}</li>
+                      }
+                    </ul>
+                    @if (stations.length < row.remaining) {
+                      <p class="truncated">
+                        {{ 'STATS.COMPLETION.TRUNCATED' | translate: { shown: stations.length, total: row.remaining } }}
+                      </p>
+                    }
+                  }
+                }
+              </mat-expansion-panel>
+            }
+          </mat-accordion>
+        </mat-card-content>
+      </mat-card>
+    }
+  }
+</div>

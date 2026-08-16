@@ -337,6 +337,18 @@
     "REGIONS": "Regions",
     "SUBREGIONS_VISITED": "underlying regions",
     "STATIONS_VISITED": "stations",
+    "COMPLETION": {
+      "TITLE": "Completion",
+      "STATIONS_VISITED": "stations visited",
+      "REGIONS_COMPLETED": "regions completed",
+      "REGIONS_IN_PROGRESS": "regions in progress",
+      "REGIONS_UNTOUCHED": "regions not started",
+      "CLOSEST": "Closest to completion",
+      "NOTHING_IN_PROGRESS": "No regions in progress yet. Visit a station to get started.",
+      "TO_GO": "{{count}} to go",
+      "NONE_MISSING": "Every station in this region has been visited.",
+      "TRUNCATED": "Showing {{shown}} of {{total}} missing stations."
+    },
     "YEARREVIEW": {
       "TITLE": "Year in review",
       "NO_TRIPS": "No trips recorded in {{year}}.",
