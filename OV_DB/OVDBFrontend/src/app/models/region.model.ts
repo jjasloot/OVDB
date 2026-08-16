@@ -5,6 +5,8 @@ export interface Region {
   originalName: string;
   osmRelationId: number;
   isoCode?: string;
+  /** Levels below this country that the region achievement collects; only set on countries. */
+  achievementRegionDepth?: number;
   subRegions: Region[];
 }
 

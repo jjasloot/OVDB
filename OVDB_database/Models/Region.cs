@@ -24,4 +24,12 @@ public class Region
     public ICollection<Operator> OperatorsRestrictedToRegion { get; set; } = [];
     public string? FlagEmoji { get; set; }
     public string? IsoCode { get; set; }
+
+    /// <summary>
+    /// How many levels below this country the "collect the regions" achievement counts. Only
+    /// meaningful on top-level countries. One - the level directly underneath - suits almost
+    /// everything (provinces, Bundesländer, cantons); raise it where the first level is too
+    /// coarse to be interesting, such as the United Kingdom's four nations.
+    /// </summary>
+    public int AchievementRegionDepth { get; set; } = 1;
 }

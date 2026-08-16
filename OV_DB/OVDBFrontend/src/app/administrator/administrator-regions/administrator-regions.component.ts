@@ -12,6 +12,7 @@ import { MatChip } from "@angular/material/chips";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { MatFormField, MatLabel } from "@angular/material/form-field";
 import { MatInput } from "@angular/material/input";
+import { MatTooltip } from "@angular/material/tooltip";
 import { FormsModule } from "@angular/forms";
 
 @Component({
@@ -32,6 +33,7 @@ import { FormsModule } from "@angular/forms";
     MatFormField,
     MatLabel,
     MatInput,
+    MatTooltip,
     FormsModule
   ]
 })

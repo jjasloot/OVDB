@@ -154,52 +154,67 @@ namespace OV_DB.Tests
             Assert.Equal(3, streak[^1].Value);
         }
 
-        [Theory]
-        [InlineData(new[] { 11 }, 0)]           // Belgium as imported: provinces sit directly under the country
-        [InlineData(new[] { 12, 342 }, 0)]      // Netherlands: provinces are fine, do not descend to municipalities
-        [InlineData(new[] { 26, 140 }, 0)]      // Switzerland: cantons are fine
-        [InlineData(new[] { 4, 101 }, 0)]       // United Kingdom: 101 counties is too many, keep the four nations
-        [InlineData(new[] { 4, 30 }, 1)]        // Too few at the top and a workable level below: descend
-        [InlineData(new[] { 3 }, 0)]            // Nothing deeper to descend into
-        [InlineData(new[] { 2, 3 }, 0)]         // No level qualifies: fall back to the top
-        [InlineData(new[] { 80, 400 }, 0)]      // Top level already too large: descending would not help
-        [InlineData(new[] { 11, 43 }, 0)]       // A finer level imported later must not redefine the achievement
-        [InlineData(new[] { 3, 200, 9 }, 2)]    // Skips an over-large level to reach a workable one
-        public void ChooseCollectLevel_PicksTheDeepestSensibleLevel(int[] countsPerLevel, int expected)
-        {
-            Assert.Equal(expected, AchievementService.ChooseCollectLevel(countsPerLevel));
-        }
-
-        [Fact]
-        public void ResolveCollectibleRegions_CollectsDutchProvincesButBelgianProvinces()
+        /// <summary>A country with one level of children, and optionally a level below that.</summary>
+        private static List<AchievementService.RegionNode> Country(int id, string iso, int depth, int children, int grandchildrenEach = 0)
         {
             var regions = new List<AchievementService.RegionNode>
             {
-                new(1, null, "Netherlands", "Nederland", "NL"),
-                new(2, null, "Belgium", "België", "BE"),
+                new(id, null, $"Country {iso}", $"Land {iso}", iso, depth)
             };
-            // The Netherlands: twelve provinces directly under the country.
-            for (var i = 0; i < 12; i++)
+            for (var child = 0; child < children; child++)
             {
-                regions.Add(new AchievementService.RegionNode(100 + i, 1, $"Province {i}", $"Provincie {i}", null));
+                var childId = (id * 1000) + child;
+                regions.Add(new AchievementService.RegionNode(childId, id, $"Child {child}", $"Kind {child}", null, 1));
+                for (var grandchild = 0; grandchild < grandchildrenEach; grandchild++)
+                {
+                    regions.Add(new AchievementService.RegionNode((childId * 100) + grandchild, childId,
+                        $"Grandchild {grandchild}", $"Kleinkind {grandchild}", null, 1));
+                }
             }
-            // Belgium: three regions, whose ten provinces are what people collect.
-            regions.Add(new AchievementService.RegionNode(200, 2, "Flanders", "Vlaanderen", null));
-            regions.Add(new AchievementService.RegionNode(201, 2, "Wallonia", "Wallonië", null));
-            regions.Add(new AchievementService.RegionNode(202, 2, "Brussels", "Brussel", null));
-            for (var i = 0; i < 10; i++)
-            {
-                regions.Add(new AchievementService.RegionNode(300 + i, 200 + (i % 2), $"BE province {i}", $"BE provincie {i}", null));
-            }
+            return regions;
+        }
+
+        [Fact]
+        public void ResolveCollectibleRegions_CollectsOneLevelBelowTheCountryByDefault()
+        {
+            // The Netherlands as imported: twelve provinces directly under the country, each with
+            // municipalities below that nobody is collecting.
+            var regions = Country(1, "NL", depth: 1, children: 12, grandchildrenEach: 3);
 
             var (regionToCountry, countries) = AchievementService.ResolveCollectibleRegions(regions);
 
             Assert.Equal(12, countries[1].Total);
-            Assert.Equal(10, countries[2].Total);
-            // A Dutch province counts; a Belgian *region* does not - its provinces do.
-            Assert.Equal(1, regionToCountry[100]);
-            Assert.False(regionToCountry.ContainsKey(200));
-            Assert.Equal(2, regionToCountry[300]);
+            Assert.Equal(1, regionToCountry[1000]);          // a province counts
+            Assert.False(regionToCountry.ContainsKey(100000)); // a municipality does not
+        }
+
+        [Fact]
+        public void ResolveCollectibleRegions_DescendsWhenTheCountryAsksForIt()
+        {
+            // The United Kingdom: four nations, whose counties are the interesting level.
+            var regions = Country(2, "GB", depth: 2, children: 4, grandchildrenEach: 25);
+
+            var (regionToCountry, countries) = AchievementService.ResolveCollectibleRegions(regions);
+
+            Assert.Equal(100, countries[2].Total);
+            Assert.False(regionToCountry.ContainsKey(2000));  // a nation no longer counts
+            Assert.Equal(2, regionToCountry[200000]);         // its counties do
+        }
+
+        [Fact]
+        public void ResolveCollectibleRegions_ClampsAnOutOfRangeDepthInsteadOfCollectingNothing()
+        {
+            var tooDeep = Country(3, "XX", depth: 9, children: 4, grandchildrenEach: 2);
+            var tooShallow = Country(4, "YY", depth: 0, children: 4);
+
+            var (_, deepCountries) = AchievementService.ResolveCollectibleRegions(tooDeep);
+            var (shallowRegions, shallowCountries) = AchievementService.ResolveCollectibleRegions(tooShallow);
+
+            // Depth 9 stops at the deepest level that exists rather than returning nothing.
+            Assert.Equal(8, deepCountries[3].Total);
+            // Depth 0 behaves as the default of one.
+            Assert.Equal(4, shallowCountries[4].Total);
+            Assert.Equal(4, shallowRegions[4000]);
         }
 
         [Fact]
@@ -207,8 +222,8 @@ namespace OV_DB.Tests
         {
             var regions = new List<AchievementService.RegionNode>
             {
-                new(1, null, "Not a country", "Geen land", null),
-                new(2, 1, "Child", "Kind", null),
+                new(1, null, "Not a country", "Geen land", null, 1),
+                new(2, 1, "Child", "Kind", null, 1),
             };
 
             var (regionToCountry, countries) = AchievementService.ResolveCollectibleRegions(regions);

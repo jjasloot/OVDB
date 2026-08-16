@@ -11,6 +11,8 @@ public class RegionDTO
     public string OriginalName { get; set; } = null!;
     public long OsmRelationId { get; set; }
     public string? IsoCode { get; set; }
+    /// <summary>Only meaningful on a top-level country; see Region.AchievementRegionDepth.</summary>
+    public int AchievementRegionDepth { get; set; } = 1;
     public IEnumerable<RegionDTO> SubRegions { get; set; } = [];
 }
 
@@ -30,5 +32,6 @@ public class RegionIntermediate
     public string OriginalName { get; set; } = null!;
     public long OsmRelationId { get; set; }
     public string? IsoCode { get; set; }
+    public int AchievementRegionDepth { get; set; } = 1;
     public int? ParentRegionId { get; set; }
 }

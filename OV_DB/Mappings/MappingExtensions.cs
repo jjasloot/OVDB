@@ -242,6 +242,7 @@ namespace OV_DB.Mappings
                 OriginalName = r.OriginalName,
                 OsmRelationId = r.OsmRelationId,
                 IsoCode = r.IsoCode,
+                AchievementRegionDepth = r.AchievementRegionDepth,
                 ParentRegionId = r.ParentRegionId
             });
         }

@@ -77,7 +77,7 @@ public class AchievementService(OVDBDatabaseContext dbContext) : IAchievementSer
         // provinces sit directly under the country, Belgian ones sit under its three regions).
         var allRegions = await dbContext.Regions
             .AsNoTracking()
-            .Select(r => new RegionNode(r.Id, r.ParentRegionId, r.Name, r.NameNL, r.IsoCode))
+            .Select(r => new RegionNode(r.Id, r.ParentRegionId, r.Name, r.NameNL, r.IsoCode, r.AchievementRegionDepth))
             .ToListAsync(cancellationToken);
 
         var (subdivisionParent, countryInfo) = ResolveCollectibleRegions(allRegions);
@@ -285,20 +285,16 @@ public class AchievementService(OVDBDatabaseContext dbContext) : IAchievementSer
         return families;
     }
 
-    internal readonly record struct RegionNode(int Id, int? ParentRegionId, string Name, string NameNL, string IsoCode);
+    internal readonly record struct RegionNode(int Id, int? ParentRegionId, string Name, string NameNL, string IsoCode, int AchievementRegionDepth);
 
-    /// <summary>A collection should be granular enough to be interesting, small enough to finish.</summary>
-    internal const int MinCollectible = 5;
-    internal const int MaxCollectible = 60;
+    /// <summary>Deeper than this is municipalities, which nobody is collecting.</summary>
+    internal const int MaxRegionDepth = 3;
 
     /// <summary>
-    /// Picks, per country, which level of the region tree to collect, and returns a lookup from
-    /// region id to country id plus the display data for each country.
-    ///
-    /// Countries do not agree on what their "first level" means: the Netherlands has twelve
-    /// provinces directly under it, while Belgium has three regions whose children are the
-    /// provinces people actually collect. Rather than hard-code that, take the deepest level that
-    /// still forms a sensible collection.
+    /// Resolves which regions each country's "collect the regions" achievement counts, using the
+    /// depth chosen per country (one level below the country by default, which is the right level
+    /// for provinces, Bundesländer and cantons alike). Returns a lookup from region id to country
+    /// id plus the display data for each country.
     /// </summary>
     internal static (Dictionary<int, int> RegionToCountry, Dictionary<int, (string Name, string NameNL, int Total)> Countries)
         ResolveCollectibleRegions(IReadOnlyList<RegionNode> regions)
@@ -314,22 +310,27 @@ public class AchievementService(OVDBDatabaseContext dbContext) : IAchievementSer
         // A country is a top-level region carrying an ISO code.
         foreach (var country in regions.Where(r => !r.ParentRegionId.HasValue && !string.IsNullOrWhiteSpace(r.IsoCode)))
         {
-            var levels = new List<List<RegionNode>>();
-            var current = childrenByParent.TryGetValue(country.Id, out var firstLevel) ? firstLevel : [];
-            while (current.Count > 0 && levels.Count < 3)
+            var depth = Math.Clamp(country.AchievementRegionDepth, 1, MaxRegionDepth);
+            var chosen = childrenByParent.TryGetValue(country.Id, out var firstLevel) ? firstLevel : [];
+            for (var level = 1; level < depth; level++)
             {
-                levels.Add(current);
-                current = current
+                var deeper = chosen
                     .SelectMany(node => childrenByParent.TryGetValue(node.Id, out var kids) ? kids : [])
                     .ToList();
+                // Asking for a level the tree does not have must not wipe out the achievement:
+                // stop at the deepest level that actually exists.
+                if (deeper.Count == 0)
+                {
+                    break;
+                }
+                chosen = deeper;
             }
 
-            if (levels.Count == 0)
+            if (chosen.Count == 0)
             {
                 continue;
             }
 
-            var chosen = levels[ChooseCollectLevel([.. levels.Select(l => l.Count)])];
             foreach (var region in chosen)
             {
                 regionToCountry[region.Id] = country.Id;
@@ -338,31 +339,6 @@ public class AchievementService(OVDBDatabaseContext dbContext) : IAchievementSer
         }
 
         return (regionToCountry, countries);
-    }
-
-    /// <summary>
-    /// Normally the level directly under the country: in this database that is already the level
-    /// people collect (Dutch and Belgian provinces, German Bundesländer, Swiss cantons).
-    ///
-    /// Only when that level is uselessly small - the United Kingdom's four nations - is a deeper
-    /// level considered, and then only the shallowest one that forms a sensible collection.
-    /// Deliberately conservative: a country whose top level is already fine never descends, so
-    /// importing a finer level later cannot silently change what an achievement means.
-    /// </summary>
-    internal static int ChooseCollectLevel(IReadOnlyList<int> countsPerLevel)
-    {
-        if (countsPerLevel.Count == 0 || countsPerLevel[0] >= MinCollectible)
-        {
-            return 0;
-        }
-        for (var index = 1; index < countsPerLevel.Count; index++)
-        {
-            if (countsPerLevel[index] >= MinCollectible && countsPerLevel[index] <= MaxCollectible)
-            {
-                return index;
-            }
-        }
-        return 0;
     }
 
     /// <summary>Quarter, half, three quarters and all of a country's subdivisions.</summary>

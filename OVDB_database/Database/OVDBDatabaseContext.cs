@@ -53,6 +53,9 @@ namespace OVDB_database.Database
 
             modelBuilder.Entity<Station>().Property(s => s.Hidden).HasDefaultValue(false);
             modelBuilder.Entity<Station>().Property(s => s.Special).HasDefaultValue(false);
+            // One level below the country suits almost every country, so existing rows and new
+            // regions both default to it rather than to 0, which would collect nothing.
+            modelBuilder.Entity<Region>().Property(r => r.AchievementRegionDepth).HasDefaultValue(1);
 
             modelBuilder.Entity<Operator>(entity =>
              {

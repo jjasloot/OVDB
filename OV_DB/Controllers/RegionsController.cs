@@ -88,7 +88,8 @@ namespace OV_DB.Controllers
                 return NotFound();
 
             region.IsoCode = input.IsoCode;
-            
+            region.AchievementRegionDepth = Math.Clamp(input.AchievementRegionDepth, 1, 3);
+
             await _context.SaveChangesAsync();
             return Ok();
         }
@@ -330,6 +331,7 @@ namespace OV_DB.Controllers
                 OriginalName = r.OriginalName,
                 OsmRelationId = r.OsmRelationId,
                 IsoCode = r.IsoCode,
+                AchievementRegionDepth = r.AchievementRegionDepth,
                 SubRegions = list.Where(c => c.ParentRegionId == r.Id).Select(c => new RegionDTO
                 {
                     Id = c.Id,
