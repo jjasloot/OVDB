@@ -21,7 +21,11 @@ public enum VisitEvidence
 {
     /// <summary>The line passes within the threshold. Cannot tell stopping from passing through.</summary>
     Proximity = 0,
-    /// <summary>The train called here. Supplied by the importer from Träwelling, not derived here.</summary>
+    /// <summary>
+    /// The train called here, according to the operator's own calling pattern. Supplied by the
+    /// importer from Träwelling stopovers or OSM stop members — it cannot be derived from geometry,
+    /// which is exactly why it is worth fetching.
+    /// </summary>
     Stopover = 1,
     /// <summary>The journey started or ended here, so you were on the platform.</summary>
     RouteEndpoint = 2
@@ -45,10 +49,14 @@ public sealed record StationCandidate(
     VisitEvidence Evidence,
     double DistanceMetres);
 
+/// <summary>A station an operator says a train calls at, as named by the source it came from.</summary>
+public readonly record struct StopPoint(string Name, double Lattitude, double Longitude);
+
 public interface IStationTripMatcher
 {
     Task<IReadOnlyList<TripCandidate>> FindTripsForStationAsync(int userId, int stationId, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<StationCandidate>> FindStationsForTripAsync(int userId, int routeInstanceId, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<StationCandidate>> MatchStopsAsync(IEnumerable<StopPoint> stops, CancellationToken cancellationToken = default);
 }
 
 /// <summary>
@@ -72,6 +80,18 @@ public class StationTripMatcher(OVDBDatabaseContext dbContext, IMatcherIndexCach
 
     /// <summary>Coarse enough to halve the index, fine enough to be noise against 300 m.</summary>
     private const double SimplifyMetres = 50.0;
+
+    /// <summary>
+    /// How far an upstream stop may sit from the OVDB station it means. Tighter than the proximity
+    /// threshold because this is identity matching, not "did we pass nearby".
+    /// </summary>
+    private const double StopMatchMetres = 250.0;
+
+    /// <summary>
+    /// The wider radius allowed when the names also agree. Large interchanges are a kilometre end
+    /// to end and the two sources rarely pick the same point on them.
+    /// </summary>
+    private const double StopNameMatchMetres = 1000.0;
 
     private const double MetresPerDegreeLatitude = 111_320.0;
 
@@ -195,6 +215,85 @@ public class StationTripMatcher(OVDBDatabaseContext dbContext, IMatcherIndexCach
 
         // Strongest first here: the import list is read top-down and the weak tier is the long one.
         return results.OrderByDescending(r => r.Evidence).ThenBy(r => r.DistanceMetres).ToList();
+    }
+
+    /// <summary>
+    /// Turns an operator's calling pattern into OVDB stations. Unlike the two geometric directions,
+    /// this says the train <em>stopped</em>, which is the difference between a suggestion worth
+    /// making and one that is merely nearby.
+    /// </summary>
+    /// <remarks>
+    /// Matching is by position rather than name: Träwelling, OSM and OVDB disagree about names
+    /// constantly ("Utrecht Centraal" / "Utrecht CS" / "Utrecht Centraal Station"), while the
+    /// coordinates agree to within a platform's length. A name match widens the radius rather than
+    /// replacing it, for the big stations where the two sources pick different reference points.
+    /// </remarks>
+    public async Task<IReadOnlyList<StationCandidate>> MatchStopsAsync(IEnumerable<StopPoint> stops, CancellationToken cancellationToken = default)
+    {
+        var index = await GetIndexAsync(cancellationToken);
+        var matched = new Dictionary<int, double>();
+
+        foreach (var stop in stops)
+        {
+            StationPoint? best = null;
+            var bestDistance = double.MaxValue;
+
+            foreach (var station in index.Stations.Query(BoxAround(stop.Lattitude, stop.Longitude, StopNameMatchMetres)))
+            {
+                var distance = DistanceMetres(stop.Lattitude, stop.Longitude, station.Lattitude, station.Longitude);
+                if (distance > StopNameMatchMetres || distance >= bestDistance)
+                {
+                    continue;
+                }
+                best = station;
+                bestDistance = distance;
+            }
+
+            if (best == null)
+            {
+                continue;
+            }
+
+            // Beyond the tight radius, only take it if the names agree.
+            if (bestDistance > StopMatchMetres && !await NameAgreesAsync(best.Value.StationId, stop.Name, cancellationToken))
+            {
+                continue;
+            }
+
+            if (!matched.TryGetValue(best.Value.StationId, out var existing) || bestDistance < existing)
+            {
+                matched[best.Value.StationId] = bestDistance;
+            }
+        }
+
+        if (matched.Count == 0)
+        {
+            return [];
+        }
+
+        var ids = matched.Keys.ToList();
+        var names = await dbContext.Stations.AsNoTracking()
+            .Where(s => ids.Contains(s.Id))
+            .Select(s => new { s.Id, s.Name })
+            .ToListAsync(cancellationToken);
+
+        return names
+            .Select(s => new StationCandidate(s.Id, s.Name, VisitEvidence.Stopover, matched[s.Id]))
+            .OrderBy(c => c.StationName)
+            .ToList();
+    }
+
+    private async Task<bool> NameAgreesAsync(int stationId, string stopName, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(stopName))
+        {
+            return false;
+        }
+        var name = await dbContext.Stations.AsNoTracking()
+            .Where(s => s.Id == stationId)
+            .Select(s => s.Name)
+            .SingleOrDefaultAsync(cancellationToken);
+        return NameMatches(name, stopName);
     }
 
     private Task<MatcherIndex> GetIndexAsync(CancellationToken cancellationToken) =>

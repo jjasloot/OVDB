@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using OV_DB.Models;
 using OVDB_database.Models;
@@ -203,5 +204,18 @@ namespace OV_DB.Services
         /// <param name="user">User with valid tokens</param>
         /// <returns>List of active warning or danger alerts</returns>
         Task<List<TrawellingAlert>> GetAlertsAsync(User user);
+
+        /// <summary>
+        /// The full calling pattern of a trip — every station the train stops at, not just the two
+        /// the check-in covers.
+        /// </summary>
+        /// <remarks>
+        /// Costs one API call, so it is made <b>only when a trip is actually being imported</b>,
+        /// never while listing or browsing check-ins. This is the one signal that can tell stopping
+        /// apart from passing through, which route geometry cannot.
+        /// </remarks>
+        /// <param name="user">User with valid tokens</param>
+        /// <param name="tripId">Träwelling trip id, from <c>status.Checkin.Trip</c></param>
+        Task<List<TrawellingStopover>> GetTripStopoversAsync(User user, int tripId, CancellationToken cancellationToken = default);
     }
 }

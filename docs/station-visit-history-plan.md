@@ -188,18 +188,34 @@ correct date beats a guessed link.
 
 ## Importing a route (requirement 3)
 
-After an import, run *trip → stations* and show what the trip explains but is not marked, grouped by
-evidence:
+**Suggestions come from the operator's calling pattern, never from geometry.** This is the rule the
+first attempt got wrong, and it is worth stating plainly: a line passing a station looks *identical*
+whether or not the train stopped there. Proximity is fine as one ranked signal when the user is
+already dating a visit they asserted themselves; it is not a basis for telling them they might have
+visited somewhere. Regional services do call everywhere, so a proximity-driven list looks convincing
+— right up against an express, where it is nonsense.
 
-- **Started or ended here** — strongest, listed first.
-- **The train stopped here** — from the calling pattern, when there is one.
-- **Passed nearby** — proximity only, listed last and visually distinct.
+So suggestions exist only where a real stop list does, which means only at import:
 
-Every one is off by default. Ticking one **marks the station** (the explicit user action the base
-requirement demands) and dates it from that trip **at the level its group implies** — the first two
-groups set entry/exit and stopped respectively, and a proximity tick asks which. Leaving it alone
-does nothing. Explicitly dismissing one writes an undated tombstone, so it is not offered again on
-the next trip through.
+- **Träwelling** — `GET /stopovers/{tripId}`, giving every station the trip calls at rather than
+  just the two ends the check-in covers. Fetched **once, when a trip is imported**, never while
+  listing or browsing check-ins. The inbox row still holds the check-in payload at that moment, so
+  the trip id is free and it costs exactly one API call.
+- **OSM** — the relation's `stop` and `platform` members, which the importer already parsed and
+  then threw away. Clipped to the section actually being imported, because a relation often runs
+  far past both ends of the journey. Costs no extra request: the stops ride back on the DTO the
+  wizard already round-trips.
+
+Upstream stops are matched to OVDB stations **by position, not name** — Träwelling, OSM and OVDB
+disagree about names constantly while the coordinates agree to within a platform's length. 250 m is
+the plain radius; an agreeing name widens it to 1 km, for the big interchanges where the two sources
+pick different reference points.
+
+Nothing is pre-ticked and there is no "accept all". Ticking one **marks the station** (the explicit
+user action the base requirement demands) at the level chosen, dated from the trip where there is
+one. An OSM import has no trip yet, so those marks are undated on purpose and join the backfill
+queue. Leaving a row alone does nothing. Dismissing writes a `StationSuggestionDismissal`, which
+says only "stop asking" — never anything about whether the station was visited.
 
 This is the only flow that creates visits from suggestions, and it is opt-in per station.
 
@@ -355,19 +371,17 @@ missing-stations — keeps using row existence and is unaffected.
    with the oldest endpoint-grade one preselected, and three outcomes: got on/off, only stopped, or
    can't remember. No bulk confirm. A fourth button, "decide later", steps past a station without
    recording anything at all.
-6. ✅ **Import suggestions.** A list to come back to rather than a prompt after importing, because
-   Träwelling check-ins arrive in the background and there is no import moment to interrupt.
-   Nothing is pre-ticked, and dismissals are recorded separately from visits.
+6. ✅ **Import suggestions.** A dialog at import, driven by the operator's calling pattern —
+   Träwelling stopovers or OSM stop members. Nothing is pre-ticked, and dismissals are recorded
+   separately from visits.
 
-Measured once both existed, which changed two things:
-
-- **The suggestion window had to grow from 25 trips to 250.** The 25 most recent trips yielded
-  *nothing*, because suggestions cluster in a travel period rather than at the top of the list; 250
-  found 38 trips with 173 unmarked stations between them. It stops early once 20 trips have
-  something to offer, so the usual case is far cheaper than the 3 s worst case.
-- **The volume guard was needed after all, and is now built.** One real trip offers 33 proposals, so
-  a trip's list collapses after five with a count.
-6. **Consumers.** "New stations this year", discovery timeline, station achievements.
+   **This shipped wrong first and was rebuilt.** The first version was a standing page that swept
+   recent trips *by geometry*, which is exactly the inference that cannot support a suggestion: it
+   would have proposed every station an express blew past, and only looked convincing in testing
+   because regional services do call everywhere. It has been replaced by the two real stop sources
+   and the standing page deleted. The volume guard survives the rewrite — one real trip offered 33
+   proposals — so the list collapses after eight with a count.
+7. **Consumers.** "New stations this year", discovery timeline, station achievements.
 
 ## Failure modes
 

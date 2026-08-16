@@ -1,65 +1,57 @@
-<div class="page">
-  <h2>{{ 'STATIONS.SUGGESTIONS.TITLE' | translate }}</h2>
-  <p class="intro">{{ 'STATIONS.SUGGESTIONS.INTRO' | translate }}</p>
+<h2 mat-dialog-title>{{ 'STATIONS.SUGGESTIONS.TITLE' | translate }}</h2>
 
-  @if (loading()) {
-    <mat-spinner diameter="32" />
-  } @else if (trips().length === 0) {
-    <p class="note">{{ 'STATIONS.SUGGESTIONS.NOTHING' | translate }}</p>
-  } @else {
-    @for (trip of trips(); track trip.routeInstanceId) {
-      <section class="trip">
-        <header>
-          <span class="date">{{ trip.date | date: 'longDate' }}</span>
-          <span class="name">{{ trip.routeName }}</span>
-          @if (trip.from || trip.to) {
-            <span class="ends">{{ trip.from }} → {{ trip.to }}</span>
-          }
-        </header>
-
-        <ul>
-          @for (station of visibleStations(trip); track station.stationId) {
-            <li [class.busy]="isBusy(station.stationId)">
-              <div class="station">
-                <span class="station-name">{{ station.stationName }}</span>
-                @if (station.isEndpoint) {
-                  <span class="badge endpoint">{{ 'STATIONS.VISIT.EVIDENCE_ENDPOINT' | translate }}</span>
-                } @else {
-                  <span class="badge">{{ 'STATIONS.VISIT.EVIDENCE_NEARBY' | translate: { metres: (station.distanceMetres | number: '1.0-0') } }}</span>
-                }
-              </div>
-              <div class="choices">
-                <button
-                  mat-flat-button
-                  [disabled]="isBusy(station.stationId)"
-                  (click)="mark(trip, station.stationId, levels.EntryExit)"
-                >
-                  {{ 'STATIONS.VISIT.SET_ENTRY_EXIT' | translate }}
-                </button>
-                <button
-                  mat-stroked-button
-                  [disabled]="isBusy(station.stationId)"
-                  (click)="mark(trip, station.stationId, levels.Stopped)"
-                >
-                  {{ 'STATIONS.VISIT.SET_STOPPED' | translate }}
-                </button>
-                <button
-                  mat-button
-                  [disabled]="isBusy(station.stationId)"
-                  (click)="dismiss(station.stationId)"
-                >
-                  {{ 'STATIONS.SUGGESTIONS.DISMISS' | translate }}
-                </button>
-              </div>
-            </li>
-          }
-        </ul>
-        @if (hiddenCount(trip) > 0) {
-          <button mat-button (click)="expand(trip.routeInstanceId)">
-            {{ 'STATIONS.SUGGESTIONS.SHOW_MORE' | translate: { count: hiddenCount(trip) } }}
-          </button>
-        }
-      </section>
-    }
+<mat-dialog-content>
+  <p class="intro">
+    {{ 'STATIONS.SUGGESTIONS.INTRO' | translate: { trip: data.tripName } }}
+  </p>
+  @if (data.routeInstanceId === null) {
+    <p class="note">{{ 'STATIONS.SUGGESTIONS.NO_DATE' | translate }}</p>
   }
-</div>
+
+  <ul>
+    @for (station of visible(); track station.stationId) {
+      <li [class.busy]="isBusy(station.stationId)">
+        <div class="station">
+          <span class="station-name">{{ station.stationName }}</span>
+          <span class="badge">{{ 'STATIONS.SUGGESTIONS.CALLED_AT' | translate }}</span>
+          @if (station.distanceMetres > 100) {
+            <span class="offset">{{ station.distanceMetres | number: '1.0-0' }} m</span>
+          }
+        </div>
+        <div class="choices">
+          <button
+            mat-flat-button
+            [disabled]="isBusy(station.stationId)"
+            (click)="mark(station.stationId, levels.EntryExit)"
+          >
+            {{ 'STATIONS.VISIT.SET_ENTRY_EXIT' | translate }}
+          </button>
+          <button
+            mat-stroked-button
+            [disabled]="isBusy(station.stationId)"
+            (click)="mark(station.stationId, levels.Stopped)"
+          >
+            {{ 'STATIONS.VISIT.SET_STOPPED' | translate }}
+          </button>
+          <button
+            mat-button
+            [disabled]="isBusy(station.stationId)"
+            (click)="dismiss(station.stationId)"
+          >
+            {{ 'STATIONS.SUGGESTIONS.DISMISS' | translate }}
+          </button>
+        </div>
+      </li>
+    }
+  </ul>
+
+  @if (hiddenCount() > 0) {
+    <button mat-button (click)="expand()">
+      {{ 'STATIONS.SUGGESTIONS.SHOW_MORE' | translate: { count: hiddenCount() } }}
+    </button>
+  }
+</mat-dialog-content>
+
+<mat-dialog-actions>
+  <button mat-button mat-dialog-close>{{ 'STATIONS.SUGGESTIONS.DONE' | translate }}</button>
+</mat-dialog-actions>

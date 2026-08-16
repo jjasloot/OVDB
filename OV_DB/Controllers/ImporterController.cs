@@ -216,11 +216,24 @@ namespace OV_DB.Controllers
             if (fromStop == null || toStop == null)
             {
                 element.GeoJson = CoordsToGeoJson(oneList);
+                // Nothing was clipped, so the whole calling pattern applies.
+                element.Stops = ToStopDtos(stops);
                 return Ok(element);
             }
             if (relation.Tags.ContainsKey("ref"))
             {
                 element.Name = relation.Tags["ref"] + ": " + fromStop.Tags["friendlyName"] + " => " + toStop.Tags["friendlyName"];
+            }
+
+            // Only the stops on the section actually being imported: the relation may run far past
+            // both ends of the journey, and stations beyond it were not called at by this trip.
+            var fromStopIndex = stops.FindIndex(s => s.Id == fromStop.Id);
+            var toStopIndex = stops.FindLastIndex(s => s.Id == toStop.Id);
+            if (fromStopIndex >= 0 && toStopIndex >= 0)
+            {
+                var first = Math.Min(fromStopIndex, toStopIndex);
+                var last = Math.Max(fromStopIndex, toStopIndex);
+                element.Stops = ToStopDtos(stops.GetRange(first, last - first + 1));
             }
             var min = double.MaxValue;
             IPosition minPosition = null;
@@ -295,6 +308,21 @@ namespace OV_DB.Controllers
             }
             return Ok(element);
         }
+
+        /// <summary>
+        /// Stops reduced to what a station match needs. Names are kept only as a tie-breaker —
+        /// OSM, Träwelling and OVDB disagree about them constantly, while the coordinates agree.
+        /// </summary>
+        private static List<OSMStopDTO> ToStopDtos(IEnumerable<Element> stops) =>
+            stops
+                .Where(s => s.Lat.HasValue && s.Lon.HasValue)
+                .Select(s => new OSMStopDTO
+                {
+                    Name = s.Tags?.GetValueOrDefault("name"),
+                    Lattitude = s.Lat.Value,
+                    Longitude = s.Lon.Value
+                })
+                .ToList();
 
         private static void HandleNewStop(Member way, ILookup<long, Element> elementsById, List<Element> stops)
         {

@@ -22,6 +22,11 @@ import { MatCard, MatCardContent, MatCardHeader, MatCardTitle } from "@angular/m
 import { TrawellingTripContext } from "src/app/models/traewelling.model";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { STANDARD_DIALOG } from "src/app/constants/dialog-sizes";
+import { StationSuggestion } from "src/app/models/stationView.model";
+import {
+  StationSuggestionsComponent,
+  StationSuggestionsDialogData,
+} from "src/app/stations/station-suggestions/station-suggestions.component";
 
 @Component({
   selector: "app-route-instances",
@@ -281,9 +286,12 @@ export class RouteInstancesComponent implements OnInit {
     dialogRef.afterClosed().subscribe((result: RouteInstance) => {
       if (result) {
         this.apiService.updateRouteInstance(result).subscribe({
-          next: () => {
+          next: (response) => {
             this.router.navigate(['/admin/routes/instances', this.routeId()]);
             this.getData();
+            // Importing is the only moment the calling pattern is on hand, so the stations it
+            // says were called at but are not marked get offered now or not at all.
+            this.offerStationSuggestions(response, result);
             // Clear the fromTraewelling flag after successful creation
             this.fromTraewelling.set(false);
             this.trawellingTripData.set(null);
@@ -295,6 +303,31 @@ export class RouteInstancesComponent implements OnInit {
         });
       }
     });
+  }
+
+  /**
+   * Offers the stations this trip called at but that are not marked visited. Suggestions ride back
+   * on the import response because that is the one request where the calling pattern was fetched;
+   * they are not stored, so this is the moment to act on them or let them go.
+   */
+  private offerStationSuggestions(response: unknown, saved: RouteInstance): void {
+    const suggestions = (response as { stationSuggestions?: StationSuggestion[] })?.stationSuggestions;
+    if (!suggestions?.length) {
+      return;
+    }
+
+    this.dialog.open<StationSuggestionsComponent, StationSuggestionsDialogData>(
+      StationSuggestionsComponent,
+      {
+        maxWidth: '95vw',
+        width: '560px',
+        data: {
+          tripName: this.route()?.name ?? '',
+          routeInstanceId: saved.routeInstanceId ?? null,
+          stations: suggestions,
+        },
+      }
+    );
   }
 
   private toLocalDateString(date: Date): string {

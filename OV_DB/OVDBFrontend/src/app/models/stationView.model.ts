@@ -95,22 +95,24 @@ export interface RouteGeometry {
   coordinates: [number, number][];
 }
 
-/** A station a trip explains but that is not marked visited. */
+/**
+ * A station an import says the train called at, that is not marked visited. Comes from an
+ * operator's calling pattern — Träwelling stopovers or OSM stop members — never from geometry,
+ * which cannot tell stopping from passing through.
+ */
 export interface StationSuggestion {
   stationId: number;
   stationName: string;
   lattitude: number;
   longitude: number;
   isEndpoint: boolean;
+  /** How far the upstream stop sat from the OVDB station it was matched to. */
   distanceMetres: number;
 }
 
-export interface TripSuggestions {
-  routeInstanceId: number;
-  routeId: number;
-  routeName: string;
-  from: string;
-  to: string;
-  date: string;
-  stations: StationSuggestion[];
+/** A stop parsed out of an OSM relation's members, as returned by the importer. */
+export interface OSMStop {
+  name: string;
+  lattitude: number;
+  longitude: number;
 }

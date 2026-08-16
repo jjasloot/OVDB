@@ -171,6 +171,7 @@ namespace OV_DB
             services.AddScoped<IAchievementService, AchievementService>();
             services.AddScoped<IStationVisitService, StationVisitService>();
             services.AddScoped<IStationTripMatcher, StationTripMatcher>();
+            services.AddScoped<IStationSuggestionService, StationSuggestionService>();
             // Singleton so the ~65 MB route/station index is built once and shared, then dropped
             // again once nobody has asked for a match in a while.
             services.AddSingleton<IMatcherIndexCache, MatcherIndexCache>();

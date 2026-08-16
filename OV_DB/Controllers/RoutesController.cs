@@ -1019,7 +1019,7 @@ namespace OV_DB.Controllers
         }
 
         [HttpPut("instances")]
-        public async Task<ActionResult> UpdateInstance([FromBody] RouteInstanceUpdate update)
+        public async Task<ActionResult> UpdateInstance([FromBody] RouteInstanceUpdate update, [FromServices] IStationSuggestionService suggestionService)
         {
             var userIdClaim = User.GetUserId();
             if (userIdClaim < 0)
@@ -1138,15 +1138,32 @@ namespace OV_DB.Controllers
             }
             await _context.SaveChangesAsync();
 
+            var suggestions = new List<StationSuggestionDTO>();
             if (update.TraewellingStatusId.HasValue)
             {
+                // This is the import moment, and the only place the calling pattern is worth
+                // fetching: the inbox row still holds the check-in payload, so the trip id is free.
+                // Read it before the delete below takes it away.
+                var payload = await _context.TrawellingInboxStatuses
+                    .Where(s => s.UserId == userIdClaim && s.TrawellingStatusId == update.TraewellingStatusId.Value)
+                    .Select(s => s.PayloadJson)
+                    .FirstOrDefaultAsync();
+
+                var user = await _context.Users.SingleOrDefaultAsync(u => u.Id == userIdClaim);
+                if (payload != null && user != null)
+                {
+                    suggestions = await suggestionService.FromTrawellingStatusAsync(user, payload);
+                }
+
                 // The status is imported now; its Träwelling inbox row is no longer pending
                 await _context.TrawellingInboxStatuses
                     .Where(s => s.UserId == userIdClaim && s.TrawellingStatusId == update.TraewellingStatusId.Value)
                     .ExecuteDeleteAsync();
             }
 
-            return Ok();
+            // Stations this trip calls at that are not marked. Proposals only — the response carries
+            // them so the user can act while the trip is still in mind, and nothing is stored.
+            return Ok(new { stationSuggestions = suggestions });
         }
 
 

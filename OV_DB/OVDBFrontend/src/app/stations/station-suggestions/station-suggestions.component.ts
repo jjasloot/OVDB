@@ -1,89 +1,100 @@
-import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from "@angular/core";
+import { ChangeDetectionStrategy, Component, inject, signal } from "@angular/core";
+import {
+  MAT_DIALOG_DATA,
+  MatDialogActions,
+  MatDialogContent,
+  MatDialogRef,
+  MatDialogTitle,
+} from "@angular/material/dialog";
 import { MatButton } from "@angular/material/button";
-import { MatProgressSpinner } from "@angular/material/progress-spinner";
-import { DatePipe, DecimalPipe } from "@angular/common";
+import { DecimalPipe } from "@angular/common";
 import { TranslateModule } from "@ngx-translate/core";
 import { firstValueFrom } from "rxjs";
 import { ApiService } from "src/app/services/api.service";
-import { StationVisitLevel, TripSuggestions } from "src/app/models/stationView.model";
+import { StationSuggestion, StationVisitLevel } from "src/app/models/stationView.model";
+
+export interface StationSuggestionsDialogData {
+  /** What the suggestions came from, shown so the user knows what they are answering about. */
+  tripName: string;
+  /**
+   * The trip that supplies the date, when there is one. Träwelling imports have it; a freshly
+   * imported OSM route does not, and marking then leaves an undated visit for the backfill.
+   */
+  routeInstanceId: number | null;
+  stations: StationSuggestion[];
+}
 
 /**
- * Stations your recent trips pass that are not marked visited.
+ * Stations an import says the train called at, that are not marked visited.
  *
- * This is the only screen that turns inference into visits, so it does it one tick at a time and
- * never in bulk: proximity is only about 66% precise, and a measured 14% of unvisited stations sit
- * within 300 m of a route that has been ridden. Nothing here is pre-ticked, and leaving a row alone
- * does nothing at all.
+ * Shown once, at import, because that is the only moment the operator's calling pattern is on hand
+ * — Träwelling stopovers or OSM stop members. Route geometry is deliberately not used here: a line
+ * passing a station looks identical whether or not the train stopped, so it cannot support a
+ * suggestion.
  *
- * It is a list to come back to rather than a prompt after importing, because Träwelling check-ins
- * arrive in the background — there is no import moment to interrupt.
+ * Nothing is pre-ticked and there is no "accept all". Each station is marked, dismissed, or left
+ * alone, and leaving it alone does nothing.
  */
 @Component({
   selector: "app-station-suggestions",
   templateUrl: "./station-suggestions.component.html",
   styleUrl: "./station-suggestions.component.scss",
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [MatButton, MatProgressSpinner, DatePipe, DecimalPipe, TranslateModule],
+  imports: [
+    MatDialogTitle,
+    MatDialogContent,
+    MatDialogActions,
+    MatButton,
+    DecimalPipe,
+    TranslateModule,
+  ],
 })
-export class StationSuggestionsComponent implements OnInit {
+export class StationSuggestionsComponent {
   private apiService = inject(ApiService);
+  private dialogRef = inject(MatDialogRef<StationSuggestionsComponent>);
+  data = inject<StationSuggestionsDialogData>(MAT_DIALOG_DATA);
 
-  trips = signal<TripSuggestions[]>([]);
-  loading = signal(true);
-  /** Stations resolved this session, so a row can disappear without refetching everything. */
+  remaining = signal<StationSuggestion[]>(this.data.stations);
   busy = signal<Set<number>>(new Set());
-  /** Trips the user has asked to see in full. */
-  private expanded = signal<Set<number>>(new Set());
+  private expanded = signal(false);
 
   readonly levels = StationVisitLevel;
 
-  /**
-   * A long journey should not open with a wall of proposals — one measured trip offers 33. Endpoint
-   * matches always show, since they are the ones worth acting on; the weak proximity tail collapses
-   * behind a count.
-   */
-  private static readonly COLLAPSE_AFTER = 5;
+  /** A long journey should not open with a wall of proposals; one measured trip offers 33. */
+  private static readonly COLLAPSE_AFTER = 8;
 
-  visibleStations(trip: TripSuggestions) {
-    if (this.expanded().has(trip.routeInstanceId)) {
-      return trip.stations;
-    }
-    return trip.stations.slice(0, StationSuggestionsComponent.COLLAPSE_AFTER);
+  visible() {
+    return this.expanded()
+      ? this.remaining()
+      : this.remaining().slice(0, StationSuggestionsComponent.COLLAPSE_AFTER);
   }
 
-  hiddenCount(trip: TripSuggestions): number {
-    return this.expanded().has(trip.routeInstanceId)
+  hiddenCount(): number {
+    return this.expanded()
       ? 0
-      : Math.max(0, trip.stations.length - StationSuggestionsComponent.COLLAPSE_AFTER);
+      : Math.max(0, this.remaining().length - StationSuggestionsComponent.COLLAPSE_AFTER);
   }
 
-  expand(routeInstanceId: number): void {
-    this.expanded.update((current) => new Set(current).add(routeInstanceId));
-  }
-
-  ngOnInit(): void {
-    void this.load();
-  }
-
-  private async load(): Promise<void> {
-    this.loading.set(true);
-    try {
-      this.trips.set(await firstValueFrom(this.apiService.getStationSuggestions()));
-    } catch {
-      this.trips.set([]);
-    } finally {
-      this.loading.set(false);
-    }
+  expand(): void {
+    this.expanded.set(true);
   }
 
   isBusy(stationId: number): boolean {
     return this.busy().has(stationId);
   }
 
-  async mark(trip: TripSuggestions, stationId: number, level: StationVisitLevel): Promise<void> {
+  async mark(stationId: number, level: StationVisitLevel): Promise<void> {
     this.setBusy(stationId, true);
     try {
-      await firstValueFrom(this.apiService.markSuggestedStation(stationId, trip.routeInstanceId, level));
+      // With a trip the visit is dated from it; without one it stays undated on purpose rather
+      // than claiming today, which nothing here knows.
+      if (this.data.routeInstanceId !== null) {
+        await firstValueFrom(
+          this.apiService.markSuggestedStation(stationId, this.data.routeInstanceId, level)
+        );
+      } else {
+        await firstValueFrom(this.apiService.updateStation(stationId, true, level));
+      }
       this.remove(stationId);
     } catch {
       this.setBusy(stationId, false);
@@ -113,13 +124,11 @@ export class StationSuggestionsComponent implements OnInit {
     });
   }
 
-  /** A station can be suggested by several trips, so it goes from all of them at once. */
   private remove(stationId: number): void {
-    this.trips.update((trips) =>
-      trips
-        .map((trip) => ({ ...trip, stations: trip.stations.filter((s) => s.stationId !== stationId) }))
-        .filter((trip) => trip.stations.length > 0)
-    );
+    this.remaining.update((stations) => stations.filter((s) => s.stationId !== stationId));
     this.setBusy(stationId, false);
+    if (this.remaining().length === 0) {
+      this.dialogRef.close();
+    }
   }
 }

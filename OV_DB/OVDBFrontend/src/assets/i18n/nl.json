@@ -42,11 +42,12 @@
       "ALL_DONE": "Elk bezoek heeft een datum of is opzij gezet."
     },
     "SUGGESTIONS": {
-      "LINK": "Mogelijk gemiste stations",
-      "TITLE": "Stations die je misschien gemist hebt",
-      "INTRO": "Je recente ritten komen langs deze stations, maar ze staan niet als bezocht. Er wordt niets gemarkeerd tot jij het zegt.",
-      "NOTHING": "Je recente ritten komen nergens langs waar je nog niet over besloten hebt.",
+      "TITLE": "Stations op deze rit",
+      "INTRO": "{{trip}} stopt op deze stations, en je hebt ze niet als bezocht gemarkeerd. Er wordt niets gemarkeerd tot jij het zegt.",
+      "NO_DATE": "Deze route heeft nog geen datum, dus wat je hier markeert blijft ongedateerd tot je het dateert.",
+      "CALLED_AT": "trein stopt hier",
       "DISMISS": "Niet meer vragen",
+      "DONE": "Klaar",
       "SHOW_MORE": "Toon nog {{count}} op deze rit"
     }
   },

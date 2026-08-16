@@ -1710,6 +1710,45 @@ namespace OV_DB.Services
             return request;
         }
 
+        /// <summary>
+        /// Every station this trip calls at. See <see cref="ITrawellingService.GetTripStopoversAsync"/>
+        /// for why this is only ever called at import.
+        /// </summary>
+        public async Task<List<TrawellingStopover>> GetTripStopoversAsync(User user, int tripId, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                if (!await EnsureValidTokenAsync(user))
+                    return [];
+
+                var response = await SendAsync(
+                    () => CreateApiRequest(HttpMethod.Get, $"{_baseUrl}/stopovers/{tripId}", user),
+                    cancellationToken: cancellationToken);
+                if (!response.IsSuccessStatusCode)
+                {
+                    _logger.LogWarning("Träwelling returned {StatusCode} fetching stopovers for trip {TripId}",
+                        (int)response.StatusCode, tripId);
+                    return [];
+                }
+
+                var content = await response.Content.ReadAsStringAsync(cancellationToken);
+                if (JObject.Parse(content)["data"] is not JObject data)
+                    return [];
+
+                // Keyed by trip id, because the endpoint accepts a comma-separated list. We only
+                // ever ask for one, so take whichever key came back rather than assuming its shape.
+                var stopovers = data[tripId.ToString()] ?? data.Properties().FirstOrDefault()?.Value;
+                return stopovers?.ToObject<List<TrawellingStopover>>() ?? [];
+            }
+            catch (Exception ex)
+            {
+                // A missing calling pattern costs suggestions, not the import. Never fail the one
+                // for the other.
+                _logger.LogError(ex, "Error fetching stopovers for trip {TripId} for user {UserId}", tripId, user.Id);
+                return [];
+            }
+        }
+
         private async Task<HttpResponseMessage> SendAsync(Func<HttpRequestMessage> requestFactory, int maxRetries = 5, CancellationToken cancellationToken = default)
         {
             int attempt = 0;

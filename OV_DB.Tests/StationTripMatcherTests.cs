@@ -250,6 +250,83 @@ public class StationTripMatcherTests
     }
 
     [Fact]
+    public async Task AStopBecomesTheStationItSitsOn()
+    {
+        using var context = await SeedAsync();
+        await AddStationAsync(context, 10, "Halt", BaseLat, BaseLon);
+        var nearby = Offset(60, 0);
+
+        var matched = await NewMatcher(context).MatchStopsAsync([new StopPoint("Halt", nearby.Lat, nearby.Lon)]);
+
+        var candidate = Assert.Single(matched);
+        Assert.Equal(10, candidate.StationId);
+        // A stop is the one thing that says the train stopped, rather than merely passed.
+        Assert.Equal(VisitEvidence.Stopover, candidate.Evidence);
+    }
+
+    [Fact]
+    public async Task AStopFarFromAnyStationMatchesNothing()
+    {
+        using var context = await SeedAsync();
+        await AddStationAsync(context, 10, "Halt", BaseLat, BaseLon);
+        var faraway = Offset(3000, 0);
+
+        Assert.Empty(await NewMatcher(context).MatchStopsAsync([new StopPoint("Halt", faraway.Lat, faraway.Lon)]));
+    }
+
+    [Fact]
+    public async Task AnAgreeingNameReachesFurtherThanPositionAlone()
+    {
+        // Big interchanges are a kilometre end to end and the two sources rarely pick the same
+        // point on them, so the name is what rescues the match.
+        using var context = await SeedAsync();
+        await AddStationAsync(context, 10, "Grote Overstap", BaseLat, BaseLon);
+        var offPlatform = Offset(600, 0);
+
+        var matched = await NewMatcher(context).MatchStopsAsync([new StopPoint("grote overstap", offPlatform.Lat, offPlatform.Lon)]);
+
+        Assert.Equal(10, Assert.Single(matched).StationId);
+    }
+
+    [Fact]
+    public async Task ADisagreeingNameDoesNotReachFurther()
+    {
+        using var context = await SeedAsync();
+        await AddStationAsync(context, 10, "Grote Overstap", BaseLat, BaseLon);
+        var offPlatform = Offset(600, 0);
+
+        // Without the name agreeing, 600 m is too far to call it the same station.
+        Assert.Empty(await NewMatcher(context).MatchStopsAsync([new StopPoint("Somewhere else", offPlatform.Lat, offPlatform.Lon)]));
+    }
+
+    [Fact]
+    public async Task RepeatedStopsAtOneStationCollapse()
+    {
+        using var context = await SeedAsync();
+        await AddStationAsync(context, 10, "Halt", BaseLat, BaseLon);
+        var a = Offset(30, 0);
+        var b = Offset(60, 0);
+
+        var matched = await NewMatcher(context).MatchStopsAsync(
+            [new StopPoint("Halt", a.Lat, a.Lon), new StopPoint("Halt", b.Lat, b.Lon)]);
+
+        var candidate = Assert.Single(matched);
+        // And it keeps the closest reading of the two.
+        Assert.InRange(candidate.DistanceMetres, 28, 32);
+    }
+
+    [Fact]
+    public async Task StopMatchingNeverMarksAnythingVisited()
+    {
+        using var context = await SeedAsync();
+        await AddStationAsync(context, 10, "Halt", BaseLat, BaseLon);
+
+        await NewMatcher(context).MatchStopsAsync([new StopPoint("Halt", BaseLat, BaseLon)]);
+
+        Assert.Empty(context.StationVisits);
+    }
+
+    [Fact]
     public async Task MatchingNeverMarksAnythingVisited()
     {
         // The base requirement, asserted rather than assumed: inference proposes, the user decides.

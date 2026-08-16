@@ -15,14 +15,15 @@ import { MultipleEdit } from "../models/multipleEdit.model";
 import { RouteInstance } from "../models/routeInstance.model";
 import { StationMap } from "../models/stationMap.model";
 import {
+  OSMStop,
   RouteGeometry,
   StationBackfillItem,
+  StationSuggestion,
   StationView,
   StationVisitDates,
   StationVisitLevel,
   StationVisitState,
   TripCandidateGroup,
-  TripSuggestions,
 } from "../models/stationView.model";
 import { StationCountry } from "../models/stationCountry.model";
 import { StationAdminProperties } from "../models/stationAdminProperties.model";
@@ -580,10 +581,13 @@ export class ApiService {
     return this.httpClient.get<RouteGeometry>(url);
   }
 
-  /** Recent trips that pass stations not marked visited. Proposals only. */
-  getStationSuggestions(): Observable<TripSuggestions[]> {
-    const url = environment.backend + "api/stationsuggestions";
-    return this.httpClient.get<TripSuggestions[]>(url);
+  /**
+   * Stations an imported OSM relation calls at that are not marked visited. Sent the stops the
+   * import already parsed, so it costs no extra OSM request — and it is called once, at import.
+   */
+  getSuggestionsFromStops(stops: OSMStop[]): Observable<StationSuggestion[]> {
+    const url = environment.backend + "api/stationsuggestions/from-stops";
+    return this.httpClient.post<StationSuggestion[]>(url, stops);
   }
 
   /** Marks one suggested station, dated from the trip that suggested it. */

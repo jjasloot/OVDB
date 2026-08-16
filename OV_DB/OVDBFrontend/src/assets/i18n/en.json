@@ -43,11 +43,12 @@
       "ALL_DONE": "Every visit either has a date or has been set aside."
     },
     "SUGGESTIONS": {
-      "LINK": "Stations you may have missed",
-      "TITLE": "Stations you may have missed",
-      "INTRO": "Your recent trips pass these stations, but they are not marked visited. Nothing is marked until you say so.",
-      "NOTHING": "Your recent trips pass nothing you have not already decided about.",
+      "TITLE": "Stations along this trip",
+      "INTRO": "{{trip}} calls at these stations, and you have not marked them visited. Nothing is marked until you say so.",
+      "NO_DATE": "This route has no date yet, so anything you mark here stays undated until you date it.",
+      "CALLED_AT": "train stops here",
       "DISMISS": "Don't ask again",
+      "DONE": "Done",
       "SHOW_MORE": "Show {{count}} more along this trip"
     }
   },

@@ -14,102 +14,47 @@ using OVDB_database.Models;
 namespace OV_DB.Controllers
 {
     /// <summary>
-    /// Stations a trip passes that are not marked visited.
+    /// Acting on the station suggestions an import produced.
     /// </summary>
     /// <remarks>
-    /// This is the only flow that turns inference into visits, and it does so strictly one tick at a
-    /// time: nothing here marks anything until the user asks for a specific station, and there is no
-    /// "accept all". Proximity is only ~66% precise — a measured 14% of unvisited stations sit within
-    /// 300 m of a ridden route — which is exactly why it proposes and never decides.
+    /// The suggestions themselves are made at import — see <see cref="IStationSuggestionService"/> —
+    /// because only the importer has the operator's calling pattern, and route geometry cannot tell
+    /// stopping from passing through. This controller is only the two things the user can do with
+    /// one: mark it, or say stop asking. Both are per station; there is no "accept all".
     /// </remarks>
     [Route("api/[controller]")]
     [ApiController]
     [Authorize]
     public class StationSuggestionsController(
         OVDBDatabaseContext context,
-        IStationTripMatcher matcher,
+        IStationSuggestionService suggestionService,
         IStationVisitService stationVisitService) : ControllerBase
     {
         /// <summary>
-        /// How far back to look. Measured: the 25 most recent trips yielded nothing at all for this
-        /// user, while 250 found 38 trips with suggestions — they cluster in a travel period rather
-        /// than at the top of the list, so a small window simply misses them.
+        /// Stations an OSM relation calls at that are not marked visited, from the stops the
+        /// importer parsed out of the relation's members.
         /// </summary>
-        private const int MaxTripsToScan = 250;
-
-        /// <summary>
-        /// Stop once this many trips have something to offer. Scanning all 250 costs ~3 s; stopping
-        /// early usually costs far less, and twenty trips is already more than one sitting's work.
-        /// </summary>
-        private const int MaxTripsToReturn = 20;
-
-        /// <summary>
-        /// Recent trips that pass unmarked stations. Träwelling check-ins arrive in the background,
-        /// so there is no import moment to interrupt — this is the list to come back to instead.
-        /// </summary>
-        [HttpGet]
-        public async Task<IActionResult> GetRecent()
+        /// <remarks>
+        /// Called once, straight after importing a route, with the stops that import already
+        /// produced — no extra OSM request. Unlike the Träwelling path these suggestions carry no
+        /// date, because a freshly imported route has no trip on it yet; marking one leaves an
+        /// undated visit, which is exactly what the backfill is for.
+        /// </remarks>
+        [HttpPost("from-stops")]
+        public async Task<IActionResult> FromStops([FromBody] List<OSMStopDTO> stops)
         {
             var userId = User.GetUserId();
             if (userId < 0)
             {
                 return Forbid();
             }
-
-            var trips = await context.RouteInstances.AsNoTracking()
-                .Where(ri => ri.Route.RouteMaps.Any(rm => rm.Map.UserId == userId))
-                .OrderByDescending(ri => ri.Date)
-                .Take(MaxTripsToScan)
-                .Select(ri => new
-                {
-                    ri.RouteInstanceId,
-                    ri.RouteId,
-                    ri.Date,
-                    ri.Route.Name,
-                    ri.Route.From,
-                    ri.Route.To
-                })
-                .ToListAsync();
-
-            var results = new List<TripSuggestionsDTO>();
-            foreach (var trip in trips)
+            if (stops == null || stops.Count == 0)
             {
-                var stations = await SuggestionsForAsync(userId, trip.RouteInstanceId);
-                if (stations.Count == 0)
-                {
-                    continue;
-                }
-                results.Add(new TripSuggestionsDTO
-                {
-                    RouteInstanceId = trip.RouteInstanceId,
-                    RouteId = trip.RouteId,
-                    RouteName = trip.Name,
-                    From = trip.From,
-                    To = trip.To,
-                    Date = trip.Date,
-                    Stations = stations
-                });
-
-                if (results.Count >= MaxTripsToReturn)
-                {
-                    break;
-                }
+                return Ok(new List<StationSuggestionDTO>());
             }
 
-            return Ok(results);
-        }
-
-        /// <summary>Suggestions for one trip, for coming back to a specific journey.</summary>
-        [HttpGet("{routeInstanceId:int}")]
-        public async Task<IActionResult> GetForTrip(int routeInstanceId)
-        {
-            var userId = User.GetUserId();
-            if (userId < 0)
-            {
-                return Forbid();
-            }
-
-            return Ok(await SuggestionsForAsync(userId, routeInstanceId));
+            var points = stops.Select(s => new StopPoint(s.Name, s.Lattitude, s.Longitude));
+            return Ok(await suggestionService.FromStopsAsync(userId, points));
         }
 
         /// <summary>
@@ -166,46 +111,6 @@ namespace OV_DB.Controllers
             }
 
             return Ok();
-        }
-
-        private async Task<List<StationSuggestionDTO>> SuggestionsForAsync(int userId, int routeInstanceId)
-        {
-            var candidates = await matcher.FindStationsForTripAsync(userId, routeInstanceId);
-            if (candidates.Count == 0)
-            {
-                return [];
-            }
-
-            var stationIds = candidates.Select(c => c.StationId).ToList();
-
-            // Anything already marked, or explicitly dismissed, is not a suggestion.
-            var visited = await context.StationVisits.AsNoTracking()
-                .Where(sv => sv.UserId == userId && stationIds.Contains(sv.StationId))
-                .Select(sv => sv.StationId)
-                .ToListAsync();
-            var dismissed = await context.StationSuggestionDismissals.AsNoTracking()
-                .Where(d => d.UserId == userId && stationIds.Contains(d.StationId))
-                .Select(d => d.StationId)
-                .ToListAsync();
-            var excluded = visited.Concat(dismissed).ToHashSet();
-
-            var positions = await context.Stations.AsNoTracking()
-                .Where(s => stationIds.Contains(s.Id))
-                .Select(s => new { s.Id, s.Lattitude, s.Longitude })
-                .ToDictionaryAsync(s => s.Id);
-
-            return candidates
-                .Where(c => !excluded.Contains(c.StationId))
-                .Select(c => new StationSuggestionDTO
-                {
-                    StationId = c.StationId,
-                    StationName = c.StationName,
-                    Lattitude = positions[c.StationId].Lattitude,
-                    Longitude = positions[c.StationId].Longitude,
-                    IsEndpoint = c.Evidence == VisitEvidence.RouteEndpoint,
-                    DistanceMetres = c.DistanceMetres
-                })
-                .ToList();
         }
     }
 }
