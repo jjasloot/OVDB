@@ -340,15 +340,17 @@ missing-stations — keeps using row existence and is unaffected.
 
 ## Rollout
 
-1. **Migration and the write boundary.** Columns, indexes, `StationVisitService` as the only writer,
-   merge fix, architecture test. No visible change.
-2. **Marking at two levels.** Web map three colours, non-expiring snackbar offering the entry/exit
+1. ✅ **Migration and the write boundary.** Columns, indexes, `StationVisitService` as the only
+   writer, merge fix, architecture test. No visible change.
+2. ✅ **Marking at two levels.** Web map three colours, non-expiring snackbar offering the entry/exit
    upgrade, un-mark dialog; Telegram verbs on the same service.
-3. **The matcher.** One service, both directions, cached STRtree. Nothing user-facing yet; testable
-   in isolation.
-4. **Dating on the web.** Telegram already stamps today and needs nothing further. The web gets the
-   date controls: the snackbar offers a matched date when the matcher found one, and the station
-   popup gains an edit dialog — pick a date, or pick a candidate trip and take its date.
+3. ✅ **The matcher.** One service, both directions, cached segment index. Nothing user-facing;
+   testable in isolation.
+4. ✅ **Dating on the web.** Telegram already stamps today and needs nothing further. The station
+   popup gained an edit dialog — pick a date, or pick a candidate trip and take its date.
+   **Not done deliberately:** the snackbar does not offer a matched date after marking. It already
+   carries Undo and Entry/exit, and a third action on a bar that never expires is one too many;
+   the dialog is one tap away and is the surface that can show why a trip is a candidate at all.
 5. **Backfill.** One station at a time — map, candidate trips oldest-first with the oldest
    preselected, confirm or deny. No bulk confirm.
 6. **Import suggestions.** The post-import list, off by default, dismissals recorded separately.
