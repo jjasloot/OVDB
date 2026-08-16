@@ -1,15 +1,17 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using OV_DB.Services;
 using OVDB_database.Database;
 using SixLabors.Fonts;
 using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Drawing;
 using SixLabors.ImageSharp.Drawing.Processing;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -20,8 +22,42 @@ namespace OV_DB.Controllers;
 [ApiController]
 public class ImagesController(OVDBDatabaseContext context, IMemoryCache memoryCache, IFontLoader fontLoader) : ControllerBase
 {
+    private const int Padding = 12;
+    private const int ComfortableRowHeight = 24;
+    private const int CompactRowHeight = 18;
+    private const int TitleAdvance = 22;
+    private const int FooterHeight = 14;
+    private const int BarHeight = 3;
+    private const int DotRadius = 4;
+
+    /// <summary>Colours for one badge theme.</summary>
+    internal sealed record Palette(Color Background, Color Text, Color Muted, Color Divider, Color Track);
+
+    internal static Palette GetPalette(string theme) => (theme ?? string.Empty).ToLowerInvariant() switch
+    {
+        "dark" => new Palette(
+            Background: Color.ParseHex("1E1F22"),
+            Text: Color.ParseHex("ECECEC"),
+            Muted: Color.ParseHex("9AA0A6"),
+            Divider: Color.ParseHex("3C4043"),
+            Track: Color.ParseHex("2E3033")),
+        // Keeps the original see-through behaviour for anyone already embedding the badge.
+        "transparent" => new Palette(
+            Background: Color.Transparent,
+            Text: Color.ParseHex("1B1B1B"),
+            Muted: Color.ParseHex("5F6368"),
+            Divider: Color.ParseHex("DADCE0"),
+            Track: Color.ParseHex("ECEDEF")),
+        _ => new Palette(
+            Background: Color.ParseHex("FFFFFF"),
+            Text: Color.ParseHex("1B1B1B"),
+            Muted: Color.ParseHex("5F6368"),
+            Divider: Color.ParseHex("E3E5E8"),
+            Track: Color.ParseHex("EFF1F3")),
+    };
+
     [HttpGet]
-    public async Task<ActionResult> GetImageAsync([FromQuery] List<Guid> guid, [FromQuery] int width = 300, [FromQuery] int height = 100, [FromQuery] string title = null, [FromQuery] bool includeTotal = false, [FromQuery] string language = "NL", [FromQuery] bool hideAttribution = false)
+    public async Task<ActionResult> GetImageAsync([FromQuery] List<Guid> guid, [FromQuery] int width = 420, [FromQuery] int height = 170, [FromQuery] string title = null, [FromQuery] bool includeTotal = false, [FromQuery] string language = "NL", [FromQuery] bool hideAttribution = false, [FromQuery] string theme = "light")
     {
         // This endpoint is intentionally anonymous (embeddable badge). Clamp the
         // attacker-controlled dimensions so a request cannot ask for a multi-GB
@@ -44,185 +80,223 @@ public class ImagesController(OVDBDatabaseContext context, IMemoryCache memoryCa
             return NotFound();
         }
 
-        var id = "image|" + string.Join(',', sharedGuids.Select(g => g.ToString())) + "|" + width + "|" + height + "|" + includeTotal + "|" + title + "|" + language + "|" + hideAttribution;
+        var id = "image|" + string.Join(',', sharedGuids.Select(g => g.ToString())) + "|" + width + "|" + height + "|" + includeTotal + "|" + title + "|" + language + "|" + hideAttribution + "|" + theme;
 
         var fileContents = await memoryCache.GetOrCreateAsync(id, async entry =>
         {
             entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(15);
-            return await GenerateImageAsync(width, height, title, sharedGuids, includeTotal, language, hideAttribution);
+            return await GenerateImageAsync(width, height, title, sharedGuids, includeTotal, language, hideAttribution, theme);
         });
         return File(fileContents, "image/png");
     }
 
-    private async Task<byte[]> GenerateImageAsync(int width, int height, string title, List<Guid> guids, bool includeTotal, string language, bool hideAttribution)
+    internal sealed record TypeRow(string Name, Color Colour, double YearDistance, double MonthDistance);
+
+    private async Task<byte[]> GenerateImageAsync(int width, int height, string title, List<Guid> guids, bool includeTotal, string language, bool hideAttribution, string theme)
     {
-        var query = context.RouteInstances
- .Where(ri => ri.Route.RouteMaps.Any(rm => guids.Contains(rm.Map.MapGuid)) || ri.RouteInstanceMaps.Any(rim => guids.Contains(rim.Map.MapGuid)));
+        var now = DateTime.Now;
+        var raw = await context.RouteInstances
+            .AsNoTracking()
+            .Where(ri => ri.Route.RouteMaps.Any(rm => guids.Contains(rm.Map.MapGuid)) || ri.RouteInstanceMaps.Any(rim => guids.Contains(rim.Map.MapGuid)))
+            .Where(ri => ri.Date.Year == now.Year)
+            .Select(ri => new
+            {
+                ri.Date,
+                ri.Route.RouteType.Name,
+                ri.Route.RouteType.NameNL,
+                ri.Route.RouteType.Colour,
+                Distance = (double)((ri.Route.OverrideDistance.HasValue && ri.Route.OverrideDistance > 0) ? ri.Route.OverrideDistance : ri.Route.CalculatedDistance)
+            })
+            .ToListAsync();
 
-        query = query.Where(ri => ri.Date.Year == DateTime.Now.Year);
+        var dutch = string.Equals(language, "NL", StringComparison.OrdinalIgnoreCase);
+        var palette = GetPalette(theme);
 
+        var rows = raw
+            .GroupBy(r => r.Name)
+            .Select(g => new TypeRow(
+                Name: dutch && !string.IsNullOrWhiteSpace(g.First().NameNL) ? g.First().NameNL : g.Key,
+                Colour: ParseColour(g.First().Colour, palette.Muted),
+                YearDistance: Math.Round(g.Sum(v => v.Distance), 1),
+                MonthDistance: Math.Round(g.Where(v => v.Date.Month == now.Month).Sum(v => v.Distance), 1)))
+            .OrderByDescending(r => r.YearDistance)
+            .ToList();
 
-        var x = await query.Select(ri => new
-        {
-            ri.Date.Date,
-            ri.Route.RouteType.Name,
-            ri.Route.RouteType.NameNL,
-            Distance = (double)(((ri.Route.OverrideDistance.HasValue && ri.Route.OverrideDistance > 0) ? ri.Route.OverrideDistance : ri.Route.CalculatedDistance))
-        }).ToListAsync();
+        return RenderBadge(rows, fontLoader.FontCollection.Get("Ubuntu"), width, height, title, includeTotal, dutch, hideAttribution, palette, now);
+    }
 
-        var x2 = x.GroupBy(x => x.Name).Select(x => (Name: x.Key, x.First().NameNL, Distance: Math.Round(x.Sum(x => x.Distance), 1))).OrderByDescending(x => x.Distance).ToList();
-        var x4 = x.Where(ri => ri.Date.Month == DateTime.Now.Month).GroupBy(x => x.Name).Select(x => (Name: x.Key, x.First().NameNL, Distance: Math.Round(x.Sum(x => x.Distance), 1))).OrderByDescending(x => x.Distance).ToList();
+    /// <summary>
+    /// Pure rendering step: turns already-aggregated rows into the badge PNG. Kept separate from
+    /// the data query so the layout can be exercised without a database.
+    /// </summary>
+    internal static byte[] RenderBadge(IReadOnlyList<TypeRow> rows, FontFamily family, int width, int height, string title, bool includeTotal, bool dutch, bool hideAttribution, Palette palette, DateTime now)
+    {
+        var culture = dutch ? CultureInfo.GetCultureInfo("nl-NL") : CultureInfo.GetCultureInfo("en-GB");
+        var titleFont = new Font(family, 15, FontStyle.Bold);
+        var rowFont = new Font(family, 12);
+        var valueFont = new Font(family, 12, FontStyle.Bold);
+        var footerFont = new Font(family, 9);
 
-        var collection = fontLoader.FontCollection;
-        var fontType = collection.Get("Ubuntu");
-        var font = new Font(fontType, 12);
-        var smallfont = new Font(fontType, 10);
-        var greenbrush = Brushes.Solid(Color.Green);
-        var graybrush = Brushes.Solid(Color.Gray);
-        var brush = Brushes.Solid(Color.Black);
+        var textBrush = Brushes.Solid(palette.Text);
+        var mutedBrush = Brushes.Solid(palette.Muted);
+
         using var image = new Image<Rgba32>(width, height);
-        float spaceNeeded = 0;
-        if (!hideAttribution)
+        if (palette.Background != Color.Transparent)
         {
-            spaceNeeded = TextMeasurer.MeasureAdvance("ovdb.infinityx.nl", new TextOptions(font)).Width;
-            image.Mutate(x =>
-            {
-                x.DrawText("ovdb.infinityx.nl", font, greenbrush, new PointF(width - spaceNeeded - 8, height - 20));
-            });
+            image.Mutate(ctx => ctx.BackgroundColor(palette.Background));
         }
 
-        var postion = 0;
-        var columnwidth = 10.0f;
-        var distanceColumn = 10.0f;
-        var distanceMonthColumn = 10.0f;
-
+        var top = Padding;
         if (!string.IsNullOrWhiteSpace(title))
         {
-            image.Mutate(x =>
+            image.Mutate(ctx => ctx.DrawText(title, titleFont, textBrush, new PointF(Padding, top)));
+            top += TitleAdvance;
+        }
+
+        var footerSpace = hideAttribution ? 0 : FooterHeight;
+        var totalSpace = includeTotal ? ComfortableRowHeight + 6 : 0;
+        var available = Math.Max(CompactRowHeight, height - top - footerSpace - totalSpace - Padding);
+
+        // Prefer roomy rows with a small bar chart, but fall back to a dense list rather than
+        // dropping most of the data when the caller asked for a short image.
+        var rowHeight = ComfortableRowHeight;
+        var showBars = true;
+        var rowsPerColumn = Math.Max(1, available / rowHeight);
+        if (rowsPerColumn < Math.Min(rows.Count, 3))
+        {
+            rowHeight = CompactRowHeight;
+            showBars = false;
+            rowsPerColumn = Math.Max(1, available / rowHeight);
+        }
+
+        string FormatKm(double value) => string.Format(culture, "{0:N0} km", value);
+
+        var labelWidth = rows.Count == 0 ? 0f : rows.Max(r => TextMeasurer.MeasureAdvance(r.Name, new TextOptions(rowFont)).Width);
+        var yearWidth = rows.Count == 0 ? 0f : rows.Max(r => TextMeasurer.MeasureAdvance(FormatKm(r.YearDistance), new TextOptions(valueFont)).Width);
+        var monthWidth = rows.Count == 0 ? 0f : rows.Max(r => TextMeasurer.MeasureAdvance(FormatKm(r.MonthDistance), new TextOptions(rowFont)).Width);
+        var columnWidth = (DotRadius * 2) + 8 + labelWidth + 12 + yearWidth + 10 + monthWidth + 16;
+        var usableWidth = width - (Padding * 2);
+        var columns = Math.Max(1, (int)(usableWidth / Math.Max(columnWidth, 1)));
+        columnWidth = Math.Min(columnWidth, usableWidth / (float)columns);
+
+        var visible = rows.Take(rowsPerColumn * columns).ToList();
+        var hidden = rows.Count - visible.Count;
+        var maxDistance = visible.Count == 0 ? 0 : visible.Max(r => r.YearDistance);
+
+        for (var index = 0; index < visible.Count; index++)
+        {
+            var row = visible[index];
+            var x = Padding + ((index / rowsPerColumn) * columnWidth);
+            var y = top + ((index % rowsPerColumn) * rowHeight);
+            var textY = y + 1;
+
+            var yearText = FormatKm(row.YearDistance);
+            var monthText = FormatKm(row.MonthDistance);
+            var yearRight = x + columnWidth - monthWidth - 16;
+            var monthRight = x + columnWidth - 8;
+
+            image.Mutate(ctx =>
             {
-                x.DrawText(title, new Font(font, FontStyle.Bold), brush, new PointF(0, postion));
+                // Colour dot in the route type's own colour, so the badge reads at a glance.
+                ctx.Fill(row.Colour, new EllipsePolygon(x + DotRadius, textY + 8, DotRadius));
+                ctx.DrawText(row.Name, rowFont, textBrush, new PointF(x + (DotRadius * 2) + 8, textY));
+                ctx.DrawText(yearText, valueFont, textBrush,
+                    new PointF(yearRight - TextMeasurer.MeasureAdvance(yearText, new TextOptions(valueFont)).Width, textY));
+                ctx.DrawText(monthText, rowFont, mutedBrush,
+                    new PointF(monthRight - TextMeasurer.MeasureAdvance(monthText, new TextOptions(rowFont)).Width, textY));
             });
-            postion += 20;
-        }
-        var total = x2.Sum(x => x.Distance);
-        var monthTotal = x4.Sum(x => x.Distance);
-        foreach (var method in x2)
-        {
 
-            var name = (!string.IsNullOrWhiteSpace(method.NameNL) && string.Equals(language, "NL", StringComparison.OrdinalIgnoreCase) ? method.NameNL : method.Name);
-            var stringToDisplay = $"{name}: ";
-            spaceNeeded = TextMeasurer.MeasureAdvance(stringToDisplay, new TextOptions(font)).Width;
-            columnwidth = Math.Max(columnwidth, spaceNeeded + 8);
-            distanceColumn = Math.Max(distanceColumn, TextMeasurer.MeasureAdvance($"{method.Distance:N0} km ", new TextOptions(font)).Width + 8);
-        }
-        foreach (var method in x4)
-        {
-            distanceMonthColumn = Math.Max(distanceMonthColumn, TextMeasurer.MeasureAdvance($"{method.Distance:N0} km ", new TextOptions(font)).Width);
-        }
-        var totalColumnWidth = columnwidth + distanceColumn + distanceMonthColumn + 8;
-
-        var numberOfColumns = (int)(width / totalColumnWidth);
-
-        if (includeTotal)
-        {
-            columnwidth = Math.Max(columnwidth, TextMeasurer.MeasureAdvance("Totaal: ", new TextOptions(font)).Width);
-            distanceColumn = Math.Max(distanceColumn, TextMeasurer.MeasureAdvance($"{total:N0} km ", new TextOptions(font)).Width);
-        }
-
-        var maxItems = ((height - 20) / 20);
-        if (!string.IsNullOrWhiteSpace(title))
-            maxItems--;
-        var column = 0;
-
-        foreach (var method in x2.Take(maxItems * numberOfColumns))
-        {
-            var index = x2.IndexOf(method);
-            if (index >= maxItems * (column + 1))
+            // A thin proportional bar under each row turns the list into a small chart. It sits
+            // below the text baseline so it reads as a bar, not as an underline.
+            if (showBars && maxDistance > 0)
             {
-                column++;
-                postion = 0;
-                if (!string.IsNullOrWhiteSpace(title))
+                var barTop = y + rowHeight - BarHeight - 2;
+                var barMaxWidth = Math.Max(4f, columnWidth - 16);
+                var barWidth = (float)Math.Max(2, barMaxWidth * (row.YearDistance / maxDistance));
+                image.Mutate(ctx =>
                 {
-                    postion = 20;
-                }
-            }
-            string name = !string.IsNullOrWhiteSpace(method.NameNL) && string.Equals(language, "NL", StringComparison.OrdinalIgnoreCase) ? method.NameNL : method.Name;
-            string stringToDisplay = $"{name}: ";
-            var month = x4.FindIndex(x => x.Name == method.Name);
-
-            image.Mutate(x =>
-            {
-                x.DrawText(stringToDisplay, font, brush, new PointF(column * totalColumnWidth, postion));
-            });
-
-            spaceNeeded = TextMeasurer.MeasureAdvance($"{method.Distance:N0} km ", new TextOptions(font)).Width;
-            image.Mutate(x =>
-            {
-                x.DrawText($"{method.Distance:N0} km ", font, brush, new PointF(columnwidth + (distanceColumn - spaceNeeded) + (column * totalColumnWidth), postion));
-            });
-            if (month >= 0)
-            {
-                string toShow = $"{x4[month].Distance:N0} km ";
-                spaceNeeded = TextMeasurer.MeasureAdvance(toShow, new TextOptions(font)).Width;
-                image.Mutate(x =>
-                {
-                    x.DrawText(toShow, font, brush, new PointF((columnwidth + distanceColumn + (distanceMonthColumn - spaceNeeded)) + 8 + (column * totalColumnWidth), postion));
+                    ctx.Fill(palette.Track, new RectangularPolygon(x, barTop, barMaxWidth, BarHeight));
+                    ctx.Fill(row.Colour, new RectangularPolygon(x, barTop, barWidth, BarHeight));
                 });
             }
-            else
+        }
+
+        var footerTop = height - Padding - footerSpace;
+        var markerDrawn = false;
+        if (includeTotal && rows.Count > 0)
+        {
+            var totalYear = Math.Round(rows.Sum(r => r.YearDistance), 1);
+            var totalMonth = Math.Round(rows.Sum(r => r.MonthDistance), 1);
+            var lineY = footerTop - ComfortableRowHeight - 2;
+            image.Mutate(ctx => ctx.DrawLine(palette.Divider, 1, new PointF(Padding, lineY), new PointF(width - Padding, lineY)));
+
+            var label = dutch ? "Totaal" : "Total";
+            var totalText = FormatKm(totalYear);
+            var totalMonthText = FormatKm(totalMonth);
+            var labelY = lineY + 5;
+            image.Mutate(ctx =>
             {
-                spaceNeeded = TextMeasurer.MeasureAdvance("0 km", new TextOptions(font)).Width;
-                image.Mutate(x => { x.DrawText("0 km", font, brush, new PointF((columnwidth + distanceColumn + (distanceMonthColumn - spaceNeeded)) + 8 + (column * totalColumnWidth), postion)); });
+                ctx.DrawText(label, valueFont, textBrush, new PointF(Padding, labelY));
+                ctx.DrawText(totalText, valueFont, textBrush,
+                    new PointF(width - Padding - monthWidth - 16 - TextMeasurer.MeasureAdvance(totalText, new TextOptions(valueFont)).Width, labelY));
+                ctx.DrawText(totalMonthText, rowFont, mutedBrush,
+                    new PointF(width - Padding - 8 - TextMeasurer.MeasureAdvance(totalMonthText, new TextOptions(rowFont)).Width, labelY));
+            });
+
+            // The total covers every type, so say how many are not listed above.
+            if (hidden > 0)
+            {
+                var labelWidthMeasured = TextMeasurer.MeasureAdvance(label, new TextOptions(valueFont)).Width;
+                image.Mutate(ctx => ctx.DrawText($"+{hidden}", footerFont, mutedBrush,
+                    new PointF(Padding + labelWidthMeasured + 6, labelY + 4)));
+                markerDrawn = true;
             }
-            postion += 20;
         }
-        if (includeTotal)
+        else if (hidden > 0)
         {
-            image.Mutate(x =>
+            // No total row to hang the marker off; place it after the last row when it fits.
+            var markerY = top + (rowsPerColumn * rowHeight);
+            if (footerTop - markerY >= 12)
             {
-                x.DrawLine(new DrawingOptions(), brush, 1, new PointF(1, height - 20), new PointF((int)(columnwidth + distanceColumn * 2), height - 20));
-            });
-            spaceNeeded = TextMeasurer.MeasureAdvance($"{total:N0} km", new TextOptions(font)).Width;
-            image.Mutate(x =>
-            {
-                if (string.Equals(language, "NL", StringComparison.OrdinalIgnoreCase))
-                {
-                    x.DrawText($"Totaal: ", font, brush, new PointF(0, height - 20));
-                }
-                else
-                {
-                    x.DrawText($"Total: ", font, brush, new PointF(0, height - 20));
-                }
-            });
-            image.Mutate(x =>
-            {
-                x.DrawText($"{total:N0} km", font, brush, new PointF(columnwidth + (distanceColumn - spaceNeeded), height - 20));
-                x.DrawText($"{monthTotal:N0} km", font, brush, new PointF(columnwidth + distanceColumn + 8, height - 20));
-            });
-            postion += 20;
+                var marker = $"+{hidden}";
+                image.Mutate(ctx => ctx.DrawText(marker, footerFont, mutedBrush,
+                    new PointF(width - Padding - TextMeasurer.MeasureAdvance(marker, new TextOptions(footerFont)).Width, markerY)));
+                markerDrawn = true;
+            }
         }
 
-
-        if (x2.Count > maxItems * numberOfColumns)
+        if (!hideAttribution)
         {
-
-            image.Mutate(x =>
+            var stamp = now.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture);
+            // If there was nowhere to put the "+N" marker, fold it into the attribution rather
+            // than silently pretending the listed types are everything.
+            var attribution = hidden > 0 && !markerDrawn ? $"ovdb.infinityx.nl  +{hidden}" : "ovdb.infinityx.nl";
+            image.Mutate(ctx =>
             {
-                x.DrawText("...", font, brush, new PointF(width - 20, height - 40));
+                ctx.DrawText(attribution, footerFont, mutedBrush, new PointF(Padding, footerTop + 1));
+                ctx.DrawText(stamp, footerFont, mutedBrush,
+                    new PointF(width - Padding - TextMeasurer.MeasureAdvance(stamp, new TextOptions(footerFont)).Width, footerTop + 1));
             });
         }
-        if (!includeTotal)
-        {
-            image.Mutate(x =>
-            {
-                x.DrawText(DateTime.Now.ToString("yyyy-MM-dd HH:mm"), smallfont, graybrush, new PointF(0, height - 16));
-            });
 
-        }
-        using (MemoryStream ms = new MemoryStream())
+        using var ms = new MemoryStream();
+        image.SaveAsPng(ms);
+        return ms.ToArray();
+    }
+
+    private static Color ParseColour(string colour, Color fallback)
+    {
+        if (string.IsNullOrWhiteSpace(colour))
         {
-            image.SaveAsPng(ms);
-            return ms.ToArray();
+            return fallback;
+        }
+        try
+        {
+            return Color.ParseHex(colour.TrimStart('#'));
+        }
+        catch (ArgumentException)
+        {
+            return fallback;
         }
     }
 }
