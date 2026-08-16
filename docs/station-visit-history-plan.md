@@ -351,9 +351,22 @@ missing-stations — keeps using row existence and is unaffected.
    **Not done deliberately:** the snackbar does not offer a matched date after marking. It already
    carries Undo and Entry/exit, and a third action on a bar that never expires is one too many;
    the dialog is one tap away and is the surface that can show why a trip is a candidate at all.
-5. **Backfill.** One station at a time — map, candidate trips oldest-first with the oldest
-   preselected, confirm or deny. No bulk confirm.
-6. **Import suggestions.** The post-import list, off by default, dismissals recorded separately.
+5. ✅ **Backfill.** One station at a time — map with the selected route drawn on it, candidate trips
+   with the oldest endpoint-grade one preselected, and three outcomes: got on/off, only stopped, or
+   can't remember. No bulk confirm. A fourth button, "decide later", steps past a station without
+   recording anything at all.
+6. ✅ **Import suggestions.** A list to come back to rather than a prompt after importing, because
+   Träwelling check-ins arrive in the background and there is no import moment to interrupt.
+   Nothing is pre-ticked, and dismissals are recorded separately from visits.
+
+Measured once both existed, which changed two things:
+
+- **The suggestion window had to grow from 25 trips to 250.** The 25 most recent trips yielded
+  *nothing*, because suggestions cluster in a travel period rather than at the top of the list; 250
+  found 38 trips with 173 unmarked stations between them. It stops early once 20 trips have
+  something to offer, so the usual case is far cheaper than the 3 s worst case.
+- **The volume guard was needed after all, and is now built.** One real trip offers 33 proposals, so
+  a trip's list collapses after five with a count.
 6. **Consumers.** "New stations this year", discovery timeline, station achievements.
 
 ## Failure modes
@@ -396,8 +409,10 @@ feature.
   probably resurface when a newly imported trip provides a candidate; a visit skipped because the
   user genuinely cannot remember should not. Same flag, two meanings — either split it or accept the
   nagging.
-- **Import suggestions need a volume guard.** A forty-stop journey should not present forty
-  proposals; collapse the proximity group behind a count by default.
+- Whether the backfill queue should be ordered by candidate trip rather than geographically. The
+  plan wanted "consecutive stations share a journey", but that needs every station's candidates
+  computed up front — ~35 s for the 5,739-station queue — so it ships ordered by country then name,
+  which gets some of the benefit for none of the cost. Revisit if the ordering grates in practice.
 - Whether station achievements wait for backfill or ship counting dated visits only.
 
 **Settled by measurement** (was: how aggressively to simplify the geometry): **50 m Douglas-Peucker,

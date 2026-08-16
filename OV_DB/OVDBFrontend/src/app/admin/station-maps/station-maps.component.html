@@ -4,6 +4,16 @@
 @if (!loading) {
   <div class="container">
     <div class="title" [innerHTML]="'STATIONMAP.DESCRIPTION' | translate"></div>
+    <div class="visit-tools">
+      <a mat-stroked-button routerLink="/stations/backfill">
+        <mat-icon>event</mat-icon>
+        {{ 'STATIONS.BACKFILL.LINK' | translate }}
+      </a>
+      <a mat-stroked-button routerLink="/stations/suggestions">
+        <mat-icon>lightbulb</mat-icon>
+        {{ 'STATIONS.SUGGESTIONS.LINK' | translate }}
+      </a>
+    </div>
     @if (data.length > 0) {
       <mat-list>
         @for (map of data; track map.id) {

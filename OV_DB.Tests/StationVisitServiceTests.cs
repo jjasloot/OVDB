@@ -344,6 +344,78 @@ namespace OV_DB.Tests
             Assert.False(visit.DatingSkipped);
         }
 
+        [Fact]
+        public async Task MarkFromTrip_DatesAndLinksInOneGo()
+        {
+            using var context = NewContext();
+            await SeedTripAsync(context, routeInstanceId: 7, ownerUserId: 1, date: Earlier);
+            var service = NewService(context);
+
+            await service.MarkFromTripAsync(1, 10, StationVisitLevel.EntryExit, 7, StationVisitSource.ImportSuggested);
+
+            var visit = await context.StationVisits.SingleAsync();
+            Assert.Equal(Earlier, visit.FirstStoppedDate);
+            Assert.Equal(Earlier, visit.FirstEntryExitDate);
+            Assert.Equal(7, visit.FirstStoppedRouteInstanceId);
+            Assert.Equal(7, visit.FirstEntryExitRouteInstanceId);
+            Assert.Equal(StationVisitSource.ImportSuggested, visit.Source);
+        }
+
+        [Fact]
+        public async Task MarkFromTrip_StillOnlyEverAddsInformation()
+        {
+            using var context = NewContext();
+            await SeedTripAsync(context, routeInstanceId: 7, ownerUserId: 1, date: Day);
+            var service = NewService(context);
+            await service.MarkAsync(1, 10, StationVisitLevel.Stopped, Earlier, StationVisitSource.Web);
+
+            // A later trip cannot push an established earlier date forward, suggestion or not.
+            await service.MarkFromTripAsync(1, 10, StationVisitLevel.Stopped, 7, StationVisitSource.ImportSuggested);
+
+            var visit = await context.StationVisits.SingleAsync();
+            Assert.Equal(Earlier, visit.FirstStoppedDate);
+            Assert.Null(visit.FirstStoppedRouteInstanceId);
+        }
+
+        [Fact]
+        public async Task MarkFromTrip_RejectsATripTheUserDoesNotOwn()
+        {
+            using var context = NewContext();
+            await SeedTripAsync(context, routeInstanceId: 7, ownerUserId: 99, date: Day);
+            var service = NewService(context);
+
+            await Assert.ThrowsAsync<ArgumentException>(() =>
+                service.MarkFromTripAsync(1, 10, StationVisitLevel.Stopped, 7, StationVisitSource.ImportSuggested));
+
+            // And critically, no visit was conjured on the way to failing.
+            Assert.Empty(context.StationVisits);
+        }
+
+        [Fact]
+        public async Task SkipDating_RetiresTheVisitWithoutClaimingAnything()
+        {
+            using var context = NewContext();
+            var service = NewService(context);
+            await service.MarkAsync(1, 10, StationVisitLevel.Stopped, null, StationVisitSource.Web);
+
+            Assert.True(await service.SkipDatingAsync(1, 10));
+
+            // Still visited, still undated — just no longer asked about.
+            var visit = await context.StationVisits.SingleAsync();
+            Assert.True(visit.DatingSkipped);
+            Assert.Null(visit.FirstStoppedDate);
+        }
+
+        [Fact]
+        public async Task SkipDating_OnAnUnvisitedStationIsANoOp()
+        {
+            using var context = NewContext();
+            var service = NewService(context);
+
+            Assert.False(await service.SkipDatingAsync(1, 10));
+            Assert.Empty(context.StationVisits);
+        }
+
         private static async Task SeedTripAsync(OVDBDatabaseContext context, int routeInstanceId, int ownerUserId, DateTime date)
         {
             context.Maps.Add(new Map { MapId = 1, UserId = ownerUserId, Name = "Trains", MapGuid = Guid.NewGuid() });

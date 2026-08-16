@@ -159,28 +159,7 @@ namespace OV_DB.Controllers
             }
 
             var candidates = await matcher.FindTripsForStationAsync(userIdClaim, id);
-
-            var groups = candidates
-                .GroupBy(c => c.RouteId)
-                .Select(g => new TripCandidateGroupDTO
-                {
-                    RouteId = g.Key,
-                    RouteName = g.First().RouteName,
-                    From = g.First().From,
-                    To = g.First().To,
-                    IsEndpoint = g.Any(c => c.Evidence == VisitEvidence.RouteEndpoint),
-                    DistanceMetres = g.Min(c => c.DistanceMetres),
-                    Instances = g.OrderBy(c => c.Date)
-                        .Select(c => new TripCandidateDTO { RouteInstanceId = c.RouteInstanceId, Date = c.Date })
-                        .ToList()
-                })
-                // Endpoint routes first: they are the only evidence you stood on the platform rather
-                // than rolled past it. Within that, earliest wins, because the question is "first".
-                .OrderByDescending(g => g.IsEndpoint)
-                .ThenBy(g => g.Instances[0].Date)
-                .ToList();
-
-            return Ok(groups);
+            return Ok(TripCandidateGrouping.Group(candidates));
         }
 
         private async Task<StationVisitStateDTO> BuildStateAsync(int userId, int stationId, IStationVisitService stationVisitService)

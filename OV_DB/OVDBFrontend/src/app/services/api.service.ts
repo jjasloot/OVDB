@@ -15,11 +15,14 @@ import { MultipleEdit } from "../models/multipleEdit.model";
 import { RouteInstance } from "../models/routeInstance.model";
 import { StationMap } from "../models/stationMap.model";
 import {
+  RouteGeometry,
+  StationBackfillItem,
   StationView,
   StationVisitDates,
   StationVisitLevel,
   StationVisitState,
   TripCandidateGroup,
+  TripSuggestions,
 } from "../models/stationView.model";
 import { StationCountry } from "../models/stationCountry.model";
 import { StationAdminProperties } from "../models/stationAdminProperties.model";
@@ -558,6 +561,45 @@ export class ApiService {
   getStationVisitCandidates(id: number): Observable<TripCandidateGroup[]> {
     const url = environment.backend + "api/station/" + id + "/candidates";
     return this.httpClient.get<TripCandidateGroup[]>(url);
+  }
+
+  /** The next undated visit to date. Skip steps past one without recording anything about it. */
+  getBackfillItem(skip = 0): Observable<StationBackfillItem> {
+    const url = environment.backend + "api/stationbackfill?skip=" + skip;
+    return this.httpClient.get<StationBackfillItem>(url);
+  }
+
+  /** Retires a station from the dating queue. Says nothing about whether it was visited. */
+  skipBackfillStation(stationId: number): Observable<void> {
+    const url = environment.backend + "api/stationbackfill/" + stationId + "/skip";
+    return this.httpClient.post<void>(url, {});
+  }
+
+  getBackfillRouteGeometry(routeId: number): Observable<RouteGeometry> {
+    const url = environment.backend + "api/stationbackfill/route/" + routeId;
+    return this.httpClient.get<RouteGeometry>(url);
+  }
+
+  /** Recent trips that pass stations not marked visited. Proposals only. */
+  getStationSuggestions(): Observable<TripSuggestions[]> {
+    const url = environment.backend + "api/stationsuggestions";
+    return this.httpClient.get<TripSuggestions[]>(url);
+  }
+
+  /** Marks one suggested station, dated from the trip that suggested it. */
+  markSuggestedStation(
+    stationId: number,
+    routeInstanceId: number,
+    level: StationVisitLevel
+  ): Observable<void> {
+    const url = environment.backend + "api/stationsuggestions/mark";
+    return this.httpClient.post<void>(url, { stationId, routeInstanceId, level });
+  }
+
+  /** Stops a station being suggested again, without claiming it was or was not visited. */
+  dismissStationSuggestion(stationId: number): Observable<void> {
+    const url = environment.backend + "api/stationsuggestions/" + stationId + "/dismiss";
+    return this.httpClient.post<void>(url, {});
   }
 
   updateStationAdmin(id: any, special: any, hidden: boolean) {

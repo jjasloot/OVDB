@@ -46,6 +46,8 @@ export const routes: Routes = [
         children: [
           { path: "map/:guid", loadComponent: () => import("./stations/station-map-view/station-map-view.component").then(m => m.StationMapViewComponent), canActivate: [LoginGuard] },
           { path: "link/:name", loadComponent: () => import("./stations/station-map-view/station-map-view.component").then(m => m.StationMapViewComponent) },
+          { path: "backfill", loadComponent: () => import("./stations/station-backfill/station-backfill.component").then(m => m.StationBackfillComponent), canActivate: [LoginGuard] },
+          { path: "suggestions", loadComponent: () => import("./stations/station-suggestions/station-suggestions.component").then(m => m.StationSuggestionsComponent), canActivate: [LoginGuard] },
         ],
       },
       {

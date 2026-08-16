@@ -7,6 +7,13 @@
     transform: translateZ(0);
 }
 
+.visit-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
 .title {
     margin: 8px 16px;
 }

@@ -70,3 +70,47 @@ export interface TripCandidate {
   routeInstanceId: number;
   date: string;
 }
+
+/** One station's worth of the dating queue. */
+export interface StationBackfillItem {
+  remaining: number;
+  stationId: number;
+  stationName: string;
+  lattitude: number;
+  longitude: number;
+  regions: string[];
+  candidates: TripCandidateGroup[];
+  /**
+   * The trip to preselect: the oldest endpoint-grade candidate where one exists, else the oldest
+   * of any grade. The oldest candidate overall is endpoint-grade only 15% of the time, so plain
+   * "oldest" would usually preselect a train that passed through without stopping.
+   */
+  suggestedRouteInstanceId: number | null;
+  suggestionIsEndpoint: boolean;
+}
+
+export interface RouteGeometry {
+  routeId: number;
+  /** [lattitude, longitude] pairs, the order Leaflet wants. */
+  coordinates: [number, number][];
+}
+
+/** A station a trip explains but that is not marked visited. */
+export interface StationSuggestion {
+  stationId: number;
+  stationName: string;
+  lattitude: number;
+  longitude: number;
+  isEndpoint: boolean;
+  distanceMetres: number;
+}
+
+export interface TripSuggestions {
+  routeInstanceId: number;
+  routeId: number;
+  routeName: string;
+  from: string;
+  to: string;
+  date: string;
+  stations: StationSuggestion[];
+}

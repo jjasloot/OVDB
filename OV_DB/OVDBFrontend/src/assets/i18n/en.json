@@ -30,6 +30,25 @@
       "EVIDENCE_NEARBY": "passes {{metres}} m away",
       "MORE_TRIPS": "{{count}} more",
       "FEWER_TRIPS": "Show fewer"
+    },
+    "BACKFILL": {
+      "REMAINING": "{{count}} still undated",
+      "NO_CANDIDATES": "No trip of yours passes this station, so there is nothing to date it from yet. Importing more trips may change that.",
+      "GOT_ON_OFF": "Got on/off here",
+      "ONLY_STOPPED": "Only stopped here",
+      "LATER": "Decide later",
+      "CANNOT_REMEMBER": "Can't remember",
+      "LINK": "Date your visits",
+      "ALL_DONE_TITLE": "Nothing left to date",
+      "ALL_DONE": "Every visit either has a date or has been set aside."
+    },
+    "SUGGESTIONS": {
+      "LINK": "Stations you may have missed",
+      "TITLE": "Stations you may have missed",
+      "INTRO": "Your recent trips pass these stations, but they are not marked visited. Nothing is marked until you say so.",
+      "NOTHING": "Your recent trips pass nothing you have not already decided about.",
+      "DISMISS": "Don't ask again",
+      "SHOW_MORE": "Show {{count}} more along this trip"
     }
   },
   "MISSINGDATA.NODATA": "No routes with missing information.",

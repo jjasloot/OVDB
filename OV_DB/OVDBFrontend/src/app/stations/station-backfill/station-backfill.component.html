@@ -1,0 +1,81 @@
+<div class="page">
+  @if (loading()) {
+    <mat-spinner diameter="32" />
+  } @else if (!hasWork()) {
+    <div class="done">
+      <h2>{{ 'STATIONS.BACKFILL.ALL_DONE_TITLE' | translate }}</h2>
+      <p>{{ 'STATIONS.BACKFILL.ALL_DONE' | translate }}</p>
+    </div>
+  } @else {
+    <header>
+      <h2>{{ item()!.stationName }}</h2>
+      <p class="regions">{{ item()!.regions.join(' · ') }}</p>
+      <mat-progress-bar mode="determinate" [value]="progress()" />
+      <p class="remaining">{{ 'STATIONS.BACKFILL.REMAINING' | translate: { count: item()!.remaining } }}</p>
+    </header>
+
+    <div
+      class="map"
+      leaflet
+      [leafletOptions]="options"
+      [leafletLayers]="layers()"
+      [leafletFitBounds]="bounds()"
+      [leafletLayersControl]="leafletLayersControl"
+    ></div>
+
+    @if (item()!.candidates.length === 0) {
+      <p class="note">{{ 'STATIONS.BACKFILL.NO_CANDIDATES' | translate }}</p>
+    } @else {
+      <mat-radio-group class="candidates" [ngModel]="selected()">
+        @for (row of rows(); track row.instance.routeInstanceId) {
+          <div class="row">
+            <mat-radio-button
+              [value]="row.instance.routeInstanceId"
+              (change)="select(row.instance.routeInstanceId)"
+            >
+              <span class="date">{{ row.instance.date | date: 'longDate' }}</span>
+              <span class="name">{{ row.group.routeName }}</span>
+              @if (row.group.isEndpoint) {
+                <span class="badge endpoint">{{ 'STATIONS.VISIT.EVIDENCE_ENDPOINT' | translate }}</span>
+              } @else {
+                <span class="badge">{{ 'STATIONS.VISIT.EVIDENCE_NEARBY' | translate: { metres: (row.group.distanceMetres | number: '1.0-0') } }}</span>
+              }
+            </mat-radio-button>
+            @if (row.group.instances.length > 1 && row.instance.routeInstanceId === row.group.instances[0].routeInstanceId) {
+              <button mat-button class="more" (click)="toggle(row.group.routeId)">
+                @if (expanded() === row.group.routeId) {
+                  {{ 'STATIONS.VISIT.FEWER_TRIPS' | translate }}
+                } @else {
+                  {{ 'STATIONS.VISIT.MORE_TRIPS' | translate: { count: row.group.instances.length - 1 } }}
+                }
+              </button>
+            }
+          </div>
+        }
+      </mat-radio-group>
+    }
+
+    <div class="actions">
+      <button
+        mat-flat-button
+        [disabled]="saving() || selected() === null"
+        (click)="confirm(levels.EntryExit)"
+      >
+        {{ 'STATIONS.BACKFILL.GOT_ON_OFF' | translate }}
+      </button>
+      <button
+        mat-stroked-button
+        [disabled]="saving() || selected() === null"
+        (click)="confirm(levels.Stopped)"
+      >
+        {{ 'STATIONS.BACKFILL.ONLY_STOPPED' | translate }}
+      </button>
+      <button mat-stroked-button [disabled]="saving()" (click)="later()">
+        {{ 'STATIONS.BACKFILL.LATER' | translate }}
+      </button>
+      <button mat-button [disabled]="saving()" (click)="skip()">
+        {{ 'STATIONS.BACKFILL.CANNOT_REMEMBER' | translate }}
+      </button>
+    </div>
+  }
+</div>

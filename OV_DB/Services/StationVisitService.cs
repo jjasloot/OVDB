@@ -13,7 +13,9 @@ namespace OV_DB.Services;
 public interface IStationVisitService
 {
     Task<StationVisit> MarkAsync(int userId, int stationId, StationVisitLevel level, DateTime? localDate, StationVisitSource source, CancellationToken cancellationToken = default);
+    Task<StationVisit> MarkFromTripAsync(int userId, int stationId, StationVisitLevel level, int routeInstanceId, StationVisitSource source, CancellationToken cancellationToken = default);
     Task<StationVisit> DowngradeToStoppedAsync(int userId, int stationId, CancellationToken cancellationToken = default);
+    Task<bool> SkipDatingAsync(int userId, int stationId, CancellationToken cancellationToken = default);
     Task<StationVisit> SetDatesAsync(int userId, int stationId, StationVisitDates dates, CancellationToken cancellationToken = default);
     Task<DateTime> LocalDateAtStationAsync(Station station, CancellationToken cancellationToken = default);
     Task<bool> UnmarkAsync(int userId, int stationId, CancellationToken cancellationToken = default);
@@ -40,7 +42,21 @@ public class StationVisitService(OVDBDatabaseContext dbContext, ITimezoneService
     /// Marks a station visited, or raises an existing visit to a higher level. Never lowers one and
     /// never moves a date later: re-marking somewhere can only ever add information.
     /// </summary>
-    public async Task<StationVisit> MarkAsync(int userId, int stationId, StationVisitLevel level, DateTime? localDate, StationVisitSource source, CancellationToken cancellationToken = default)
+    public Task<StationVisit> MarkAsync(int userId, int stationId, StationVisitLevel level, DateTime? localDate, StationVisitSource source, CancellationToken cancellationToken = default) =>
+        MarkCoreAsync(userId, stationId, level, (localDate?.Date, null), source, cancellationToken);
+
+    /// <summary>
+    /// Marks a station from a specific trip, taking that trip's date and recording the link. Used
+    /// where the user picks a suggestion: the tick is the explicit action, the trip is what dates it.
+    /// </summary>
+    /// <exception cref="ArgumentException">A trip was named that the user does not own.</exception>
+    public async Task<StationVisit> MarkFromTripAsync(int userId, int stationId, StationVisitLevel level, int routeInstanceId, StationVisitSource source, CancellationToken cancellationToken = default)
+    {
+        var evidence = await ResolveAsync(userId, routeInstanceId, null, cancellationToken);
+        return await MarkCoreAsync(userId, stationId, level, evidence, source, cancellationToken);
+    }
+
+    private async Task<StationVisit> MarkCoreAsync(int userId, int stationId, StationVisitLevel level, (DateTime? Date, int? RouteInstanceId) evidence, StationVisitSource source, CancellationToken cancellationToken)
     {
         var visit = await GetAsync(userId, stationId, cancellationToken);
         if (visit == null)
@@ -55,7 +71,7 @@ public class StationVisitService(OVDBDatabaseContext dbContext, ITimezoneService
             dbContext.StationVisits.Add(visit);
         }
 
-        var date = localDate?.Date;
+        var date = evidence.Date;
 
         // Getting on or off implies the train stopped, so entry/exit fills both levels. Each date
         // only ever moves earlier, so confirming an older trip later still improves the record.
@@ -64,14 +80,14 @@ public class StationVisitService(OVDBDatabaseContext dbContext, ITimezoneService
             if (!visit.FirstStoppedDate.HasValue || date < visit.FirstStoppedDate)
             {
                 visit.FirstStoppedDate = date;
-                visit.FirstStoppedRouteInstanceId = null;
+                visit.FirstStoppedRouteInstanceId = evidence.RouteInstanceId;
             }
 
             if (level == StationVisitLevel.EntryExit
                 && (!visit.FirstEntryExitDate.HasValue || date < visit.FirstEntryExitDate))
             {
                 visit.FirstEntryExitDate = date;
-                visit.FirstEntryExitRouteInstanceId = null;
+                visit.FirstEntryExitRouteInstanceId = evidence.RouteInstanceId;
             }
         }
         else if (level == StationVisitLevel.EntryExit && !visit.FirstEntryExitDate.HasValue
@@ -179,6 +195,23 @@ public class StationVisitService(OVDBDatabaseContext dbContext, ITimezoneService
         }
 
         return (trip.Value.Date, routeInstanceId);
+    }
+
+    /// <summary>
+    /// Retires a visit from the dating queue without claiming anything about it. Not a denial: the
+    /// backfill never asks "have you been here", only "when", and "I cannot remember" is an answer.
+    /// </summary>
+    public async Task<bool> SkipDatingAsync(int userId, int stationId, CancellationToken cancellationToken = default)
+    {
+        var visit = await GetAsync(userId, stationId, cancellationToken);
+        if (visit == null)
+        {
+            return false;
+        }
+
+        visit.DatingSkipped = true;
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return true;
     }
 
     /// <summary>Today where the station is, which is not always today where the server is.</summary>

@@ -29,6 +29,25 @@
       "EVIDENCE_NEARBY": "passeert op {{metres}} m",
       "MORE_TRIPS": "Nog {{count}}",
       "FEWER_TRIPS": "Toon minder"
+    },
+    "BACKFILL": {
+      "REMAINING": "Nog {{count}} zonder datum",
+      "NO_CANDIDATES": "Geen van je ritten komt langs dit station, dus er valt nog niets aan te dateren. Meer ritten importeren kan dat veranderen.",
+      "GOT_ON_OFF": "Hier in-/uitgestapt",
+      "ONLY_STOPPED": "Hier alleen gestopt",
+      "LATER": "Later beslissen",
+      "CANNOT_REMEMBER": "Weet ik niet meer",
+      "LINK": "Bezoeken dateren",
+      "ALL_DONE_TITLE": "Niets meer te dateren",
+      "ALL_DONE": "Elk bezoek heeft een datum of is opzij gezet."
+    },
+    "SUGGESTIONS": {
+      "LINK": "Mogelijk gemiste stations",
+      "TITLE": "Stations die je misschien gemist hebt",
+      "INTRO": "Je recente ritten komen langs deze stations, maar ze staan niet als bezocht. Er wordt niets gemarkeerd tot jij het zegt.",
+      "NOTHING": "Je recente ritten komen nergens langs waar je nog niet over besloten hebt.",
+      "DISMISS": "Niet meer vragen",
+      "SHOW_MORE": "Toon nog {{count}} op deze rit"
     }
   },
   "SAVE": "Opslaan",

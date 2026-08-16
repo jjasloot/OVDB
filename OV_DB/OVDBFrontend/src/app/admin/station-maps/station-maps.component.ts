@@ -1,7 +1,7 @@
 import { Component, OnInit, inject, ChangeDetectionStrategy } from "@angular/core";
 import { MatBottomSheet } from "@angular/material/bottom-sheet";
 import { MatDialog } from "@angular/material/dialog";
-import { Router } from "@angular/router";
+import { Router, RouterLink } from "@angular/router";
 import { TranslateService, TranslateModule } from "@ngx-translate/core";
 import { AreYouSureDialogComponent } from "src/app/are-you-sure-dialog/are-you-sure-dialog.component";
 import { STANDARD_DIALOG } from "src/app/constants/dialog-sizes";
@@ -15,7 +15,7 @@ import { SortItemsDialogComponent } from "../sort-items-dialog/sort-items-dialog
 import { StationMapsEditComponent } from "../station-maps-edit/station-maps-edit.component";
 import { MatProgressSpinner } from "@angular/material/progress-spinner";
 import { MatList, MatListItem } from "@angular/material/list";
-import { MatIconButton, MatFabButton } from "@angular/material/button";
+import { MatIconButton, MatFabButton, MatButton } from "@angular/material/button";
 import { MatTooltip } from "@angular/material/tooltip";
 import { MatIcon } from "@angular/material/icon";
 import { CdkCopyToClipboard } from "@angular/cdk/clipboard";
@@ -34,6 +34,8 @@ import { CdkCopyToClipboard } from "@angular/cdk/clipboard";
     MatIcon,
     CdkCopyToClipboard,
     MatFabButton,
+    MatButton,
+    RouterLink,
     TranslateModule,
   ],
 })

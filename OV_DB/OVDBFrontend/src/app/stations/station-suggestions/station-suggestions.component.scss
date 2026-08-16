@@ -1,0 +1,84 @@
+.page {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+h2 {
+  margin: 0;
+}
+
+.intro,
+.note {
+  opacity: 0.7;
+  font-size: 0.9em;
+}
+
+.trip {
+  margin-top: 16px;
+  padding-top: 8px;
+  border-top: 1px solid rgb(128 128 128 / 25%);
+
+  header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 8px;
+
+    .name {
+      font-weight: 500;
+    }
+
+    .date,
+    .ends {
+      opacity: 0.7;
+      font-size: 0.9em;
+    }
+  }
+
+  ul {
+    list-style: none;
+    margin: 4px 0 0;
+    padding: 0;
+  }
+
+  li {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 6px 0;
+  }
+
+  // Fades while the server confirms, rather than vanishing before it has.
+  li.busy {
+    opacity: 0.5;
+  }
+}
+
+.station {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.badge {
+  font-size: 0.75em;
+  padding: 1px 6px;
+  border-radius: 10px;
+  background: rgb(128 128 128 / 20%);
+  white-space: nowrap;
+}
+
+// Starting or ending here is the only evidence you stood on the platform, so it earns the colour.
+.badge.endpoint {
+  background: rgb(30 136 229 / 20%);
+  color: #1565c0;
+}
