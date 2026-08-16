@@ -142,8 +142,21 @@ unknown to a plausible guess.
 - **Telegram.** Tapping an unvisited station marks it stopped at, and the confirmation message
   carries an **Entry/exit** button. Tapping an already-visited station replies with its current
   state and the options — upgrade, downgrade, remove.
-- **Station popup** stays the full-control surface: both dates with their trips, each editable or
-  clearable. The quick paths stay quick; anything unusual is fixed here.
+
+**Dating is a web concern only.** The two surfaces are asking different questions, so they get
+different answers:
+
+- **Telegram is just-in-time.** You are standing on the platform. Today, in the station's own
+  timezone, is not a guess — it is the answer. No date UI belongs there, and none is offered.
+- **The web is retrospective.** Tapping a marker on a map at home says nothing about when, so it
+  must not stamp today; that would be a fabricated date, and a wrong date is worse than none. The
+  web therefore offers, never assumes: the visit is born undated and the user can **pick a date** or
+  **attach a trip** — the matcher's candidates, which date it as a side effect — whenever they know
+  it. Undated stays a first-class state.
+
+So: **Station popup** is the full-control surface, and the only one. Both dates with their trips,
+each settable, changeable or clearable, either by picking a date directly or by choosing from the
+matcher's candidate trips. The quick paths stay quick; anything unusual is fixed here.
 - **Marked before the trip exists.** The usual case: you tap at the platform, the Träwelling
   check-in imports later. No pending-status column is needed — when an instance is created or
   imported, the matcher runs over the user's unlinked visits from ±1 day and links what it
@@ -304,8 +317,9 @@ missing-stations — keeps using row existence and is unaffected.
    upgrade, un-mark dialog; Telegram verbs on the same service.
 3. **The matcher.** One service, both directions, cached STRtree. Nothing user-facing yet; testable
    in isolation.
-4. **Dating at the edges.** Telegram stamps today; the web snackbar offers the matched date;
-   the station popup shows date, source and trip, with an edit dialog.
+4. **Dating on the web.** Telegram already stamps today and needs nothing further. The web gets the
+   date controls: the snackbar offers a matched date when the matcher found one, and the station
+   popup gains an edit dialog — pick a date, or pick a candidate trip and take its date.
 5. **Backfill.** One station at a time — map, candidate trips oldest-first with the oldest
    preselected, confirm or deny. No bulk confirm.
 6. **Import suggestions.** The post-import list, off by default, dismissals recorded separately.
@@ -349,7 +363,9 @@ feature.
   doing the work, not the geometry.
 - **The two dates need an ordering rule when edited.** Alighting implies stopping, so setting
   `FirstEntryExitDate` earlier than `FirstStoppedDate` is incoherent. Pull the stopped date back to
-  match, or refuse — decide before the edit dialog is built.
+  match, or refuse. **Now blocking step 4**, since that step is where the dates first become
+  editable — `MarkAsync` cannot answer it, because it only ever moves a date earlier and an edit has
+  to be able to move one later.
 - **`DatingSkipped` can go stale.** A visit skipped because nothing plausible was on offer should
   probably resurface when a newly imported trip provides a candidate; a visit skipped because the
   user genuinely cannot remember should not. Same flag, two meanings — either split it or accept the
