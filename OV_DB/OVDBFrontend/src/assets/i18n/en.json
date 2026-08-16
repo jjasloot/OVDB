@@ -343,6 +343,7 @@
       "UNLOCKED_ON": "unlocked {{date}}",
       "NEXT": "Next:",
       "ALL_COMPLETE": "Every tier unlocked",
+      "SUBDIVISIONS_DESC": "Regions of this country your routes reach",
       "FAMILY": {
         "DISTANCE": {
           "NAME": "Distance travelled",
@@ -387,10 +388,6 @@
         "BORDER_HOPPER": {
           "NAME": "Border hopper",
           "DESC": "Journeys that crossed a national border"
-        },
-        "DUTCH_PROVINCES": {
-          "NAME": "Province collector",
-          "DESC": "Dutch provinces your routes pass through"
         },
         "OPERATOR_BINGO": {
           "NAME": "Operator bingo",

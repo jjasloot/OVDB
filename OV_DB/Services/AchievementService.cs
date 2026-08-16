@@ -73,13 +73,24 @@ public class AchievementService(OVDBDatabaseContext dbContext) : IAchievementSer
             })
             .ToDictionaryAsync(r => r.RouteId, r => r, cancellationToken);
 
-        // Subdivisions of the Netherlands, used for the provinces achievement without hard-coding names.
-        var dutchProvinceIds = (await dbContext.Regions
+        // Direct children of any ISO-coded country: provinces, Bundesländer, cantons and so on.
+        // Deeper levels are excluded, so this stays "first level subdivisions" for every country.
+        var subdivisions = await dbContext.Regions
             .AsNoTracking()
-            .Where(r => r.ParentRegion != null && r.ParentRegion.IsoCode == "NL")
-            .Select(r => r.Id)
-            .ToListAsync(cancellationToken))
-            .ToHashSet();
+            .Where(r => r.ParentRegion != null && r.ParentRegion.IsoCode != null && r.ParentRegion.IsoCode != "")
+            .Select(r => new
+            {
+                r.Id,
+                ParentId = r.ParentRegionId.Value,
+                ParentName = r.ParentRegion.Name,
+                ParentNameNL = r.ParentRegion.NameNL
+            })
+            .ToListAsync(cancellationToken);
+
+        var subdivisionParent = subdivisions.ToDictionary(s => s.Id, s => s.ParentId);
+        var countryInfo = subdivisions
+            .GroupBy(s => s.ParentId)
+            .ToDictionary(g => g.Key, g => (Name: g.First().ParentName, NameNL: g.First().ParentNameNL, Total: g.Count()));
 
         var deutscheBahnOperatorIds = await FindDeutscheBahnOperatorIdsAsync(cancellationToken);
 
@@ -95,7 +106,6 @@ public class AchievementService(OVDBDatabaseContext dbContext) : IAchievementSer
         var borderHops = new List<ProgressPoint>(trips.Count);
         var deutscheBahned = new List<ProgressPoint>(trips.Count);
         var shortHops = new List<ProgressPoint>(trips.Count);
-        var provinces = new List<ProgressPoint>(trips.Count);
         var countryGroupProgress = CountryGroups.ToDictionary(g => g.Key, _ => new List<ProgressPoint>(trips.Count));
 
         double totalDistance = 0;
@@ -108,7 +118,6 @@ public class AchievementService(OVDBDatabaseContext dbContext) : IAchievementSer
         var shortHopCount = 0;
         var seenCountries = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var seenOperators = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        var seenProvinces = new HashSet<int>();
         var seenDays = new HashSet<DateTime>();
 
         foreach (var trip in trips)
@@ -147,15 +156,6 @@ public class AchievementService(OVDBDatabaseContext dbContext) : IAchievementSer
                 var have = group.Iso.Count(iso => seenCountries.Contains(iso));
                 countryGroupProgress[group.Key].Add(new ProgressPoint(trip.Date, have));
             }
-
-            foreach (var regionId in route?.RegionIds ?? [])
-            {
-                if (dutchProvinceIds.Contains(regionId))
-                {
-                    seenProvinces.Add(regionId);
-                }
-            }
-            provinces.Add(new ProgressPoint(trip.Date, seenProvinces.Count));
 
             foreach (var name in SplitOperators(trip.Operator))
             {
@@ -209,7 +209,6 @@ public class AchievementService(OVDBDatabaseContext dbContext) : IAchievementSer
             BuildFamily("STREAK", "local_fire_department", "count", [3, 7, 14, 30], streak),
             BuildFamily("COUNTRIES", "public", "count", [1, 3, 5, 10, 25], countries),
             BuildFamily("BORDER_HOPPER", "swap_horiz", "count", [1, 10, 50], borderHops),
-            BuildFamily("DUTCH_PROVINCES", "flag", "count", [4, 8, 12], provinces),
             BuildFamily("OPERATORS", "badge", "count", [5, 10, 25, 50], operatorsSeen),
             BuildFamily("OPERATOR_BINGO", "casino", "count", [3, 5, 8], operatorBingo),
             BuildFamily("LONGEST_TRIP", "trending_flat", "km", [100, 250, 500, 1000], longestTrip),
@@ -217,7 +216,7 @@ public class AchievementService(OVDBDatabaseContext dbContext) : IAchievementSer
             BuildFamily("TOP_SPEED", "speed", "kmh", [80, 100, 160, 200], topSpeed),
             BuildFamily("NIGHT_TRAINS", "bedtime", "count", [1, 5, 10, 25], nightTrains),
             BuildFamily("DELAY_TIME", "hourglass_bottom", "hours", [1, 5, 24, 72], delayHours),
-            BuildFamily("DEUTSCHEBAHNED", "sentiment_dissatisfied", "minutes", [60, 90, 120], deutscheBahned),
+            BuildFamily("DEUTSCHEBAHNED", "sentiment_dissatisfied", "minutes", [30, 60, 120, 180, 300], deutscheBahned),
             BuildFamily("SHORT_HOP", "directions_walk", "count", [1, 10, 50], shortHops),
         ];
 
@@ -226,7 +225,84 @@ public class AchievementService(OVDBDatabaseContext dbContext) : IAchievementSer
             result.Families.Add(BuildFamily(group.Key, group.Icon, "count", [group.Iso.Length], countryGroupProgress[group.Key]));
         }
 
+        result.Families.AddRange(BuildSubdivisionFamilies(trips.Select(t => (t.Date, t.RouteId)).ToList(),
+            routeId => routeRegions.TryGetValue(routeId, out var route) ? route.RegionIds : [],
+            subdivisionParent, countryInfo));
+
         return result;
+    }
+
+    /// <summary>
+    /// One "collect the regions" family per country the user has actually been to a subdivision
+    /// of - provinces, Bundesländer, cantons, régions. Thresholds are a proportion of that
+    /// country's own subdivision count, so a 3-region country and a 26-canton one both work.
+    /// </summary>
+    internal static List<AchievementFamilyDTO> BuildSubdivisionFamilies(
+        IReadOnlyList<(DateTime Date, int RouteId)> trips,
+        Func<int, IReadOnlyList<int>> regionsForRoute,
+        IReadOnlyDictionary<int, int> subdivisionParent,
+        IReadOnlyDictionary<int, (string Name, string NameNL, int Total)> countryInfo)
+    {
+        // First pass: which countries are worth showing at all.
+        var touched = new Dictionary<int, HashSet<int>>();
+        foreach (var trip in trips)
+        {
+            foreach (var regionId in regionsForRoute(trip.RouteId))
+            {
+                if (subdivisionParent.TryGetValue(regionId, out var countryId))
+                {
+                    if (!touched.TryGetValue(countryId, out var set))
+                    {
+                        set = [];
+                        touched[countryId] = set;
+                    }
+                    set.Add(regionId);
+                }
+            }
+        }
+
+        var families = new List<AchievementFamilyDTO>();
+        foreach (var (countryId, _) in touched.OrderByDescending(t => t.Value.Count))
+        {
+            if (!countryInfo.TryGetValue(countryId, out var country) || country.Total == 0)
+            {
+                continue;
+            }
+
+            // Second pass, for this country only, so each threshold can still be dated.
+            var progression = new List<ProgressPoint>(trips.Count);
+            var seen = new HashSet<int>();
+            foreach (var trip in trips)
+            {
+                foreach (var regionId in regionsForRoute(trip.RouteId))
+                {
+                    if (subdivisionParent.TryGetValue(regionId, out var parent) && parent == countryId)
+                    {
+                        seen.Add(regionId);
+                    }
+                }
+                progression.Add(new ProgressPoint(trip.Date, seen.Count));
+            }
+
+            var family = BuildFamily($"SUBDIVISIONS_{countryId}", "flag", "count",
+                SubdivisionThresholds(country.Total), progression);
+            family.Name = country.Name;
+            family.NameNL = country.NameNL;
+            family.DescriptionKey = "SUBDIVISIONS_DESC";
+            families.Add(family);
+        }
+
+        return families;
+    }
+
+    /// <summary>Quarter, half, three quarters and all of a country's subdivisions.</summary>
+    internal static List<double> SubdivisionThresholds(int total)
+    {
+        return new[] { 0.25, 0.5, 0.75, 1.0 }
+            .Select(fraction => (double)Math.Max(1, (int)Math.Ceiling(total * fraction)))
+            .Distinct()
+            .OrderBy(value => value)
+            .ToList();
     }
 
     /// <summary>

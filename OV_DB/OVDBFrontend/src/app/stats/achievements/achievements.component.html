@@ -31,8 +31,13 @@
             <div class="head">
               <mat-icon>{{ family.icon }}</mat-icon>
               <div class="titles">
-                <span class="name">{{ 'STATS.ACHIEVEMENTS.FAMILY.' + family.key + '.NAME' | translate }}</span>
-                <span class="desc">{{ 'STATS.ACHIEVEMENTS.FAMILY.' + family.key + '.DESC' | translate }}</span>
+                @if (displayName(family); as name) {
+                  <span class="name">{{ name }}</span>
+                  <span class="desc">{{ 'STATS.ACHIEVEMENTS.' + family.descriptionKey | translate }}</span>
+                } @else {
+                  <span class="name">{{ 'STATS.ACHIEVEMENTS.FAMILY.' + family.key + '.NAME' | translate }}</span>
+                  <span class="desc">{{ 'STATS.ACHIEVEMENTS.FAMILY.' + family.key + '.DESC' | translate }}</span>
+                }
               </div>
             </div>
 

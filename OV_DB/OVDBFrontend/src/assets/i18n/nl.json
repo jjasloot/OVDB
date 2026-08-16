@@ -340,6 +340,7 @@
       "UNLOCKED_ON": "behaald op {{date}}",
       "NEXT": "Volgende:",
       "ALL_COMPLETE": "Alle niveaus behaald",
+      "SUBDIVISIONS_DESC": "Regio's van dit land waar je routes komen",
       "FAMILY": {
         "DISTANCE": {
           "NAME": "Afgelegde afstand",
@@ -384,10 +385,6 @@
         "BORDER_HOPPER": {
           "NAME": "Grensganger",
           "DESC": "Ritten die een landsgrens overstaken"
-        },
-        "DUTCH_PROVINCES": {
-          "NAME": "Provinciekampioen",
-          "DESC": "Nederlandse provincies waar je routes doorheen gaan"
         },
         "OPERATOR_BINGO": {
           "NAME": "Vervoerderbingo",

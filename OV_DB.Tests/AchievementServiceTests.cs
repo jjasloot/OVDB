@@ -154,6 +154,46 @@ namespace OV_DB.Tests
             Assert.Equal(3, streak[^1].Value);
         }
 
+        [Theory]
+        // Thresholds scale to the country, so a 3-region country and a 26-canton one both work.
+        [InlineData(12, new double[] { 3, 6, 9, 12 })]
+        [InlineData(26, new double[] { 7, 13, 20, 26 })]
+        [InlineData(3, new double[] { 1, 2, 3 })]
+        [InlineData(1, new double[] { 1 })]
+        public void SubdivisionThresholds_ScaleToTheCountrySize(int total, double[] expected)
+        {
+            Assert.Equal(expected, AchievementService.SubdivisionThresholds(total));
+        }
+
+        [Fact]
+        public void BuildSubdivisionFamilies_OnlyIncludesCountriesTheUserHasBeenTo()
+        {
+            // Regions 10/11 belong to country 1, region 20 to country 2 (never visited).
+            var subdivisionParent = new Dictionary<int, int> { [10] = 1, [11] = 1, [20] = 2 };
+            var countryInfo = new Dictionary<int, (string, string, int)>
+            {
+                [1] = ("Netherlands", "Nederland", 4),
+                [2] = ("Germany", "Duitsland", 16),
+            };
+            var trips = new List<(DateTime, int)>
+            {
+                (new DateTime(2026, 1, 1), 100),
+                (new DateTime(2026, 1, 5), 200),
+            };
+            IReadOnlyList<int> RegionsFor(int routeId) => routeId == 100 ? [10] : [11];
+
+            var families = AchievementService.BuildSubdivisionFamilies(trips, RegionsFor, subdivisionParent, countryInfo);
+
+            var family = Assert.Single(families);
+            Assert.Equal("SUBDIVISIONS_1", family.Key);
+            Assert.Equal("Netherlands", family.Name);
+            Assert.Equal("Nederland", family.NameNL);
+            Assert.Equal("SUBDIVISIONS_DESC", family.DescriptionKey);
+            Assert.Equal(2, family.CurrentValue);
+            // Second region was reached on the 5th, which is when the "half" tier was earned.
+            Assert.Equal(new DateTime(2026, 1, 5), family.CurrentTier.EarnedOn);
+        }
+
         [Fact]
         public void BuildPerDayProgressions_SumsSeveralTripsOnTheSameDay()
         {

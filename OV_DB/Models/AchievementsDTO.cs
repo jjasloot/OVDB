@@ -16,8 +16,18 @@ namespace OV_DB.Models
     {
         public string Key { get; set; }
         public string Icon { get; set; }
-        /// <summary>Formatting hint for the frontend: "km", "kmh", "hours" or "count".</summary>
+        /// <summary>Formatting hint for the frontend: "km", "kmh", "hours", "minutes" or "count".</summary>
         public string Unit { get; set; }
+
+        /// <summary>
+        /// Display name for families generated from data (e.g. one per country), where a static
+        /// translation key cannot exist. Null for fixed families, which the frontend translates
+        /// from <see cref="Key"/> instead.
+        /// </summary>
+        public string Name { get; set; }
+        public string NameNL { get; set; }
+        /// <summary>Shared translation key for the description of a generated family.</summary>
+        public string DescriptionKey { get; set; }
         public double CurrentValue { get; set; }
         public int EarnedTiers { get; set; }
         public int TotalTiers { get; set; }

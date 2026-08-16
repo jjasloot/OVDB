@@ -9,6 +9,7 @@ import { MatProgressSpinner } from '@angular/material/progress-spinner';
 import { MatSelect } from '@angular/material/select';
 import { TranslateModule } from '@ngx-translate/core';
 import { ApiService } from 'src/app/services/api.service';
+import { TranslationService } from 'src/app/services/translation.service';
 import { Map } from 'src/app/models/map.model';
 import { AchievementFamily } from 'src/app/models/achievements.model';
 
@@ -35,6 +36,7 @@ import { AchievementFamily } from 'src/app/models/achievements.model';
 })
 export class AchievementsComponent implements OnInit {
   private apiService = inject(ApiService);
+  private translationService = inject(TranslationService);
 
   maps = signal<Map[]>([]);
   selectedMap = signal<string | null>(null);
@@ -64,6 +66,11 @@ export class AchievementsComponent implements OnInit {
         this.loading.set(false);
       },
     });
+  }
+
+  /** Generated families (one per country) carry their own name; fixed ones are translated. */
+  displayName(family: AchievementFamily): string | null {
+    return family.name ? this.translationService.getNameForItem({ name: family.name, nameNL: family.nameNL ?? '' }) : null;
   }
 
   /** Tier pips, so the ladder is visible as progress without listing distant thresholds. */
