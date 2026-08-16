@@ -291,7 +291,7 @@ export class RouteInstancesComponent implements OnInit {
             this.getData();
             // Importing is the only moment the calling pattern is on hand, so the stations it
             // says were called at but are not marked get offered now or not at all.
-            this.offerStationSuggestions(response, result);
+            this.offerStationSuggestions(response);
             // Clear the fromTraewelling flag after successful creation
             this.fromTraewelling.set(false);
             this.trawellingTripData.set(null);
@@ -310,8 +310,12 @@ export class RouteInstancesComponent implements OnInit {
    * on the import response because that is the one request where the calling pattern was fetched;
    * they are not stored, so this is the moment to act on them or let them go.
    */
-  private offerStationSuggestions(response: unknown, saved: RouteInstance): void {
-    const suggestions = (response as { stationSuggestions?: StationSuggestion[] })?.stationSuggestions;
+  private offerStationSuggestions(response: unknown): void {
+    const body = response as {
+      routeInstanceId?: number;
+      stationSuggestions?: StationSuggestion[];
+    };
+    const suggestions = body?.stationSuggestions;
     if (!suggestions?.length) {
       return;
     }
@@ -323,7 +327,9 @@ export class RouteInstancesComponent implements OnInit {
         width: '560px',
         data: {
           tripName: this.route()?.name ?? '',
-          routeInstanceId: saved.routeInstanceId ?? null,
+          // Comes from the server: a newly created instance has no id client-side, and without it
+          // every suggestion would be marked undated despite the trip having a date.
+          routeInstanceId: body.routeInstanceId ?? null,
           stations: suggestions,
         },
       }

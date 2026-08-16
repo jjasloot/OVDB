@@ -47,22 +47,14 @@ namespace OV_DB.Models
         public double DistanceMetres { get; set; }
     }
 
-    /// <summary>A trip with unmarked stations along it.</summary>
-    public class TripSuggestionsDTO
-    {
-        public int RouteInstanceId { get; set; }
-        public int RouteId { get; set; }
-        public string RouteName { get; set; }
-        public string From { get; set; }
-        public string To { get; set; }
-        public DateTime Date { get; set; }
-        public List<StationSuggestionDTO> Stations { get; set; }
-    }
-
     public class MarkSuggestionDTO
     {
         public int StationId { get; set; }
-        public int RouteInstanceId { get; set; }
+        /// <summary>
+        /// The trip that supplies the date. Null for an OSM import, which has no trip on it yet —
+        /// the visit is then recorded undated rather than claiming a date nothing knows.
+        /// </summary>
+        public int? RouteInstanceId { get; set; }
         public StationVisitLevel Level { get; set; }
     }
 }

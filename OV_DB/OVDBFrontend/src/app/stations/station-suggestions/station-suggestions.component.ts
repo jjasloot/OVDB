@@ -87,14 +87,11 @@ export class StationSuggestionsComponent {
     this.setBusy(stationId, true);
     try {
       // With a trip the visit is dated from it; without one it stays undated on purpose rather
-      // than claiming today, which nothing here knows.
-      if (this.data.routeInstanceId !== null) {
-        await firstValueFrom(
-          this.apiService.markSuggestedStation(stationId, this.data.routeInstanceId, level)
-        );
-      } else {
-        await firstValueFrom(this.apiService.updateStation(stationId, true, level));
-      }
+      // than claiming today, which nothing here knows. Both go through the same endpoint so the
+      // visit is recorded as import-suggested either way.
+      await firstValueFrom(
+        this.apiService.markSuggestedStation(stationId, this.data.routeInstanceId, level)
+      );
       this.remove(stationId);
     } catch {
       this.setBusy(stationId, false);

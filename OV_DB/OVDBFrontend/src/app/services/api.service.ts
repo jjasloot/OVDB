@@ -590,10 +590,13 @@ export class ApiService {
     return this.httpClient.post<StationSuggestion[]>(url, stops);
   }
 
-  /** Marks one suggested station, dated from the trip that suggested it. */
+  /**
+   * Marks one suggested station, dated from the trip that suggested it. A null trip means the
+   * import had no trip yet (OSM), so the visit is recorded undated rather than claiming a date.
+   */
   markSuggestedStation(
     stationId: number,
-    routeInstanceId: number,
+    routeInstanceId: number | null,
     level: StationVisitLevel
   ): Observable<void> {
     const url = environment.backend + "api/stationsuggestions/mark";

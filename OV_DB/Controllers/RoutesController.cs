@@ -1039,12 +1039,14 @@ namespace OV_DB.Controllers
                 return NotFound();
             }
 
+            // A newly created instance only gets its id once saved, and the caller needs it to date
+            // any station suggestions against the trip it just imported.
+            RouteInstance savedInstance = null;
+
             if (update.RouteInstanceId.HasValue)
             {
-
-
-
                 var current = route.RouteInstances.SingleOrDefault(ri => ri.RouteInstanceId == update.RouteInstanceId);
+                savedInstance = current;
                 if (current != null)
                 {
                     current.Date = update.Date;
@@ -1135,6 +1137,7 @@ namespace OV_DB.Controllers
                         });
                 });
                 route.RouteInstances.Add(newInstance);
+                savedInstance = newInstance;
             }
             await _context.SaveChangesAsync();
 
@@ -1162,8 +1165,13 @@ namespace OV_DB.Controllers
             }
 
             // Stations this trip calls at that are not marked. Proposals only — the response carries
-            // them so the user can act while the trip is still in mind, and nothing is stored.
-            return Ok(new { stationSuggestions = suggestions });
+            // them so the user can act while the trip is still in mind, and nothing is stored. The
+            // instance id rides along because a suggestion is dated from the trip it came from.
+            return Ok(new
+            {
+                routeInstanceId = savedInstance?.RouteInstanceId,
+                stationSuggestions = suggestions
+            });
         }
 
 

@@ -72,8 +72,18 @@ namespace OV_DB.Controllers
 
             try
             {
-                await stationVisitService.MarkFromTripAsync(
-                    userId, suggestion.StationId, suggestion.Level, suggestion.RouteInstanceId, StationVisitSource.ImportSuggested);
+                // Either way the source is ImportSuggested: how the visit came to be recorded is
+                // worth keeping straight, whether or not a trip was there to date it.
+                if (suggestion.RouteInstanceId.HasValue)
+                {
+                    await stationVisitService.MarkFromTripAsync(
+                        userId, suggestion.StationId, suggestion.Level, suggestion.RouteInstanceId.Value, StationVisitSource.ImportSuggested);
+                }
+                else
+                {
+                    await stationVisitService.MarkAsync(
+                        userId, suggestion.StationId, suggestion.Level, null, StationVisitSource.ImportSuggested);
+                }
             }
             catch (ArgumentException)
             {
