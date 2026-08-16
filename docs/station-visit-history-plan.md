@@ -340,10 +340,13 @@ feature.
 
 ## Still open
 
-- **The proximity threshold is probably not one number.** ~300 m suits heavy rail, but this database
-  covers trams and metros whose stops are 300–500 m apart, where that radius will match several
-  stops at once and pick the wrong one. Likely needs to vary by route type; needs measuring on a
-  dense city before choosing.
+- **The proximity threshold is fine at ~300 m, for now** (**measured**, and it contradicted the
+  expectation): in a 400-station sample of this user's visits, 374 have no other active station
+  within ~300 m, 22 have one, and 4 have two — unambiguous 93.5% of the time. The feared tram and
+  metro density does not appear, most likely because `StationImporterController` imports
+  `railway=station|halt` and therefore **excludes `tram_stop`** entirely. One number is enough
+  today; revisit the moment tram or metro stops are imported as stations, because that assumption is
+  doing the work, not the geometry.
 - **The two dates need an ordering rule when edited.** Alighting implies stopping, so setting
   `FirstEntryExitDate` earlier than `FirstStoppedDate` is incoherent. Pull the stopped date back to
   match, or refuse — decide before the edit dialog is built.
