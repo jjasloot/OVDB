@@ -28,9 +28,8 @@ RUN dotnet publish OV_DB/OV_DB.csproj -c Release -o /app/out -p:SkipSpaBuild=tru
 # published publicly on Docker Hub.
 FROM mcr.microsoft.com/dotnet/aspnet:10.0
 WORKDIR /app
-RUN apt-get update \
-    && apt-get install -y libc6-dev libgdiplus \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+# No apt packages needed: image generation uses SixLabors.ImageSharp (fully managed) and
+# loads its font from Assets/Fonts, so the old libgdiplus/libc6-dev install - a leftover
+# from System.Drawing, which nothing references any more - has been dropped.
 COPY --from=build-env /app/out .
 ENTRYPOINT ["dotnet", "OV_DB.dll"]
