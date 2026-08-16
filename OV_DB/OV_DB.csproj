@@ -73,10 +73,13 @@
     <Exec WorkingDirectory="$(SpaRoot)" Command="npm install" />
   </Target>
   <Target Name="PublishRunWebpack" AfterTargets="ComputeFilesToPublish">
-    <!-- As part of publishing, ensure the JS resources are freshly built in production mode -->
-    <Exec WorkingDirectory="$(SpaRoot)" Command="npm install" />
-    <Exec WorkingDirectory="$(SpaRoot)" Command="npm run build -- -c production" />
-    <Exec WorkingDirectory="$(SpaRoot)" Command="npm run build:ssr -- -c production" Condition=" '$(BuildServerSideRenderer)' == 'true' " />
+    <!-- As part of publishing, ensure the JS resources are freshly built in production mode
+         (the npm "build" script already targets the production configuration).
+         Set SkipSpaBuild=true when dist has been produced beforehand - the Docker build does
+         this in a dedicated Node stage. The DistFiles below are still published either way. -->
+    <Exec WorkingDirectory="$(SpaRoot)" Command="npm install" Condition="'$(SkipSpaBuild)' != 'true'" />
+    <Exec WorkingDirectory="$(SpaRoot)" Command="npm run build" Condition="'$(SkipSpaBuild)' != 'true'" />
+    <Exec WorkingDirectory="$(SpaRoot)" Command="npm run build:ssr -- -c production" Condition=" '$(BuildServerSideRenderer)' == 'true' And '$(SkipSpaBuild)' != 'true' " />
     <!-- Include the newly-built files in the publish output -->
     <ItemGroup>
       <DistFiles Include="$(SpaRoot)dist\**; $(SpaRoot)dist-server\**" />

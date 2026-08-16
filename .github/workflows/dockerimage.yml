@@ -11,15 +11,13 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
-    env:
-      JWTSigningKey: ${{ secrets.JWTSigningKey }}
-      UserAgent: ${{ secrets.UserAgent }}
     steps:
     - uses: actions/checkout@v6
     - name: Build the Docker image
-      run: docker build . --file Dockerfile --tag jjasloot/ovdb:$(date +%Y%M%d) --tag jjasloot/ovdb:latest --build-arg JWTSigningKey --build-arg UserAgent
+      # No secrets are baked into the image: the deployment supplies JWTSigningKey,
+      # DBConnectionString, UserAgent and the bot tokens as runtime environment variables.
+      run: docker build . --file Dockerfile --tag jjasloot/ovdb:$(date +%Y%m%d) --tag jjasloot/ovdb:latest
     - name: Docker login
-      run: docker login -u ${{ secrets.DockerUsername}} -p${{secrets.DockerPassword}} 
+      run: echo "${{ secrets.DockerPassword }}" | docker login -u ${{ secrets.DockerUsername }} --password-stdin
     - name: Docker push
-      run: docker push jjasloot/ovdb
-    
+      run: docker push --all-tags jjasloot/ovdb

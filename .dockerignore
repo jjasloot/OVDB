@@ -1,2 +1,29 @@
-bin/
-obj/
+# Patterns are relative to the build context root, so bare "bin/"/"obj/" did not match
+# OV_DB/bin, OVDB_database/obj, etc. Use **/ so nested output is excluded too.
+
+# Build output
+**/bin/
+**/obj/
+**/dist/
+**/.angular/
+**/out/
+
+# Dependencies: platform-specific binaries (esbuild, rollup, node-gyp builds) must be
+# installed inside the image, never copied from a Windows working copy.
+**/node_modules/
+
+# Local development database: docker-compose volume plus a ~750 MB SQL dump.
+dev-db/
+
+# Version control and IDE state
+.git/
+.gitignore
+.github/
+.vs/
+.vscode/
+*.user
+*.suo
+
+# Local secrets / launch settings that must not enter an image
+**/appsettings.Development.json
+**/Properties/launchSettings.json
