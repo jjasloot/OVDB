@@ -1,0 +1,190 @@
+<div class="container">
+  <mat-card appearance="outlined">
+    <mat-card-title>{{ 'SELECTION' | translate }}</mat-card-title>
+    <mat-card-content>
+      <mat-form-field>
+        <mat-label>{{ 'CHOOSEMAP' | translate }}</mat-label>
+        <mat-select [value]="selectedMap()" (selectionChange)="changeMap($event.value)">
+          @for (map of maps(); track map.mapGuid) {
+            <mat-option [value]="map.mapGuid">{{ map.name }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field>
+        <mat-label>{{ 'CHOOSEYEAR' | translate }}</mat-label>
+        <mat-select [value]="selectedYear()" (selectionChange)="changeYear($event.value)">
+          @for (year of years(); track year) {
+            <mat-option [value]="year">{{ year }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+    </mat-card-content>
+  </mat-card>
+
+  @if (loading()) {
+    <div class="loading">
+      <mat-spinner diameter="40" />
+    </div>
+  } @else if (review(); as r) {
+    @if (r.trips === 0) {
+      <mat-card appearance="outlined">
+        <mat-card-content>
+          <p>{{ 'STATS.YEARREVIEW.NO_TRIPS' | translate: { year: r.year } }}</p>
+        </mat-card-content>
+      </mat-card>
+    } @else {
+      <mat-card appearance="outlined" class="hero">
+        <mat-card-content>
+          <div class="hero-year">{{ r.year }}</div>
+          <div class="hero-figures">
+            <div class="figure">
+              <span class="value">{{ r.distanceKm | number: '1.0-0' }}</span>
+              <span class="label">{{ 'STATS.YEARREVIEW.KILOMETRES' | translate }}</span>
+            </div>
+            <div class="figure">
+              <span class="value">{{ r.trips }}</span>
+              <span class="label">{{ 'STATS.YEARREVIEW.TRIPS' | translate }}</span>
+            </div>
+            <div class="figure">
+              <span class="value">{{ r.durationHours | number: '1.0-0' }}</span>
+              <span class="label">{{ 'STATS.YEARREVIEW.HOURS' | translate }}</span>
+            </div>
+            <div class="figure">
+              <span class="value">{{ r.activeDays }}</span>
+              <span class="label">{{ 'STATS.YEARREVIEW.ACTIVE_DAYS' | translate }}</span>
+            </div>
+            <div class="figure">
+              <span class="value">{{ r.newRoutes }}</span>
+              <span class="label">{{ 'STATS.YEARREVIEW.NEW_ROUTES' | translate }}</span>
+            </div>
+          </div>
+          @if (distanceTrend(); as trend) {
+            <div class="trend" [class.up]="trend > 0" [class.down]="trend < 0">
+              <mat-icon>{{ trend > 0 ? 'trending_up' : 'trending_down' }}</mat-icon>
+              <span>
+                {{ 'STATS.YEARREVIEW.TREND' | translate: {
+                  percent: (trend > 0 ? '+' : '') + (trend | number: '1.0-1'),
+                  year: r.year - 1,
+                  distance: (r.previousYearDistanceKm | number: '1.0-0')
+                } }}
+              </span>
+            </div>
+          }
+        </mat-card-content>
+      </mat-card>
+
+      @if (r.countries.length > 0) {
+        <mat-card appearance="outlined">
+          <mat-card-title>
+            {{ 'STATS.YEARREVIEW.COUNTRIES' | translate: { count: r.countries.length } }}
+          </mat-card-title>
+          <mat-card-content>
+            <div class="countries">
+              @for (country of r.countries; track country.isoCode) {
+                <span class="country" [title]="countryName(country)">
+                  <span class="flag">{{ country.flagEmoji }}</span>
+                  <span>{{ countryName(country) }}</span>
+                </span>
+              }
+            </div>
+          </mat-card-content>
+        </mat-card>
+      }
+
+      <div class="highlights">
+        @if (r.longestTrip; as trip) {
+          <mat-card appearance="outlined" class="highlight">
+            <mat-card-title>{{ 'STATS.YEARREVIEW.LONGEST_TRIP' | translate }}</mat-card-title>
+            <mat-card-content>
+              <div class="highlight-value">{{ trip.distanceKm | number: '1.0-0' }} km</div>
+              <div class="highlight-name">{{ name(trip) }}</div>
+              <div class="highlight-meta">{{ trip.date | date: 'mediumDate' }}</div>
+            </mat-card-content>
+          </mat-card>
+        }
+        @if (r.fastestTrip; as trip) {
+          <mat-card appearance="outlined" class="highlight">
+            <mat-card-title>{{ 'STATS.YEARREVIEW.FASTEST_TRIP' | translate }}</mat-card-title>
+            <mat-card-content>
+              <div class="highlight-value">{{ trip.averageSpeedKmh | number: '1.0-0' }} km/h</div>
+              <div class="highlight-name">{{ name(trip) }}</div>
+              <div class="highlight-meta">{{ trip.date | date: 'mediumDate' }}</div>
+            </mat-card-content>
+          </mat-card>
+        }
+        @if (r.busiestDay; as day) {
+          <mat-card appearance="outlined" class="highlight">
+            <mat-card-title>{{ 'STATS.YEARREVIEW.BUSIEST_DAY' | translate }}</mat-card-title>
+            <mat-card-content>
+              <div class="highlight-value">{{ day.trips }}</div>
+              <div class="highlight-name">
+                {{ 'STATS.YEARREVIEW.BUSIEST_DAY_DETAIL' | translate: { distance: (day.distanceKm | number: '1.0-0') } }}
+              </div>
+              <div class="highlight-meta">{{ day.date | date: 'mediumDate' }}</div>
+            </mat-card-content>
+          </mat-card>
+        }
+        @if (r.tripsWithArrivalData > 0) {
+          <mat-card appearance="outlined" class="highlight">
+            <mat-card-title>{{ 'STATS.PUNCTUALITY.ONTIME' | translate }}</mat-card-title>
+            <mat-card-content>
+              <div class="highlight-value">{{ r.onTimePercentage | number: '1.0-1' }}%</div>
+              <div class="highlight-name">
+                {{ 'STATS.YEARREVIEW.AVG_DELAY' | translate: { minutes: (r.averageArrivalDelayMinutes | number: '1.0-1') } }}
+              </div>
+              <div class="highlight-meta">
+                {{ 'STATS.YEARREVIEW.BASED_ON' | translate: { count: r.tripsWithArrivalData } }}
+              </div>
+            </mat-card-content>
+          </mat-card>
+        }
+      </div>
+
+      @if (monthlyChart(); as data) {
+        <mat-card appearance="outlined">
+          <mat-card-title>{{ 'STATS.YEARREVIEW.PER_MONTH' | translate }}</mat-card-title>
+          <mat-card-content>
+            <div class="chart">
+              <canvas baseChart type="bar" [data]="data" [options]="monthlyChartOptions"></canvas>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      }
+
+      <div class="tables">
+        @if (r.topRouteTypes.length > 0) {
+          <mat-card appearance="outlined">
+            <mat-card-title>{{ 'STATS.YEARREVIEW.BY_TYPE' | translate }}</mat-card-title>
+            <mat-card-content>
+              <table>
+                @for (row of r.topRouteTypes; track row.name) {
+                  <tr>
+                    <td>{{ name(row) }}</td>
+                    <td class="numeric">{{ row.trips }}</td>
+                    <td class="numeric">{{ row.distanceKm | number: '1.0-0' }} km</td>
+                  </tr>
+                }
+              </table>
+            </mat-card-content>
+          </mat-card>
+        }
+        @if (r.topOperators.length > 0) {
+          <mat-card appearance="outlined">
+            <mat-card-title>{{ 'STATS.YEARREVIEW.TOP_OPERATORS' | translate }}</mat-card-title>
+            <mat-card-content>
+              <table>
+                @for (row of r.topOperators; track row.name) {
+                  <tr>
+                    <td>{{ row.name }}</td>
+                    <td class="numeric">{{ row.trips }}</td>
+                    <td class="numeric">{{ row.distanceKm | number: '1.0-0' }} km</td>
+                  </tr>
+                }
+              </table>
+            </mat-card-content>
+          </mat-card>
+        }
+      </div>
+    }
+  }
+</div>

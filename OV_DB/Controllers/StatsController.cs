@@ -164,6 +164,178 @@ namespace OV_DB.Controllers
 
         private static readonly string[] DelayBucketKeys = ["EARLY", "ONTIME", "D5_15", "D15_30", "D30_60", "D60PLUS"];
 
+        [HttpGet("year-in-review/{map}")]
+        public async Task<ActionResult<YearInReviewDTO>> GetYearInReview(Guid map, [FromQuery] int? year)
+        {
+            var userIdClaim = User.GetUserId();
+            if (userIdClaim < 0)
+            {
+                return Forbid();
+            }
+
+            const int onTimeThresholdMinutes = 5;
+            var targetYear = year ?? DateTime.Now.Year;
+
+            var trips = await QueryForInstances(map, targetYear, userIdClaim)
+                .Select(ri => new
+                {
+                    ri.RouteId,
+                    ri.Date,
+                    ri.DurationHours,
+                    ri.EndTime,
+                    ri.ScheduledEndTime,
+                    ri.Route.Name,
+                    ri.Route.NameNL,
+                    Operator = ri.Route.OperatingCompany,
+                    TypeName = ri.Route.RouteType.Name,
+                    TypeNameNL = ri.Route.RouteType.NameNL,
+                    Distance = (double)((ri.Route.OverrideDistance.HasValue && ri.Route.OverrideDistance > 0)
+                        ? ri.Route.OverrideDistance
+                        : ri.Route.CalculatedDistance)
+                })
+                .ToListAsync();
+
+            var result = new YearInReviewDTO
+            {
+                Year = targetYear,
+                Trips = trips.Count,
+                DistanceKm = Math.Round(trips.Sum(t => t.Distance), 1),
+                DurationHours = Math.Round(trips.Sum(t => t.DurationHours ?? 0), 1),
+                ActiveDays = trips.Select(t => t.Date.Date).Distinct().Count(),
+                DistinctRoutes = trips.Select(t => t.RouteId).Distinct().Count(),
+                MonthlyDistanceKm = Enumerable.Range(1, 12)
+                    .Select(month => Math.Round(trips.Where(t => t.Date.Month == month).Sum(t => t.Distance), 1))
+                    .ToList()
+            };
+
+            var routeIds = trips.Select(t => t.RouteId).Distinct().ToList();
+
+            if (routeIds.Count > 0)
+            {
+                // A route counts as new when its earliest instance anywhere falls in this year.
+                var firstRides = await _context.RouteInstances
+                    .AsNoTracking()
+                    .Where(ri => routeIds.Contains(ri.RouteId))
+                    .GroupBy(ri => ri.RouteId)
+                    .Select(g => new { RouteId = g.Key, First = g.Min(ri => ri.Date) })
+                    .ToListAsync();
+                result.NewRoutes = firstRides.Count(f => f.First.Year == targetYear);
+
+                result.Countries = await _context.Routes
+                    .AsNoTracking()
+                    .Where(r => routeIds.Contains(r.RouteId))
+                    .SelectMany(r => r.Regions)
+                    .Where(r => r.IsoCode != null && r.IsoCode != "")
+                    .Select(r => new CountryVisitDTO
+                    {
+                        IsoCode = r.IsoCode,
+                        FlagEmoji = r.FlagEmoji,
+                        Name = r.Name,
+                        NameNL = r.NameNL
+                    })
+                    .Distinct()
+                    .OrderBy(c => c.Name)
+                    .ToListAsync();
+            }
+
+            result.TopRouteTypes = trips
+                .Where(t => !string.IsNullOrWhiteSpace(t.TypeName))
+                .GroupBy(t => new { t.TypeName, t.TypeNameNL })
+                .Select(g => new NameCountDTO
+                {
+                    Name = g.Key.TypeName,
+                    NameNL = g.Key.TypeNameNL,
+                    Trips = g.Count(),
+                    DistanceKm = Math.Round(g.Sum(t => t.Distance), 1)
+                })
+                .OrderByDescending(g => g.DistanceKm)
+                .ToList();
+
+            result.TopOperators = trips
+                .Where(t => !string.IsNullOrWhiteSpace(t.Operator))
+                .GroupBy(t => t.Operator.Trim())
+                .Select(g => new NameCountDTO
+                {
+                    Name = g.Key,
+                    NameNL = g.Key,
+                    Trips = g.Count(),
+                    DistanceKm = Math.Round(g.Sum(t => t.Distance), 1)
+                })
+                .OrderByDescending(g => g.Trips)
+                .ThenByDescending(g => g.DistanceKm)
+                .Take(5)
+                .ToList();
+
+            var longest = trips.OrderByDescending(t => t.Distance).FirstOrDefault();
+            if (longest != null && longest.Distance > 0)
+            {
+                result.LongestTrip = new HighlightTripDTO
+                {
+                    RouteId = longest.RouteId,
+                    Date = longest.Date,
+                    Name = longest.Name,
+                    NameNL = longest.NameNL,
+                    DistanceKm = Math.Round(longest.Distance, 1),
+                    DurationHours = longest.DurationHours,
+                    AverageSpeedKmh = longest.DurationHours > 0
+                        ? Math.Round(longest.Distance / longest.DurationHours.Value, 1)
+                        : null
+                };
+            }
+
+            var fastest = trips
+                .Where(t => t.DurationHours > 0 && t.Distance > 0)
+                .OrderByDescending(t => t.Distance / t.DurationHours.Value)
+                .FirstOrDefault();
+            if (fastest != null)
+            {
+                result.FastestTrip = new HighlightTripDTO
+                {
+                    RouteId = fastest.RouteId,
+                    Date = fastest.Date,
+                    Name = fastest.Name,
+                    NameNL = fastest.NameNL,
+                    DistanceKm = Math.Round(fastest.Distance, 1),
+                    DurationHours = fastest.DurationHours,
+                    AverageSpeedKmh = Math.Round(fastest.Distance / fastest.DurationHours.Value, 1)
+                };
+            }
+
+            var busiest = trips
+                .GroupBy(t => t.Date.Date)
+                .Select(g => new BusiestDayDTO
+                {
+                    Date = g.Key,
+                    Trips = g.Count(),
+                    DistanceKm = Math.Round(g.Sum(t => t.Distance), 1)
+                })
+                .OrderByDescending(d => d.Trips)
+                .ThenByDescending(d => d.DistanceKm)
+                .FirstOrDefault();
+            result.BusiestDay = busiest;
+
+            var arrivalDelays = trips
+                .Where(t => t.EndTime.HasValue && t.ScheduledEndTime.HasValue)
+                .Select(t => (t.EndTime.Value - t.ScheduledEndTime.Value).TotalMinutes)
+                .ToList();
+            result.TripsWithArrivalData = arrivalDelays.Count;
+            if (arrivalDelays.Count > 0)
+            {
+                result.AverageArrivalDelayMinutes = Math.Round(arrivalDelays.Average(), 1);
+                result.OnTimePercentage = Math.Round(
+                    100.0 * arrivalDelays.Count(d => d < onTimeThresholdMinutes) / arrivalDelays.Count, 1);
+            }
+
+            var previousQuery = QueryForInstances(map, targetYear - 1, userIdClaim);
+            result.PreviousYearTrips = await previousQuery.CountAsync();
+            result.PreviousYearDistanceKm = Math.Round(
+                await previousQuery.SumAsync(ri => (double?)((ri.Route.OverrideDistance.HasValue && ri.Route.OverrideDistance > 0)
+                    ? ri.Route.OverrideDistance
+                    : ri.Route.CalculatedDistance)) ?? 0, 1);
+
+            return Ok(result);
+        }
+
         [HttpGet("punctuality/{map}")]
         public async Task<ActionResult<PunctualityStatsDTO>> GetPunctualityStats(Guid map, [FromQuery] int? year)
         {

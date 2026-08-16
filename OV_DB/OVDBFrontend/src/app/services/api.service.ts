@@ -21,6 +21,7 @@ import { MapDataDTO } from "../models/map-data.model";
 import { RegionOperators } from "../models/region-operators.model";
 import { RegionStat } from "../models/region.model";
 import { PunctualityStats } from "../models/punctuality.model";
+import { YearInReview } from "../models/year-in-review.model";
 import { UserProfile, UpdateProfile, ChangePassword, TraewellingTagMapping, TrainlogOperatorMapping } from "../models/user-profile.model";
 import { RouteInstanceListResponseDTO } from "../models/routeInstanceList.model";
 import { 
@@ -460,6 +461,14 @@ export class ApiService {
       url += `?year=${year}`;
     }
     return this.httpClient.get<PunctualityStats>(url);
+  }
+
+  getYearInReview(map: string, year?: number | null): Observable<YearInReview> {
+    let url = environment.backend + "api/stats/year-in-review/" + map;
+    if (year) {
+      url += `?year=${year}`;
+    }
+    return this.httpClient.get<YearInReview>(url);
   }
 
   getAutocompleteForTags() {
