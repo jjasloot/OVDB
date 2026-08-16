@@ -1,0 +1,15 @@
+.current {
+  margin: 0;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+// Removing a visit is the destructive option here; it should not look like the others.
+.danger {
+  --mdc-outlined-button-label-text-color: #c62828;
+  color: #c62828;
+}

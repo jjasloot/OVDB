@@ -13,7 +13,37 @@ import { MapTileLayersService } from "src/app/services/map-tile-layers.service";
 import { LeafletModule } from "@bluehalo/ngx-leaflet";
 import { NgClass } from "@angular/common";
 import { MatProgressSpinner } from "@angular/material/progress-spinner";
+import { MatSnackBar, MatSnackBarConfig } from "@angular/material/snack-bar";
+import { MatDialog } from "@angular/material/dialog";
+import { TranslateService } from "@ngx-translate/core";
 import { createMarkerClusterGroup } from "src/app/leaflet-markercluster-loader";
+import { StationVisitLevel } from "src/app/models/stationView.model";
+import {
+  StationVisitDialogComponent,
+  StationVisitDialogData,
+  StationVisitDialogResult,
+} from "../station-visit-dialog/station-visit-dialog.component";
+
+/**
+ * Four states, not two: red is unvisited, green is stopped at, blue is got on/off, and grey is
+ * visited with the level not yet known — which is every row predating visit history, until the
+ * backfill has been through it.
+ */
+function markerStyle(visited: boolean, level: StationVisitLevel | null) {
+  if (!visited) {
+    return { radius: 4, fillColor: "#FF0000", color: "#000", weight: 1, opacity: 1, fillOpacity: 0.5 };
+  }
+  const fillColor =
+    level === StationVisitLevel.EntryExit ? "#1E88E5" : level === StationVisitLevel.Stopped ? "#00C853" : "#9E9E9E";
+  return { radius: 8, fillColor, color: "#000", weight: 1, opacity: 1, fillOpacity: 0.8 };
+}
+
+const PENDING_STYLE = { radius: 6, fillColor: "#FF7F00", color: "#000", weight: 1, opacity: 1, fillOpacity: 0.65 };
+
+/** No duration: a mis-tap is usually noticed long after five seconds have passed. */
+const UNDOABLE: MatSnackBarConfig = { verticalPosition: "bottom" };
+
+const SMALL_DIALOG = { maxWidth: "95vw", width: "360px" };
 
 @Component({
     selector: "app-station-map",
@@ -31,6 +61,9 @@ export class StationMapComponent implements OnInit {
   private translationService = inject(TranslationService);
   private cd = inject(ChangeDetectorRef);
   private mapTileLayersService = inject(MapTileLayersService);
+  private snackBar = inject(MatSnackBar);
+  private dialog = inject(MatDialog);
+  private translateService = inject(TranslateService);
 
   baseLayers = this.mapTileLayersService.createBaseLayers();
   readonly guid = input<string>();
@@ -105,57 +138,31 @@ export class StationMapComponent implements OnInit {
     text.stations.forEach((station) => {
       const marker = circleMarker(
         new LatLng(station.lattitude, station.longitude, station.elevation!),
-        {
-          radius: station.visited ? 8 : 4,
-          fillColor: station.visited ? "#00FF00" : "#FF0000",
-          color: "#000",
-          weight: 1,
-          opacity: 1,
-          fillOpacity: station.visited ? 0.8 : 0.5,
-        }
+        markerStyle(station.visited, station.visitLevel)
       );
       marker.feature = {
         properties: {
           id: station.id,
+          name: station.name,
           visited: station.visited,
+          visitLevel: station.visitLevel,
         },
         type: "Feature",
         geometry: null!,
       };
       markers.addLayer(marker);
     });
-    markers.addEventListener("click", async (f: LeafletEvent) => {
-      if (!f.propagatedFrom.feature.properties.visited) {
-        f.propagatedFrom.feature.properties.visited = true;
+    markers.addEventListener("click", (f: LeafletEvent) => {
+      const properties = f.propagatedFrom.feature.properties;
+      if (properties.visited) {
+        // Already visited: changing it is deliberate, so ask what to do rather than toggling
+        // something away on a stray tap.
+        void parent.openVisitDialog(f.propagatedFrom);
       } else {
-        f.propagatedFrom.feature.properties.visited = false;
+        // A plain tap records the weaker claim; upgrading to entry/exit is an explicit choice
+        // offered in the snackbar.
+        void parent.markStation(f.propagatedFrom, StationVisitLevel.Stopped);
       }
-      f.propagatedFrom.setStyle({
-        fillColor: "#FF7F00",
-        fillOpacity: 0.65,
-        radius: 6,
-      });
-      (this.layers()[0] as any).refreshClusters();
-      await firstValueFrom(parent.apiService
-        .updateStation(
-          f.propagatedFrom.feature.properties.id,
-          f.propagatedFrom.feature.properties.visited
-        ));
-      if (f.propagatedFrom.feature.properties.visited) {
-        parent.visited.update(v => v + 1);
-      } else {
-        parent.visited.update(v => v - 1);
-      }
-      parent.cd.detectChanges();
-      console.log(f.propagatedFrom);
-      f.propagatedFrom.setStyle({
-        fillColor: f.propagatedFrom.feature.properties.visited
-          ? "#00FF00"
-          : "#FF0000",
-        fillOpacity: f.propagatedFrom.feature.properties.visited ? 0.8 : 0.5,
-        radius: f.propagatedFrom.feature.properties.visited ? 8 : 4,
-      });
-      (this.layers()[0] as any).refreshClusters();
     });
     this.layers.set([markers]);
     this.bounds = markers.getBounds();
@@ -164,5 +171,110 @@ export class StationMapComponent implements OnInit {
 
   getName(object: { name: string; nameNL: string }) {
     return this.translationService.getNameForItem(object);
+  }
+
+  /** Marks or upgrades a station, then reflects the result on the marker. */
+  private async markStation(marker: any, level: StationVisitLevel): Promise<void> {
+    const properties = marker.feature.properties;
+    const wasVisited = properties.visited;
+    marker.setStyle(PENDING_STYLE);
+    this.refreshClusters();
+
+    try {
+      const state = await firstValueFrom(
+        this.apiService.updateStation(properties.id, true, level)
+      );
+      this.applyState(marker, state.visited, state.level);
+      if (!wasVisited) {
+        this.visited.update((v) => v + 1);
+      }
+      this.offerUpgrade(marker, state.level);
+    } catch {
+      this.applyState(marker, wasVisited, properties.visitLevel);
+    }
+  }
+
+  private async removeStation(marker: any): Promise<void> {
+    const properties = marker.feature.properties;
+    const previousLevel = properties.visitLevel;
+    marker.setStyle(PENDING_STYLE);
+    this.refreshClusters();
+
+    try {
+      await firstValueFrom(this.apiService.updateStation(properties.id, false));
+      this.applyState(marker, false, null);
+      this.visited.update((v) => v - 1);
+      // Un-marking discards the dates, so undo re-marks at the level it had.
+      this.snackBar
+        .open(
+          this.translateService.instant('STATIONS.VISIT.REMOVED', { name: properties.name }),
+          this.translateService.instant('UNDO'),
+          UNDOABLE
+        )
+        .onAction()
+        .subscribe(() => void this.markStation(marker, previousLevel ?? StationVisitLevel.Stopped));
+    } catch {
+      this.applyState(marker, true, previousLevel);
+    }
+  }
+
+  /**
+   * The snackbar does not expire: noticing a mis-tap ten minutes later is the common case, and a
+   * five second window is no use for it.
+   */
+  private offerUpgrade(marker: any, level: StationVisitLevel | null): void {
+    if (level === StationVisitLevel.EntryExit) {
+      this.snackBar.open(
+        this.translateService.instant('STATIONS.VISIT.MARKED_ENTRY_EXIT', { name: marker.feature.properties.name }),
+        this.translateService.instant('UNDO'),
+        UNDOABLE
+      ).onAction().subscribe(() => void this.removeStation(marker));
+      return;
+    }
+
+    this.snackBar
+      .open(
+        this.translateService.instant('STATIONS.VISIT.MARKED_STOPPED', { name: marker.feature.properties.name }),
+        this.translateService.instant('STATIONS.VISIT.SET_ENTRY_EXIT'),
+        UNDOABLE
+      )
+      .onAction()
+      .subscribe(() => void this.markStation(marker, StationVisitLevel.EntryExit));
+  }
+
+  private async openVisitDialog(marker: any): Promise<void> {
+    const properties = marker.feature.properties;
+    const result = await firstValueFrom(
+      this.dialog
+        .open<StationVisitDialogComponent, StationVisitDialogData, StationVisitDialogResult>(
+          StationVisitDialogComponent,
+          { data: { name: properties.name, level: properties.visitLevel }, ...SMALL_DIALOG }
+        )
+        .afterClosed()
+    );
+
+    switch (result) {
+      case 'entryExit':
+        await this.markStation(marker, StationVisitLevel.EntryExit);
+        break;
+      case 'stopped':
+        await this.markStation(marker, StationVisitLevel.Stopped);
+        break;
+      case 'remove':
+        await this.removeStation(marker);
+        break;
+    }
+  }
+
+  private applyState(marker: any, visited: boolean, level: StationVisitLevel | null): void {
+    marker.feature.properties.visited = visited;
+    marker.feature.properties.visitLevel = level;
+    marker.setStyle(markerStyle(visited, level));
+    this.refreshClusters();
+    this.cd.detectChanges();
+  }
+
+  private refreshClusters(): void {
+    (this.layers()[0] as any)?.refreshClusters?.();
   }
 }

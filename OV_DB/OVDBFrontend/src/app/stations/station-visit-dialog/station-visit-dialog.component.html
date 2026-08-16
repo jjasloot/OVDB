@@ -1,0 +1,28 @@
+<h2 mat-dialog-title>{{ data.name }}</h2>
+
+<mat-dialog-content>
+  <p class="current">
+    @switch (data.level) {
+      @case (levels.EntryExit) { {{ 'STATIONS.VISIT.CURRENT_ENTRY_EXIT' | translate }} }
+      @case (levels.Stopped) { {{ 'STATIONS.VISIT.CURRENT_STOPPED' | translate }} }
+      @default { {{ 'STATIONS.VISIT.CURRENT_UNKNOWN' | translate }} }
+    }
+  </p>
+</mat-dialog-content>
+
+<mat-dialog-actions class="actions">
+  @if (data.level !== levels.EntryExit) {
+    <button mat-flat-button (click)="close('entryExit')">
+      {{ 'STATIONS.VISIT.SET_ENTRY_EXIT' | translate }}
+    </button>
+  }
+  @if (data.level === levels.EntryExit) {
+    <button mat-stroked-button (click)="close('stopped')">
+      {{ 'STATIONS.VISIT.SET_STOPPED' | translate }}
+    </button>
+  }
+  <button mat-stroked-button class="danger" (click)="close('remove')">
+    {{ 'STATIONS.VISIT.REMOVE' | translate }}
+  </button>
+  <button mat-button mat-dialog-close>{{ 'CANCEL' | translate }}</button>
+</mat-dialog-actions>

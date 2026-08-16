@@ -15,6 +15,12 @@ namespace OV_DB.Models
         public String Network { get; set; }
         public String Operator { get; set; }
         public bool Visited { get; set; }
+        /// <summary>
+        /// What the visit means, when known. Null while <see cref="Visited"/> is true is a real
+        /// state, not a gap: rows that predate visit history are visited with no level yet, and the
+        /// map shows them distinctly until the backfill has been through them.
+        /// </summary>
+        public StationVisitLevel? VisitLevel { get; set; }
         public IEnumerable<StationRegionDTO> Regions { get; set; }
     }
 

@@ -193,7 +193,13 @@ namespace OV_DB.Controllers
                 Name = s.Name,
                 Network = s.Network,
                 Operator = s.Operator,
-                Visited = s.StationVisits.Any(sv => sv.UserId == userIdClaim)
+                Visited = s.StationVisits.Any(sv => sv.UserId == userIdClaim),
+                VisitLevel = s.StationVisits
+                    .Where(sv => sv.UserId == userIdClaim)
+                    .Select(sv => sv.FirstEntryExitDate.HasValue
+                        ? StationVisitLevel.EntryExit
+                        : sv.FirstStoppedDate.HasValue ? StationVisitLevel.Stopped : (StationVisitLevel?)null)
+                    .FirstOrDefault()
             }).ToListAsync();
 
 

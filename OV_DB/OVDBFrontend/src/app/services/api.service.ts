@@ -14,7 +14,7 @@ import { AdminUser } from "../models/adminUser.model";
 import { MultipleEdit } from "../models/multipleEdit.model";
 import { RouteInstance } from "../models/routeInstance.model";
 import { StationMap } from "../models/stationMap.model";
-import { StationView } from "../models/stationView.model";
+import { StationView, StationVisitLevel, StationVisitState } from "../models/stationView.model";
 import { StationCountry } from "../models/stationCountry.model";
 import { StationAdminProperties } from "../models/stationAdminProperties.model";
 import { MapDataDTO } from "../models/map-data.model";
@@ -519,9 +519,19 @@ export class ApiService {
     return this.httpClient.get<StationAdminProperties[]>(url);
   }
 
-  updateStation(id: any, value: any) {
+  /**
+   * Marks a station visited at the given level, or removes the visit when visited is false.
+   * The web map sends no date: marking from a map says nothing about when, so the visit stays
+   * undated and joins the backfill queue.
+   */
+  updateStation(
+    id: number,
+    visited: boolean,
+    level: StationVisitLevel = StationVisitLevel.Stopped,
+    date: string | null = null
+  ): Observable<StationVisitState> {
     const url = environment.backend + "api/station/" + id;
-    return this.httpClient.put(url, { value });
+    return this.httpClient.put<StationVisitState>(url, { visited, level, date });
   }
 
   updateStationAdmin(id: any, special: any, hidden: boolean) {
