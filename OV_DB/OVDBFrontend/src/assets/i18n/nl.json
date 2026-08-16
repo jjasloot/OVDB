@@ -12,6 +12,8 @@
       "REMOVED": "{{name}} niet meer gemarkeerd als bezocht",
       "CURRENT_STOPPED": "Gemarkeerd als gestopt.",
       "CURRENT_ENTRY_EXIT": "Gemarkeerd als in-/uitgestapt.",
+      "FIRST_ON": "Voor het eerst op {{date}}.",
+      "UNDATED": "Nog geen datum.",
       "SET_ENTRY_EXIT": "In-/uitgestapt",
       "SET_STOPPED": "Alleen gestopt",
       "REMOVE": "Niet bezocht"

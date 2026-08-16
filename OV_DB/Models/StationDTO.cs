@@ -21,6 +21,12 @@ namespace OV_DB.Models
         /// than as an unknown. Dating is a separate question from level.
         /// </summary>
         public StationVisitLevel? VisitLevel { get; set; }
+        /// <summary>
+        /// When the visit happened, where that is known. Null is the ordinary case for now — the web
+        /// marks without claiming a date — and is what the backfill exists to fill in.
+        /// </summary>
+        public DateTime? FirstStoppedDate { get; set; }
+        public DateTime? FirstEntryExitDate { get; set; }
         public IEnumerable<StationRegionDTO> Regions { get; set; }
     }
 

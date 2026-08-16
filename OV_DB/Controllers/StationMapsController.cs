@@ -199,6 +199,14 @@ namespace OV_DB.Controllers
                     .Select(sv => sv.FirstEntryExitDate.HasValue
                         ? StationVisitLevel.EntryExit
                         : (StationVisitLevel?)StationVisitLevel.Stopped)
+                    .FirstOrDefault(),
+                FirstStoppedDate = s.StationVisits
+                    .Where(sv => sv.UserId == userIdClaim)
+                    .Select(sv => sv.FirstStoppedDate)
+                    .FirstOrDefault(),
+                FirstEntryExitDate = s.StationVisits
+                    .Where(sv => sv.UserId == userIdClaim)
+                    .Select(sv => sv.FirstEntryExitDate)
                     .FirstOrDefault()
             }).ToListAsync();
 

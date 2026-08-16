@@ -8,6 +8,13 @@
       {{ 'STATIONS.VISIT.CURRENT_STOPPED' | translate }}
     }
   </p>
+  <p class="date">
+    @if (date) {
+      {{ 'STATIONS.VISIT.FIRST_ON' | translate: { date: (date | date: 'longDate') } }}
+    } @else {
+      {{ 'STATIONS.VISIT.UNDATED' | translate }}
+    }
+  </p>
 </mat-dialog-content>
 
 <mat-dialog-actions class="actions">

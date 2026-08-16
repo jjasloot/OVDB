@@ -145,6 +145,8 @@ export class StationMapComponent implements OnInit {
           name: station.name,
           visited: station.visited,
           visitLevel: station.visitLevel,
+          firstStoppedDate: station.firstStoppedDate,
+          firstEntryExitDate: station.firstEntryExitDate,
         },
         type: "Feature",
         geometry: null!,
@@ -183,25 +185,27 @@ export class StationMapComponent implements OnInit {
       const state = await firstValueFrom(
         this.apiService.updateStation(properties.id, true, level)
       );
-      this.applyState(marker, state.visited, state.level);
+      this.applyState(marker, state.visited, state.level, state.firstStoppedDate, state.firstEntryExitDate);
       if (!wasVisited) {
         this.visited.update((v) => v + 1);
       }
       this.offerUpgrade(marker, state.level);
     } catch {
-      this.applyState(marker, wasVisited, properties.visitLevel);
+      this.applyState(marker, wasVisited, properties.visitLevel, properties.firstStoppedDate, properties.firstEntryExitDate);
     }
   }
 
   private async removeStation(marker: any): Promise<void> {
     const properties = marker.feature.properties;
     const previousLevel = properties.visitLevel;
+    const previousStopped = properties.firstStoppedDate;
+    const previousEntryExit = properties.firstEntryExitDate;
     marker.setStyle(PENDING_STYLE);
     this.refreshClusters();
 
     try {
       await firstValueFrom(this.apiService.updateStation(properties.id, false));
-      this.applyState(marker, false, null);
+      this.applyState(marker, false, null, null, null);
       this.visited.update((v) => v - 1);
       // Un-marking discards the dates, so undo re-marks at the level it had.
       this.snackBar
@@ -213,7 +217,7 @@ export class StationMapComponent implements OnInit {
         .onAction()
         .subscribe(() => void this.markStation(marker, previousLevel ?? StationVisitLevel.Stopped));
     } catch {
-      this.applyState(marker, true, previousLevel);
+      this.applyState(marker, true, previousLevel, previousStopped, previousEntryExit);
     }
   }
 
@@ -247,7 +251,15 @@ export class StationMapComponent implements OnInit {
       this.dialog
         .open<StationVisitDialogComponent, StationVisitDialogData, StationVisitDialogResult>(
           StationVisitDialogComponent,
-          { data: { name: properties.name, level: properties.visitLevel }, ...SMALL_DIALOG }
+          {
+            data: {
+              name: properties.name,
+              level: properties.visitLevel,
+              firstStoppedDate: properties.firstStoppedDate,
+              firstEntryExitDate: properties.firstEntryExitDate,
+            },
+            ...SMALL_DIALOG,
+          }
         )
         .afterClosed()
     );
@@ -265,9 +277,17 @@ export class StationMapComponent implements OnInit {
     }
   }
 
-  private applyState(marker: any, visited: boolean, level: StationVisitLevel | null): void {
+  private applyState(
+    marker: any,
+    visited: boolean,
+    level: StationVisitLevel | null,
+    firstStoppedDate: string | null,
+    firstEntryExitDate: string | null
+  ): void {
     marker.feature.properties.visited = visited;
     marker.feature.properties.visitLevel = level;
+    marker.feature.properties.firstStoppedDate = firstStoppedDate;
+    marker.feature.properties.firstEntryExitDate = firstEntryExitDate;
     marker.setStyle(markerStyle(visited, level));
     this.refreshClusters();
     this.cd.detectChanges();

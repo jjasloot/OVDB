@@ -21,8 +21,11 @@ export interface StationDTO {
   network: string;
   operator: string;
   visited: boolean;
-  /** Null while visited is true means the level is not known yet — a legacy row awaiting backfill. */
+  /** Null only when unvisited: every visit is at least a stop, dated or not. */
   visitLevel: StationVisitLevel | null;
+  /** Null is the ordinary case for now — the web marks without claiming a date. */
+  firstStoppedDate: string | null;
+  firstEntryExitDate: string | null;
 }
 
 /** The state of a single visit after marking, un-marking or changing its level. */

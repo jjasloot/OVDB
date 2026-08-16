@@ -13,6 +13,8 @@
       "REMOVED": "{{name}} no longer marked as visited",
       "CURRENT_STOPPED": "Marked as stopped at.",
       "CURRENT_ENTRY_EXIT": "Marked as got on/off.",
+      "FIRST_ON": "First on {{date}}.",
+      "UNDATED": "No date yet.",
       "SET_ENTRY_EXIT": "Got on/off",
       "SET_STOPPED": "Only stopped",
       "REMOVE": "Not visited"
