@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, inject, signal } from "@angular/cor
 import {
   MAT_DIALOG_DATA,
   MatDialogActions,
+  MatDialogClose,
   MatDialogContent,
   MatDialogRef,
   MatDialogTitle,
@@ -56,6 +57,7 @@ interface Row {
     MatDialogTitle,
     MatDialogContent,
     MatDialogActions,
+    MatDialogClose,
     MatButton,
     MatIconButton,
     MatIcon,

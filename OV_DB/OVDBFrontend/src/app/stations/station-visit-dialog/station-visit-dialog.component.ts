@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
-import { MAT_DIALOG_DATA, MatDialogActions, MatDialogContent, MatDialogRef, MatDialogTitle } from '@angular/material/dialog';
+import { MAT_DIALOG_DATA, MatDialogActions, MatDialogClose, MatDialogContent, MatDialogRef, MatDialogTitle } from '@angular/material/dialog';
 import { MatButton } from '@angular/material/button';
 import { DatePipe } from '@angular/common';
 import { TranslateModule } from '@ngx-translate/core';
@@ -20,7 +20,7 @@ export type StationVisitDialogResult = 'entryExit' | 'stopped' | 'remove' | 'dat
   templateUrl: './station-visit-dialog.component.html',
   styleUrl: './station-visit-dialog.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [MatDialogTitle, MatDialogContent, MatDialogActions, MatButton, DatePipe, TranslateModule],
+  imports: [MatDialogTitle, MatDialogContent, MatDialogActions, MatDialogClose, MatButton, DatePipe, TranslateModule],
 })
 export class StationVisitDialogComponent {
   private dialogRef = inject(MatDialogRef<StationVisitDialogComponent, StationVisitDialogResult>);

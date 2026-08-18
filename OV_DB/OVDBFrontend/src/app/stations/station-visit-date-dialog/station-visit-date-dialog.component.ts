@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import {
   MAT_DIALOG_DATA,
   MatDialogActions,
+  MatDialogClose,
   MatDialogContent,
   MatDialogRef,
   MatDialogTitle,
@@ -47,6 +48,7 @@ type Target = 'stopped' | 'entryExit';
     MatDialogTitle,
     MatDialogContent,
     MatDialogActions,
+    MatDialogClose,
     MatButton,
     MatIconButton,
     MatIcon,
