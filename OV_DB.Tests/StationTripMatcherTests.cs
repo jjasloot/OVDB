@@ -240,6 +240,43 @@ public class StationTripMatcherTests
     }
 
     [Fact]
+    public async Task TwoTripsOnOneDayAreOrderedByTheirTimes()
+    {
+        using var context = await SeedAsync();
+        await AddStationAsync(context, 10, "Halt", BaseLat, BaseLon);
+        var day = new DateTime(2021, 6, 1);
+        // Added latest-first, so date order alone would leave them the wrong way round.
+        context.RouteInstances.Add(new RouteInstance
+        {
+            RouteInstanceId = 50, RouteId = 1, Date = day, StartTime = day.AddHours(18)
+        });
+        context.RouteInstances.Add(new RouteInstance
+        {
+            RouteInstanceId = 51, RouteId = 1, Date = day, StartTime = day.AddHours(6)
+        });
+        await context.SaveChangesAsync();
+
+        var candidates = await NewMatcher(context).FindTripsForStationAsync(1, 10);
+
+        Assert.Equal([51, 1, 50], candidates.Select(c => c.RouteInstanceId));
+    }
+
+    [Fact]
+    public async Task ATripWithNoTimeSortsAfterOneWithATime()
+    {
+        using var context = await SeedAsync();
+        await AddStationAsync(context, 10, "Halt", BaseLat, BaseLon);
+        var day = new DateTime(2021, 6, 1);
+        context.RouteInstances.Add(new RouteInstance { RouteInstanceId = 50, RouteId = 1, Date = day });
+        await context.SaveChangesAsync();
+
+        var candidates = await NewMatcher(context).FindTripsForStationAsync(1, 10);
+
+        // A known 09:14 is a better answer than an unknown time, so the blank must not lead.
+        Assert.Equal([1, 50], candidates.Select(c => c.RouteInstanceId));
+    }
+
+    [Fact]
     public async Task AnotherUsersTripsAreNeverProposed()
     {
         using var context = await SeedAsync(ownerUserId: 99);

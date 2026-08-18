@@ -179,7 +179,14 @@ public class StationTripMatcher(OVDBDatabaseContext dbContext, IMatcherIndexCach
 
         // Oldest first: the question this answers is "which trip first brought me here", and the
         // backfill preselects the earliest. Evidence rides along for the caller to group by.
-        return candidates.OrderBy(c => c.Date).ThenByDescending(c => c.Evidence).ToList();
+        // Times break the tie within a date, so two trips on one day are ordered as they were
+        // actually ridden. A trip with no time sorts last: a known 09:14 is a better answer than an
+        // unknown one, so the unknown must not jump ahead of it.
+        return candidates
+            .OrderBy(c => c.Date)
+            .ThenBy(c => c.StartTime ?? DateTime.MaxValue)
+            .ThenByDescending(c => c.Evidence)
+            .ToList();
     }
 
     public async Task<IReadOnlyList<StationCandidate>> FindStationsForTripAsync(int userId, int routeInstanceId, CancellationToken cancellationToken = default)

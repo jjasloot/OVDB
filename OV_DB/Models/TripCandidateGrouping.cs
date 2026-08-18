@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using OV_DB.Services;
@@ -29,7 +30,8 @@ namespace OV_DB.Models
                     RouteTypeName = g.First().RouteTypeName,
                     RouteTypeNameNL = g.First().RouteTypeNameNL,
                     RouteTypeColour = g.First().RouteTypeColour,
-                    Instances = g.OrderBy(c => c.Date).ThenBy(c => c.StartTime)
+                    // Undated times sort last, so a known departure is never outranked by a blank.
+                    Instances = g.OrderBy(c => c.Date).ThenBy(c => c.StartTime ?? DateTime.MaxValue)
                         .Select(c => new TripCandidateDTO
                         {
                             RouteInstanceId = c.RouteInstanceId,
@@ -41,6 +43,9 @@ namespace OV_DB.Models
                 })
                 .OrderByDescending(g => g.IsEndpoint)
                 .ThenBy(g => g.Instances[0].Date)
+                // Earliest actually means earliest, not just earliest date: where two routes were
+                // both ridden on the same day, the one boarded first leads and gets pre-selected.
+                .ThenBy(g => g.Instances[0].StartTime ?? DateTime.MaxValue)
                 .ToList();
     }
 }
