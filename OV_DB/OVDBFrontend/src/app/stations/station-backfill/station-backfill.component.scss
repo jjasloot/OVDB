@@ -19,6 +19,12 @@ header {
     font-size: 0.9em;
   }
 
+  // The second question needs to read as a new question, not as more context for the first.
+  .second-question {
+    margin: 8px 0 0;
+    font-weight: 500;
+  }
+
   mat-progress-bar {
     margin-top: 6px;
   }

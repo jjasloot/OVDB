@@ -12,6 +12,11 @@
       <p class="regions">{{ item()!.regions.join(' · ') }}</p>
       <mat-progress-bar mode="determinate" [value]="progress()" />
       <p class="remaining">{{ 'STATIONS.BACKFILL.REMAINING' | translate: { count: item()!.remaining } }}</p>
+      @if (stage() === 'entryExit') {
+        <p class="second-question">
+          {{ 'STATIONS.BACKFILL.NOW_PICK_ENTRY_EXIT' | translate: { date: (stoppedDate() | date: 'longDate') } }}
+        </p>
+      }
     </header>
 
     <div
@@ -66,26 +71,46 @@
     }
 
     <div class="actions">
-      <button
-        mat-flat-button
-        [disabled]="saving() || selected() === null"
-        (click)="confirm(levels.EntryExit)"
-      >
-        {{ 'STATIONS.BACKFILL.GOT_ON_OFF' | translate }}
-      </button>
-      <button
-        mat-stroked-button
-        [disabled]="saving() || selected() === null"
-        (click)="confirm(levels.Stopped)"
-      >
-        {{ 'STATIONS.BACKFILL.ONLY_STOPPED' | translate }}
-      </button>
-      <button mat-stroked-button [disabled]="saving()" (click)="later()">
-        {{ 'STATIONS.BACKFILL.LATER' | translate }}
-      </button>
-      <button mat-button [disabled]="saving()" (click)="skip()">
-        {{ 'STATIONS.BACKFILL.CANNOT_REMEMBER' | translate }}
-      </button>
+      @if (stage() === 'stopped') {
+        <button
+          mat-flat-button
+          [disabled]="saving() || selected() === null"
+          (click)="confirm(levels.EntryExit)"
+        >
+          {{ 'STATIONS.BACKFILL.GOT_ON_OFF' | translate }}
+        </button>
+        <button
+          mat-stroked-button
+          [disabled]="saving() || selected() === null"
+          (click)="confirm(levels.Stopped)"
+        >
+          {{ 'STATIONS.BACKFILL.ONLY_STOPPED' | translate }}
+        </button>
+        <button
+          mat-stroked-button
+          [disabled]="saving() || selected() === null"
+          (click)="confirmStoppedThenAskEntryExit()"
+        >
+          {{ 'STATIONS.BACKFILL.STOPPED_AND_LATER' | translate }}
+        </button>
+        <button mat-stroked-button [disabled]="saving()" (click)="later()">
+          {{ 'STATIONS.BACKFILL.LATER' | translate }}
+        </button>
+        <button mat-button [disabled]="saving()" (click)="skip()">
+          {{ 'STATIONS.BACKFILL.CANNOT_REMEMBER' | translate }}
+        </button>
+      } @else {
+        <button
+          mat-flat-button
+          [disabled]="saving() || selected() === null"
+          (click)="confirmEntryExit()"
+        >
+          {{ 'STATIONS.BACKFILL.GOT_OFF_ON_THIS' | translate }}
+        </button>
+        <button mat-button [disabled]="saving()" (click)="skipEntryExit()">
+          {{ 'STATIONS.BACKFILL.SKIP_ENTRY_EXIT' | translate }}
+        </button>
+      }
     </div>
   }
 </div>

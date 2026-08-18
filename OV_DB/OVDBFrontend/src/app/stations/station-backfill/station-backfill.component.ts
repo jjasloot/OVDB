@@ -72,7 +72,19 @@ export class StationBackfillComponent implements OnInit {
   private passed = signal(0);
   private done = signal(0);
 
+  /**
+   * Passing through a station for years before finally getting off there is ordinary, and the two
+   * are separate facts on separate dates. Rather than ask every station twice, the second question
+   * is opt-in: answer "stopped, and got off later" and the same station stays up for it.
+   */
+  stage = signal<"stopped" | "entryExit">("stopped");
+  /** The trip confirmed in the first stage, resent in the second so its date is not lost. */
+  private stoppedTrip = signal<number | null>(null);
+
   readonly levels = StationVisitLevel;
+
+  /** The date already recorded as the stop, shown as context for the second question. */
+  stoppedDate = computed(() => this.instanceById(this.stoppedTrip())?.date ?? null);
 
   hasWork = computed(() => !!this.item()?.stationId);
   progress = computed(() => {
@@ -103,6 +115,8 @@ export class StationBackfillComponent implements OnInit {
       this.item.set(item);
       this.selected.set(item.suggestedRouteInstanceId);
       this.expanded.set(null);
+      this.stage.set("stopped");
+      this.stoppedTrip.set(null);
       this.drawStation(item);
       if (item.suggestedRouteInstanceId) {
         await this.drawRoute(this.routeIdFor(item.suggestedRouteInstanceId));
@@ -200,6 +214,100 @@ export class StationBackfillComponent implements OnInit {
     } finally {
       this.saving.set(false);
     }
+  }
+
+  /**
+   * Records the stop, then stays on this station to ask which later trip you got off on. The stop is
+   * saved before the second question, so abandoning half way leaves the answer already given rather
+   * than losing it.
+   */
+  async confirmStoppedThenAskEntryExit(): Promise<void> {
+    const item = this.item();
+    const routeInstanceId = this.selected();
+    if (!item || routeInstanceId === null) {
+      return;
+    }
+
+    this.saving.set(true);
+    try {
+      await firstValueFrom(
+        this.apiService.updateStationVisitDates(item.stationId, {
+          firstStoppedDate: null,
+          firstStoppedRouteInstanceId: routeInstanceId,
+          firstEntryExitDate: null,
+          firstEntryExitRouteInstanceId: null,
+        })
+      );
+      this.stoppedTrip.set(routeInstanceId);
+      this.stage.set("entryExit");
+      await this.selectLikelyEntryExit(routeInstanceId);
+    } finally {
+      this.saving.set(false);
+    }
+  }
+
+  /**
+   * Getting off happened on a later trip than the one that first merely stopped, so the default
+   * looks forward from it — preferring a route that starts or ends here, which is the only evidence
+   * of having been on the platform.
+   */
+  private async selectLikelyEntryExit(stoppedTripId: number): Promise<void> {
+    const stopped = this.instanceById(stoppedTripId);
+    const groups = this.item()?.candidates ?? [];
+    const later = groups
+      .flatMap((group) => group.instances.map((instance) => ({ group, instance })))
+      .filter((row) => row.instance.routeInstanceId !== stoppedTripId)
+      .filter((row) => !stopped || row.instance.date >= stopped.date)
+      .sort((a, b) => a.instance.date.localeCompare(b.instance.date));
+
+    const pick = later.find((row) => row.group.isEndpoint) ?? later[0] ?? null;
+    this.selected.set(pick?.instance.routeInstanceId ?? null);
+    if (pick) {
+      await this.drawRoute(pick.group.routeId);
+    }
+  }
+
+  /** Records getting off, resending the stop so the date confirmed a moment ago survives. */
+  async confirmEntryExit(): Promise<void> {
+    const item = this.item();
+    const routeInstanceId = this.selected();
+    const stoppedTripId = this.stoppedTrip();
+    if (!item || routeInstanceId === null || stoppedTripId === null) {
+      return;
+    }
+
+    this.saving.set(true);
+    try {
+      await firstValueFrom(
+        this.apiService.updateStationVisitDates(item.stationId, {
+          firstStoppedDate: null,
+          firstStoppedRouteInstanceId: stoppedTripId,
+          firstEntryExitDate: null,
+          firstEntryExitRouteInstanceId: routeInstanceId,
+        })
+      );
+      this.done.update((d) => d + 1);
+      await this.load();
+    } finally {
+      this.saving.set(false);
+    }
+  }
+
+  /** Leaves the stop recorded and moves on without claiming to have got off here. */
+  async skipEntryExit(): Promise<void> {
+    this.done.update((d) => d + 1);
+    await this.load();
+  }
+
+  private instanceById(routeInstanceId: number | null) {
+    if (routeInstanceId === null) {
+      return null;
+    }
+    return (
+      this.item()
+        ?.candidates.flatMap((g) => g.instances)
+        .find((i) => i.routeInstanceId === routeInstanceId) ?? null
+    );
   }
 
   async skip(): Promise<void> {
