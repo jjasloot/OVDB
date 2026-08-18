@@ -13,6 +13,12 @@
       </mat-card>
       <mat-card appearance="outlined" class="tile">
         <mat-card-content>
+          <span class="value">{{ totalEntryExit() }}</span>
+          <span class="label">{{ 'STATS.COMPLETION.STATIONS_ENTRY_EXIT' | translate }}</span>
+        </mat-card-content>
+      </mat-card>
+      <mat-card appearance="outlined" class="tile">
+        <mat-card-content>
           <span class="value">{{ completed().length }}</span>
           <span class="label">{{ 'STATS.COMPLETION.REGIONS_COMPLETED' | translate }}</span>
         </mat-card-content>
@@ -55,7 +61,18 @@
                   </mat-panel-title>
                   <mat-panel-description>
                     <span class="counts">{{ row.visited }} / {{ row.total }}</span>
-                    <mat-progress-bar mode="determinate" [value]="row.percentage" />
+                    <!--
+                      One bar, two tones: blue is the stations you got on or off at, green the ones a
+                      train merely carried you through. The blue is a subset of the green, so it is
+                      drawn over it rather than beside it.
+                    -->
+                    <span
+                      class="split-bar"
+                      [title]="'STATS.COMPLETION.SPLIT_HINT' | translate: { stopped: row.visited, entryExit: row.entryExit }"
+                    >
+                      <span class="stopped" [style.width.%]="row.percentage"></span>
+                      <span class="entry-exit" [style.width.%]="row.entryExitPercentage"></span>
+                    </span>
                     <span class="remaining">
                       {{ 'STATS.COMPLETION.TO_GO' | translate: { count: row.remaining } }}
                     </span>

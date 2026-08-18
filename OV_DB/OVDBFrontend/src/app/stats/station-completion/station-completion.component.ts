@@ -1,7 +1,6 @@
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { MatCard, MatCardContent, MatCardTitle } from '@angular/material/card';
 import { MatExpansionModule } from '@angular/material/expansion';
-import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatProgressSpinner } from '@angular/material/progress-spinner';
 import { TranslateModule } from '@ngx-translate/core';
 import { ApiService } from 'src/app/services/api.service';
@@ -15,8 +14,11 @@ interface CompletionRow {
   nameNL: string;
   flagEmoji: string | null;
   visited: number;
+  /** Of the visited ones, how many you got on or off at. A subset of visited. */
+  entryExit: number;
   total: number;
   percentage: number;
+  entryExitPercentage: number;
   remaining: number;
 }
 
@@ -30,7 +32,7 @@ interface CompletionRow {
     MatCardTitle,
     MatCardContent,
     MatExpansionModule,
-    MatProgressBarModule,
+
     MatProgressSpinner,
     TranslateModule,
   ],
@@ -56,8 +58,10 @@ export class StationCompletionComponent implements OnInit {
             nameNL: region.nameNL,
             flagEmoji: region.flagEmoji,
             visited: region.visitedStations,
+            entryExit: region.entryExitStations,
             total: region.totalStations,
             percentage: (region.visitedStations / region.totalStations) * 100,
+            entryExitPercentage: (region.entryExitStations / region.totalStations) * 100,
             remaining: region.totalStations - region.visitedStations,
           });
         }
@@ -82,6 +86,8 @@ export class StationCompletionComponent implements OnInit {
   untouched = computed(() => this.allRows().filter((row) => row.visited === 0));
 
   totalVisited = computed(() => this.allRows().reduce((sum, row) => sum + row.visited, 0));
+
+  totalEntryExit = computed(() => this.allRows().reduce((sum, row) => sum + row.entryExit, 0));
 
   ngOnInit(): void {
     this.apiService.getRegionStats().subscribe({

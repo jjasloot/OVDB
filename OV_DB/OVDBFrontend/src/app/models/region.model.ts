@@ -31,6 +31,8 @@ export interface RegionStat {
   visited: boolean;
   totalStations: number;
   visitedStations: number;
+  /** Of the visited ones, how many you actually got on or off at. A subset, not a separate total. */
+  entryExitStations: number;
   children: RegionStat[];
   flagEmoji: string | null;
   parentRegionId: number | null;

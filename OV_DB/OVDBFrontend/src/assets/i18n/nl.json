@@ -485,6 +485,8 @@
     "COMPLETION": {
       "TITLE": "Volledigheid",
       "STATIONS_VISITED": "stations bezocht",
+      "STATIONS_ENTRY_EXIT": "in-/uitgestapt",
+      "SPLIT_HINT": "{{stopped}} gestopt, {{entryExit}} in-/uitgestapt",
       "REGIONS_COMPLETED": "regio's compleet",
       "REGIONS_IN_PROGRESS": "regio's bezig",
       "REGIONS_UNTOUCHED": "regio's nog niet begonnen",

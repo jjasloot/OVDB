@@ -741,7 +741,11 @@ namespace OV_DB.Controllers
                     r.ParentRegionId,
                     r.FlagEmoji,
                     TotalStations = r.Stations.Count(s => !s.Hidden && !s.Special),
-                    VisitedStations = r.Stations.Count(s => !s.Hidden && !s.Special && s.StationVisits.Any(sv => sv.UserId == userIdClaim))
+                    VisitedStations = r.Stations.Count(s => !s.Hidden && !s.Special && s.StationVisits.Any(sv => sv.UserId == userIdClaim)),
+                    // Counted separately because they answer different questions: how much of the
+                    // region a train has carried you through, and how much of it you have actually
+                    // set foot in. The second is a subset of the first.
+                    EntryExitStations = r.Stations.Count(s => !s.Hidden && !s.Special && s.StationVisits.Any(sv => sv.UserId == userIdClaim && sv.FirstEntryExitDate != null))
                 })
                 .ToListAsync();
 
@@ -757,6 +761,7 @@ namespace OV_DB.Controllers
                 OriginalName = r.OriginalName,
                 OsmRelationId = r.OsmRelationId,
                 VisitedStations = r.VisitedStations,
+                EntryExitStations = r.EntryExitStations,
                 TotalStations = r.TotalStations,
                 FlagEmoji = r.FlagEmoji,
                 ParentRegionId = r.ParentRegionId,

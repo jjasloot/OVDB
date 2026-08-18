@@ -488,6 +488,8 @@
     "COMPLETION": {
       "TITLE": "Completion",
       "STATIONS_VISITED": "stations visited",
+      "STATIONS_ENTRY_EXIT": "got on/off at",
+      "SPLIT_HINT": "{{stopped}} stopped at, {{entryExit}} got on/off at",
       "REGIONS_COMPLETED": "regions completed",
       "REGIONS_IN_PROGRESS": "regions in progress",
       "REGIONS_UNTOUCHED": "regions not started",

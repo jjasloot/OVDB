@@ -12,6 +12,11 @@ namespace OV_DB.Models
         public bool Visited { get; set; }
         public int TotalStations { get; set; }
         public int VisitedStations { get; set; }
+        /// <summary>
+        /// Of the visited ones, how many you actually got on or off at. A subset of
+        /// <see cref="VisitedStations"/>, never a separate total.
+        /// </summary>
+        public int EntryExitStations { get; set; }
         public List<RegionStatDTO> Children { get; set; } = new();
         public string? FlagEmoji { get; set; }
         public int? ParentRegionId { get; set; }
