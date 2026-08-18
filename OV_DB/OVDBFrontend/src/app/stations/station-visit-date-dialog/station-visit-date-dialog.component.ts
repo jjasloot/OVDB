@@ -71,7 +71,6 @@ export class StationVisitDateDialogComponent {
   data = inject<StationVisitDateDialogData>(MAT_DIALOG_DATA);
 
   readonly levels = StationVisitLevel;
-  readonly hasEntryExit = this.data.level === StationVisitLevel.EntryExit;
 
   stoppedDate = signal<Moment | null>(this.data.firstStoppedDate ? moment(this.data.firstStoppedDate) : null);
   entryExitDate = signal<Moment | null>(this.data.firstEntryExitDate ? moment(this.data.firstEntryExitDate) : null);
@@ -148,8 +147,10 @@ export class StationVisitDateDialogComponent {
     this.dialogRef.close({
       firstStoppedDate: format(this.stoppedDate()),
       firstStoppedRouteInstanceId: this.stoppedTrip(),
-      firstEntryExitDate: this.hasEntryExit ? format(this.entryExitDate()) : null,
-      firstEntryExitRouteInstanceId: this.hasEntryExit ? this.entryExitTrip() : null,
+      // Sent whatever the visit's current level is: filling this in is what raises it to got-on/off,
+      // and leaving it blank is what takes that back down to merely stopped.
+      firstEntryExitDate: format(this.entryExitDate()),
+      firstEntryExitRouteInstanceId: this.entryExitTrip(),
     });
   }
 }

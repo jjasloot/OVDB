@@ -20,29 +20,32 @@
     }
   </div>
 
-  @if (hasEntryExit) {
-    <div class="dates">
-      <mat-form-field>
-        <mat-label>{{ 'STATIONS.VISIT.DATE_ENTRY_EXIT' | translate }}</mat-label>
-        <input
-          matInput
-          [matDatepicker]="entryExitPicker"
-          [ngModel]="entryExitDate()"
-          (ngModelChange)="setDate('entryExit', $event)"
-        />
-        <mat-datepicker-toggle matSuffix [for]="entryExitPicker" />
-        <mat-datepicker #entryExitPicker />
-      </mat-form-field>
-      @if (entryExitDate()) {
-        <button mat-icon-button [attr.aria-label]="'STATIONS.VISIT.CLEAR_DATE' | translate" (click)="clear('entryExit')">
-          <mat-icon>backspace</mat-icon>
-        </button>
-      }
-    </div>
-
-    @if (willPullStoppedBack()) {
-      <p class="note">{{ 'STATIONS.VISIT.PULLS_STOPPED_BACK' | translate }}</p>
+  <!--
+    Always offered, whatever level the visit is at. Passing through a station for years before
+    finally getting off there is ordinary, and the two dates are separate facts — so filling this in
+    is how you say "I also got off here, later", and clearing it takes that claim back.
+  -->
+  <div class="dates">
+    <mat-form-field>
+      <mat-label>{{ 'STATIONS.VISIT.DATE_ENTRY_EXIT' | translate }}</mat-label>
+      <input
+        matInput
+        [matDatepicker]="entryExitPicker"
+        [ngModel]="entryExitDate()"
+        (ngModelChange)="setDate('entryExit', $event)"
+      />
+      <mat-datepicker-toggle matSuffix [for]="entryExitPicker" />
+      <mat-datepicker #entryExitPicker />
+    </mat-form-field>
+    @if (entryExitDate()) {
+      <button mat-icon-button [attr.aria-label]="'STATIONS.VISIT.CLEAR_DATE' | translate" (click)="clear('entryExit')">
+        <mat-icon>backspace</mat-icon>
+      </button>
     }
+  </div>
+
+  @if (willPullStoppedBack()) {
+    <p class="note">{{ 'STATIONS.VISIT.PULLS_STOPPED_BACK' | translate }}</p>
   }
 
   <h3>{{ 'STATIONS.VISIT.CANDIDATES' | translate }}</h3>
@@ -84,11 +87,9 @@
               <button mat-stroked-button (click)="choose('stopped', instance.routeInstanceId, instance.date)">
                 {{ 'STATIONS.VISIT.SET_STOPPED' | translate }}
               </button>
-              @if (hasEntryExit) {
-                <button mat-stroked-button (click)="choose('entryExit', instance.routeInstanceId, instance.date)">
-                  {{ 'STATIONS.VISIT.SET_ENTRY_EXIT' | translate }}
-                </button>
-              }
+              <button mat-stroked-button (click)="choose('entryExit', instance.routeInstanceId, instance.date)">
+                {{ 'STATIONS.VISIT.SET_ENTRY_EXIT' | translate }}
+              </button>
             </div>
           }
 
