@@ -240,6 +240,40 @@ public class StationTripMatcherTests
     }
 
     [Fact]
+    public async Task ARouteAddedAfterTheIndexWasBuiltIsStillFound()
+    {
+        // The Aalborg case: import a route, go straight to the backfill, and the cached index
+        // predates it. Nothing calls Invalidate, so the counts have to catch this on their own.
+        using var context = await SeedAsync();
+        await AddStationAsync(context, 10, "Halt", BaseLat, BaseLon);
+        var cache = new CountingCache();
+        var matcher = new StationTripMatcher(context, cache);
+        Assert.Single(await matcher.FindTripsForStationAsync(1, 10));
+
+        var far = Offset(0, 30_000);
+        context.RouteTypes.Add(new RouteType { TypeId = 2, Name = "Train", Colour = "#000", UserId = 1, IsTrain = true });
+        context.Routes.Add(new Route
+        {
+            RouteId = 2,
+            Name = "The new line",
+            Share = Guid.NewGuid(),
+            RouteTypeId = 2,
+            LineString = new LineString([
+                new Coordinate(BaseLon, BaseLat),
+                new Coordinate(far.Lon, far.Lat)
+            ])
+        });
+        context.RoutesMaps.Add(new RouteMap { RouteMapId = 2, RouteId = 2, MapId = 1 });
+        context.RouteInstances.Add(new RouteInstance { RouteInstanceId = 90, RouteId = 2, Date = new DateTime(2024, 3, 3) });
+        await context.SaveChangesAsync();
+
+        var candidates = await matcher.FindTripsForStationAsync(1, 10);
+
+        Assert.Equal(2, cache.Builds);
+        Assert.Contains(90, candidates.Select(c => c.RouteInstanceId));
+    }
+
+    [Fact]
     public async Task TwoTripsOnOneDayAreOrderedByTheirTimes()
     {
         using var context = await SeedAsync();
@@ -492,8 +526,8 @@ public class StationTripMatcherTests
         private readonly MatcherIndexCache _inner = new();
         public int Builds { get; private set; }
 
-        public Task<MatcherIndex> GetAsync(Func<CancellationToken, Task<MatcherIndex>> build, CancellationToken cancellationToken = default) =>
-            _inner.GetAsync(ct =>
+        public Task<MatcherIndex> GetAsync(int routeCount, int stationCount, Func<CancellationToken, Task<MatcherIndex>> build, CancellationToken cancellationToken = default) =>
+            _inner.GetAsync(routeCount, stationCount, ct =>
             {
                 Builds++;
                 return build(ct);
