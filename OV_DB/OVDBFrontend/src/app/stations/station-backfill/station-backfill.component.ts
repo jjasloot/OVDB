@@ -86,6 +86,57 @@ export class StationBackfillComponent implements OnInit {
   /** The date already recorded as the stop, shown as context for the second question. */
   stoppedDate = computed(() => this.instanceById(this.stoppedTrip())?.date ?? null);
 
+  /** The three answers, in a fixed order — only the emphasis moves, so nothing jumps under the cursor. */
+  readonly actions: { key: BackfillAction; labelKey: string }[] = [
+    { key: "entryExit", labelKey: "STATIONS.BACKFILL.GOT_ON_OFF" },
+    { key: "stopped", labelKey: "STATIONS.BACKFILL.ONLY_STOPPED" },
+    { key: "stoppedAndLater", labelKey: "STATIONS.BACKFILL.STOPPED_AND_LATER" },
+  ];
+
+  /**
+   * Which answer the selected trip actually suggests, so the obvious tap is the filled one.
+   *
+   * A route that starts or ends at the station means you were on the platform, so getting on/off is
+   * the likely answer. If instead it merely calls here but a later trip does terminate here, the
+   * likely story is "passed through then, got off later" — which is the two-date answer.
+   */
+  primaryAction = computed<BackfillAction>(() => {
+    const selected = this.selectedRow();
+    if (!selected) {
+      return "stopped";
+    }
+    if (selected.group.isEndpoint) {
+      return "entryExit";
+    }
+    return this.hasLaterEndpoint(selected.instance.date) ? "stoppedAndLater" : "stopped";
+  });
+
+  private selectedRow() {
+    const id = this.selected();
+    return (
+      this.item()
+        ?.candidates.flatMap((group) => group.instances.map((instance) => ({ group, instance })))
+        .find((row) => row.instance.routeInstanceId === id) ?? null
+    );
+  }
+
+  private hasLaterEndpoint(afterDate: string): boolean {
+    return (this.item()?.candidates ?? []).some(
+      (group) => group.isEndpoint && group.instances.some((i) => i.date > afterDate)
+    );
+  }
+
+  run(action: BackfillAction): Promise<void> {
+    switch (action) {
+      case "entryExit":
+        return this.confirm(StationVisitLevel.EntryExit);
+      case "stoppedAndLater":
+        return this.confirmStoppedThenAskEntryExit();
+      default:
+        return this.confirm(StationVisitLevel.Stopped);
+    }
+  }
+
   hasWork = computed(() => !!this.item()?.stationId);
   progress = computed(() => {
     const remaining = this.item()?.remaining ?? 0;
@@ -330,3 +381,6 @@ export class StationBackfillComponent implements OnInit {
     await this.load();
   }
 }
+
+/** The three answers the first stage can give. */
+export type BackfillAction = "entryExit" | "stopped" | "stoppedAndLater";

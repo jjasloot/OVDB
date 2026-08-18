@@ -324,8 +324,16 @@ public class StationTripMatcher(OVDBDatabaseContext dbContext, IMatcherIndexCach
         return NameMatches(name, stopName);
     }
 
-    private Task<MatcherIndex> GetIndexAsync(CancellationToken cancellationToken) =>
-        indexCache.GetAsync(BuildIndexAsync, cancellationToken);
+    /// <summary>
+    /// Counts first, then the index: two cheap queries are worth paying so a route imported a minute
+    /// ago is never invisible because a cached index predates it.
+    /// </summary>
+    private async Task<MatcherIndex> GetIndexAsync(CancellationToken cancellationToken)
+    {
+        var routeCount = await dbContext.Routes.CountAsync(r => r.LineString != null, cancellationToken);
+        var stationCount = await dbContext.Stations.CountAsync(s => !s.Hidden && !s.Special, cancellationToken);
+        return await indexCache.GetAsync(routeCount, stationCount, BuildIndexAsync, cancellationToken);
+    }
 
     private async Task<MatcherIndex> BuildIndexAsync(CancellationToken cancellationToken)
     {
@@ -340,8 +348,13 @@ public class StationTripMatcher(OVDBDatabaseContext dbContext, IMatcherIndexCach
             .Select(r => new { r.RouteId, r.LineString })
             .AsAsyncEnumerable();
 
+        // Counted as rows seen, not as usable routes: this has to match the count the cache checks
+        // against, or a single degenerate geometry would make every read think the index is stale.
+        var routeRowCount = 0;
+
         await foreach (var route in routes.WithCancellation(cancellationToken))
         {
+            routeRowCount++;
             var coordinates = Simplify(route.LineString).Coordinates;
             if (coordinates.Length < 2)
             {
@@ -368,8 +381,10 @@ public class StationTripMatcher(OVDBDatabaseContext dbContext, IMatcherIndexCach
             .Select(s => new { s.Id, s.Lattitude, s.Longitude })
             .AsAsyncEnumerable();
 
+        var stationRowCount = 0;
         await foreach (var station in stationRows.WithCancellation(cancellationToken))
         {
+            stationRowCount++;
             stations.Insert(
                 new Envelope(station.Longitude, station.Longitude, station.Lattitude, station.Lattitude),
                 new StationPoint(station.Id, station.Longitude, station.Lattitude));
@@ -380,7 +395,9 @@ public class StationTripMatcher(OVDBDatabaseContext dbContext, IMatcherIndexCach
         {
             Segments = segments,
             Stations = stations,
-            RouteEndpoints = endpoints
+            RouteEndpoints = endpoints,
+            RouteCount = routeRowCount,
+            StationCount = stationRowCount
         };
     }
 

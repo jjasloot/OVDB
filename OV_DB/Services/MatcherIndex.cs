@@ -33,11 +33,21 @@ public sealed class MatcherIndex
     public required STRtree<StationPoint> Stations { get; init; }
     /// <summary>First and last coordinate of each route, for the "you started or ended here" test.</summary>
     public required IReadOnlyDictionary<int, (double X1, double Y1, double X2, double Y2)> RouteEndpoints { get; init; }
+    /// <summary>
+    /// What the index was built from. Compared on every read so a route imported a minute ago cannot
+    /// be invisible until the cache happens to expire — which it was, because nothing remembered to
+    /// invalidate. A counted fingerprint needs nobody to remember anything.
+    /// </summary>
+    public required int RouteCount { get; init; }
+    public required int StationCount { get; init; }
 }
 
 public interface IMatcherIndexCache
 {
-    Task<MatcherIndex> GetAsync(Func<CancellationToken, Task<MatcherIndex>> build, CancellationToken cancellationToken = default);
+    /// <summary>
+    /// The cached index if it was built from these same counts, otherwise a freshly built one.
+    /// </summary>
+    Task<MatcherIndex> GetAsync(int routeCount, int stationCount, Func<CancellationToken, Task<MatcherIndex>> build, CancellationToken cancellationToken = default);
     void Invalidate();
 }
 
@@ -63,12 +73,18 @@ public sealed class MatcherIndexCache : IMatcherIndexCache, IDisposable
         _sweep = new Timer(_ => DropIfIdle(), null, IdleTimeout, IdleTimeout);
     }
 
-    public async Task<MatcherIndex> GetAsync(Func<CancellationToken, Task<MatcherIndex>> build, CancellationToken cancellationToken = default)
+    public async Task<MatcherIndex> GetAsync(int routeCount, int stationCount, Func<CancellationToken, Task<MatcherIndex>> build, CancellationToken cancellationToken = default)
     {
         // Under the gate so a burst of concurrent callers pays the build cost once, not once each.
         await _gate.WaitAsync(cancellationToken);
         try
         {
+            if (_index != null && (_index.RouteCount != routeCount || _index.StationCount != stationCount))
+            {
+                // Something was imported or removed since this was built, so it is answering about a
+                // world that no longer exists.
+                _index = null;
+            }
             _index ??= await build(cancellationToken);
             _lastUsedUtc = DateTime.UtcNow;
             return _index;
