@@ -200,7 +200,7 @@ export class StationBackfillComponent implements OnInit {
         fillOpacity: 0.9,
       }),
     ]);
-    this.bounds.set(new LatLngBounds(position, position).pad(0.02));
+    this.bounds.set(boxAround(position));
   }
 
   /** Seeing the line sweep through the station is the evidence; a lone pin is not. */
@@ -214,8 +214,7 @@ export class StationBackfillComponent implements OnInit {
       const line = polyline(geometry.coordinates, { color: "#1E88E5", weight: 4, opacity: 0.8 });
       this.drawStation(item);
       this.layers.update((existing) => [line, ...existing]);
-      const station = new LatLng(item.lattitude, item.longitude);
-      this.bounds.set(new LatLngBounds(station, station).pad(0.02));
+      this.bounds.set(boxAround(new LatLng(item.lattitude, item.longitude)));
     } catch {
       // A missing line is not worth blocking the decision on; the pin and dates still stand.
     }
@@ -384,3 +383,16 @@ export class StationBackfillComponent implements OnInit {
 
 /** The three answers the first stage can give. */
 export type BackfillAction = "entryExit" | "stopped" | "stoppedAndLater";
+
+/**
+ * A window of roughly a kilometre around the station. Padding a zero-area bounds keeps it zero-area,
+ * which made Leaflet jump to maximum zoom and show one street - the point is to see the line sweep
+ * through, so it needs room either side.
+ */
+function boxAround(position: LatLng): LatLngBounds {
+  const delta = 0.01;
+  return new LatLngBounds(
+    new LatLng(position.lat - delta, position.lng - delta),
+    new LatLng(position.lat + delta, position.lng + delta)
+  );
+}

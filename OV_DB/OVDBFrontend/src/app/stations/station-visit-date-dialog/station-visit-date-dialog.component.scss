@@ -23,8 +23,10 @@ h3 {
   list-style: none;
   margin: 0;
   padding: 0;
-  // Long enough to be worth scrolling, short enough that the dates stay in view above it.
+  // Long enough to be worth scrolling, short enough that the dates stay in view above it. Only
+  // vertically: anything too wide has to wrap, because a sideways scrollbar in a dialog is a bug.
   max-height: 40vh;
+  overflow-x: hidden;
   overflow-y: auto;
 
   li {
@@ -35,11 +37,20 @@ h3 {
 
 .route {
   display: flex;
+  flex-wrap: wrap;
   align-items: baseline;
   gap: 8px;
 
   .name {
     font-weight: 500;
+    // Route names run long ("CFL-60a: Bettembourg => Volmerange-les-Mines"), so let the name take
+    // the room it needs and push the badge onto the next line rather than off the edge.
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .badge {
+    flex: none;
   }
 }
 
@@ -86,8 +97,21 @@ h3 {
   margin-top: 4px;
 
   .date {
-    flex: 1;
+    flex: 1 1 auto;
     min-width: 8em;
+  }
+
+  // The range is one fact; wrapping between the two times reads as two.
+  .times {
+    white-space: nowrap;
+  }
+
+  // Compact enough that a date and both choices sit on one line. At default Material width the
+  // second button wrapped, which doubled the height of every candidate in a list meant for skimming.
+  button {
+    min-width: 0;
+    padding: 0 10px;
+    font-size: 0.85em;
   }
 }
 

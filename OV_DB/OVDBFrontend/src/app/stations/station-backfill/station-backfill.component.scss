@@ -43,6 +43,9 @@ header {
 .candidates {
   display: flex;
   flex-direction: column;
+  // Never shrink below the content: as a flex child it was being squeezed a few pixels short, which
+  // put a scrollbar next to a single row.
+  flex: none;
   // Long enough to compare, short enough to keep the buttons on screen without scrolling away.
   max-height: 32vh;
   overflow-y: auto;
@@ -53,6 +56,9 @@ header {
   align-items: center;
   justify-content: space-between;
   gap: 8px;
+  // The radio's touch target is a few pixels taller than its box, which overflowed the row and put
+  // a scrollbar beside a single candidate. Give it the room it actually takes.
+  min-height: 48px;
 
   .date {
     display: inline-block;

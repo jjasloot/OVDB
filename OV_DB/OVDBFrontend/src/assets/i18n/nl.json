@@ -89,6 +89,7 @@
   "ROUTESLIST.NAME": "Naam",
   "ROUTESLIST.OPERATOR": "Bedienend bedrijf",
   "ROUTESLIST.DATE": "Datum",
+  "ROUTESLIST.TIME": "Tijd",
   "ROUTESLIST.MAPS": "Kaarten",
   "ROUTESLIST.TYPE": "Type",
   "ROUTESLIST.EXPORT": "Export",

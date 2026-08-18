@@ -109,6 +109,15 @@ export class StationVisitDateDialogComponent {
     this.expanded.update((current) => (current === routeId ? null : routeId));
   }
 
+  /**
+   * Which of the two choices this candidate suggests. Starting or ending at the station is the only
+   * evidence of standing on the platform, so those lead with got-on/off; everything else leads with
+   * the weaker claim.
+   */
+  primaryFor(group: TripCandidateGroup): 'stopped' | 'entryExit' {
+    return group.isEndpoint ? 'entryExit' : 'stopped';
+  }
+
   /** The user's own name for the route type, in their language. */
   typeName(group: TripCandidateGroup): string {
     return this.translationService.getNameForItem({

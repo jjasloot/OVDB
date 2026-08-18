@@ -84,12 +84,26 @@
                   </span>
                 }
               </span>
-              <button mat-stroked-button (click)="choose('stopped', instance.routeInstanceId, instance.date)">
-                {{ 'STATIONS.VISIT.SET_STOPPED' | translate }}
-              </button>
-              <button mat-stroked-button (click)="choose('entryExit', instance.routeInstanceId, instance.date)">
-                {{ 'STATIONS.VISIT.SET_ENTRY_EXIT' | translate }}
-              </button>
+              <!--
+                Emphasis follows the evidence, as it does in the backfill: a route that starts or
+                ends here means you were on the platform, so got-on/off leads. Otherwise the weaker
+                claim leads, and a fast tap never invents an alighting.
+              -->
+              @if (primaryFor(group) === 'stopped') {
+                <button mat-flat-button (click)="choose('stopped', instance.routeInstanceId, instance.date)">
+                  {{ 'STATIONS.VISIT.SET_STOPPED' | translate }}
+                </button>
+                <button mat-stroked-button (click)="choose('entryExit', instance.routeInstanceId, instance.date)">
+                  {{ 'STATIONS.VISIT.SET_ENTRY_EXIT' | translate }}
+                </button>
+              } @else {
+                <button mat-flat-button (click)="choose('entryExit', instance.routeInstanceId, instance.date)">
+                  {{ 'STATIONS.VISIT.SET_ENTRY_EXIT' | translate }}
+                </button>
+                <button mat-stroked-button (click)="choose('stopped', instance.routeInstanceId, instance.date)">
+                  {{ 'STATIONS.VISIT.SET_STOPPED' | translate }}
+                </button>
+              }
             </div>
           }
 
