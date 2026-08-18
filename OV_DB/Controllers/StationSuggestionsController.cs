@@ -41,7 +41,7 @@ namespace OV_DB.Controllers
         /// undated visit, which is exactly what the backfill is for.
         /// </remarks>
         [HttpPost("from-stops")]
-        public async Task<IActionResult> FromStops([FromBody] List<OSMStopDTO> stops)
+        public async Task<IActionResult> FromStops([FromBody] List<OSMStopDTO> stops, [FromQuery] int? routeId = null)
         {
             var userId = User.GetUserId();
             if (userId < 0)
@@ -50,11 +50,30 @@ namespace OV_DB.Controllers
             }
             if (stops == null || stops.Count == 0)
             {
-                return Ok(new List<StationSuggestionDTO>());
+                return Ok(new StationSuggestionsForRouteDTO { Stations = [] });
             }
 
             var points = stops.Select(s => new StopPoint(s.Name, s.Lattitude, s.Longitude));
-            return Ok(await suggestionService.FromStopsAsync(userId, points));
+            var stations = await suggestionService.FromStopsAsync(userId, points);
+
+            // The route's earliest trip is what dates anything the user ticks. Resolved here rather
+            // than passed in, because the caller has just created it and does not know its id.
+            int? routeInstanceId = null;
+            if (routeId.HasValue)
+            {
+                routeInstanceId = await context.RouteInstances.AsNoTracking()
+                    .Where(ri => ri.RouteId == routeId.Value)
+                    .Where(ri => ri.Route.RouteMaps.Any(rm => rm.Map.UserId == userId))
+                    .OrderBy(ri => ri.Date)
+                    .Select(ri => (int?)ri.RouteInstanceId)
+                    .FirstOrDefaultAsync();
+            }
+
+            return Ok(new StationSuggestionsForRouteDTO
+            {
+                RouteInstanceId = routeInstanceId,
+                Stations = stations
+            });
         }
 
         /// <summary>

@@ -51,6 +51,10 @@
       "INTRO": "{{trip}} calls at these stations, and you have not marked them visited. Nothing is marked until you say so.",
       "NO_DATE": "This route has no date yet, so anything you mark here stays undated until you date it.",
       "CALLED_AT": "train stops here",
+      "ROLE_STOPPED": "Stopped here",
+      "ROLE_STARTED": "Started here",
+      "ROLE_FINISHED": "Finished here",
+      "CONFIRM": "Confirm",
       "DISMISS": "Don't ask again",
       "DONE": "Done",
       "SHOW_MORE": "Show {{count}} more along this trip"

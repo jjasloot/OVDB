@@ -126,3 +126,12 @@ export interface OSMStop {
   lattitude: number;
   longitude: number;
 }
+
+/**
+ * Suggestions for a just-imported route, with the trip that can date them. A null trip means the
+ * route has none yet, so anything marked stays undated and joins the backfill queue.
+ */
+export interface StationSuggestionsForRoute {
+  routeInstanceId: number | null;
+  stations: StationSuggestion[];
+}

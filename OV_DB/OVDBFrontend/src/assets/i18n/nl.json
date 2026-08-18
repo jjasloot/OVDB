@@ -50,6 +50,10 @@
       "INTRO": "{{trip}} stopt op deze stations, en je hebt ze niet als bezocht gemarkeerd. Er wordt niets gemarkeerd tot jij het zegt.",
       "NO_DATE": "Deze route heeft nog geen datum, dus wat je hier markeert blijft ongedateerd tot je het dateert.",
       "CALLED_AT": "trein stopt hier",
+      "ROLE_STOPPED": "Hier gestopt",
+      "ROLE_STARTED": "Hier ingestapt",
+      "ROLE_FINISHED": "Hier uitgestapt",
+      "CONFIRM": "Bevestigen",
       "DISMISS": "Niet meer vragen",
       "DONE": "Klaar",
       "SHOW_MORE": "Toon nog {{count}} op deze rit"

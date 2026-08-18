@@ -16,11 +16,9 @@ ul {
 
 li {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
   gap: 8px;
-  padding: 8px 0;
+  padding: 2px 0;
   border-top: 1px solid rgb(128 128 128 / 25%);
 }
 
@@ -29,33 +27,25 @@ li.busy {
   opacity: 0.5;
 }
 
-.station {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-
-  .station-name {
-    font-weight: 500;
-  }
-
-  .offset {
-    opacity: 0.6;
-    font-size: 0.8em;
-  }
-}
-
-.choices {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-// The operator says the train stopped here, which is why this is worth asking about at all.
-.badge {
-  font-size: 0.75em;
-  padding: 1px 6px;
-  border-radius: 10px;
-  background: rgb(30 136 229 / 20%);
-  color: #1565c0;
+.station-name {
+  flex: 1;
+  min-width: 0;
+  // Long station names must not push the controls off the row.
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+// Narrow on purpose: three short options, and the row has to stay one line.
+.role {
+  width: 11em;
+  flex: none;
+}
+
+.confirm {
+  color: #2e7d32;
+}
+
+.deny {
+  color: #c62828;
 }

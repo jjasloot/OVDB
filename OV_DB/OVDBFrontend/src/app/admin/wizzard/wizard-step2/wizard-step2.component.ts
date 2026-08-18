@@ -6,10 +6,7 @@ import { WizardStepsComponent } from "../wizard-steps/wizard-steps.component";
 import { OSMDataLine } from "src/app/models/osmDataLine.model";
 import { LatLngBounds, Layer, geoJSON } from "leaflet";
 import { OSMLineStop } from "src/app/models/osmLineStop.model";
-import {
-  StationSuggestionsComponent,
-  StationSuggestionsDialogData,
-} from "src/app/stations/station-suggestions/station-suggestions.component";
+import { PendingStationSuggestionsService } from "src/app/services/pending-station-suggestions.service";
 import { saveAs } from "file-saver";
 import { TranslateService, TranslateModule } from "@ngx-translate/core";
 import { MatDialog } from "@angular/material/dialog";
@@ -58,6 +55,7 @@ export class WizzardStep2Component implements OnInit {
   private translateService = inject(TranslateService);
   private dialog = inject(MatDialog);
   private router = inject(Router);
+  private pendingSuggestions = inject(PendingStationSuggestionsService);
   private mapTileLayersService = inject(MapTileLayersService);
 
   id!: string;
@@ -152,9 +150,10 @@ export class WizzardStep2Component implements OnInit {
 
         this.apiService.importerAddRoute(this.data).subscribe(
           (route) => {
-            // Offer the stations this relation calls at before leaving the page: the stops came
-            // back with the import and are not stored, so this is the only chance to act on them.
-            this.offerStationSuggestions(() => this.goToRoute(route));
+            // Not asked here: the route has no date yet, so nothing the user ticked could be dated.
+            // The stops wait until the route is saved, or until its first trip is, whichever comes.
+            this.pendingSuggestions.set(route.routeId, this.data.stops);
+            this.goToRoute(route);
           },
           () => {
             this.error = true;
@@ -174,38 +173,6 @@ export class WizzardStep2Component implements OnInit {
     } else {
       this.router.navigate(["/", "admin", "routes", route.routeId]);
     }
-  }
-
-  /**
-   * Shows the stations the relation says the train calls at that are not marked visited, then
-   * continues. Unlike a Träwelling import these carry no date — the route has no trip on it yet —
-   * so marking one leaves an undated visit for the backfill to date later.
-   */
-  private offerStationSuggestions(done: () => void) {
-    const stops = this.data.stops ?? [];
-    if (!stops.length) {
-      done();
-      return;
-    }
-
-    this.apiService.getSuggestionsFromStops(stops).subscribe({
-      next: (stations) => {
-        if (!stations.length) {
-          done();
-          return;
-        }
-        this.dialog
-          .open<StationSuggestionsComponent, StationSuggestionsDialogData>(StationSuggestionsComponent, {
-            maxWidth: "95vw",
-            width: "560px",
-            data: { tripName: this.data.name, routeInstanceId: null, stations },
-          })
-          .afterClosed()
-          .subscribe(() => done());
-      },
-      // Suggestions are a bonus; never let them hold up the import.
-      error: () => done(),
-    });
   }
 
   export() {

@@ -8,39 +8,46 @@
     <p class="note">{{ 'STATIONS.SUGGESTIONS.NO_DATE' | translate }}</p>
   }
 
+  <!-- In the order the relation lists them, so the list reads like the journey. -->
   <ul>
-    @for (station of visible(); track station.stationId) {
-      <li [class.busy]="isBusy(station.stationId)">
-        <div class="station">
-          <span class="station-name">{{ station.stationName }}</span>
-          <span class="badge">{{ 'STATIONS.SUGGESTIONS.CALLED_AT' | translate }}</span>
-          @if (station.distanceMetres > 100) {
-            <span class="offset">{{ station.distanceMetres | number: '1.0-0' }} m</span>
-          }
-        </div>
-        <div class="choices">
-          <button
-            mat-flat-button
-            [disabled]="isBusy(station.stationId)"
-            (click)="mark(station.stationId, levels.EntryExit)"
+    @for (row of visible(); track row.station.stationId) {
+      <li [class.busy]="row.state === 'busy'">
+        <span class="station-name">{{ row.station.stationName }}</span>
+
+        <mat-form-field subscriptSizing="dynamic" class="role">
+          <mat-select
+            [ngModel]="row.role"
+            (ngModelChange)="setRole(row.station.stationId, $event)"
+            [disabled]="row.state === 'busy'"
           >
-            {{ 'STATIONS.VISIT.SET_ENTRY_EXIT' | translate }}
-          </button>
-          <button
-            mat-stroked-button
-            [disabled]="isBusy(station.stationId)"
-            (click)="mark(station.stationId, levels.Stopped)"
-          >
-            {{ 'STATIONS.VISIT.SET_STOPPED' | translate }}
-          </button>
-          <button
-            mat-button
-            [disabled]="isBusy(station.stationId)"
-            (click)="dismiss(station.stationId)"
-          >
-            {{ 'STATIONS.SUGGESTIONS.DISMISS' | translate }}
-          </button>
-        </div>
+            @for (role of roles; track role) {
+              <mat-option [value]="role">
+                {{ roleLabel(role) | translate }}
+              </mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <button
+          mat-icon-button
+          class="confirm"
+          [disabled]="row.state === 'busy'"
+          [attr.aria-label]="'STATIONS.SUGGESTIONS.CONFIRM' | translate"
+          [title]="'STATIONS.SUGGESTIONS.CONFIRM' | translate"
+          (click)="confirm(row)"
+        >
+          <mat-icon>check</mat-icon>
+        </button>
+        <button
+          mat-icon-button
+          class="deny"
+          [disabled]="row.state === 'busy'"
+          [attr.aria-label]="'STATIONS.SUGGESTIONS.DISMISS' | translate"
+          [title]="'STATIONS.SUGGESTIONS.DISMISS' | translate"
+          (click)="deny(row)"
+        >
+          <mat-icon>close</mat-icon>
+        </button>
       </li>
     }
   </ul>

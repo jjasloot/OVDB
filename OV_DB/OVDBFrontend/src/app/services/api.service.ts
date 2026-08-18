@@ -18,7 +18,7 @@ import {
   OSMStop,
   RouteGeometry,
   StationBackfillItem,
-  StationSuggestion,
+  StationSuggestionsForRoute,
   StationView,
   StationVisitDates,
   StationVisitLevel,
@@ -585,9 +585,15 @@ export class ApiService {
    * Stations an imported OSM relation calls at that are not marked visited. Sent the stops the
    * import already parsed, so it costs no extra OSM request — and it is called once, at import.
    */
-  getSuggestionsFromStops(stops: OSMStop[]): Observable<StationSuggestion[]> {
-    const url = environment.backend + "api/stationsuggestions/from-stops";
-    return this.httpClient.post<StationSuggestion[]>(url, stops);
+  getSuggestionsFromStops(
+    stops: OSMStop[],
+    routeId?: number
+  ): Observable<StationSuggestionsForRoute> {
+    let url = environment.backend + "api/stationsuggestions/from-stops";
+    if (routeId !== undefined) {
+      url += "?routeId=" + routeId;
+    }
+    return this.httpClient.post<StationSuggestionsForRoute>(url, stops);
   }
 
   /**

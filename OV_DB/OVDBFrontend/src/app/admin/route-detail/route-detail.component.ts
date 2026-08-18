@@ -4,6 +4,11 @@ import { Route } from "src/app/models/route.model";
 import { ApiService } from "src/app/services/api.service";
 import { UntypedFormBuilder, Validators, UntypedFormGroup, FormsModule, ReactiveFormsModule } from "@angular/forms";
 import moment from "moment";
+import { PendingStationSuggestionsService } from "src/app/services/pending-station-suggestions.service";
+import {
+  StationSuggestionsComponent,
+  StationSuggestionsDialogData,
+} from "src/app/stations/station-suggestions/station-suggestions.component";
 import { RouteType } from "src/app/models/routeType.model";
 import { Country } from "src/app/models/country.model";
 import { MatSelectionList, MatListOption } from "@angular/material/list";
@@ -79,6 +84,7 @@ export class RouteDetailComponent implements OnInit {
   private dialog = inject(MatDialog);
   private snackBar = inject(MatSnackBar);
   private router = inject(Router);
+  private pendingSuggestions = inject(PendingStationSuggestionsService);
   private destroyRef = inject(DestroyRef);
 
   routeId = signal<number>(0);
@@ -207,7 +213,9 @@ export class RouteDetailComponent implements OnInit {
     }
     this.apiService.updateRoute({ ...values, firstDateTime: this.formatDateTimeLocal(new Date(values.firstDateTime)) } as Route).subscribe((_) => {
       if (!goToInstances) {
-        this.goBack();
+        // Saving here is where an OSM import finally has a date, so this is where its station
+        // suggestions are worth asking about. Going on to the trips page defers them instead.
+        this.offerPendingStationSuggestions(() => this.goBack());
       } else {
         const navigationParams: any = {
           route: ["/", "admin", "routes", "instances", this.route()!.routeId]
@@ -220,6 +228,42 @@ export class RouteDetailComponent implements OnInit {
 
         this.router.navigate(navigationParams.route, navigationParams.queryParams ? { queryParams: navigationParams.queryParams } : {});
       }
+    });
+  }
+
+  /**
+   * Offers the stations an OSM import said this route calls at, now that saving has given it a date.
+   * The stops are consumed, so one import is never offered twice; if there are none, or the request
+   * fails, this just continues — suggestions must never hold up a save.
+   */
+  private offerPendingStationSuggestions(done: () => void): void {
+    const routeId = this.route()!.routeId;
+    const stops = this.pendingSuggestions.take(routeId);
+    if (!stops?.length) {
+      done();
+      return;
+    }
+
+    this.apiService.getSuggestionsFromStops(stops, routeId).subscribe({
+      next: (result) => {
+        if (!result.stations.length) {
+          done();
+          return;
+        }
+        this.dialog
+          .open<StationSuggestionsComponent, StationSuggestionsDialogData>(StationSuggestionsComponent, {
+            maxWidth: "95vw",
+            width: "560px",
+            data: {
+              tripName: this.route()!.name,
+              routeInstanceId: result.routeInstanceId,
+              stations: result.stations,
+            },
+          })
+          .afterClosed()
+          .subscribe(() => done());
+      },
+      error: () => done(),
     });
   }
 

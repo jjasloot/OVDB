@@ -47,6 +47,16 @@ namespace OV_DB.Models
         public double DistanceMetres { get; set; }
     }
 
+    /// <summary>
+    /// Suggestions for a just-imported route, with the trip that can date them. Null when the route
+    /// has no trip yet — then anything ticked is recorded undated and joins the backfill queue.
+    /// </summary>
+    public class StationSuggestionsForRouteDTO
+    {
+        public int? RouteInstanceId { get; set; }
+        public List<StationSuggestionDTO> Stations { get; set; }
+    }
+
     public class MarkSuggestionDTO
     {
         public int StationId { get; set; }

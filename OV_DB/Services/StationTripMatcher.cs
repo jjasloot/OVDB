@@ -260,6 +260,9 @@ public class StationTripMatcher(OVDBDatabaseContext dbContext, IMatcherIndexCach
     {
         var index = await GetIndexAsync(cancellationToken);
         var matched = new Dictionary<int, double>();
+        // Stops arrive in the order the relation lists them, which is the order they are ridden in.
+        // Keeping it means the suggestion list reads like the journey instead of like an index.
+        var order = new List<int>();
 
         foreach (var stop in stops)
         {
@@ -288,26 +291,30 @@ public class StationTripMatcher(OVDBDatabaseContext dbContext, IMatcherIndexCach
                 continue;
             }
 
-            if (!matched.TryGetValue(best.Value.StationId, out var existing) || bestDistance < existing)
+            if (!matched.TryGetValue(best.Value.StationId, out var existing))
+            {
+                matched[best.Value.StationId] = bestDistance;
+                order.Add(best.Value.StationId);
+            }
+            else if (bestDistance < existing)
             {
                 matched[best.Value.StationId] = bestDistance;
             }
         }
 
-        if (matched.Count == 0)
+        if (order.Count == 0)
         {
             return [];
         }
 
-        var ids = matched.Keys.ToList();
         var names = await dbContext.Stations.AsNoTracking()
-            .Where(s => ids.Contains(s.Id))
+            .Where(s => order.Contains(s.Id))
             .Select(s => new { s.Id, s.Name })
-            .ToListAsync(cancellationToken);
+            .ToDictionaryAsync(s => s.Id, s => s.Name, cancellationToken);
 
-        return names
-            .Select(s => new StationCandidate(s.Id, s.Name, VisitEvidence.Stopover, matched[s.Id]))
-            .OrderBy(c => c.StationName)
+        return order
+            .Where(names.ContainsKey)
+            .Select(id => new StationCandidate(id, names[id], VisitEvidence.Stopover, matched[id]))
             .ToList();
     }
 

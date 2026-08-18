@@ -22,6 +22,7 @@ import { MatCard, MatCardContent, MatCardHeader, MatCardTitle } from "@angular/m
 import { TrawellingTripContext } from "src/app/models/traewelling.model";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { STANDARD_DIALOG } from "src/app/constants/dialog-sizes";
+import { PendingStationSuggestionsService } from "src/app/services/pending-station-suggestions.service";
 import { StationSuggestion } from "src/app/models/stationView.model";
 import {
   StationSuggestionsComponent,
@@ -61,6 +62,7 @@ export class RouteInstancesComponent implements OnInit {
   private router = inject(Router);
   private destroyRef = inject(DestroyRef);
   private snackBar = inject(MatSnackBar);
+  private pendingSuggestions = inject(PendingStationSuggestionsService);
 
   routeId = signal<number>(0);
   route = signal<Route | null>(null);
@@ -317,6 +319,9 @@ export class RouteInstancesComponent implements OnInit {
     };
     const suggestions = body?.stationSuggestions;
     if (!suggestions?.length) {
+      // No Träwelling calling pattern on this save, so this may instead be the first trip on a
+      // freshly imported OSM route — which is the moment its stops finally have a date.
+      this.offerPendingOsmSuggestions(body?.routeInstanceId ?? null);
       return;
     }
 
@@ -334,6 +339,40 @@ export class RouteInstancesComponent implements OnInit {
         },
       }
     );
+  }
+
+  /**
+   * The other half of the OSM import: the wizard parked its stops because the route had no date,
+   * and adding the first trip is where it finally gets one. Consumed, so it is offered once.
+   */
+  private offerPendingOsmSuggestions(routeInstanceId: number | null): void {
+    const routeId = this.routeId();
+    const stops = this.pendingSuggestions.take(routeId);
+    if (!stops?.length) {
+      return;
+    }
+
+    this.apiService.getSuggestionsFromStops(stops, routeId).subscribe({
+      next: (result) => {
+        if (!result.stations.length) {
+          return;
+        }
+        this.dialog.open<StationSuggestionsComponent, StationSuggestionsDialogData>(
+          StationSuggestionsComponent,
+          {
+            maxWidth: '95vw',
+            width: '560px',
+            data: {
+              tripName: this.route()?.name ?? '',
+              routeInstanceId: result.routeInstanceId ?? routeInstanceId,
+              stations: result.stations,
+            },
+          }
+        );
+      },
+      // A bonus, never a blocker.
+      error: () => undefined,
+    });
   }
 
   private toLocalDateString(date: Date): string {
