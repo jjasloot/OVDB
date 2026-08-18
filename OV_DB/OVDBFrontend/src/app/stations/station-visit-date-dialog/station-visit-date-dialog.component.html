@@ -56,6 +56,10 @@
       @for (group of candidates(); track group.routeId) {
         <li>
           <div class="route">
+            <span
+              class="type"
+              [style.background-color]="group.routeTypeColour"
+            >{{ typeName(group) }}</span>
             <span class="name">{{ group.routeName }}</span>
             @if (group.isEndpoint) {
               <span class="badge endpoint">{{ 'STATIONS.VISIT.EVIDENCE_ENDPOINT' | translate }}</span>
@@ -69,7 +73,14 @@
 
           @for (instance of expanded() === group.routeId ? group.instances : group.instances.slice(0, 1); track instance.routeInstanceId) {
             <div class="instance">
-              <span class="date">{{ instance.date | date: 'longDate' }}</span>
+              <span class="date">
+                {{ instance.date | date: 'longDate' }}
+                @if (instance.startTime) {
+                  <span class="times">
+                    {{ instance.startTime | date: 'HH:mm' }}@if (instance.endTime) {&ndash;{{ instance.endTime | date: 'HH:mm' }}}
+                  </span>
+                }
+              </span>
               <button mat-stroked-button (click)="choose('stopped', instance.routeInstanceId, instance.date)">
                 {{ 'STATIONS.VISIT.SET_STOPPED' | translate }}
               </button>

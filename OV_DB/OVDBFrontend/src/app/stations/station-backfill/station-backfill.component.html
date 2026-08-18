@@ -34,6 +34,16 @@
               (change)="select(row.instance.routeInstanceId)"
             >
               <span class="date">{{ row.instance.date | date: 'longDate' }}</span>
+              @if (row.instance.startTime) {
+                <span class="times">
+                  {{ row.instance.startTime | date: 'HH:mm' }}@if (row.instance.endTime) {&ndash;{{ row.instance.endTime | date: 'HH:mm' }}}
+                </span>
+              }
+              <span
+                class="type"
+                [style.background-color]="row.group.routeTypeColour"
+                [title]="typeName(row.group)"
+              >{{ typeName(row.group) }}</span>
               <span class="name">{{ row.group.routeName }}</span>
               @if (row.group.isEndpoint) {
                 <span class="badge endpoint">{{ 'STATIONS.VISIT.EVIDENCE_ENDPOINT' | translate }}</span>

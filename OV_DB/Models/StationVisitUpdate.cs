@@ -66,6 +66,14 @@ namespace OV_DB.Models
         /// <summary>True when the route starts or ends here, which is the only evidence you were on the platform.</summary>
         public bool IsEndpoint { get; set; }
         public double DistanceMetres { get; set; }
+        /// <summary>
+        /// The kind of train, shown because the candidate list is otherwise a wall of dates. Only
+        /// train-typed routes reach here at all: stations exist for railway stations, so a bus or
+        /// tram trip cannot explain being at one however close its line runs.
+        /// </summary>
+        public string RouteTypeName { get; set; }
+        public string RouteTypeNameNL { get; set; }
+        public string RouteTypeColour { get; set; }
         public List<TripCandidateDTO> Instances { get; set; }
     }
 
@@ -73,5 +81,8 @@ namespace OV_DB.Models
     {
         public int RouteInstanceId { get; set; }
         public DateTime Date { get; set; }
+        /// <summary>Departure and arrival, where known — what tells two trips on one date apart.</summary>
+        public DateTime? StartTime { get; set; }
+        public DateTime? EndTime { get; set; }
     }
 }

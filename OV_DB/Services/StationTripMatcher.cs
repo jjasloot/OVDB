@@ -40,7 +40,13 @@ public sealed record TripCandidate(
     string To,
     DateTime Date,
     VisitEvidence Evidence,
-    double DistanceMetres);
+    double DistanceMetres,
+    /// <summary>Departure and arrival, where known. Two trips on one date are told apart by these.</summary>
+    DateTime? StartTime,
+    DateTime? EndTime,
+    string RouteTypeName,
+    string RouteTypeNameNL,
+    string RouteTypeColour);
 
 /// <summary>A station a trip might explain having visited.</summary>
 public sealed record StationCandidate(
@@ -135,14 +141,24 @@ public class StationTripMatcher(OVDBDatabaseContext dbContext, IMatcherIndexCach
             // Scoping happens here rather than in the index: a route the user does not own simply
             // produces no trips.
             .Where(ri => ri.Route.RouteMaps.Any(rm => rm.Map.UserId == userId))
+            // Stations exist only for railway stations — the importer takes railway=station|halt and
+            // excludes tram_stop — so a bus or tram trip cannot explain being at one, however close
+            // its line runs. A route with no type at all cannot be shown to be a train, so it is
+            // out too.
+            .Where(ri => ri.Route.RouteType != null && ri.Route.RouteType.IsTrain)
             .Select(ri => new
             {
                 ri.RouteInstanceId,
                 ri.RouteId,
                 ri.Date,
+                ri.StartTime,
+                ri.EndTime,
                 ri.Route.Name,
                 ri.Route.From,
-                ri.Route.To
+                ri.Route.To,
+                RouteTypeName = ri.Route.RouteType.Name,
+                RouteTypeNameNL = ri.Route.RouteType.NameNL,
+                RouteTypeColour = ri.Route.RouteType.Colour
             })
             .ToListAsync(cancellationToken);
 
@@ -154,7 +170,12 @@ public class StationTripMatcher(OVDBDatabaseContext dbContext, IMatcherIndexCach
             t.To,
             t.Date,
             EvidenceFor(index, t.RouteId, station.Name, t.From, t.To, station.Lattitude, station.Longitude),
-            nearest[t.RouteId]));
+            nearest[t.RouteId],
+            t.StartTime,
+            t.EndTime,
+            t.RouteTypeName,
+            t.RouteTypeNameNL,
+            t.RouteTypeColour));
 
         // Oldest first: the question this answers is "which trip first brought me here", and the
         // backfill preselects the earliest. Evidence rides along for the caller to group by.

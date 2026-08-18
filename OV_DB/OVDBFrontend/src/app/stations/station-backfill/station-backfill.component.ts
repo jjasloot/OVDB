@@ -11,6 +11,7 @@ import { TranslateModule } from "@ngx-translate/core";
 import { firstValueFrom } from "rxjs";
 import { ApiService } from "src/app/services/api.service";
 import { MapTileLayersService } from "src/app/services/map-tile-layers.service";
+import { TranslationService } from "src/app/services/translation.service";
 import {
   StationBackfillItem,
   StationVisitLevel,
@@ -48,6 +49,7 @@ import {
 export class StationBackfillComponent implements OnInit {
   private apiService = inject(ApiService);
   private mapTileLayersService = inject(MapTileLayersService);
+  private translationService = inject(TranslationService);
 
   private baseLayers = this.mapTileLayersService.createBaseLayers();
   options = {
@@ -165,6 +167,14 @@ export class StationBackfillComponent implements OnInit {
 
   evidenceOf(group: TripCandidateGroup): "endpoint" | "nearby" {
     return group.isEndpoint ? "endpoint" : "nearby";
+  }
+
+  /** The user's own name for the route type, in their language. */
+  typeName(group: TripCandidateGroup): string {
+    return this.translationService.getNameForItem({
+      name: group.routeTypeName,
+      nameNL: group.routeTypeNameNL,
+    });
   }
 
   /** Both outcomes are the same decision split two ways, so the level costs no extra tap. */

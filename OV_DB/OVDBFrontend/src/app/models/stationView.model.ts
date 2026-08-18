@@ -63,12 +63,22 @@ export interface TripCandidateGroup {
   /** The route starts or ends here — the only evidence you stood on the platform. */
   isEndpoint: boolean;
   distanceMetres: number;
+  /**
+   * The kind of train. Only train-typed routes are offered as candidates at all: stations exist for
+   * railway stations, so a bus or tram trip cannot explain being at one however close its line runs.
+   */
+  routeTypeName: string;
+  routeTypeNameNL: string;
+  routeTypeColour: string;
   instances: TripCandidate[];
 }
 
 export interface TripCandidate {
   routeInstanceId: number;
   date: string;
+  /** Departure and arrival, where known — what tells two trips on one date apart. */
+  startTime: string | null;
+  endTime: string | null;
 }
 
 /** One station's worth of the dating queue. */

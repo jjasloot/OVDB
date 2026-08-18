@@ -18,6 +18,7 @@ import { TranslateModule } from '@ngx-translate/core';
 import { firstValueFrom } from 'rxjs';
 import moment, { Moment } from 'moment';
 import { ApiService } from 'src/app/services/api.service';
+import { TranslationService } from 'src/app/services/translation.service';
 import {
   StationVisitDates,
   StationVisitLevel,
@@ -66,6 +67,7 @@ type Target = 'stopped' | 'entryExit';
 export class StationVisitDateDialogComponent {
   private dialogRef = inject(MatDialogRef<StationVisitDateDialogComponent, StationVisitDates>);
   private apiService = inject(ApiService);
+  private translationService = inject(TranslationService);
   data = inject<StationVisitDateDialogData>(MAT_DIALOG_DATA);
 
   readonly levels = StationVisitLevel;
@@ -106,6 +108,14 @@ export class StationVisitDateDialogComponent {
 
   toggle(routeId: number): void {
     this.expanded.update((current) => (current === routeId ? null : routeId));
+  }
+
+  /** The user's own name for the route type, in their language. */
+  typeName(group: TripCandidateGroup): string {
+    return this.translationService.getNameForItem({
+      name: group.routeTypeName,
+      nameNL: group.routeTypeNameNL,
+    });
   }
 
   /** Assigning a trip sets the date too — the server takes it from the trip, so they cannot differ. */

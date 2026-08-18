@@ -52,10 +52,23 @@ public class StationTripMatcherTests
         string from = "Somewhere",
         string to = "Elsewhere",
         int ownerUserId = 1,
-        DateTime[] dates = null)
+        DateTime[] dates = null,
+        bool isTrain = true,
+        bool withRouteType = true)
     {
         var context = NewContext();
         context.Maps.Add(new Map { MapId = 1, UserId = ownerUserId, Name = "Trains", MapGuid = Guid.NewGuid() });
+        if (withRouteType)
+        {
+            context.RouteTypes.Add(new RouteType
+            {
+                TypeId = 1,
+                Name = isTrain ? "Train" : "Bus",
+                Colour = "#1E88E5",
+                UserId = ownerUserId,
+                IsTrain = isTrain
+            });
+        }
         context.Routes.Add(new Route
         {
             RouteId = 1,
@@ -63,6 +76,7 @@ public class StationTripMatcherTests
             From = from,
             To = to,
             Share = Guid.NewGuid(),
+            RouteTypeId = withRouteType ? 1 : null,
             LineString = line ?? EastWestLineThroughBase()
         });
         context.RoutesMaps.Add(new RouteMap { RouteMapId = 1, RouteId = 1, MapId = 1 });
@@ -74,7 +88,9 @@ public class StationTripMatcherTests
             {
                 RouteInstanceId = i + 1,
                 RouteId = 1,
-                Date = instanceDates[i]
+                Date = instanceDates[i],
+                StartTime = instanceDates[i].AddHours(9).AddMinutes(14),
+                EndTime = instanceDates[i].AddHours(10).AddMinutes(2)
             });
         }
 
@@ -184,6 +200,43 @@ public class StationTripMatcherTests
         Assert.Equal(
             [new DateTime(2016, 7, 9), new DateTime(2019, 4, 2), new DateTime(2023, 1, 1)],
             candidates.Select(c => c.Date));
+    }
+
+    [Fact]
+    public async Task ANonTrainTripIsNeverProposedForAStation()
+    {
+        // Stations exist only for railway stations, so a bus running past one explains nothing —
+        // however close its line happens to run.
+        using var context = await SeedAsync(isTrain: false);
+        await AddStationAsync(context, 10, "Halt", BaseLat, BaseLon);
+
+        Assert.Empty(await NewMatcher(context).FindTripsForStationAsync(1, 10));
+    }
+
+    [Fact]
+    public async Task ARouteWithNoTypeAtAllIsNotProposedEither()
+    {
+        // It cannot be shown to be a train, and guessing in the permissive direction is what puts
+        // tram and bus noise in front of the user.
+        using var context = await SeedAsync(withRouteType: false);
+        await AddStationAsync(context, 10, "Halt", BaseLat, BaseLon);
+
+        Assert.Empty(await NewMatcher(context).FindTripsForStationAsync(1, 10));
+    }
+
+    [Fact]
+    public async Task ACandidateCarriesItsTimesAndType()
+    {
+        using var context = await SeedAsync();
+        await AddStationAsync(context, 10, "Halt", BaseLat, BaseLon);
+
+        var candidate = Assert.Single(await NewMatcher(context).FindTripsForStationAsync(1, 10));
+
+        // Two trips on one date are told apart by the times, so they have to survive the journey.
+        Assert.Equal(new DateTime(2021, 6, 1, 9, 14, 0), candidate.StartTime);
+        Assert.Equal(new DateTime(2021, 6, 1, 10, 2, 0), candidate.EndTime);
+        Assert.Equal("Train", candidate.RouteTypeName);
+        Assert.Equal("#1E88E5", candidate.RouteTypeColour);
     }
 
     [Fact]

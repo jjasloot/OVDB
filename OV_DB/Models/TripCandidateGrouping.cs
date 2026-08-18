@@ -26,8 +26,17 @@ namespace OV_DB.Models
                     To = g.First().To,
                     IsEndpoint = g.Any(c => c.Evidence == VisitEvidence.RouteEndpoint),
                     DistanceMetres = g.Min(c => c.DistanceMetres),
-                    Instances = g.OrderBy(c => c.Date)
-                        .Select(c => new TripCandidateDTO { RouteInstanceId = c.RouteInstanceId, Date = c.Date })
+                    RouteTypeName = g.First().RouteTypeName,
+                    RouteTypeNameNL = g.First().RouteTypeNameNL,
+                    RouteTypeColour = g.First().RouteTypeColour,
+                    Instances = g.OrderBy(c => c.Date).ThenBy(c => c.StartTime)
+                        .Select(c => new TripCandidateDTO
+                        {
+                            RouteInstanceId = c.RouteInstanceId,
+                            Date = c.Date,
+                            StartTime = c.StartTime,
+                            EndTime = c.EndTime
+                        })
                         .ToList()
                 })
                 .OrderByDescending(g => g.IsEndpoint)

@@ -48,6 +48,22 @@ h3 {
   font-size: 0.9em;
 }
 
+// The user's own colour for the type, so it reads the same as everywhere else in OVDB.
+.type {
+  font-size: 0.75em;
+  padding: 1px 6px;
+  border-radius: 10px;
+  color: #fff;
+  // Types carry light colours too, so keep the text legible against either.
+  text-shadow: 0 0 2px rgb(0 0 0 / 60%);
+  white-space: nowrap;
+}
+
+.times {
+  opacity: 0.75;
+  font-variant-numeric: tabular-nums;
+}
+
 .badge {
   font-size: 0.75em;
   padding: 1px 6px;
