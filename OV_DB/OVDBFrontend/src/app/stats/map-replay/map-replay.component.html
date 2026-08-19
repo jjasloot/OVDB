@@ -43,11 +43,26 @@
             [attr.aria-label]="(playing() ? 'STATS.REPLAY.PAUSE' : 'STATS.REPLAY.PLAY') | translate">
             <mat-icon>{{ playing() ? 'pause' : 'play_arrow' }}</mat-icon>
           </button>
-          <mat-slider [min]="0" [max]="routes().length" [step]="1" discrete class="slider">
+          <mat-slider [min]="0" [max]="timelineLength()" [step]="1" discrete class="slider">
             <input matSliderThumb [value]="index()" (valueChange)="setIndex($event)"
               [attr.aria-label]="'STATS.REPLAY.TIMELINE' | translate" />
           </mat-slider>
           <button mat-button (click)="reset()">{{ 'STATS.REPLAY.RESET' | translate }}</button>
+        </div>
+
+        <div class="options">
+          <mat-form-field class="speed">
+            <mat-label>{{ 'STATS.REPLAY.SPEED' | translate }}</mat-label>
+            <mat-select [value]="speed()" (selectionChange)="setSpeed($event.value)">
+              @for (option of speeds; track option) {
+                <mat-option [value]="option">{{ option }}&times;</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+          <!-- Off shows each route in its type's colour, which is how the legend reads. -->
+          <mat-checkbox [checked]="useOverrideColours()" (change)="toggleOverrideColours()">
+            {{ 'STATS.REPLAY.OVERRIDE_COLOURS' | translate }}
+          </mat-checkbox>
         </div>
 
         <div class="readout">
@@ -56,14 +71,73 @@
             <span class="label">{{ 'STATS.REPLAY.DATE' | translate }}</span>
           </div>
           <div class="figure">
-            <span class="value">{{ index() }} / {{ routes().length }}</span>
+            <span class="value">{{ revealed() }} / {{ routes().length }}</span>
             <span class="label">{{ 'STATS.REPLAY.ROUTES' | translate }}</span>
           </div>
           <div class="figure">
             <span class="value">{{ cumulativeKm() | number: '1.0-0' }} km</span>
             <span class="label">{{ 'STATS.REPLAY.DISTANCE' | translate }}</span>
           </div>
+          @if (stoppedDates().length > 0) {
+            <div class="figure">
+              <span class="value">
+                {{ stationsStopped() }}
+                @if (stationsEntryExit() > 0) {
+                  <span class="upgraded">· {{ stationsEntryExit() }}</span>
+                }
+              </span>
+              <span class="label">{{ 'STATS.REPLAY.STATIONS' | translate }}</span>
+            </div>
+          }
         </div>
+
+        @if (stoppedDates().length > 0) {
+          <!--
+            Station growth over the same timeline. Green is stations known to have been stopped at by
+            now, blue the ones already upgraded to got-on/off — so an upgrade shows as the blue
+            eating into the green rather than as a separate total. Only dated visits count; the
+            undated ones would be a guess at when they happened.
+          -->
+          <span class="ovdb-split-bar stations-bar"
+            [title]="'STATS.REPLAY.STATIONS_HINT' | translate: { stopped: stationsStoppedOnly(), entryExit: stationsEntryExit() }">
+            @if (stationsStopped() > 0) {
+              <span class="ovdb-split-stopped" [style.width.%]="stoppedPercentage()"></span>
+            }
+            @if (stationsEntryExit() > 0) {
+              <span class="ovdb-split-entry-exit" [style.width.%]="entryExitPercentage()"></span>
+            }
+          </span>
+        }
+
+        <!--
+          The same growth per country, filling as the replay runs. Hidden on narrow screens, where
+          the single bar above already carries the summary and this would just push the map away.
+        -->
+        @if (regionProgress().length > 0) {
+          <div class="regions">
+            <h4>{{ 'STATS.REPLAY.BY_COUNTRY' | translate }}</h4>
+            @for (region of regionProgress(); track region.regionId) {
+              <div class="region" [class.dormant]="region.stopped === 0">
+                <span class="region-label">
+                  @if (region.flagEmoji) {
+                    <span class="flag">{{ region.flagEmoji }}</span>
+                  }
+                  {{ region.name }}
+                </span>
+                <span class="ovdb-split-bar"
+                  [title]="'STATS.REPLAY.STATIONS_HINT' | translate: { stopped: region.stopped - region.entryExit, entryExit: region.entryExit }">
+                  @if (region.stopped > 0) {
+                    <span class="ovdb-split-stopped" [style.width.%]="region.stoppedPercentage"></span>
+                  }
+                  @if (region.entryExit > 0) {
+                    <span class="ovdb-split-entry-exit" [style.width.%]="region.entryExitPercentage"></span>
+                  }
+                </span>
+                <span class="region-count">{{ region.stopped }} / {{ region.total }}</span>
+              </div>
+            }
+          </div>
+        }
       </mat-card-content>
     </mat-card>
   }

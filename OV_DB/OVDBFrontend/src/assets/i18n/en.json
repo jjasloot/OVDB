@@ -483,7 +483,12 @@
       "TIMELINE": "Timeline",
       "DATE": "first ridden",
       "ROUTES": "routes shown",
-      "DISTANCE": "distance so far"
+      "DISTANCE": "distance so far",
+      "BY_COUNTRY": "By country",
+      "SPEED": "Speed",
+      "OVERRIDE_COLOURS": "Use route colours",
+      "STATIONS": "stations dated",
+      "STATIONS_HINT": "{{stopped}} only stopped at, {{entryExit}} got on/off at"
     },
     "COMPLETION": {
       "TITLE": "Completion",

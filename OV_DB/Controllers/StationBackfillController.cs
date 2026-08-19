@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using NetTopologySuite.Simplify;
 using OV_DB.Models;
 using OV_DB.Services;
 using OVDB_database.Database;
@@ -129,14 +128,13 @@ namespace OV_DB.Controllers
                 return NotFound();
             }
 
-            // Drawn at map scale, so display tolerance rather than the matcher's: a route can carry
-            // 17,000 coordinates and none of them are visible.
-            var simplified = DouglasPeuckerSimplifier.Simplify(line, 100.0 / 111_320.0);
-
+            // Not simplified. This is one route on a map the user zooms into to judge whether the
+            // line really runs through the platform, and a smoothed line is exactly the wrong thing
+            // to make that call on. One route's worth of coordinates is a cheap payload.
             return Ok(new RouteGeometryDTO
             {
                 RouteId = routeId,
-                Coordinates = simplified.Coordinates.Select(c => new[] { c.Y, c.X }).ToList()
+                Coordinates = line.Coordinates.Select(c => new[] { c.Y, c.X }).ToList()
             });
         }
 

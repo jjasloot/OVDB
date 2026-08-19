@@ -198,7 +198,11 @@ namespace OV_DB.Controllers
                 return Forbid();
             }
 
-            const double simplificationTolerance = 0.002;
+            // ~25 m rather than the ~222 m this used to use. Measured on the default map: raw
+            // geometry is 3.5M points and 70 MB of JSON, 25 m is 232k points and 4.6 MB, the old
+            // 222 m was 73k and 1.5 MB. The old value was visibly coarse as soon as you zoomed in;
+            // 25 m is not, and three times the payload is worth that.
+            const double simplificationTolerance = 25.0 / 111_320.0;
 
             var firstRides = await QueryForInstances(map, year, userIdClaim)
                 .GroupBy(ri => ri.RouteId)
@@ -222,6 +226,7 @@ namespace OV_DB.Controllers
                     r.NameNL,
                     r.LineString,
                     Colour = r.OverrideColour ?? r.RouteType.Colour,
+                    RouteTypeColour = r.RouteType.Colour,
                     Distance = (double)((r.OverrideDistance.HasValue && r.OverrideDistance > 0) ? r.OverrideDistance : r.CalculatedDistance)
                 })
                 .ToListAsync(cancellationToken);
@@ -243,6 +248,7 @@ namespace OV_DB.Controllers
                     Name = route.Name,
                     NameNL = route.NameNL,
                     Colour = route.Colour,
+                    RouteTypeColour = route.RouteTypeColour,
                     DistanceKm = Math.Round(route.Distance, 1),
                     FirstDate = firstDateByRoute[route.RouteId],
                     Coordinates = coordinates
@@ -257,6 +263,80 @@ namespace OV_DB.Controllers
                 result.Start = result.Routes[0].FirstDate;
                 result.End = result.Routes[^1].FirstDate;
             }
+
+            // Station growth alongside the routes. Cumulative and not map-scoped: visits belong to
+            // stations rather than to maps, and "how the map filled in over time" reads better as a
+            // running total than as one year in isolation. Undated visits are simply absent — the
+            // replay shows what is known rather than guessing when the rest happened.
+            var dated = await _context.StationVisits.AsNoTracking()
+                .Where(sv => sv.UserId == userIdClaim && sv.FirstStoppedDate != null)
+                .Where(sv => !sv.Station.Hidden && !sv.Station.Special)
+                .Select(sv => new { sv.StationId, sv.FirstStoppedDate, sv.FirstEntryExitDate })
+                .ToListAsync(cancellationToken);
+
+            result.StoppedDates = dated
+                .Select(d => d.FirstStoppedDate!.Value)
+                .OrderBy(d => d)
+                .ToList();
+            result.EntryExitDates = dated
+                .Where(d => d.FirstEntryExitDate.HasValue)
+                .Select(d => d.FirstEntryExitDate!.Value)
+                .OrderBy(d => d)
+                .ToList();
+
+            // The same growth per country. Which country each dated station sits in is asked
+            // separately and joined here: a SelectMany straight off the visits needs a CROSS APPLY
+            // that EF cannot translate.
+            var datedStationIds = dated.Select(d => d.StationId).Distinct().ToList();
+            var stationCountries = await _context.Stations.AsNoTracking()
+                .Where(s => datedStationIds.Contains(s.Id))
+                .Select(s => new
+                {
+                    s.Id,
+                    CountryIds = s.Regions.Where(r => r.ParentRegionId == null).Select(r => r.Id).ToList()
+                })
+                .ToListAsync(cancellationToken);
+
+            var countryByStation = stationCountries.ToDictionary(s => s.Id, s => s.CountryIds);
+            var perCountry = dated
+                .SelectMany(d => (countryByStation.TryGetValue(d.StationId, out var ids) ? ids : [])
+                    .Select(id => new { RegionId = id, d.FirstStoppedDate, d.FirstEntryExitDate }))
+                .ToList();
+
+            var visitedCountryIds = perCountry.Select(v => v.RegionId).Distinct().ToList();
+            var countries = await _context.Regions.AsNoTracking()
+                .Where(r => r.ParentRegionId == null && visitedCountryIds.Contains(r.Id))
+                .Select(r => new
+                {
+                    r.Id,
+                    r.Name,
+                    r.NameNL,
+                    r.FlagEmoji,
+                    Total = r.Stations.Count(s => !s.Hidden && !s.Special)
+                })
+                .ToListAsync(cancellationToken);
+
+            result.Regions = countries
+                .Select(c =>
+                {
+                    var visits = perCountry.Where(v => v.RegionId == c.Id).ToList();
+                    return new ReplayRegionDTO
+                    {
+                        RegionId = c.Id,
+                        Name = c.Name,
+                        NameNL = c.NameNL,
+                        FlagEmoji = c.FlagEmoji,
+                        TotalStations = c.Total,
+                        StoppedDates = visits.Select(v => v.FirstStoppedDate!.Value).OrderBy(d => d).ToList(),
+                        EntryExitDates = visits.Where(v => v.FirstEntryExitDate.HasValue)
+                            .Select(v => v.FirstEntryExitDate!.Value).OrderBy(d => d).ToList()
+                    };
+                })
+                // Busiest first, and fixed for the whole replay: bars that reorder as they fill are
+                // impossible to follow.
+                .OrderByDescending(r => r.StoppedDates.Count)
+                .ThenBy(r => r.Name)
+                .ToList();
 
             return Ok(result);
         }

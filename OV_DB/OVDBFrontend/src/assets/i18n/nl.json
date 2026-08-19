@@ -481,7 +481,12 @@
       "TIMELINE": "Tijdlijn",
       "DATE": "voor het eerst gereden",
       "ROUTES": "routes getoond",
-      "DISTANCE": "afstand tot nu toe"
+      "DISTANCE": "afstand tot nu toe",
+      "BY_COUNTRY": "Per land",
+      "SPEED": "Snelheid",
+      "OVERRIDE_COLOURS": "Routekleuren gebruiken",
+      "STATIONS": "stations met datum",
+      "STATIONS_HINT": "{{stopped}} alleen gestopt, {{entryExit}} in-/uitgestapt"
     },
     "COMPLETION": {
       "TITLE": "Volledigheid",
