@@ -201,6 +201,13 @@ So suggestions exist only where a real stop list does, which means only at impor
   just the two ends the check-in covers. Fetched **once, when a trip is imported**, never while
   listing or browsing check-ins. The inbox row still holds the check-in payload at that moment, so
   the trip id is free and it costs exactly one API call.
+
+  Then **cut to the section actually ridden**: the endpoint answers with the whole trip, and the
+  stations it called at before the user boarded, or after they got off, were never reached. The
+  check-in names its own origin and destination, so the cut is free. Matched on station id and
+  searched forward from the boarding point, so a service that calls twice at one station takes the
+  arrival after boarding rather than one before it. If either end is missing from the pattern the
+  whole thing is kept — over-offering is recoverable, dropping stations the user did visit is not.
 - **OSM** — the relation's `stop` and `platform` members, which the importer already parsed and
   then threw away. Clipped to the section actually being imported, because a relation often runs
   far past both ends of the journey. Costs no extra request: the stops ride back on the DTO the
@@ -218,6 +225,14 @@ queue. Leaving a row alone does nothing. Dismissing writes a `StationSuggestionD
 says only "stop asking" — never anything about whether the station was visited.
 
 This is the only flow that creates visits from suggestions, and it is opt-in per station.
+
+Each row's level defaults to **"only stopped"**, the weaker claim, except at the two ends of the
+journey, where entry/exit is what being at the end of a ridden section means. Which stations those
+are is decided server-side, by matching the ends separately: reading it off position in the offered
+list is wrong, because the ends are usually the stations the user marked years ago and so are the
+ones missing from it. That bug shipped and was caught testing an RE5 Hamburg–Cuxhaven import, which
+offered "boarded here" for Buxtehude, the third stop, because Hamburg Hbf and Harburg were already
+marked. A fast confirm-through must never invent a boarding.
 
 ## Backfill (requirement 2)
 
@@ -292,7 +307,12 @@ preserves one they created by accident. Ask rather than infer from elapsed time.
   3 May 2024" — so a stale restored date is seen rather than silent.
 - **Edit date** from the station popup is the correction path, not un-mark/re-mark.
 - **No batch undo is needed**, because there is no bulk confirm: every backfill decision is a single
-  station, correctable from its popup like any other.
+  station, correctable from its popup like any other. In practice the backfill grew its own way back
+  anyway — a one-click undo of the last answer, plus a session list of everything answered so far,
+  each row revertible — because "correctable from its popup" means leaving the queue, finding the
+  station on a map and correcting it there, which nobody does mid-run. Undo lands back on the
+  station it just put back rather than at the head of the queue: taking an answer back means wanting
+  to answer it again.
 - **Irreversible:** the explicit "by mistake" delete, and station merge.
 
 ### Station merge
