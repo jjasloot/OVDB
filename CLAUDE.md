@@ -103,8 +103,7 @@ Angular 22 with Angular Material, in `OV_DB/OVDBFrontend/src/app/`. Requires Nod
 
 - The frontend has no unit tests or e2e: the long-broken karma and protractor targets were removed in the Angular 22 upgrade. If tests are ever revived, use the Vitest-based `@angular/build:unit-test` builder.
 - `npm run lint` reports hundreds of existing errors.
-- Docker build currently fails (npm not found during build).
 
 ## CI
 
-`.github/workflows/ci.yml` builds frontend (`npm install && npm run build`) and backend (`dotnet build`) on every push; it does not run tests. `dockerimage.yml` builds/pushes Docker images on tags.
+`.github/workflows/ci.yml` builds the frontend (`npm ci && npm run build`) and the backend, and runs `dotnet test` on every push. `dockerimage.yml` builds/pushes Docker images on tags.
