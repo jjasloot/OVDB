@@ -169,11 +169,28 @@ header {
   opacity: 0.8;
 }
 
+/*
+ * Which trip the date came from. Kept quieter than the station and the answer - it is there to be
+ * scanned for a wrong pick, not read every time - and marked with the type colour so it reads like
+ * the candidate row it came from.
+ */
+.entry-route {
+  font-size: 0.85em;
+  opacity: 0.75;
+  border-left: 3px solid transparent;
+  padding-left: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 18em;
+}
+
 // Struck through rather than removed: it still says what happened, and that it was taken back.
 .entry.reverted {
   opacity: 0.5;
 
   .entry-station,
+  .entry-route,
   .entry-answer {
     text-decoration: line-through;
   }
@@ -255,5 +272,12 @@ header {
     // otherwise an entry that names a date wraps and one that does not stays inline.
     flex: 1 1 0;
     min-width: 0;
+  }
+
+  // Its own line in a 22em column: the answer, the trip and the undo button do not share one.
+  .entry-route {
+    flex: 1 1 100%;
+    max-width: none;
+    order: 3;
   }
 }

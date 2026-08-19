@@ -149,6 +149,17 @@
                 <span class="entry-date">· {{ entry.date | date: 'longDate' }}</span>
               }
             </span>
+            <!--
+              Which trip the date came from. The date alone cannot tell a fast service from a stopping
+              one over the same track, and that is the mistake this list exists to catch.
+            -->
+            @if (entry.routeName) {
+              <span
+                class="entry-route"
+                [style.border-left-color]="entry.routeTypeColour"
+                [title]="entry.routeName"
+              >{{ entry.routeName }}</span>
+            }
             @if (entry.reverted) {
               <span class="entry-reverted">{{ 'STATIONS.BACKFILL.REVERTED' | translate }}</span>
             } @else {

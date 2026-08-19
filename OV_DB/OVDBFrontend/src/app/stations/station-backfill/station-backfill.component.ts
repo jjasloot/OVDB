@@ -214,11 +214,16 @@ export class StationBackfillComponent implements OnInit {
     }
   }
 
-  private routeIdFor(routeInstanceId: number | null): number | null {
-    const group = this.item()?.candidates.find((g) =>
-      g.instances.some((i) => i.routeInstanceId === routeInstanceId)
+  private groupFor(routeInstanceId: number | null): TripCandidateGroup | null {
+    return (
+      this.item()?.candidates.find((g) =>
+        g.instances.some((i) => i.routeInstanceId === routeInstanceId)
+      ) ?? null
     );
-    return group?.routeId ?? null;
+  }
+
+  private routeIdFor(routeInstanceId: number | null): number | null {
+    return this.groupFor(routeInstanceId)?.routeId ?? null;
   }
 
   private drawStation(item: StationBackfillItem): void {
@@ -419,12 +424,17 @@ export class StationBackfillComponent implements OnInit {
     if (!item) {
       return;
     }
+    const group = this.groupFor(routeInstanceId);
     this.remember({
       kind: 'dated',
       stationId: item.stationId,
       stationName: item.stationName,
       labelKey,
       date: this.instanceById(routeInstanceId)?.date ?? null,
+      // Which trip the date came from. A fast service and a stopping one share the same track, so
+      // the route name is what makes picking the wrong one visible after the fact.
+      routeName: group?.routeName ?? null,
+      routeTypeColour: group?.routeTypeColour ?? null,
       reverted: false,
     });
   }
@@ -514,6 +524,8 @@ export class StationBackfillComponent implements OnInit {
         stationName: item.stationName,
         labelKey: 'STATIONS.BACKFILL.CANNOT_REMEMBER',
         date: null,
+        routeName: null,
+        routeTypeColour: null,
         reverted: false,
       });
       // Counted as progress like any other answer: it leaves the queue, so leaving `done` alone
@@ -541,6 +553,13 @@ export interface HistoryEntry {
   labelKey: string;
   /** The date recorded, where one was. Null for a set-aside station. */
   date: string | null;
+  /**
+   * The trip the date came from. Shown because the date alone cannot tell a fast service from a
+   * stopping one over the same track, and picking the wrong one is the mistake worth catching.
+   */
+  routeName: string | null;
+  /** The route type's own colour, so the entry reads like the candidate row it came from. */
+  routeTypeColour: string | null;
   reverted: boolean;
 }
 
