@@ -1,5 +1,5 @@
 <div class="page">
-  @if (loading()) {
+  @if (firstLoad()) {
     <mat-spinner diameter="32" />
   } @else if (!hasWork()) {
     <div class="done">
@@ -7,6 +7,7 @@
       <p>{{ 'STATIONS.BACKFILL.ALL_DONE' | translate }}</p>
     </div>
   } @else {
+    <div class="work" [class.busy]="loading() || saving()">
     <header>
       <h2>{{ item()!.stationName }}</h2>
       <p class="regions">{{ item()!.regions.join(' · ') }}</p>
@@ -98,6 +99,11 @@
         <button mat-button [disabled]="saving()" (click)="skip()">
           {{ 'STATIONS.BACKFILL.CANNOT_REMEMBER' | translate }}
         </button>
+        @if (canUndo()) {
+          <button mat-stroked-button class="undo" [disabled]="saving()" (click)="undo()">
+            {{ 'STATIONS.BACKFILL.UNDO' | translate: { station: lastActionStation() } }}
+          </button>
+        }
       } @else {
         <button
           mat-flat-button
@@ -110,6 +116,7 @@
           {{ 'STATIONS.BACKFILL.SKIP_ENTRY_EXIT' | translate }}
         </button>
       }
+    </div>
     </div>
   }
 </div>

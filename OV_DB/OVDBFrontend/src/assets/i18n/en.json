@@ -42,6 +42,7 @@
       "SKIP_ENTRY_EXIT": "Never got off here",
       "LATER": "Decide later",
       "CANNOT_REMEMBER": "Can't remember",
+      "UNDO": "Undo {{station}}",
       "LINK": "Date your visits",
       "ALL_DONE_TITLE": "Nothing left to date",
       "ALL_DONE": "Every visit either has a date or has been set aside."

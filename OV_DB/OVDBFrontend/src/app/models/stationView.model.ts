@@ -97,6 +97,8 @@ export interface StationBackfillItem {
    */
   suggestedRouteInstanceId: number | null;
   suggestionIsEndpoint: boolean;
+  /** The pre-selected route line, sent with the station so drawing it needs no second request. */
+  suggestedRouteGeometry: RouteGeometry | null;
 }
 
 export interface RouteGeometry {

@@ -16,6 +16,7 @@ public interface IStationVisitService
     Task<StationVisit> MarkFromTripAsync(int userId, int stationId, StationVisitLevel level, int routeInstanceId, StationVisitSource source, CancellationToken cancellationToken = default);
     Task<StationVisit> DowngradeToStoppedAsync(int userId, int stationId, CancellationToken cancellationToken = default);
     Task<bool> SkipDatingAsync(int userId, int stationId, CancellationToken cancellationToken = default);
+    Task<bool> ResumeDatingAsync(int userId, int stationId, CancellationToken cancellationToken = default);
     Task<StationVisit> SetDatesAsync(int userId, int stationId, StationVisitDates dates, CancellationToken cancellationToken = default);
     Task<DateTime> LocalDateAtStationAsync(Station station, CancellationToken cancellationToken = default);
     Task<bool> UnmarkAsync(int userId, int stationId, CancellationToken cancellationToken = default);
@@ -210,6 +211,23 @@ public class StationVisitService(OVDBDatabaseContext dbContext, ITimezoneService
         }
 
         visit.DatingSkipped = true;
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return true;
+    }
+
+    /// <summary>
+    /// Puts a set-aside visit back in the dating queue. The undo for "can't remember", and equally
+    /// the way back in when a newly imported trip finally offers a candidate.
+    /// </summary>
+    public async Task<bool> ResumeDatingAsync(int userId, int stationId, CancellationToken cancellationToken = default)
+    {
+        var visit = await GetAsync(userId, stationId, cancellationToken);
+        if (visit == null)
+        {
+            return false;
+        }
+
+        visit.DatingSkipped = false;
         await dbContext.SaveChangesAsync(cancellationToken);
         return true;
     }

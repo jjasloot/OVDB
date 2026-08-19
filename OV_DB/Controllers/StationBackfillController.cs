@@ -77,6 +77,7 @@ namespace OV_DB.Controllers
 
             return Ok(new StationBackfillItemDTO
             {
+                SuggestedRouteGeometry = suggested == null ? null : await GeometryAsync(userId, suggested.RouteId),
                 Remaining = remaining,
                 StationId = station.StationId,
                 StationName = station.Name,
@@ -118,24 +119,46 @@ namespace OV_DB.Controllers
                 return Forbid();
             }
 
+            var geometry = await GeometryAsync(userId, routeId);
+            return geometry == null ? NotFound() : Ok(geometry);
+        }
+
+        /// <summary>
+        /// A route's line, unsimplified. This is one route on a map the user zooms into to judge
+        /// whether it really runs through the platform, and a smoothed line is the wrong thing to
+        /// make that call on. One route's worth of coordinates is a cheap payload.
+        /// </summary>
+        private async Task<RouteGeometryDTO> GeometryAsync(int userId, int routeId)
+        {
             var line = await context.Routes.AsNoTracking()
                 .Where(r => r.RouteId == routeId)
                 .Where(r => r.RouteMaps.Any(rm => rm.Map.UserId == userId))
                 .Select(r => r.LineString)
                 .SingleOrDefaultAsync();
-            if (line == null)
+
+            return line == null
+                ? null
+                : new RouteGeometryDTO
+                {
+                    RouteId = routeId,
+                    Coordinates = line.Coordinates.Select(c => new[] { c.Y, c.X }).ToList()
+                };
+        }
+
+        /// <summary>
+        /// Puts a station the user set aside back in the dating queue — the undo for "can't
+        /// remember". Dating itself is undone by clearing the dates, which needs nothing new.
+        /// </summary>
+        [HttpDelete("{stationId:int}/skip")]
+        public async Task<IActionResult> Unskip(int stationId)
+        {
+            var userId = User.GetUserId();
+            if (userId < 0)
             {
-                return NotFound();
+                return Forbid();
             }
 
-            // Not simplified. This is one route on a map the user zooms into to judge whether the
-            // line really runs through the platform, and a smoothed line is exactly the wrong thing
-            // to make that call on. One route's worth of coordinates is a cheap payload.
-            return Ok(new RouteGeometryDTO
-            {
-                RouteId = routeId,
-                Coordinates = line.Coordinates.Select(c => new[] { c.Y, c.X }).ToList()
-            });
+            return await stationVisitService.ResumeDatingAsync(userId, stationId) ? Ok() : NotFound();
         }
 
         /// <summary>

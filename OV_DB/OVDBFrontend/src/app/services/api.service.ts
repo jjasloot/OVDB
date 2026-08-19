@@ -576,6 +576,12 @@ export class ApiService {
     return this.httpClient.post<void>(url, {});
   }
 
+  /** Puts a set-aside station back in the dating queue — the undo for "can't remember". */
+  unskipBackfillStation(stationId: number): Observable<void> {
+    const url = environment.backend + "api/stationbackfill/" + stationId + "/skip";
+    return this.httpClient.delete<void>(url);
+  }
+
   getBackfillRouteGeometry(routeId: number): Observable<RouteGeometry> {
     const url = environment.backend + "api/stationbackfill/route/" + routeId;
     return this.httpClient.get<RouteGeometry>(url);

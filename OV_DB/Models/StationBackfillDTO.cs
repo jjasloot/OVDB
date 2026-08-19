@@ -26,6 +26,13 @@ namespace OV_DB.Models
         public int? SuggestedRouteInstanceId { get; set; }
         /// <summary>True when the suggestion rests on the route starting or ending here.</summary>
         public bool SuggestionIsEndpoint { get; set; }
+
+        /// <summary>
+        /// The pre-selected route's line, sent with the station rather than fetched after it. The
+        /// default is what gets drawn nearly every time, so making it a second round trip only ever
+        /// added a visible delay between the station appearing and its route showing up.
+        /// </summary>
+        public RouteGeometryDTO SuggestedRouteGeometry { get; set; }
     }
 
     /// <summary>A route drawn on the backfill map, simplified for display.</summary>

@@ -77,6 +77,22 @@ export class StationBackfillComponent implements OnInit {
    * are separate facts on separate dates. Rather than ask every station twice, the second question
    * is opt-in: answer "stopped, and got off later" and the same station stays up for it.
    */
+  /**
+   * True only until the first station is on screen. After that the map stays mounted while the next
+   * one loads: unmounting it threw away the tile layer and the user's base-layer choice with it, and
+   * made every station feel like a fresh page.
+   */
+  firstLoad = signal(true);
+
+  /** Route lines already fetched. Selecting back and forth should not re-download them. */
+  private geometryCache = new Map<number, [number, number][]>();
+  private drawnRouteId: number | null = null;
+
+  /** What the last confirm did, so it can be taken back. */
+  private lastAction = signal<UndoableAction | null>(null);
+  canUndo = computed(() => this.lastAction() !== null);
+  lastActionStation = computed(() => this.lastAction()?.stationName ?? '');
+
   stage = signal<"stopped" | "entryExit">("stopped");
   /** The trip confirmed in the first stage, resent in the second so its date is not lost. */
   private stoppedTrip = signal<number | null>(null);
@@ -168,12 +184,21 @@ export class StationBackfillComponent implements OnInit {
       this.expanded.set(null);
       this.stage.set("stopped");
       this.stoppedTrip.set(null);
+      this.drawnRouteId = null;
+
+      // The default route's line arrives with the station, so the common case needs no second
+      // request and the line appears at the same moment the station does.
+      if (item.suggestedRouteGeometry) {
+        this.geometryCache.set(item.suggestedRouteGeometry.routeId, item.suggestedRouteGeometry.coordinates);
+      }
+
       this.drawStation(item);
       if (item.suggestedRouteInstanceId) {
         await this.drawRoute(this.routeIdFor(item.suggestedRouteInstanceId));
       }
     } finally {
       this.loading.set(false);
+      this.firstLoad.set(false);
     }
   }
 
@@ -206,15 +231,24 @@ export class StationBackfillComponent implements OnInit {
   /** Seeing the line sweep through the station is the evidence; a lone pin is not. */
   private async drawRoute(routeId: number | null): Promise<void> {
     const item = this.item();
-    if (!item || routeId === null) {
+    if (!item || routeId === null || routeId === this.drawnRouteId) {
+      // Already the line on screen: redrawing it would only make the map flicker.
       return;
     }
     try {
-      const geometry = await firstValueFrom(this.apiService.getBackfillRouteGeometry(routeId));
-      const line = polyline(geometry.coordinates, { color: "#1E88E5", weight: 4, opacity: 0.8 });
+      let coordinates = this.geometryCache.get(routeId);
+      if (!coordinates) {
+        const geometry = await firstValueFrom(this.apiService.getBackfillRouteGeometry(routeId));
+        coordinates = geometry.coordinates as [number, number][];
+        // Kept for the session: clicking back and forth between two candidates is common, and a
+        // route's line does not change while you are deciding about it.
+        this.geometryCache.set(routeId, coordinates);
+      }
+      const line = polyline(coordinates, { color: "#1E88E5", weight: 4, opacity: 0.8 });
       this.drawStation(item);
       this.layers.update((existing) => [line, ...existing]);
       this.bounds.set(boxAround(new LatLng(item.lattitude, item.longitude)));
+      this.drawnRouteId = routeId;
     } catch {
       // A missing line is not worth blocking the decision on; the pin and dates still stand.
     }
@@ -259,6 +293,7 @@ export class StationBackfillComponent implements OnInit {
           firstEntryExitRouteInstanceId: level === StationVisitLevel.EntryExit ? routeInstanceId : null,
         })
       );
+      this.remember({kind: 'dated', stationId: item.stationId, stationName: item.stationName});
       this.done.update((d) => d + 1);
       await this.load();
     } finally {
@@ -336,6 +371,7 @@ export class StationBackfillComponent implements OnInit {
           firstEntryExitRouteInstanceId: routeInstanceId,
         })
       );
+      this.remember({kind: 'dated', stationId: item.stationId, stationName: item.stationName});
       this.done.update((d) => d + 1);
       await this.load();
     } finally {
@@ -347,6 +383,43 @@ export class StationBackfillComponent implements OnInit {
   async skipEntryExit(): Promise<void> {
     this.done.update((d) => d + 1);
     await this.load();
+  }
+
+  private remember(action: UndoableAction): void {
+    this.lastAction.set(action);
+  }
+
+  /**
+   * Takes back the last confirm. Dating is undone by clearing both dates, which puts the visit back
+   * in the queue undated; a set-aside station is undone by clearing the flag. Either way the station
+   * returns to the position we are still standing at, so reloading shows it again.
+   */
+  async undo(): Promise<void> {
+    const action = this.lastAction();
+    if (!action) {
+      return;
+    }
+
+    this.saving.set(true);
+    try {
+      if (action.kind === 'dated') {
+        await firstValueFrom(
+          this.apiService.updateStationVisitDates(action.stationId, {
+            firstStoppedDate: null,
+            firstStoppedRouteInstanceId: null,
+            firstEntryExitDate: null,
+            firstEntryExitRouteInstanceId: null,
+          })
+        );
+      } else {
+        await firstValueFrom(this.apiService.unskipBackfillStation(action.stationId));
+      }
+      this.lastAction.set(null);
+      this.done.update((d) => Math.max(0, d - 1));
+      await this.load();
+    } finally {
+      this.saving.set(false);
+    }
   }
 
   private instanceById(routeInstanceId: number | null) {
@@ -368,6 +441,7 @@ export class StationBackfillComponent implements OnInit {
     this.saving.set(true);
     try {
       await firstValueFrom(this.apiService.skipBackfillStation(item.stationId));
+      this.remember({ kind: 'skipped', stationId: item.stationId, stationName: item.stationName });
       await this.load();
     } finally {
       this.saving.set(false);
@@ -379,6 +453,13 @@ export class StationBackfillComponent implements OnInit {
     this.passed.update((p) => p + 1);
     await this.load();
   }
+}
+
+/** A confirm that can be taken back, and what taking it back means. */
+interface UndoableAction {
+  kind: 'dated' | 'skipped';
+  stationId: number;
+  stationName: string;
 }
 
 /** The three answers the first stage can give. */

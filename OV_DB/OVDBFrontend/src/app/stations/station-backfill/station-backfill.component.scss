@@ -117,3 +117,15 @@ header {
   text-align: center;
   padding: 32px 0;
 }
+
+// Dimmed while the next station is fetched. The map deliberately stays mounted underneath, so the
+// tile layer and the chosen base layer survive from one station to the next.
+.work.busy {
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+// Undo is a way back, not one of the answers, so it does not compete with them.
+.undo {
+  margin-left: auto;
+}

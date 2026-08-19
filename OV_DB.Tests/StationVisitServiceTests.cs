@@ -407,6 +407,32 @@ namespace OV_DB.Tests
         }
 
         [Fact]
+        public async Task ResumeDating_PutsASetAsideVisitBackInTheQueue()
+        {
+            using var context = NewContext();
+            var service = NewService(context);
+            await service.MarkAsync(1, 10, StationVisitLevel.Stopped, null, StationVisitSource.Web);
+            await service.SkipDatingAsync(1, 10);
+
+            Assert.True(await service.ResumeDatingAsync(1, 10));
+
+            // Undoing "can't remember" restores the question without asserting an answer to it.
+            var visit = await context.StationVisits.SingleAsync();
+            Assert.False(visit.DatingSkipped);
+            Assert.Null(visit.FirstStoppedDate);
+        }
+
+        [Fact]
+        public async Task ResumeDating_OnAnUnvisitedStationIsANoOp()
+        {
+            using var context = NewContext();
+            var service = NewService(context);
+
+            Assert.False(await service.ResumeDatingAsync(1, 10));
+            Assert.Empty(context.StationVisits);
+        }
+
+        [Fact]
         public async Task SkipDating_OnAnUnvisitedStationIsANoOp()
         {
             using var context = NewContext();
