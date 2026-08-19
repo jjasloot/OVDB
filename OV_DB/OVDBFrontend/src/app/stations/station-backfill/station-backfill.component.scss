@@ -305,16 +305,23 @@ header {
      * is made five thousand times.
      */
     max-width: 1820px;
-    // Inherits the space the shell hands it, so the answers stay on screen.
-    height: 100%;
     box-sizing: border-box;
+
+    /*
+     * The height of both columns, in one place because they have to agree: the answers row plus ten rows
+     * of trips. Nothing about this layout is allowed to derive a height from a sibling - the trip list
+     * runs from none to fifty-odd rows and the history from none to twenty-five entries, and every time
+     * one of those set a height, something else moved.
+     */
+    --backfill-columns: 608px;
   }
 
   .layout {
     flex-direction: row;
     gap: 24px;
-    // Takes the height the page was given rather than growing to fit its content: the columns below
-    // divide that height between them, and a 54-trip list would otherwise set it.
+    // Top-aligned, not stretched: a long session history would otherwise pull the whole row taller and
+    // take the map up with it.
+    align-items: flex-start;
     flex: 1 1 auto;
     min-height: 0;
   }
@@ -345,9 +352,10 @@ header {
      * Leaflet redrawing tiles for a box that had already changed.
      */
     flex: 0 0 clamp(320px, 40%, 520px);
-    // Stretched to that settled height, so it is the same size and in the same place on every station.
-    align-self: stretch;
-    height: auto;
+    // A height of its own rather than one taken from a sibling, so it is the same size and in the same
+    // place on every station whatever else is on screen.
+    align-self: flex-start;
+    height: var(--backfill-columns);
   }
 
   /*
@@ -360,11 +368,9 @@ header {
     flex: 1 1 auto;
     max-width: 900px;
     /*
-     * A settled height: the answers row plus ten rows of trips. Sized from the column rather than from
-     * its contents, because the number of trips runs from none to fifty-odd - letting that set the
-     * height moved the map, and the list with it, on every station.
+     * A settled height, so a station with three trips and one with fifty look the same.
      */
-    height: 608px;
+    height: var(--backfill-columns);
   }
 
   /*
@@ -399,9 +405,9 @@ header {
     margin-top: 0;
     border-top: none;
     padding-top: 0;
-    // Its own scroll rather than the page's: the answers must not be pushed off screen by a long
-    // session.
-    max-height: calc(100vh - 32px);
+    // Its own scroll, capped to what fits under the nav bar. Left uncapped a long session made the page
+    // itself scroll, and the scrollbar appearing shifted the answer buttons sideways.
+    max-height: calc(100vh - 96px);
   }
 
   // A station name and an answer do not fit beside each other in a column this narrow, so each entry
