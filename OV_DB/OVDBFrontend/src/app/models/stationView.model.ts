@@ -116,6 +116,7 @@ export interface StationSuggestion {
   stationName: string;
   lattitude: number;
   longitude: number;
+  /** Where the journey began or ended, which is where an entry/exit default is honest. */
   isEndpoint: boolean;
   /** How far the upstream stop sat from the OVDB station it was matched to. */
   distanceMetres: number;

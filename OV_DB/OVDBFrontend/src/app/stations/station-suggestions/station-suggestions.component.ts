@@ -76,19 +76,26 @@ export class StationSuggestionsComponent {
   readonly roles: StopRole[] = ["stopped", "started", "finished"];
 
   /**
-   * First and last stop of the relation default to started and finished — that is what being at the
+   * Where the user boarded and got off default to started and finished — that is what being at the
    * end of a ridden section means — and everything between defaults to merely stopped, the weaker
    * claim. So a fast confirm-through never invents an alighting that did not happen.
+   *
+   * The flag has to come from the server, which knows the journey: position in this list cannot
+   * stand in for it, because the ends of a journey are usually the stations the user has already
+   * marked and so are missing here. Trusting position offered "boarded here" for whichever station
+   * happened to survive the filter.
    */
   rows = signal<Row[]>(
     this.data.stations.map((station, index) => ({
       station,
       role:
-        index === 0 && this.data.stations.length > 1
-          ? "started"
-          : index === this.data.stations.length - 1 && this.data.stations.length > 1
-            ? "finished"
-            : "stopped",
+        this.data.stations.length > 1 && station.isEndpoint
+          ? index === 0
+            ? "started"
+            : index === this.data.stations.length - 1
+              ? "finished"
+              : "stopped"
+          : "stopped",
       state: "open" as const,
     }))
   );

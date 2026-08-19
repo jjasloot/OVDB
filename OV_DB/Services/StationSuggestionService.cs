@@ -57,19 +57,68 @@ public class StationSuggestionService(
         }
 
         var stopovers = await trawellingService.GetTripStopoversAsync(user, tripId, cancellationToken);
-        var stops = stopovers
+
+        // Only the section actually ridden. The endpoint answers with the whole trip, and the
+        // stations before boarding or beyond where the user got off were never reached — offering
+        // those invites marking a visit that did not happen.
+        var ridden = RiddenSection(stopovers, status.Checkin?.Origin?.Station, status.Checkin?.Destination?.Station);
+
+        var stops = ridden
             .Where(s => s.Station?.Latitude != null && s.Station?.Longitude != null)
             .Select(s => new StopPoint(s.Station.Name, s.Station.Latitude.Value, s.Station.Longitude.Value));
 
         return await FromStopsAsync(user.Id, stops, cancellationToken);
     }
 
+    /// <summary>
+    /// The stopovers from where the user boarded to where they got off, inclusive.
+    /// </summary>
+    /// <remarks>
+    /// Matched on station id rather than position, because a check-in names its own origin and
+    /// destination and those can sit anywhere in the trip. If either cannot be found — an unusual
+    /// payload, a trip that changed under us — the whole pattern is kept: over-offering is recoverable
+    /// (the user says no), silently dropping the stations they did visit is not.
+    /// </remarks>
+    private static List<TrawellingStopover> RiddenSection(
+        List<TrawellingStopover> stopovers, TrawellingStation origin, TrawellingStation destination)
+    {
+        if (origin == null || destination == null)
+        {
+            return stopovers;
+        }
+
+        var from = stopovers.FindIndex(s => s.Station?.Id == origin.Id);
+        // Searched from the boarding point onward, so a trip that calls at one station twice takes
+        // the arrival after boarding rather than one before it.
+        var to = from < 0 ? -1 : stopovers.FindIndex(from, s => s.Station?.Id == destination.Id);
+
+        return from < 0 || to < from ? stopovers : stopovers.GetRange(from, to - from + 1);
+    }
+
+    /// <summary>
+    /// The stations a list of stops suggests, where the first and last stop are taken to be where the
+    /// user boarded and got off.
+    /// </summary>
     public async Task<List<StationSuggestionDTO>> FromStopsAsync(int userId, IEnumerable<StopPoint> stops, CancellationToken cancellationToken = default)
     {
-        var candidates = await matcher.MatchStopsAsync(stops, cancellationToken);
+        var stopList = stops as IList<StopPoint> ?? stops.ToList();
+        var candidates = await matcher.MatchStopsAsync(stopList, cancellationToken);
         if (candidates.Count == 0)
         {
             return [];
+        }
+
+        // Which stations the ends of the journey landed on, matched separately because unmatched
+        // stops drop out of the list above: the first suggestion is not necessarily the first stop.
+        // Getting this wrong is not cosmetic — the dialog defaults an endpoint to "boarded here", so
+        // a station in the middle inheriting that offers the user a claim they never made.
+        var endpointIds = new HashSet<int>();
+        if (stopList.Count > 1)
+        {
+            foreach (var end in await matcher.MatchStopsAsync([stopList[0], stopList[^1]], cancellationToken))
+            {
+                endpointIds.Add(end.StationId);
+            }
         }
 
         var ids = candidates.Select(c => c.StationId).ToList();
@@ -98,7 +147,7 @@ public class StationSuggestionService(
                 StationName = c.StationName,
                 Lattitude = positions[c.StationId].Lattitude,
                 Longitude = positions[c.StationId].Longitude,
-                IsEndpoint = false,
+                IsEndpoint = endpointIds.Contains(c.StationId),
                 DistanceMetres = c.DistanceMetres
             })
             .ToList();
