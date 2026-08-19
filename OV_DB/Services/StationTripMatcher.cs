@@ -337,7 +337,11 @@ public class StationTripMatcher(OVDBDatabaseContext dbContext, IMatcherIndexCach
     /// </summary>
     private async Task<MatcherIndex> GetIndexAsync(CancellationToken cancellationToken)
     {
-        var routeCount = await dbContext.Routes.CountAsync(r => r.LineString != null, cancellationToken);
+        // Counted without a predicate on the geometry. "WHERE LineString IS NOT NULL" measured at
+        // 1.16 s against 10 ms for a plain count — MariaDB reads the geometry blobs to evaluate it —
+        // and it ran on every station in the backfill. The fingerprint only has to notice change, so
+        // rows are as good a signal as rows-with-geometry.
+        var routeCount = await dbContext.Routes.CountAsync(cancellationToken);
         var stationCount = await dbContext.Stations.CountAsync(s => !s.Hidden && !s.Special, cancellationToken);
         return await indexCache.GetAsync(routeCount, stationCount, BuildIndexAsync, cancellationToken);
     }
@@ -350,8 +354,10 @@ public class StationTripMatcher(OVDBDatabaseContext dbContext, IMatcherIndexCach
         // Streamed rather than loaded: whole geometry is 382 MB and simplified geometry is 65 MB, so
         // materialising the list first would spike peak memory by six times the steady state for no
         // reason. Each route is simplified and its original discarded as we go.
+        // Unfiltered, so the row count here matches the one the cache checks against; routes with no
+        // geometry are skipped in the loop instead, which costs nothing extra since the geometry is
+        // being read either way.
         var routes = dbContext.Routes.AsNoTracking()
-            .Where(r => r.LineString != null)
             .Select(r => new { r.RouteId, r.LineString })
             .AsAsyncEnumerable();
 
@@ -362,6 +368,10 @@ public class StationTripMatcher(OVDBDatabaseContext dbContext, IMatcherIndexCach
         await foreach (var route in routes.WithCancellation(cancellationToken))
         {
             routeRowCount++;
+            if (route.LineString == null)
+            {
+                continue;
+            }
             var coordinates = Simplify(route.LineString).Coordinates;
             if (coordinates.Length < 2)
             {

@@ -42,6 +42,8 @@
       "LATER": "Later beslissen",
       "CANNOT_REMEMBER": "Weet ik niet meer",
       "UNDO": "{{station}} ongedaan maken",
+      "RECENT": "Deze sessie beantwoord",
+      "REVERTED": "ongedaan gemaakt",
       "LINK": "Bezoeken dateren",
       "ALL_DONE_TITLE": "Niets meer te dateren",
       "ALL_DONE": "Elk bezoek heeft een datum of is opzij gezet."

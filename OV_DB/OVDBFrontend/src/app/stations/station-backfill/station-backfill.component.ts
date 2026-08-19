@@ -88,8 +88,16 @@ export class StationBackfillComponent implements OnInit {
   private geometryCache = new Map<number, [number, number][]>();
   private drawnRouteId: number | null = null;
 
-  /** What the last confirm did, so it can be taken back. */
-  private lastAction = signal<UndoableAction | null>(null);
+  /**
+   * What has been answered this session, newest first, so a mistake noticed several stations later
+   * can still be found and taken back. Capped because this is a working list, not an audit log — the
+   * database holds the answers themselves.
+   */
+  history = signal<HistoryEntry[]>([]);
+  private static readonly HISTORY_LIMIT = 25;
+
+  /** The most recent answer still standing: what the quick undo button takes back. */
+  private lastAction = computed(() => this.history().find((entry) => !entry.reverted) ?? null);
   canUndo = computed(() => this.lastAction() !== null);
   lastActionStation = computed(() => this.lastAction()?.stationName ?? '');
 
@@ -293,7 +301,12 @@ export class StationBackfillComponent implements OnInit {
           firstEntryExitRouteInstanceId: level === StationVisitLevel.EntryExit ? routeInstanceId : null,
         })
       );
-      this.remember({kind: 'dated', stationId: item.stationId, stationName: item.stationName});
+      this.rememberAnswer(
+        level === StationVisitLevel.EntryExit
+          ? 'STATIONS.BACKFILL.GOT_ON_OFF'
+          : 'STATIONS.BACKFILL.ONLY_STOPPED',
+        routeInstanceId
+      );
       this.done.update((d) => d + 1);
       await this.load();
     } finally {
@@ -325,7 +338,7 @@ export class StationBackfillComponent implements OnInit {
       );
       // Remembered here, not only when the second stage finishes: the stopped date is already
       // written, so walking away mid-flow must still be undoable.
-      this.remember({ kind: "dated", stationId: item.stationId, stationName: item.stationName });
+      this.rememberAnswer('STATIONS.BACKFILL.ONLY_STOPPED', routeInstanceId);
       this.stoppedTrip.set(routeInstanceId);
       this.stage.set("entryExit");
       await this.selectLikelyEntryExit(routeInstanceId);
@@ -374,7 +387,7 @@ export class StationBackfillComponent implements OnInit {
           firstEntryExitRouteInstanceId: routeInstanceId,
         })
       );
-      this.remember({kind: 'dated', stationId: item.stationId, stationName: item.stationName});
+      this.rememberAnswer('STATIONS.BACKFILL.GOT_ON_OFF', routeInstanceId);
       this.done.update((d) => d + 1);
       await this.load();
     } finally {
@@ -390,14 +403,37 @@ export class StationBackfillComponent implements OnInit {
   async skipEntryExit(): Promise<void> {
     const item = this.item();
     if (item) {
-      this.remember({ kind: "dated", stationId: item.stationId, stationName: item.stationName });
+      this.rememberAnswer('STATIONS.BACKFILL.ONLY_STOPPED', this.stoppedTrip());
     }
     this.done.update((d) => d + 1);
     await this.load();
   }
 
+  /** Records an answer for the session list, described by what was actually chosen. */
+  private rememberAnswer(labelKey: string, routeInstanceId: number | null): void {
+    const item = this.item();
+    if (!item) {
+      return;
+    }
+    this.remember({
+      kind: 'dated',
+      stationId: item.stationId,
+      stationName: item.stationName,
+      labelKey,
+      date: this.instanceById(routeInstanceId)?.date ?? null,
+      reverted: false,
+    });
+  }
+
   private remember(action: UndoableAction): void {
-    this.lastAction.set(action);
+    // Replace any earlier entry for the same station: the list is "what this station ended up as",
+    // not every keystroke on the way there — the two-stage flow would otherwise record it twice.
+    this.history.update((entries) =>
+      [action, ...entries.filter((e) => e.stationId !== action.stationId)].slice(
+        0,
+        StationBackfillComponent.HISTORY_LIMIT
+      )
+    );
   }
 
   /**
@@ -405,17 +441,27 @@ export class StationBackfillComponent implements OnInit {
    * in the queue undated; a set-aside station is undone by clearing the flag. Either way the station
    * returns to the position we are still standing at, so reloading shows it again.
    */
-  async undo(): Promise<void> {
+  /** Takes back the most recent answer still standing. */
+  undo(): Promise<void> {
     const action = this.lastAction();
-    if (!action) {
+    return action ? this.revert(action) : Promise.resolve();
+  }
+
+  /**
+   * Takes back any answer from the session list, not only the last. Dating is undone by clearing
+   * both dates, which returns the visit to the queue undated; a set-aside station is undone by
+   * clearing the flag.
+   */
+  async revert(entry: HistoryEntry): Promise<void> {
+    if (entry.reverted) {
       return;
     }
 
     this.saving.set(true);
     try {
-      if (action.kind === 'dated') {
+      if (entry.kind === "dated") {
         await firstValueFrom(
-          this.apiService.updateStationVisitDates(action.stationId, {
+          this.apiService.updateStationVisitDates(entry.stationId, {
             firstStoppedDate: null,
             firstStoppedRouteInstanceId: null,
             firstEntryExitDate: null,
@@ -423,10 +469,16 @@ export class StationBackfillComponent implements OnInit {
           })
         );
       } else {
-        await firstValueFrom(this.apiService.unskipBackfillStation(action.stationId));
+        await firstValueFrom(this.apiService.unskipBackfillStation(entry.stationId));
       }
-      this.lastAction.set(null);
+
+      this.history.update((entries) =>
+        entries.map((e) => (e.stationId === entry.stationId ? { ...e, reverted: true } : e))
+      );
       this.done.update((d) => Math.max(0, d - 1));
+      // Back to the head of the queue: the restored station sorts at or before wherever we had got
+      // to, so without this a station reverted from further back could be skipped straight past.
+      this.passed.set(0);
       await this.load();
     } finally {
       this.saving.set(false);
@@ -452,7 +504,14 @@ export class StationBackfillComponent implements OnInit {
     this.saving.set(true);
     try {
       await firstValueFrom(this.apiService.skipBackfillStation(item.stationId));
-      this.remember({ kind: "skipped", stationId: item.stationId, stationName: item.stationName });
+      this.remember({
+        kind: 'skipped',
+        stationId: item.stationId,
+        stationName: item.stationName,
+        labelKey: 'STATIONS.BACKFILL.CANNOT_REMEMBER',
+        date: null,
+        reverted: false,
+      });
       // Counted as progress like any other answer: it leaves the queue, so leaving `done` alone
       // shrank the total and made the bar jump forward — and undo's decrement had nothing to undo.
       this.done.update((d) => d + 1);
@@ -469,12 +528,19 @@ export class StationBackfillComponent implements OnInit {
   }
 }
 
-/** A confirm that can be taken back, and what taking it back means. */
-interface UndoableAction {
+/** An answer that can be taken back, and enough to say what it was. */
+export interface HistoryEntry {
   kind: 'dated' | 'skipped';
   stationId: number;
   stationName: string;
+  /** Which answer was given, as a translation key, so the list reads in the user's language. */
+  labelKey: string;
+  /** The date recorded, where one was. Null for a set-aside station. */
+  date: string | null;
+  reverted: boolean;
 }
+
+type UndoableAction = HistoryEntry;
 
 /** The three answers the first stage can give. */
 export type BackfillAction = "entryExit" | "stopped" | "stoppedAndLater";

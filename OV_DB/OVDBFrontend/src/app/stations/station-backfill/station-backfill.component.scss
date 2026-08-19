@@ -129,3 +129,57 @@ header {
 .undo {
   margin-left: auto;
 }
+
+/*
+ * Session history. Below the answers rather than beside them: it is for looking back when something
+ * feels wrong, not part of the per-station decision.
+ */
+.history {
+  margin-top: 8px;
+  border-top: 1px solid rgb(128 128 128 / 25%);
+  padding-top: 8px;
+  // A working list, not a log — long enough to find the mistake, short enough to stay out of the way.
+  max-height: 30vh;
+  overflow-y: auto;
+
+  h4 {
+    margin: 0 0 4px;
+    font-size: 0.85em;
+    opacity: 0.7;
+  }
+}
+
+.entry {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9em;
+  min-height: 36px;
+}
+
+.entry-station {
+  flex: 0 0 12em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.entry-answer {
+  flex: 1;
+  opacity: 0.8;
+}
+
+// Struck through rather than removed: it still says what happened, and that it was taken back.
+.entry.reverted {
+  opacity: 0.5;
+
+  .entry-station,
+  .entry-answer {
+    text-decoration: line-through;
+  }
+}
+
+.entry-reverted {
+  font-size: 0.85em;
+  opacity: 0.7;
+}

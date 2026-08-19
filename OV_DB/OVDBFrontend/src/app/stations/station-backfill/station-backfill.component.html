@@ -123,6 +123,35 @@
         }
       }
     </div>
+
+    <!--
+      What has been answered this session. The quick undo above handles the usual "that was wrong"
+      the moment it happens; this is for noticing five stations later, which the single-step undo
+      could not reach.
+    -->
+    @if (history().length > 0) {
+      <div class="history">
+        <h4>{{ 'STATIONS.BACKFILL.RECENT' | translate }}</h4>
+        @for (entry of history(); track entry.stationId) {
+          <div class="entry" [class.reverted]="entry.reverted">
+            <span class="entry-station">{{ entry.stationName }}</span>
+            <span class="entry-answer">
+              {{ entry.labelKey | translate }}
+              @if (entry.date) {
+                <span class="entry-date">· {{ entry.date | date: 'longDate' }}</span>
+              }
+            </span>
+            @if (entry.reverted) {
+              <span class="entry-reverted">{{ 'STATIONS.BACKFILL.REVERTED' | translate }}</span>
+            } @else {
+              <button mat-button [disabled]="saving()" (click)="revert(entry)">
+                {{ 'UNDO' | translate }}
+              </button>
+            }
+          </div>
+        }
+      </div>
+    }
     </div>
   }
 </div>
