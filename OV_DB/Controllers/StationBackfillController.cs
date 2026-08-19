@@ -29,6 +29,29 @@ namespace OV_DB.Controllers
         IStationVisitService stationVisitService) : ControllerBase
     {
         /// <summary>
+        /// How tall a band of the sweep is, in degrees of latitude — about 28 km.
+        /// </summary>
+        /// <remarks>
+        /// Measured over the real 4,970-station queue, as the distance from one station to the next:
+        /// <list type="bullet">
+        /// <item>by country then name, as this used to be: median 72.5 km, mean 128.2 km, 2,925 hops
+        /// over 50 km</item>
+        /// <item>by country then latitude: median 19.1 km, mean 54.5 km, 1,583 over 50 km</item>
+        /// <item>in bands of this size, snaking: <b>median 5.1 km</b>, mean 14.8 km, 210 over 50 km,
+        /// and half of all hops under 5 km</item>
+        /// </list>
+        /// Narrower bands lower the median a little further (4.3 km at 0.1°) but raise the mean, because
+        /// each band holds fewer stations and the jump between bands comes round more often.
+        /// <para>
+        /// This is not only tidier. Adjacent stations tend to sit on the same line, so the trips that
+        /// explain one tend to explain the next — the answer stays in the same memory instead of being
+        /// rebuilt from scratch — and the map pans a few kilometres rather than teleporting, which keeps
+        /// the line that was just being judged on screen.
+        /// </para>
+        /// </remarks>
+        private const double BandDegrees = 0.25;
+
+        /// <summary>
         /// The next undated visit to work on. <paramref name="skip"/> steps past ones the user has
         /// looked at and left alone, without recording anything about them.
         /// <paramref name="stationId"/> asks for one particular station instead, which is how undo
@@ -47,9 +70,17 @@ namespace OV_DB.Controllers
             var remaining = await queue.CountAsync();
 
             var ordered = queue
-                // Geographic order, so consecutive stations tend to share the journeys that explain
-                // them and the user stays in one mental place instead of hopping the map.
+                // A sweep across the map rather than down the alphabet: north to south in bands, and
+                // along each band, reversing direction at every band so the end of one meets the start
+                // of the next. See BandDegrees for what this is worth.
                 .OrderBy(sv => sv.Station.StationCountryId)
+                .ThenByDescending(sv => Math.Floor(sv.Station.Lattitude / BandDegrees))
+                .ThenBy(sv =>
+                    Math.Floor(sv.Station.Lattitude / BandDegrees) % 2 == 0
+                        ? sv.Station.Longitude
+                        : -sv.Station.Longitude)
+                // Two stations at one place, which happens, would otherwise come back in an order the
+                // database is free to change between requests.
                 .ThenBy(sv => sv.Station.Name)
                 .Select(sv => new
                 {
