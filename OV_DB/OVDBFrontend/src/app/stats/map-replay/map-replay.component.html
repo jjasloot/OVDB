@@ -35,8 +35,12 @@
   } @else {
     <mat-card appearance="outlined">
       <mat-card-content>
+        <!-- Two columns once there is room: map and its controls on the left, countries alongside. -->
+        <div class="stage">
+        <div class="map-column">
         <div class="map" leaflet [leafletOptions]="options" [leafletLayers]="layers()"
-          [leafletLayersControl]="leafletLayersControl" [leafletFitBounds]="bounds()"></div>
+          [leafletLayersControl]="leafletLayersControl" [leafletFitBounds]="bounds()"
+          (leafletMapReady)="onMapReady($event)"></div>
 
         <div class="controls">
           <button mat-icon-button (click)="togglePlay()"
@@ -109,6 +113,8 @@
           </span>
         }
 
+        </div>
+
         <!--
           The same growth per country, filling as the replay runs. Hidden on narrow screens, where
           the single bar above already carries the summary and this would just push the map away.
@@ -118,7 +124,7 @@
             <h4>{{ 'STATS.REPLAY.BY_COUNTRY' | translate }}</h4>
             @for (region of regionProgress(); track region.regionId) {
               <div class="region" [class.dormant]="region.stopped === 0">
-                <span class="region-label">
+                <span class="region-label" [title]="region.name">
                   @if (region.flagEmoji) {
                     <span class="flag">{{ region.flagEmoji }}</span>
                   }
@@ -138,6 +144,7 @@
             }
           </div>
         }
+        </div>
       </mat-card-content>
     </mat-card>
   }

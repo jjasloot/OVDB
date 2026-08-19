@@ -11,7 +11,7 @@ import { MatSliderModule } from '@angular/material/slider';
 import { MatCheckbox } from '@angular/material/checkbox';
 import { TranslateModule } from '@ngx-translate/core';
 import { LeafletModule } from '@bluehalo/ngx-leaflet';
-import { LatLngBounds, LatLngTuple, Layer, latLngBounds, polyline } from 'leaflet';
+import { LatLngBounds, LatLngTuple, Layer, Map as LeafletMap, latLngBounds, polyline } from 'leaflet';
 import { ApiService } from 'src/app/services/api.service';
 import { MapTileLayersService } from 'src/app/services/map-tile-layers.service';
 import { TranslationService } from 'src/app/services/translation.service';
@@ -79,6 +79,21 @@ export class MapReplayComponent implements OnInit {
   private entryExitDates = signal<number[]>([]);
 
   private timer: number | null = null;
+  private leafletMap: LeafletMap | null = null;
+
+  /**
+   * The map's height now comes from the countries column beside it, which only exists once the data
+   * has loaded. Leaflet sizes its tile layer once and does not notice the container growing, so it
+   * has to be told — otherwise the first paint is a stale rectangle in a bigger box.
+   */
+  onMapReady(map: LeafletMap): void {
+    this.leafletMap = map;
+    this.refitMap();
+  }
+
+  private refitMap(): void {
+    setTimeout(() => this.leafletMap?.invalidateSize(), 0);
+  }
 
   /**
    * The dates the replay steps through: every day something was first ridden, plus a few filler
@@ -328,6 +343,8 @@ export class MapReplayComponent implements OnInit {
         }
         // Opens fully drawn, so the tab is a map of everything until you rewind and play.
         this.index.set(this.timelineLength());
+        // The countries column has just changed the map's height; Leaflet needs to hear about it.
+        this.refitMap();
         this.loading.set(false);
       },
       error: () => {
