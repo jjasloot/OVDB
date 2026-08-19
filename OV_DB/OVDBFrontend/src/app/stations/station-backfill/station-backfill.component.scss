@@ -345,12 +345,9 @@ header {
      * Leaflet redrawing tiles for a box that had already changed.
      */
     flex: 0 0 clamp(320px, 40%, 520px);
-    // Bottom-aligned with the trip list, so the answers row above the list does not leave the two
-    // columns ending at different heights.
-    align-self: flex-end;
-    // In px, not em: Leaflet sets its own 12px font-size on the container, so an em here is not the
-    // em in the list beside it and the two stopped lining up.
-    height: 512px;
+    // Stretched to that settled height, so it is the same size and in the same place on every station.
+    align-self: stretch;
+    height: auto;
   }
 
   /*
@@ -362,6 +359,12 @@ header {
     align-self: flex-start;
     flex: 1 1 auto;
     max-width: 900px;
+    /*
+     * A settled height: the answers row plus ten rows of trips. Sized from the column rather than from
+     * its contents, because the number of trips runs from none to fifty-odd - letting that set the
+     * height moved the map, and the list with it, on every station.
+     */
+    height: 608px;
   }
 
   /*
@@ -375,9 +378,11 @@ header {
   }
 
   .candidates {
-    flex: 0 1 auto;
-    // Ten rows at 48px. Matches the map beside it.
-    max-height: 512px;
+    // Takes whatever the column has left under the answers, so a short list leaves an empty panel
+    // rather than dragging everything above it upwards. The narrow layout caps this at 32vh; here the
+    // column sets it.
+    flex: 1 1 auto;
+    max-height: none;
     min-height: 0;
     // Reads as a panel that owns its scrollbar, rather than a clipped strip of the page.
     border: 1px solid rgb(128 128 128 / 20%);

@@ -37,13 +37,6 @@
     ></div>
 
     <div class="picks">
-    <!-- A caution about the list below it: it decides whether any of these trips should be accepted. -->
-    @if (item()!.candidates.length === 0) {
-      <p class="note">{{ 'STATIONS.BACKFILL.NO_CANDIDATES' | translate }}</p>
-    } @else if (!item()!.candidates[0].isTrain) {
-      <!-- Only ever the whole list: other kinds of trip appear in place of trains, never beside them. -->
-      <p class="note">{{ 'STATIONS.BACKFILL.NO_TRAINS_FALLBACK' | translate }}</p>
-    }
 
     <!--
       Above the list, not below it. The list is read from the top down and its first row is the one
@@ -103,6 +96,17 @@
         }
       }
     </div>
+
+    <!--
+      Between the answers and the list: it is a caution about the trips below it, and putting it above
+      the answers moved them down on the stations that carry one.
+    -->
+    @if (item()!.candidates.length === 0) {
+      <p class="note">{{ 'STATIONS.BACKFILL.NO_CANDIDATES' | translate }}</p>
+    } @else if (!item()!.candidates[0].isTrain) {
+      <!-- Only ever the whole list: other kinds of trip appear in place of trains, never beside them. -->
+      <p class="note">{{ 'STATIONS.BACKFILL.NO_TRAINS_FALLBACK' | translate }}</p>
+    }
 
 
 
