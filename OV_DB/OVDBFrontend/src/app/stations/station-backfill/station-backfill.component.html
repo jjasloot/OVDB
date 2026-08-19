@@ -115,6 +115,12 @@
         <button mat-button [disabled]="saving()" (click)="skipEntryExit()">
           {{ 'STATIONS.BACKFILL.SKIP_ENTRY_EXIT' | translate }}
         </button>
+        <!-- Also here: the stopped date is already written by this point, so there has to be a way back. -->
+        @if (canUndo()) {
+          <button mat-stroked-button class="undo" [disabled]="saving()" (click)="undo()">
+            {{ 'STATIONS.BACKFILL.UNDO' | translate: { station: lastActionStation() } }}
+          </button>
+        }
       }
     </div>
     </div>

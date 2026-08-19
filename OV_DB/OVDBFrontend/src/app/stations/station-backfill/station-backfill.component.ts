@@ -323,6 +323,9 @@ export class StationBackfillComponent implements OnInit {
           firstEntryExitRouteInstanceId: null,
         })
       );
+      // Remembered here, not only when the second stage finishes: the stopped date is already
+      // written, so walking away mid-flow must still be undoable.
+      this.remember({ kind: "dated", stationId: item.stationId, stationName: item.stationName });
       this.stoppedTrip.set(routeInstanceId);
       this.stage.set("entryExit");
       await this.selectLikelyEntryExit(routeInstanceId);
@@ -379,8 +382,16 @@ export class StationBackfillComponent implements OnInit {
     }
   }
 
-  /** Leaves the stop recorded and moves on without claiming to have got off here. */
+  /**
+   * Leaves the stop recorded and moves on without claiming to have got off here. The stopped date
+   * from the first stage stands, so it stays undoable — this is the normal end of that flow, not a
+   * cancel.
+   */
   async skipEntryExit(): Promise<void> {
+    const item = this.item();
+    if (item) {
+      this.remember({ kind: "dated", stationId: item.stationId, stationName: item.stationName });
+    }
     this.done.update((d) => d + 1);
     await this.load();
   }
@@ -441,7 +452,10 @@ export class StationBackfillComponent implements OnInit {
     this.saving.set(true);
     try {
       await firstValueFrom(this.apiService.skipBackfillStation(item.stationId));
-      this.remember({ kind: 'skipped', stationId: item.stationId, stationName: item.stationName });
+      this.remember({ kind: "skipped", stationId: item.stationId, stationName: item.stationName });
+      // Counted as progress like any other answer: it leaves the queue, so leaving `done` alone
+      // shrank the total and made the bar jump forward — and undo's decrement had nothing to undo.
+      this.done.update((d) => d + 1);
       await this.load();
     } finally {
       this.saving.set(false);
