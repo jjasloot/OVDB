@@ -71,7 +71,6 @@
   "ADDMAP.SHARENAME": "Name for sharing link (unique)",
   "ADDMAP.DEFAULT": "Default map",
   "MAPLIST.NODATA": "No maps created. Create a new map using the button in the bottom right.",
-  "ADDROUTE.SELECTFILES": "Select files",
   "ADDROUTE.FILESSELECTED": "file(s) selected",
   "ADDROUTE.SAVEFILES": "Save files",
   "ADDROUTE.EXAMPLEFORKML": "Example of KML file from which data is automatically read",
@@ -383,8 +382,8 @@
   "FILTER.INCLUDELINECOLOURS": "Show line colours",
   "SAVE_GO_TO_INSTANCES": "Save and go to trips",
   "FILTER.LIMITTOSELECTEDAREAS": "Cut routes to selected areas. Attention: this will take longer.",
-  "UPDATE.TITLE": "Träwelling connection mapping, marking a map as completed and starting a Trainlog compatible export",
-  "UPDATE.DESCRIPTION": "In this update you can find new options to make importing Träwelling trips easier. You can now automatically map Träwelling tags to your preferred names during import. Additionally, you can now mark a map as 'Completed', so your map list doesn't keep growing. Furthermore, I am working in the background on a Trainlog compatible export, if you are interested in testing, let me know.",
+  "UPDATE.TITLE": "Dates for your station visits, a screen to fill in the ones you already have, a redesigned badge and a lot under the hood",
+  "UPDATE.DESCRIPTION": "In this update your station visits can carry a date, and they tell merely stopping at a station apart from getting on or off there: the station map gives the two their own colour and the region statistics split them out.\n\nFor the stations you have already marked there is a new screen that goes through them one at a time, drawing the trips that could have brought you there on the map, so picking the right one is usually a single click; it works across the map region by region so a province can be finished in one sitting, and anything you answer can be taken back. Importing from Träwelling or OpenStreetMap now also offers the stations that trip called at, taken from the operator's own list of stops rather than the shape of the line, and nothing is ever marked or dated for you.\n\nThe replay on the statistics page plays out by date now and shows each country filling in, the badge you can embed elsewhere has been redesigned, and behind the scenes maps and statistics load a good deal faster, alongside a batch of security fixes.",
   "UPDATE.NEW_COUNTRY_OR_REGION": "Request new country, regions or companies",
   "REQUESTS.NEW_REQUEST": "New request",
   "REQUESTS.NEW_REQUEST_PLACEHOLDER": "Could you add Iceland? Could you split Italy into its provinces, e.g. Lomdardy and Tuscany?",
@@ -710,7 +709,7 @@
     "CATEGORY_PLANE": "Plane",
     "CATEGORY_TAXI": "Taxi",
     "CATEGORY_UNKNOWN": "Unknown",
-    "REFRESH": "Refresh",
+    "REFRESH": "Check Träwelling for new trips",
     "IGNORE_TRIP": "Ignore trip",
     "IGNORE_CONFIRM": "ignore this trip (it will not come back in this list)",
     "IGNORING": "Ignoring trip...",
@@ -748,7 +747,6 @@
     "NO_UNIMPORTED_TRIPS_MESSAGE": "All your recent Träwelling trips have been imported or ignored. Check back later for new trips!",
     "LOAD_MORE": "Load more trips",
     "LOADING_MORE": "Loading more trips...",
-    "REFRESH": "Check Träwelling for new trips",
     "CONFLICTS_TITLE": "Changed on Träwelling",
     "CONFLICT_CHANGED_SUBTITLE": "This imported trip was edited on Träwelling",
     "CONFLICT_DELETED_SUBTITLE": "This imported trip was deleted on Träwelling",
@@ -791,7 +789,5 @@
     "DESCRIPTION": "Description",
     "ALERT_READ_MORE": "Read more"
   },
-  "ROUTESLIST.EXPORTTOTRAINLOG": "Export selection for Trainlog",
-  "ROUTESLIST.SHOWROUTES": "Show routes",
-  "ROUTESLIST.SHOWINSTANCES": "Show trips"
+  "ROUTESLIST.EXPORTTOTRAINLOG": "Export selection for Trainlog"
 }

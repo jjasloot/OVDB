@@ -71,7 +71,6 @@
   "ADDMAP.SHARENAME": "Naam voor de deellink (uniek)",
   "ADDMAP.DEFAULT": "Standaard kaart",
   "MAPLIST.NODATA": "Geen kaarten aangemaakt. Maak een nieuwe kaart via de knop rechtsonderin.",
-  "ADDROUTE.SELECTFILES": "Bestanden kiezen",
   "ADDROUTE.FILESSELECTED": "bestand(en) geselecteerd",
   "ADDROUTE.SAVEFILES": "Bestanden opslaan",
   "ADDROUTE.EXAMPLEFORKML": "Voorbeeld van een KML waarbij data automatisch gelezen wordt",
@@ -381,8 +380,8 @@
   "FILTER.INCLUDELINECOLOURS": "Toon lijnkleuren",
   "SAVE_GO_TO_INSTANCES": "Opslaan en naar ritten",
   "FILTER.LIMITTOSELECTEDAREAS": "Knip routes bij tot geselecteerde gebieden. Let op! Dit duurt wat langer.",
-  "UPDATE.TITLE": "Träwelling koppeling mapping, afronden van kaarten en start aan een Trainlog compatibele export",
-  "UPDATE.DESCRIPTION": "In deze update zitten nieuwe opties om het importeren van Träwelling reizen makkelijk te maken. Je kunt nu automatisch Träwelling tags mappen naar je eigen voorkeursbenamingen bij het importeren. Daarnaast kun je een kaart nu op 'Afgerond' zetten, zodat je kaartenlijst niet alsmaar blijft groeien. Verder ben ik op de achtergrond bezig met een Trainlog compatible export, als je interesse hebt om te testen laat het me weten.",
+  "UPDATE.TITLE": "Datums bij je stationsbezoeken, een scherm om de bestaande in te vullen, een nieuwe badge en veel onder de motorkap",
+  "UPDATE.DESCRIPTION": "In deze update kunnen je stationsbezoeken een datum krijgen, en wordt er onderscheid gemaakt tussen alleen stoppen op een station en er echt in- of uitstappen: de stationskaart geeft die twee een eigen kleur en de regiostatistieken splitsen ze uit.\n\nVoor de stations die je al gemarkeerd hebt is er een nieuw scherm dat ze één voor één langsloopt en de ritten die je er gebracht kunnen hebben op de kaart tekent, waardoor de juiste kiezen meestal één klik is; het werkt regio voor regio over de kaart, zodat een provincie in één keer af kan, en alles wat je antwoordt kun je ongedaan maken. Bij het importeren vanuit Träwelling of OpenStreetMap krijg je nu ook de stations aangeboden waar die rit stopte, op basis van de haltelijst van de vervoerder en niet van de vorm van de lijn, en er wordt nooit iets voor je gemarkeerd of gedateerd.\n\nDe replay op de statistiekenpagina loopt nu op datum en laat elk land vollopen, de badge die je elders kunt insluiten is opnieuw ontworpen, en achter de schermen laden kaarten en statistieken flink sneller, naast een reeks beveiligingsfixes.",
   "UPDATE.NEW_COUNTRY_OR_REGION": "Nieuw land, regio of bedrijf aanvragen",
   "REQUESTS.NEW_REQUEST": "Nieuwe aanvraag",
   "REQUESTS.NEW_REQUEST_PLACEHOLDER": "Zou je IJsland willen toevoegen? Kun je Italië in provincies zoals Lombardije en Toscane opdelen?",
@@ -708,7 +707,7 @@
     "CATEGORY_PLANE": "Vliegtuig",
     "CATEGORY_TAXI": "Taxi",
     "CATEGORY_UNKNOWN": "Onbekend",
-    "REFRESH": "Verversen",
+    "REFRESH": "Träwelling controleren op nieuwe reizen",
     "IGNORE_TRIP": "Reis negeren",
     "IGNORE_CONFIRM": "deze reis wilt negeren (hij komt niet terug in deze lijst)",
     "IGNORING": "Reis negeren...",
@@ -746,7 +745,6 @@
     "NO_UNIMPORTED_TRIPS_MESSAGE": "Al je recente Träwelling reizen zijn geïmporteerd of genegeerd. Kom later terug voor nieuwe reizen!",
     "LOAD_MORE": "Meer reizen laden",
     "LOADING_MORE": "Meer reizen laden...",
-    "REFRESH": "Träwelling controleren op nieuwe reizen",
     "CONFLICTS_TITLE": "Gewijzigd op Träwelling",
     "CONFLICT_CHANGED_SUBTITLE": "Deze geïmporteerde reis is aangepast op Träwelling",
     "CONFLICT_DELETED_SUBTITLE": "Deze geïmporteerde reis is verwijderd op Träwelling",
@@ -792,5 +790,4 @@
   "ROUTESLIST.EXPORTTOTRAINLOG": "Exporteer selectie voor Trainlog",
   "ROUTESLIST.SHOWROUTES": "Toon routes",
   "ROUTESLIST.SHOWINSTANCES": "Toon ritten"
-  
 }

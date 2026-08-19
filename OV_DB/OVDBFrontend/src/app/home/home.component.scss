@@ -103,3 +103,13 @@ mat-list-item {
   opacity: 0.7;
   font-size: 0.9rem;
 }
+
+/*
+ * The update note is several paragraphs of release notes. It comes through the translation pipeline as
+ * one interpolated string, so the newlines in it are the only way to break it up - markup in a
+ * translation would be escaped, and rendering it as HTML instead would mean trusting the language
+ * files with innerHTML for no good reason.
+ */
+.update-text {
+  white-space: pre-line;
+}
