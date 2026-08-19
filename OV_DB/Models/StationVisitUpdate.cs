@@ -67,13 +67,16 @@ namespace OV_DB.Models
         public bool IsEndpoint { get; set; }
         public double DistanceMetres { get; set; }
         /// <summary>
-        /// The kind of train, shown because the candidate list is otherwise a wall of dates. Only
-        /// train-typed routes reach here at all: stations exist for railway stations, so a bus or
-        /// tram trip cannot explain being at one however close its line runs.
+        /// The kind of trip, shown because the candidate list is otherwise a wall of dates.
         /// </summary>
         public string RouteTypeName { get; set; }
         public string RouteTypeNameNL { get; set; }
         public string RouteTypeColour { get; set; }
+        /// <summary>
+        /// False only when no train reaches this station at all: trains are offered wherever one
+        /// does, and anything else appears in their place rather than beside them.
+        /// </summary>
+        public bool IsTrain { get; set; }
         public List<TripCandidateDTO> Instances { get; set; }
     }
 

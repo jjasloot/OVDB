@@ -203,21 +203,49 @@ public class StationTripMatcherTests
     }
 
     [Fact]
-    public async Task ANonTrainTripIsNeverProposedForAStation()
+    public async Task ANonTrainTripIsOfferedOnlyWhenNoTrainReachesTheStation()
     {
-        // Stations exist only for railway stations, so a bus running past one explains nothing —
-        // however close its line happens to run.
+        // On its own a tram is all there is, so offering nothing would be worse than offering it.
         using var context = await SeedAsync(isTrain: false);
         await AddStationAsync(context, 10, "Halt", BaseLat, BaseLon);
 
-        Assert.Empty(await NewMatcher(context).FindTripsForStationAsync(1, 10));
+        var alone = await NewMatcher(context).FindTripsForStationAsync(1, 10);
+        Assert.Single(alone);
+        Assert.False(alone[0].IsTrain);
     }
 
     [Fact]
-    public async Task ARouteWithNoTypeAtAllIsNotProposedEither()
+    public async Task ATrainHidesTheNonTrainsEntirely()
     {
-        // It cannot be shown to be a train, and guessing in the permissive direction is what puts
-        // tram and bus noise in front of the user.
+        using var context = await SeedAsync(isTrain: false);
+        await AddStationAsync(context, 10, "Halt", BaseLat, BaseLon);
+
+        // Add a train over the same ground. Stations are railway stations, so once a train reaches
+        // one the tram beside it explains nothing and must not clutter the list.
+        context.RouteTypes.Add(new RouteType { TypeId = 2, Name = "Train", Colour = "#000", UserId = 1, IsTrain = true });
+        context.Routes.Add(new Route
+        {
+            RouteId = 2,
+            Name = "The train",
+            Share = Guid.NewGuid(),
+            RouteTypeId = 2,
+            LineString = EastWestLineThroughBase()
+        });
+        context.RoutesMaps.Add(new RouteMap { RouteMapId = 2, RouteId = 2, MapId = 1 });
+        context.RouteInstances.Add(new RouteInstance { RouteInstanceId = 91, RouteId = 2, Date = new DateTime(2015, 1, 1) });
+        await context.SaveChangesAsync();
+
+        var candidates = await NewMatcher(context).FindTripsForStationAsync(1, 10);
+
+        Assert.All(candidates, c => Assert.True(c.IsTrain));
+        Assert.Contains(91, candidates.Select(c => c.RouteInstanceId));
+    }
+
+    [Fact]
+    public async Task ARouteWithNoTypeAtAllIsNotProposed()
+    {
+        // Untyped is not the same as "not a train": nothing is known about it, so it cannot be
+        // labelled honestly in either list.
         using var context = await SeedAsync(withRouteType: false);
         await AddStationAsync(context, 10, "Halt", BaseLat, BaseLon);
 

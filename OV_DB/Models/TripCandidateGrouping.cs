@@ -36,6 +36,7 @@ namespace OV_DB.Models
                     RouteTypeName = g.First().RouteTypeName,
                     RouteTypeNameNL = g.First().RouteTypeNameNL,
                     RouteTypeColour = g.First().RouteTypeColour,
+                    IsTrain = g.First().IsTrain,
                     // A trip with no time sorts first among that day's trips: it could have been any
                     // hour, so it cannot be shown to be later than one that names a time.
                     Instances = g.OrderBy(c => c.Date).ThenBy(c => c.StartTime ?? DateTime.MinValue)

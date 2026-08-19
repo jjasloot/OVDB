@@ -46,7 +46,13 @@ public sealed record TripCandidate(
     DateTime? EndTime,
     string RouteTypeName,
     string RouteTypeNameNL,
-    string RouteTypeColour);
+    string RouteTypeColour,
+    /// <summary>
+    /// Whether the route's type counts as a train. Stations exist only for railway stations, so
+    /// trains are the answer wherever one reaches the station — and everything else is offered only
+    /// where none does, rather than never.
+    /// </summary>
+    bool IsTrain);
 
 /// <summary>A station a trip might explain having visited.</summary>
 public sealed record StationCandidate(
@@ -141,11 +147,9 @@ public class StationTripMatcher(OVDBDatabaseContext dbContext, IMatcherIndexCach
             // Scoping happens here rather than in the index: a route the user does not own simply
             // produces no trips.
             .Where(ri => ri.Route.RouteMaps.Any(rm => rm.Map.UserId == userId))
-            // Stations exist only for railway stations — the importer takes railway=station|halt and
-            // excludes tram_stop — so a bus or tram trip cannot explain being at one, however close
-            // its line runs. A route with no type at all cannot be shown to be a train, so it is
-            // out too.
-            .Where(ri => ri.Route.RouteType != null && ri.Route.RouteType.IsTrain)
+            // Not filtered to trains here: that choice is made below, once it is known whether any
+            // train reaches this station at all.
+            .Where(ri => ri.Route.RouteType != null)
             .Select(ri => new
             {
                 ri.RouteInstanceId,
@@ -158,7 +162,8 @@ public class StationTripMatcher(OVDBDatabaseContext dbContext, IMatcherIndexCach
                 ri.Route.To,
                 RouteTypeName = ri.Route.RouteType.Name,
                 RouteTypeNameNL = ri.Route.RouteType.NameNL,
-                RouteTypeColour = ri.Route.RouteType.Colour
+                RouteTypeColour = ri.Route.RouteType.Colour,
+                IsTrain = ri.Route.RouteType.IsTrain
             })
             .ToListAsync(cancellationToken);
 
@@ -175,14 +180,23 @@ public class StationTripMatcher(OVDBDatabaseContext dbContext, IMatcherIndexCach
             t.EndTime,
             t.RouteTypeName,
             t.RouteTypeNameNL,
-            t.RouteTypeColour));
+            t.RouteTypeColour,
+            t.IsTrain));
+
+        // Trains where any train reaches this station, everything else only where none does. The
+        // filter exists because a station is a railway station and a bus passing it explains
+        // nothing — but with no train in range at all, a tram sharing the alignment is the only
+        // thing on offer, and offering nothing is worse than offering it labelled for what it is.
+        var byTrain = candidates.ToList();
+        var trains = byTrain.Where(c => c.IsTrain).ToList();
+        var offered = trains.Count > 0 ? trains : byTrain;
 
         // Oldest first: the question this answers is "which trip first brought me here", and the
-        // backfill preselects the earliest. Evidence rides along for the caller to group by.
-        // Strictly chronological: date, then time within the day. A trip with no time sorts first
-        // among that day's trips — it could have been any hour, so nothing shows it to be later than
-        // one that names a time. Evidence decides emphasis, never order.
-        return candidates
+        // backfill preselects the earliest. Strictly chronological: date, then time within the day.
+        // A trip with no time sorts first among that day's trips — it could have been any hour, so
+        // nothing shows it to be later than one that names a time. Evidence decides emphasis, never
+        // order.
+        return offered
             .OrderBy(c => c.Date)
             .ThenBy(c => c.StartTime ?? DateTime.MinValue)
             .ThenByDescending(c => c.Evidence)

@@ -32,6 +32,10 @@
     @if (item()!.candidates.length === 0) {
       <p class="note">{{ 'STATIONS.BACKFILL.NO_CANDIDATES' | translate }}</p>
     } @else {
+      <!-- Only ever the whole list: other kinds of trip appear in place of trains, never beside them. -->
+      @if (!item()!.candidates[0].isTrain) {
+        <p class="note">{{ 'STATIONS.BACKFILL.NO_TRAINS_FALLBACK' | translate }}</p>
+      }
       <mat-radio-group class="candidates" [ngModel]="selected()">
         @for (row of rows(); track row.instance.routeInstanceId) {
           <div class="row">

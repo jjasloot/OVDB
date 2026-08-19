@@ -13,7 +13,7 @@ public class TripCandidateGroupingTests
     private static TripCandidate Candidate(
         int instanceId, int routeId, DateTime date, DateTime? start, VisitEvidence evidence = VisitEvidence.Proximity) =>
         new(instanceId, routeId, $"Route {routeId}", "A", "B", date, evidence, 50, start,
-            start?.AddHours(1), "Train", "Trein", "#1E88E5");
+            start?.AddHours(1), "Train", "Trein", "#1E88E5", true);
 
     private static readonly DateTime Day = new(2021, 6, 1);
 
