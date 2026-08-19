@@ -1,3 +1,12 @@
+/*
+ * A block, so the layout below can be measured against something. Deliberately not stretched to the
+ * height of the window: the trips and the answers are one group and belong close together, and space
+ * spent pushing them apart is paid for in pointer travel on every one of five thousand stations.
+ */
+:host {
+  display: block;
+}
+
 .page {
   max-width: 720px;
   margin: 0 auto;
@@ -36,6 +45,26 @@ header {
   overflow: hidden;
 }
 
+/*
+ * Map beside the list of trips, once there is room for it. Stacked, the two split the page height and
+ * the list got the smaller share: fifty-odd trips scrolled inside a 250px letterbox while the map
+ * showed 320px of a city. Side by side, both get the full height.
+ */
+.map-and-trips {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.picks {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  min-height: 0;
+}
+
 .note {
   opacity: 0.7;
 }
@@ -60,16 +89,24 @@ header {
   // a scrollbar beside a single candidate. Give it the room it actually takes.
   min-height: 48px;
 
+  /*
+   * The row is the flex line for the radio button itself. The text inside the button is laid out by
+   * the ng-deep rule below, which is the only way to reach the radio's own template.
+   */
+  mat-radio-button {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  // Aligned down the column so the list can be scanned by date rather than read line by line.
   .date {
+    flex: none;
     display: inline-block;
     min-width: 9em;
   }
 
-  .name {
-    margin-right: 8px;
-  }
-
   .times {
+    flex: none;
     opacity: 0.75;
     font-variant-numeric: tabular-nums;
     margin-right: 8px;
@@ -77,6 +114,7 @@ header {
 
   // The user's own colour for the type, so it reads the same as everywhere else in OVDB.
   .type {
+    flex: none;
     font-size: 0.75em;
     padding: 1px 6px;
     border-radius: 10px;
@@ -86,9 +124,40 @@ header {
     text-shadow: 0 0 2px rgb(0 0 0 / 60%);
     white-space: nowrap;
   }
+
+  // The one part that gives way. The longest route names needed more than the row was wide and wrapped
+  // it to two lines; truncating with the full name on hover keeps every row one line high, which is
+  // what makes a fifty-row list scannable.
+  .name {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    margin-right: 8px;
+  }
+}
+
+/*
+ * The trip text sits inside the radio button's own template, which a scoped selector cannot reach.
+ * The label has to become the flex line, and every box down to it has to be allowed to shrink, or it
+ * keeps its content width and the name never gives way.
+ */
+:host::ng-deep .row {
+  .mdc-form-field {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .mdc-label {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+  }
 }
 
 .badge {
+  flex: none;
   font-size: 0.75em;
   padding: 1px 6px;
   border-radius: 10px;
@@ -221,29 +290,105 @@ header {
 }
 
 /*
- * Wide enough for two columns, matching the replay's breakpoint. The page cap lifts with it -
- * at 720px there is no room beside anything - while the answers column keeps its old width so the
- * decision itself looks unchanged. The history sticks to the top so it stays readable while the
- * answers column is taller than the viewport.
+ * The wide layout, from the same breakpoint the replay uses. Three things change at once, because
+ * they are the same problem: the page had a 720px cap that left a third of the window empty, the map
+ * and the trip list were stacked so each got half the height, and the history sat below both. Side by
+ * side, the map and the list each get the full height of one screen, the answers stay visible without
+ * scrolling, and the history moves alongside.
  */
 @media (min-width: 1250px) {
   .page {
-    max-width: 1320px;
+    /*
+     * The old 720px cap left a third of the window empty. There is still a cap, because past this the
+     * columns stop being a group the pointer can move within: filling a 2100px window put the top trip
+     * row 1289px from the primary button and the "more trips" toggle 1850px from it, and this decision
+     * is made five thousand times.
+     */
+    max-width: 1820px;
+    // Inherits the space the shell hands it, so the answers stay on screen.
+    height: 100%;
+    box-sizing: border-box;
   }
 
   .layout {
     flex-direction: row;
-    align-items: flex-start;
     gap: 24px;
+    // Takes the height the page was given rather than growing to fit its content: the columns below
+    // divide that height between them, and a 54-trip list would otherwise set it.
+    flex: 1 1 auto;
+    min-height: 0;
   }
 
   .work {
     flex: 1 1 auto;
-    max-width: 720px;
+    min-width: 0;
+    // Stretched to the full height by the row above. Without min-height: 0 the trip list's own content
+    // would win and push the answers off the bottom of the window.
+    min-height: 0;
+  }
+
+  .map-and-trips {
+    flex: 1 1 auto;
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 16px;
+    min-height: 0;
+  }
+
+  .map {
+    /*
+     * The view is a fitted box of about a kilometre around the station, so past a point more width
+     * buys nothing but empty margin either side of the line.
+     *
+     * A set height rather than one taken from the column beside it: that column is as tall as the trip
+     * list, which varies from two rows to ten, so matching it made the map jump every station and left
+     * Leaflet redrawing tiles for a box that had already changed.
+     */
+    flex: 0 0 clamp(320px, 40%, 520px);
+    // Bottom-aligned with the trip list, so the answers row above the list does not leave the two
+    // columns ending at different heights.
+    align-self: flex-end;
+    // In px, not em: Leaflet sets its own 12px font-size on the container, so an em here is not the
+    // em in the list beside it and the two stopped lining up.
+    height: 512px;
+  }
+
+  /*
+   * The trips and the answers stay one group: capped in width so the ends of a row stay near the
+   * buttons, and capped in height so the buttons stay near the rows. Ten rows is already more than the
+   * earliest few the question turns on.
+   */
+  .picks {
+    align-self: flex-start;
+    flex: 1 1 auto;
+    max-width: 900px;
+  }
+
+  /*
+   * A settled height, whether or not the undo button is there to wrap the row onto a second line. The
+   * list sits directly under this, and a row that changes height moves the list - and with it the trip
+   * the pointer was about to confirm - between one station and the next.
+   */
+  .actions {
+    min-height: 88px;
+    align-content: flex-start;
+  }
+
+  .candidates {
+    flex: 0 1 auto;
+    // Ten rows at 48px. Matches the map beside it.
+    max-height: 512px;
+    min-height: 0;
+    // Reads as a panel that owns its scrollbar, rather than a clipped strip of the page.
+    border: 1px solid rgb(128 128 128 / 20%);
+    border-radius: 8px;
+    padding: 0 8px;
   }
 
   .history {
-    flex: 0 0 22em;
+    align-self: flex-start;
+    // Widens a little where there is room, so entries stop wrapping mid-answer.
+    flex: 0 0 clamp(22em, 18%, 28em);
     position: sticky;
     top: 16px;
     margin-top: 0;
@@ -254,8 +399,8 @@ header {
     max-height: calc(100vh - 32px);
   }
 
-  // 12em of station name plus an answer does not fit a 22em column, so each entry becomes two
-  // lines with the name leading.
+  // A station name and an answer do not fit beside each other in a column this narrow, so each entry
+  // becomes two lines with the name leading.
   .entry {
     flex-wrap: wrap;
     padding: 4px 0;
@@ -268,13 +413,13 @@ header {
   }
 
   .entry-answer {
-    // Share one line with the undo button, wrapping the text rather than pushing the button down:
+    // Shares one line with the undo button, wrapping the text rather than pushing the button down:
     // otherwise an entry that names a date wraps and one that does not stays inline.
     flex: 1 1 0;
     min-width: 0;
   }
 
-  // Its own line in a 22em column: the answer, the trip and the undo button do not share one.
+  // Its own line: the answer, the trip and the undo button do not share one.
   .entry-route {
     flex: 1 1 100%;
     max-width: none;

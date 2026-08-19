@@ -1,5 +1,5 @@
-import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from "@angular/core";
-import { LatLng, LatLngBounds, Layer, circleMarker, polyline } from "leaflet";
+import { ChangeDetectionStrategy, Component, OnDestroy, OnInit, computed, inject, signal } from "@angular/core";
+import { LatLng, LatLngBounds, Layer, Map as LeafletMap, circleMarker, polyline } from "leaflet";
 import { LeafletModule } from "@bluehalo/ngx-leaflet";
 import { MatButton } from "@angular/material/button";
 import { MatProgressSpinner } from "@angular/material/progress-spinner";
@@ -46,7 +46,7 @@ import {
     TranslateModule,
   ],
 })
-export class StationBackfillComponent implements OnInit {
+export class StationBackfillComponent implements OnInit, OnDestroy {
   private apiService = inject(ApiService);
   private mapTileLayersService = inject(MapTileLayersService);
   private translationService = inject(TranslationService);
@@ -73,11 +73,6 @@ export class StationBackfillComponent implements OnInit {
   private done = signal(0);
 
   /**
-   * Passing through a station for years before finally getting off there is ordinary, and the two
-   * are separate facts on separate dates. Rather than ask every station twice, the second question
-   * is opt-in: answer "stopped, and got off later" and the same station stays up for it.
-   */
-  /**
    * True only until the first station is on screen. After that the map stays mounted while the next
    * one loads: unmounting it threw away the tile layer and the user's base-layer choice with it, and
    * made every station feel like a fresh page.
@@ -101,6 +96,11 @@ export class StationBackfillComponent implements OnInit {
   canUndo = computed(() => this.lastAction() !== null);
   lastActionStation = computed(() => this.lastAction()?.stationName ?? '');
 
+  /**
+   * Passing through a station for years before finally getting off there is ordinary, and the two
+   * are separate facts on separate dates. Rather than ask every station twice, the second question
+   * is opt-in: answer "stopped, and got off later" and the same station stays up for it.
+   */
   stage = signal<"stopped" | "entryExit">("stopped");
   /** The trip confirmed in the first stage, resent in the second so its date is not lost. */
   private stoppedTrip = signal<number | null>(null);
@@ -110,10 +110,16 @@ export class StationBackfillComponent implements OnInit {
   /** The date already recorded as the stop, shown as context for the second question. */
   stoppedDate = computed(() => this.instanceById(this.stoppedTrip())?.date ?? null);
 
-  /** The three answers, in a fixed order — only the emphasis moves, so nothing jumps under the cursor. */
+  /**
+   * The three answers, in a fixed order - only the emphasis moves, so nothing jumps under the cursor.
+   *
+   * Merely stopping leads because it is what most stations turn out to be: of the visits dated so far,
+   * 557 are stopped-only against 172 where the user got on or off. It is also the button nearest the
+   * list, which is where the pointer comes from.
+   */
   readonly actions: { key: BackfillAction; labelKey: string }[] = [
-    { key: "entryExit", labelKey: "STATIONS.BACKFILL.GOT_ON_OFF" },
     { key: "stopped", labelKey: "STATIONS.BACKFILL.ONLY_STOPPED" },
+    { key: "entryExit", labelKey: "STATIONS.BACKFILL.GOT_ON_OFF" },
     { key: "stoppedAndLater", labelKey: "STATIONS.BACKFILL.STOPPED_AND_LATER" },
   ];
 
@@ -213,6 +219,27 @@ export class StationBackfillComponent implements OnInit {
       this.firstLoad.set(false);
     }
   }
+
+  /**
+   * Leaflet measures its container once, on creation. Here the container is a flex child that only
+   * reaches its real size after the surrounding columns lay out — and it changes again when the
+   * window crosses the two-column breakpoint — so without this the tiles are drawn for a box the map
+   * no longer occupies.
+   */
+  onMapReady(map: LeafletMap): void {
+    // Watched rather than measured once: the container is a flex child sized by the columns around it,
+    // so it settles after Leaflet has already drawn, and changes again whenever the window is resized
+    // or crosses the two-column breakpoint. Left unhandled it draws tiles for a box it no longer fills.
+    this.mapResize?.disconnect();
+    this.mapResize = new ResizeObserver(() => map.invalidateSize());
+    this.mapResize.observe(map.getContainer());
+  }
+
+  ngOnDestroy(): void {
+    this.mapResize?.disconnect();
+  }
+
+  private mapResize: ResizeObserver | null = null;
 
   private groupFor(routeInstanceId: number | null): TripCandidateGroup | null {
     return (

@@ -21,7 +21,11 @@
         </p>
       }
     </header>
-
+    <!--
+      Map and trips side by side once there is room. Stacked, the list got a fifth of the height and
+      showed five of fifty-odd trips through a letterbox; beside it, both get the whole page.
+    -->
+    <div class="map-and-trips">
     <div
       class="map"
       leaflet
@@ -29,54 +33,24 @@
       [leafletLayers]="layers()"
       [leafletFitBounds]="bounds()"
       [leafletLayersControl]="leafletLayersControl"
+      (leafletMapReady)="onMapReady($event)"
     ></div>
 
+    <div class="picks">
+    <!-- A caution about the list below it: it decides whether any of these trips should be accepted. -->
     @if (item()!.candidates.length === 0) {
       <p class="note">{{ 'STATIONS.BACKFILL.NO_CANDIDATES' | translate }}</p>
-    } @else {
+    } @else if (!item()!.candidates[0].isTrain) {
       <!-- Only ever the whole list: other kinds of trip appear in place of trains, never beside them. -->
-      @if (!item()!.candidates[0].isTrain) {
-        <p class="note">{{ 'STATIONS.BACKFILL.NO_TRAINS_FALLBACK' | translate }}</p>
-      }
-      <mat-radio-group class="candidates" [ngModel]="selected()">
-        @for (row of rows(); track row.instance.routeInstanceId) {
-          <div class="row">
-            <mat-radio-button
-              [value]="row.instance.routeInstanceId"
-              (change)="select(row.instance.routeInstanceId)"
-            >
-              <span class="date">{{ row.instance.date | date: 'longDate' }}</span>
-              @if (row.instance.startTime) {
-                <span class="times">
-                  {{ row.instance.startTime | date: 'HH:mm' }}@if (row.instance.endTime) {&ndash;{{ row.instance.endTime | date: 'HH:mm' }}}
-                </span>
-              }
-              <span
-                class="type"
-                [style.background-color]="row.group.routeTypeColour"
-                [title]="typeName(row.group)"
-              >{{ typeName(row.group) }}</span>
-              <span class="name">{{ row.group.routeName }}</span>
-              @if (row.group.isEndpoint) {
-                <span class="badge endpoint">{{ 'STATIONS.VISIT.EVIDENCE_ENDPOINT' | translate }}</span>
-              } @else {
-                <span class="badge">{{ 'STATIONS.VISIT.EVIDENCE_NEARBY' | translate: { metres: (row.group.distanceMetres | number: '1.0-0') } }}</span>
-              }
-            </mat-radio-button>
-            @if (row.group.instances.length > 1 && row.instance.routeInstanceId === row.group.instances[0].routeInstanceId) {
-              <button mat-button class="more" (click)="toggle(row.group.routeId)">
-                @if (expanded() === row.group.routeId) {
-                  {{ 'STATIONS.VISIT.FEWER_TRIPS' | translate }}
-                } @else {
-                  {{ 'STATIONS.VISIT.MORE_TRIPS' | translate: { count: row.group.instances.length - 1 } }}
-                }
-              </button>
-            }
-          </div>
-        }
-      </mat-radio-group>
+      <p class="note">{{ 'STATIONS.BACKFILL.NO_TRAINS_FALLBACK' | translate }}</p>
     }
 
+    <!--
+      Above the list, not below it. The list is read from the top down and its first row is the one
+      already selected, so this is where the pointer already is - under a five-hundred-pixel list the
+      buttons sat half a screen from the trip being confirmed. In the same column as the list rather
+      than spanning the page, because width costs travel too.
+    -->
     <div class="actions">
       @if (stage() === 'stopped') {
         <!-- Order is fixed so nothing jumps under the cursor; only the emphasis follows the evidence. -->
@@ -128,6 +102,50 @@
           </button>
         }
       }
+    </div>
+
+
+
+    @if (item()!.candidates.length > 0) {
+      <mat-radio-group class="candidates" [ngModel]="selected()">
+        @for (row of rows(); track row.instance.routeInstanceId) {
+          <div class="row">
+            <mat-radio-button
+              [value]="row.instance.routeInstanceId"
+              (change)="select(row.instance.routeInstanceId)"
+            >
+              <span class="date">{{ row.instance.date | date: 'longDate' }}</span>
+              @if (row.instance.startTime) {
+                <span class="times">
+                  {{ row.instance.startTime | date: 'HH:mm' }}@if (row.instance.endTime) {&ndash;{{ row.instance.endTime | date: 'HH:mm' }}}
+                </span>
+              }
+              <span
+                class="type"
+                [style.background-color]="row.group.routeTypeColour"
+                [title]="typeName(row.group)"
+              >{{ typeName(row.group) }}</span>
+              <span class="name" [title]="row.group.routeName">{{ row.group.routeName }}</span>
+              @if (row.group.isEndpoint) {
+                <span class="badge endpoint">{{ 'STATIONS.VISIT.EVIDENCE_ENDPOINT' | translate }}</span>
+              } @else {
+                <span class="badge">{{ 'STATIONS.VISIT.EVIDENCE_NEARBY' | translate: { metres: (row.group.distanceMetres | number: '1.0-0') } }}</span>
+              }
+            </mat-radio-button>
+            @if (row.group.instances.length > 1 && row.instance.routeInstanceId === row.group.instances[0].routeInstanceId) {
+              <button mat-button class="more" (click)="toggle(row.group.routeId)">
+                @if (expanded() === row.group.routeId) {
+                  {{ 'STATIONS.VISIT.FEWER_TRIPS' | translate }}
+                } @else {
+                  {{ 'STATIONS.VISIT.MORE_TRIPS' | translate: { count: row.group.instances.length - 1 } }}
+                }
+              </button>
+            }
+          </div>
+        }
+      </mat-radio-group>
+    }
+    </div>
     </div>
 
     </div>
