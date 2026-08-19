@@ -183,10 +183,14 @@ export class StationBackfillComponent implements OnInit {
     void this.load();
   }
 
-  private async load(): Promise<void> {
+  /**
+   * Loads the station to work on: the next one in the queue, or a named one when undo needs to
+   * return to the answer it just took back.
+   */
+  private async load(stationId: number | null = null): Promise<void> {
     this.loading.set(true);
     try {
-      const item = await firstValueFrom(this.apiService.getBackfillItem(this.passed()));
+      const item = await firstValueFrom(this.apiService.getBackfillItem(this.passed(), stationId));
       this.item.set(item);
       this.selected.set(item.suggestedRouteInstanceId);
       this.expanded.set(null);
@@ -476,10 +480,10 @@ export class StationBackfillComponent implements OnInit {
         entries.map((e) => (e.stationId === entry.stationId ? { ...e, reverted: true } : e))
       );
       this.done.update((d) => Math.max(0, d - 1));
-      // Back to the head of the queue: the restored station sorts at or before wherever we had got
-      // to, so without this a station reverted from further back could be skipped straight past.
-      this.passed.set(0);
-      await this.load();
+      // Land on the station that was just put back, rather than at the head of the queue: after
+      // taking an answer back the user wants to answer it again, not to click past 5,000 stations
+      // to reach it. The position is left alone, so carrying on afterwards resumes where they were.
+      await this.load(entry.stationId);
     } finally {
       this.saving.set(false);
     }

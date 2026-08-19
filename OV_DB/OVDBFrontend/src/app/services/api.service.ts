@@ -563,10 +563,16 @@ export class ApiService {
     const url = environment.backend + "api/station/" + id + "/candidates";
     return this.httpClient.get<TripCandidateGroup[]>(url);
   }
-
-  /** The next undated visit to date. Skip steps past one without recording anything about it. */
-  getBackfillItem(skip = 0): Observable<StationBackfillItem> {
-    const url = environment.backend + "api/stationbackfill?skip=" + skip;
+  /**
+   * The next station to date. A stationId asks for that station specifically - what undo needs,
+   * since by then the queue has grown by one and the old position points somewhere else.
+   */
+  getBackfillItem(skip = 0, stationId: number | null = null): Observable<StationBackfillItem> {
+    const url =
+      environment.backend +
+      "api/stationbackfill?skip=" +
+      skip +
+      (stationId === null ? "" : "&stationId=" + stationId);
     return this.httpClient.get<StationBackfillItem>(url);
   }
 

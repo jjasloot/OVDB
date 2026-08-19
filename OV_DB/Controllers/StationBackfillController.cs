@@ -31,9 +31,11 @@ namespace OV_DB.Controllers
         /// <summary>
         /// The next undated visit to work on. <paramref name="skip"/> steps past ones the user has
         /// looked at and left alone, without recording anything about them.
+        /// <paramref name="stationId"/> asks for one particular station instead, which is how undo
+        /// returns to the answer it just took back.
         /// </summary>
         [HttpGet]
-        public async Task<IActionResult> GetNext([FromQuery] int skip = 0)
+        public async Task<IActionResult> GetNext([FromQuery] int skip = 0, [FromQuery] int? stationId = null)
         {
             var userId = User.GetUserId();
             if (userId < 0)
@@ -44,12 +46,11 @@ namespace OV_DB.Controllers
             var queue = Queue(userId);
             var remaining = await queue.CountAsync();
 
-            var station = await queue
+            var ordered = queue
                 // Geographic order, so consecutive stations tend to share the journeys that explain
                 // them and the user stays in one mental place instead of hopping the map.
                 .OrderBy(sv => sv.Station.StationCountryId)
                 .ThenBy(sv => sv.Station.Name)
-                .Skip(skip)
                 .Select(sv => new
                 {
                     sv.StationId,
@@ -57,8 +58,21 @@ namespace OV_DB.Controllers
                     sv.Station.Lattitude,
                     sv.Station.Longitude,
                     Regions = sv.Station.Regions.Select(r => r.OriginalName)
-                })
-                .FirstOrDefaultAsync();
+                });
+
+            // Undo names the station it just put back rather than a position in the queue: the queue
+            // has grown by one at that point, so the position the user was at no longer points at the
+            // station they were looking at.
+            var station = stationId.HasValue
+                ? await ordered.FirstOrDefaultAsync(s => s.StationId == stationId.Value)
+                : await ordered.Skip(skip).FirstOrDefaultAsync();
+
+            // Asked for by id, it may have left the queue in the meantime - answered again in another
+            // tab, say - so fall back to the queue instead of claiming the work is finished.
+            if (station == null && stationId.HasValue)
+            {
+                station = await ordered.Skip(skip).FirstOrDefaultAsync();
+            }
 
             if (station == null)
             {

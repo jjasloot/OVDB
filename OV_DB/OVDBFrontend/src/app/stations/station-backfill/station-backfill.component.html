@@ -7,6 +7,8 @@
       <p>{{ 'STATIONS.BACKFILL.ALL_DONE' | translate }}</p>
     </div>
   } @else {
+    <!-- Two columns once there is room: the answers stay put, the history moves alongside. -->
+    <div class="layout">
     <div class="work" [class.busy]="loading() || saving()">
     <header>
       <h2>{{ item()!.stationName }}</h2>
@@ -126,6 +128,8 @@
           </button>
         }
       }
+    </div>
+
     </div>
 
     <!--

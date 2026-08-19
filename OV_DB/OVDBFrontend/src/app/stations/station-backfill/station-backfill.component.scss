@@ -131,8 +131,8 @@ header {
 }
 
 /*
- * Session history. Below the answers rather than beside them: it is for looking back when something
- * feels wrong, not part of the per-station decision.
+ * Session history. On a narrow screen it sits below the answers; from 1250px it moves alongside
+ * them. Either way it is for looking back when something feels wrong, not part of the decision.
  */
 .history {
   margin-top: 8px;
@@ -182,4 +182,78 @@ header {
 .entry-reverted {
   font-size: 0.85em;
   opacity: 0.7;
+}
+
+/*
+ * The history is a sibling of .work, not a child: on a narrow screen this column stacks them exactly
+ * as before, and it also keeps the busy dimming (which sets pointer-events: none) off the revert
+ * buttons while the next station loads.
+ */
+.layout {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.work {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+/*
+ * Wide enough for two columns, matching the replay's breakpoint. The page cap lifts with it -
+ * at 720px there is no room beside anything - while the answers column keeps its old width so the
+ * decision itself looks unchanged. The history sticks to the top so it stays readable while the
+ * answers column is taller than the viewport.
+ */
+@media (min-width: 1250px) {
+  .page {
+    max-width: 1320px;
+  }
+
+  .layout {
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 24px;
+  }
+
+  .work {
+    flex: 1 1 auto;
+    max-width: 720px;
+  }
+
+  .history {
+    flex: 0 0 22em;
+    position: sticky;
+    top: 16px;
+    margin-top: 0;
+    border-top: none;
+    padding-top: 0;
+    // Its own scroll rather than the page's: the answers must not be pushed off screen by a long
+    // session.
+    max-height: calc(100vh - 32px);
+  }
+
+  // 12em of station name plus an answer does not fit a 22em column, so each entry becomes two
+  // lines with the name leading.
+  .entry {
+    flex-wrap: wrap;
+    padding: 4px 0;
+    border-bottom: 1px solid rgb(128 128 128 / 12%);
+  }
+
+  .entry-station {
+    flex: 1 1 100%;
+    font-weight: 500;
+  }
+
+  .entry-answer {
+    // Share one line with the undo button, wrapping the text rather than pushing the button down:
+    // otherwise an entry that names a date wraps and one that does not stays inline.
+    flex: 1 1 0;
+    min-width: 0;
+  }
 }
