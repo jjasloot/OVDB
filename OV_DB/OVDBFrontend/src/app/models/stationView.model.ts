@@ -98,6 +98,18 @@ export interface StationBackfillItem {
   suggestionIsEndpoint: boolean;
   /** The pre-selected route line, sent with the station so drawing it needs no second request. */
   suggestedRouteGeometry: RouteGeometry | null;
+  /**
+   * How far along the region this station sits in. Null where it has no region below its country.
+   * The whole-queue count never visibly moves; a province does, and can be finished in a sitting.
+   */
+  regionProgress: RegionProgress | null;
+}
+
+/** Dating progress for one region — the finishable unit behind a five-thousand-station queue. */
+export interface RegionProgress {
+  name: string;
+  dated: number;
+  total: number;
 }
 
 export interface RouteGeometry {

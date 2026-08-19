@@ -131,8 +131,54 @@ namespace OV_DB.Controllers
                 Regions = station.Regions,
                 Candidates = groups,
                 SuggestedRouteInstanceId = suggested?.Instances[0].RouteInstanceId,
-                SuggestionIsEndpoint = suggested?.IsEndpoint ?? false
+                SuggestionIsEndpoint = suggested?.IsEndpoint ?? false,
+                RegionProgress = await RegionProgressAsync(userId, station.StationId)
             });
+        }
+
+        /// <summary>
+        /// Dating progress for the region the given station sits in, as something finishable to set
+        /// against a five-thousand-station queue.
+        /// </summary>
+        /// <remarks>
+        /// The level taken is the one directly under the country — provinces, Bundesländer, cantons —
+        /// which is both the finishable unit and the level the region achievements already count.
+        /// </remarks>
+        private async Task<RegionProgressDTO> RegionProgressAsync(int userId, int stationId)
+        {
+            var region = await context.Regions.AsNoTracking()
+                .Where(r => r.ParentRegionId != null && r.ParentRegion.ParentRegionId == null)
+                .Where(r => r.Stations.Any(s => s.Id == stationId))
+                .Select(r => new { r.Id, r.OriginalName })
+                .FirstOrDefaultAsync();
+
+            if (region == null)
+            {
+                return null;
+            }
+
+            // Counted over visits rather than stations: the queue is drawn from visits, so the total has
+            // to be the ones the user has actually marked, not every station in the province.
+            var counts = await context.StationVisits.AsNoTracking()
+                .Where(sv => sv.UserId == userId)
+                .Where(sv => !sv.Station.Hidden && !sv.Station.Special)
+                .Where(sv => sv.Station.Regions.Any(r => r.Id == region.Id))
+                .GroupBy(_ => 1)
+                .Select(g => new
+                {
+                    Total = g.Count(),
+                    Dated = g.Count(sv => sv.FirstStoppedDate != null)
+                })
+                .FirstOrDefaultAsync();
+
+            return counts == null
+                ? null
+                : new RegionProgressDTO
+                {
+                    Name = region.OriginalName,
+                    Dated = counts.Dated,
+                    Total = counts.Total
+                };
         }
 
         /// <summary>

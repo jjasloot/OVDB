@@ -13,8 +13,24 @@
     <header>
       <h2>{{ item()!.stationName }}</h2>
       <p class="regions">{{ item()!.regions.join(' · ') }}</p>
-      <mat-progress-bar mode="determinate" [value]="progress()" />
-      <p class="remaining">{{ 'STATIONS.BACKFILL.REMAINING' | translate: { count: item()!.remaining } }}</p>
+      <!--
+        The bar tracks the region, not the queue: no single answer moves a bar over five thousand
+        stations, so it reads as stationary however much work goes in. A province fills up visibly and
+        can be finished, and the geographic sweep keeps you in one for a long run. The queue total stays
+        as text beside it, which is where a number that large belongs.
+      -->
+      @if (item()!.regionProgress; as region) {
+        <mat-progress-bar mode="determinate" [value]="regionProgress()" />
+        <p class="remaining">
+          <span class="region-count">
+            {{ 'STATIONS.BACKFILL.REGION_PROGRESS' | translate: { region: region.name, dated: region.dated, total: region.total } }}
+          </span>
+          <span class="queue-count">{{ 'STATIONS.BACKFILL.REMAINING' | translate: { count: item()!.remaining } }}</span>
+        </p>
+      } @else {
+        <mat-progress-bar mode="determinate" [value]="progress()" />
+        <p class="remaining">{{ 'STATIONS.BACKFILL.REMAINING' | translate: { count: item()!.remaining } }}</p>
+      }
       @if (stage() === 'entryExit') {
         <p class="second-question">
           {{ 'STATIONS.BACKFILL.NOW_PICK_ENTRY_EXIT' | translate: { date: (stoppedDate() | date: 'longDate') } }}

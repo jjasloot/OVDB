@@ -33,6 +33,7 @@
     },
     "BACKFILL": {
       "REMAINING": "{{count}} still undated",
+      "REGION_PROGRESS": "{{region}}: {{dated}} of {{total}} dated",
       "NO_CANDIDATES": "No trip of yours passes this station, so there is nothing to date it from yet. Importing more trips may change that.",
       "NO_TRAINS_FALLBACK": "No train of yours reaches this station, so these are your other trips passing it. Worth a closer look before accepting one.",
       "GOT_ON_OFF": "Got on/off here",

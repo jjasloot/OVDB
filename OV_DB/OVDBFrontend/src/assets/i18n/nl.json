@@ -32,6 +32,7 @@
     },
     "BACKFILL": {
       "REMAINING": "Nog {{count}} zonder datum",
+      "REGION_PROGRESS": "{{region}}: {{dated}} van {{total}} gedateerd",
       "NO_CANDIDATES": "Geen van je ritten komt langs dit station, dus er valt nog niets aan te dateren. Meer ritten importeren kan dat veranderen.",
       "NO_TRAINS_FALLBACK": "Geen van je treinen komt bij dit station, dus dit zijn je andere ritten die er langs komen. Kijk goed voordat je er een accepteert.",
       "GOT_ON_OFF": "Hier in-/uitgestapt",

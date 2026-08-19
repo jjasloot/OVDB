@@ -167,6 +167,15 @@ export class StationBackfillComponent implements OnInit, OnDestroy {
     }
   }
 
+  /**
+   * How full the region is. Counted from the server's own figures rather than from this session, so it
+   * is the truth about the province and not a tally of what was answered since the page loaded.
+   */
+  regionProgress = computed(() => {
+    const region = this.item()?.regionProgress;
+    return !region || region.total === 0 ? 0 : (region.dated / region.total) * 100;
+  });
+
   hasWork = computed(() => !!this.item()?.stationId);
   progress = computed(() => {
     const remaining = this.item()?.remaining ?? 0;

@@ -28,6 +28,25 @@ header {
     font-size: 0.9em;
   }
 
+  /*
+   * The region is the figure worth reading - it is the one that moves and the one that can be
+   * finished - so it leads, and the five-thousand-station total sits behind it.
+   */
+  .remaining {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .region-count {
+    opacity: 1;
+    font-weight: 500;
+  }
+
+  .queue-count {
+    opacity: 0.65;
+  }
+
   // The second question needs to read as a new question, not as more context for the first.
   .second-question {
     margin: 8px 0 0;
@@ -384,11 +403,14 @@ header {
   }
 
   .candidates {
-    // Takes whatever the column has left under the answers, so a short list leaves an empty panel
-    // rather than dragging everything above it upwards. The narrow layout caps this at 32vh; here the
-    // column sets it.
-    flex: 1 1 auto;
-    max-height: none;
+    /*
+     * Hugs its rows, up to whatever the column has left under the answers. Nothing sits below it, so a
+     * short list moves only its own bottom edge - the map and the answers are fixed by the column
+     * height and stay where they are. Filling the panel instead left a single trip floating in five
+     * hundred pixels of border.
+     */
+    flex: 0 1 auto;
+    max-height: calc(var(--backfill-columns) - 96px);
     min-height: 0;
     // Reads as a panel that owns its scrollbar, rather than a clipped strip of the page.
     border: 1px solid rgb(128 128 128 / 20%);

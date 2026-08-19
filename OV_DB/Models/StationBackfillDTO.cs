@@ -33,6 +33,31 @@ namespace OV_DB.Models
         /// added a visible delay between the station appearing and its route showing up.
         /// </summary>
         public RouteGeometryDTO SuggestedRouteGeometry { get; set; }
+
+        /// <summary>
+        /// How far along the region this station sits in. Null where the station has no region below
+        /// its country.
+        /// </summary>
+        public RegionProgressDTO RegionProgress { get; set; }
+    }
+
+    /// <summary>
+    /// Dating progress for one region.
+    /// </summary>
+    /// <remarks>
+    /// The queue is 4,970 stations long, so no single answer visibly moves it — a bar over the whole
+    /// thing reads as stationary however much work goes in. A province does move, and can be finished
+    /// in a sitting, which is the only kind of progress worth showing. The queue now sweeps
+    /// geographically, so the region stays the same for a long run of stations and then changes, which
+    /// gives the run an end.
+    /// </remarks>
+    public class RegionProgressDTO
+    {
+        public string Name { get; set; }
+        /// <summary>Visits in this region that carry a date.</summary>
+        public int Dated { get; set; }
+        /// <summary>Visits in this region, dated or not.</summary>
+        public int Total { get; set; }
     }
 
     /// <summary>A route drawn on the backfill map, simplified for display.</summary>
