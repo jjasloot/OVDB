@@ -30,27 +30,29 @@ public class TripCandidateGroupingTests
     }
 
     [Fact]
-    public void AGroupWithNoTimesDoesNotOutrankATimedOne()
+    public void AGroupWithNoTimesLeadsThatDay()
     {
         var groups = TripCandidateGrouping.Group([
-            Candidate(1, 100, Day, null),
-            Candidate(2, 200, Day, Day.AddHours(9))
+            Candidate(1, 100, Day, Day.AddHours(9)),
+            Candidate(2, 200, Day, null)
         ]);
 
+        // An unknown time could be any hour, so it cannot be shown to be later than 09:00.
         Assert.Equal([200, 100], groups.Select(g => g.RouteId));
     }
 
     [Fact]
-    public void EndpointEvidenceStillWinsOverAnEarlierTime()
+    public void OrderIsChronologicalEvenWhenALaterTripTerminatesHere()
     {
         var groups = TripCandidateGrouping.Group([
             Candidate(1, 100, Day, Day.AddHours(6)),
-            Candidate(2, 200, Day, Day.AddHours(18), VisitEvidence.RouteEndpoint)
+            Candidate(2, 200, Day.AddYears(1), Day.AddYears(1), VisitEvidence.RouteEndpoint)
         ]);
 
-        // Starting or ending here is the only evidence of standing on the platform; a train that
-        // merely rolled past earlier in the day is not a better answer for having been there.
-        Assert.Equal([200, 100], groups.Select(g => g.RouteId));
+        // The list answers "which trip brought me here first", so hoisting a terminating service a
+        // year later above an earlier passing one would answer a different question. Evidence
+        // decides which button leads, never the order.
+        Assert.Equal([100, 200], groups.Select(g => g.RouteId));
     }
 
     [Fact]

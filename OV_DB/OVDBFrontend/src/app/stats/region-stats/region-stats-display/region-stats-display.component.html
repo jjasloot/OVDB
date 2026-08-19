@@ -30,10 +30,26 @@
         }
         @if (region.totalStations > 0) {
         <div class="region-progress">
-            <mat-progress-bar color="accent" mode="determinate"
-                [value]="100 * region.visitedStations / region.totalStations"></mat-progress-bar>
+            <!-- Green for stations a train carried you through, blue for the ones you got on or off
+                 at. The blue is a subset, so it is layered over the green from the same origin. -->
+            <span class="ovdb-split-bar"
+                [title]="'STATS.COMPLETION.SPLIT_HINT' | translate: { stopped: region.visitedStations, entryExit: region.entryExitStations }">
+                @if (region.visitedStations > 0) {
+                <span class="ovdb-split-stopped"
+                    [style.width.%]="100 * region.visitedStations / region.totalStations"></span>
+                }
+                @if (region.entryExitStations > 0) {
+                <span class="ovdb-split-entry-exit"
+                    [style.width.%]="100 * region.entryExitStations / region.totalStations"></span>
+                }
+            </span>
             <div class="station-count">
                 {{ region.visitedStations }}/{{ region.totalStations }} {{'STATS.STATIONS_VISITED'|translate}}
+                @if (region.entryExitStations > 0) {
+                <span class="entry-exit-count">
+                    · {{ region.entryExitStations }} {{'STATS.COMPLETION.STATIONS_ENTRY_EXIT'|translate}}
+                </span>
+                }
             </div>
         </div>
         }

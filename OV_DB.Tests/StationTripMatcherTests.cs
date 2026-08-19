@@ -296,7 +296,7 @@ public class StationTripMatcherTests
     }
 
     [Fact]
-    public async Task ATripWithNoTimeSortsAfterOneWithATime()
+    public async Task ATripWithNoTimeSortsBeforeOneWithATimeOnTheSameDay()
     {
         using var context = await SeedAsync();
         await AddStationAsync(context, 10, "Halt", BaseLat, BaseLon);
@@ -306,8 +306,9 @@ public class StationTripMatcherTests
 
         var candidates = await NewMatcher(context).FindTripsForStationAsync(1, 10);
 
-        // A known 09:14 is a better answer than an unknown time, so the blank must not lead.
-        Assert.Equal([1, 50], candidates.Select(c => c.RouteInstanceId));
+        // The blank could have been any hour of that day, so nothing shows it to be later than the
+        // 09:14 — and this list answers "which came first".
+        Assert.Equal([50, 1], candidates.Select(c => c.RouteInstanceId));
     }
 
     [Fact]

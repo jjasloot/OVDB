@@ -11,8 +11,14 @@ namespace OV_DB.Models
     /// <remarks>
     /// Measured on real data: a station averages 60.8 candidate trips across 26.2 routes. Per route
     /// only the earliest instance can answer "when did I first come here", so that one leads and the
-    /// rest sit behind it. Endpoint routes come first because starting or ending somewhere is the
-    /// only evidence you stood on the platform rather than rolled past it.
+    /// rest sit behind it.
+    /// <para>
+    /// Ordering is strictly chronological — <b>not</b> endpoint-grade first. The question is which
+    /// trip brought you here <em>first</em>, so a list that hoists a 2023 terminating service above a
+    /// 2017 passing one is answering a different question. Evidence still decides which button leads,
+    /// and a route that only passes earlier while a later one terminates here is exactly the
+    /// "stopped then, got off later" case.
+    /// </para>
     /// </remarks>
     public static class TripCandidateGrouping
     {
@@ -30,8 +36,9 @@ namespace OV_DB.Models
                     RouteTypeName = g.First().RouteTypeName,
                     RouteTypeNameNL = g.First().RouteTypeNameNL,
                     RouteTypeColour = g.First().RouteTypeColour,
-                    // Undated times sort last, so a known departure is never outranked by a blank.
-                    Instances = g.OrderBy(c => c.Date).ThenBy(c => c.StartTime ?? DateTime.MaxValue)
+                    // A trip with no time sorts first among that day's trips: it could have been any
+                    // hour, so it cannot be shown to be later than one that names a time.
+                    Instances = g.OrderBy(c => c.Date).ThenBy(c => c.StartTime ?? DateTime.MinValue)
                         .Select(c => new TripCandidateDTO
                         {
                             RouteInstanceId = c.RouteInstanceId,
@@ -41,11 +48,10 @@ namespace OV_DB.Models
                         })
                         .ToList()
                 })
-                .OrderByDescending(g => g.IsEndpoint)
-                .ThenBy(g => g.Instances[0].Date)
+                .OrderBy(g => g.Instances[0].Date)
                 // Earliest actually means earliest, not just earliest date: where two routes were
-                // both ridden on the same day, the one boarded first leads and gets pre-selected.
-                .ThenBy(g => g.Instances[0].StartTime ?? DateTime.MaxValue)
+                // both ridden on the same day, the one boarded first leads.
+                .ThenBy(g => g.Instances[0].StartTime ?? DateTime.MinValue)
                 .ToList();
     }
 }

@@ -18,10 +18,10 @@ namespace OV_DB.Models
         public IEnumerable<string> Regions { get; set; }
         public List<TripCandidateGroupDTO> Candidates { get; set; }
         /// <summary>
-        /// The trip to pre-select. The oldest <em>endpoint-grade</em> candidate where one exists,
-        /// falling back to the oldest of any grade. Measured: the oldest candidate overall is
-        /// endpoint-grade only 15% of the time, so plain "oldest" would usually pre-select a train
-        /// that passed through without stopping and date the visit too early.
+        /// The trip to pre-select: the earliest candidate. The question is which trip brought you
+        /// here first, so a later terminating service must not outrank an earlier passing one.
+        /// Where the earliest only passes and a later one terminates here, the screen leads with
+        /// "stopped then, got off later" rather than pre-selecting the later trip outright.
         /// </summary>
         public int? SuggestedRouteInstanceId { get; set; }
         /// <summary>True when the suggestion rests on the route starting or ending here.</summary>

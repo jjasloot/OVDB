@@ -67,11 +67,15 @@
                       drawn over it rather than beside it.
                     -->
                     <span
-                      class="split-bar"
+                      class="ovdb-split-bar"
                       [title]="'STATS.COMPLETION.SPLIT_HINT' | translate: { stopped: row.visited, entryExit: row.entryExit }"
                     >
-                      <span class="stopped" [style.width.%]="row.percentage"></span>
-                      <span class="entry-exit" [style.width.%]="row.entryExitPercentage"></span>
+                      @if (row.visited > 0) {
+                        <span class="ovdb-split-stopped" [style.width.%]="row.percentage"></span>
+                      }
+                      @if (row.entryExit > 0) {
+                        <span class="ovdb-split-entry-exit" [style.width.%]="row.entryExitPercentage"></span>
+                      }
                     </span>
                     <span class="remaining">
                       {{ 'STATS.COMPLETION.TO_GO' | translate: { count: row.remaining } }}

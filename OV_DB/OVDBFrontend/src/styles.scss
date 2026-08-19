@@ -317,3 +317,41 @@ body {
   background: #c62828;
   border: 2px solid #b71c1c;
 }
+
+/*
+ * Station visit progress, in one bar with two tones: green for stations a train carried you through,
+ * blue for the ones you actually got on or off at — the same colours the station map uses.
+ *
+ * The blue is a SUBSET of the green, so it is layered over it from the same origin. Side by side
+ * would read as two totals adding up to more of the region than exists.
+ *
+ * Global rather than per component because both the regions tab and the completion tab draw it.
+ */
+.ovdb-split-bar {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 4px;
+  border-radius: 2px;
+  background: rgb(128 128 128 / 25%);
+  overflow: hidden;
+
+  > span {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    // A handful of stations in a big region is a fraction of a percent, which rounds to an
+    // invisible sliver. Something is never allowed to render as nothing, so give it a floor;
+    // segments are only emitted at all when their count is above zero.
+    min-width: 3px;
+  }
+
+  .ovdb-split-stopped {
+    background: #00c853;
+  }
+
+  .ovdb-split-entry-exit {
+    background: #1e88e5;
+  }
+}

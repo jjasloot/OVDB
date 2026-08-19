@@ -69,8 +69,12 @@ namespace OV_DB.Controllers
             var candidates = await matcher.FindTripsForStationAsync(userId, station.StationId);
             var groups = TripCandidateGrouping.Group(candidates);
 
-            // Oldest endpoint-grade candidate, else oldest of any grade.
-            var suggested = groups.FirstOrDefault(g => g.IsEndpoint) ?? groups.FirstOrDefault();
+            // The earliest candidate, full stop. Groups arrive in chronological order, and the
+            // question this screen asks is which trip brought you here first — so pre-selecting a
+            // later terminating service over an earlier passing one would answer a different
+            // question. Where the earliest only passes and a later one terminates here, the screen
+            // leads with "stopped then, got off later" instead, which is the honest reading.
+            var suggested = groups.FirstOrDefault();
 
             return Ok(new StationBackfillItemDTO
             {

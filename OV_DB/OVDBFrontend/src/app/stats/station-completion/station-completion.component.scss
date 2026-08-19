@@ -95,32 +95,8 @@ mat-panel-description mat-progress-bar {
   }
 }
 
-/*
- * Two tones in one bar, matching the station map: green for stopped at, blue for got on/off.
- * The blue is a subset of the green, so it is layered over it from the same origin rather than
- * placed beside it — side by side would read as two totals adding up to more than the region.
- */
-.split-bar {
-  position: relative;
-  display: block;
+// The shared bar is full-width by default; in the panel header it shares a row with the counts.
+mat-panel-description .ovdb-split-bar {
   flex: 1;
-  height: 4px;
-  border-radius: 2px;
-  background: rgb(128 128 128 / 25%);
-  overflow: hidden;
-
-  > span {
-    position: absolute;
-    top: 0;
-    left: 0;
-    height: 100%;
-  }
-
-  .stopped {
-    background: #00c853;
-  }
-
-  .entry-exit {
-    background: #1e88e5;
-  }
+  max-width: 160px;
 }
