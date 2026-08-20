@@ -57,6 +57,48 @@ public class TripCandidateGroupingTests
     }
 
     [Fact]
+    public void ATerminatingTripALaterDayDoesNotStealThePreselection()
+    {
+        var groups = TripCandidateGrouping.Group([
+            Candidate(1, 100, Day, Day.AddHours(6)),
+            Candidate(2, 200, Day.AddYears(1), Day.AddYears(1), VisitEvidence.RouteEndpoint)
+        ]);
+
+        // Two different days are two different dates, and the earlier one is the answer to "when
+        // did I first come here". Getting off a year later is the second date, which is what the
+        // two-part answer records.
+        Assert.Equal(100, TripCandidateGrouping.Preselect(groups).RouteId);
+    }
+
+    [Fact]
+    public void ATerminatingTripTheSameDayTakesThePreselection()
+    {
+        var groups = TripCandidateGrouping.Group([
+            Candidate(1, 100, Day, Day.AddHours(6)),
+            Candidate(2, 200, Day, Day.AddHours(18), VisitEvidence.RouteEndpoint)
+        ]);
+
+        // Passed through in the morning, got off in the afternoon: one visit, one date, and the
+        // trip that terminates here is the one that says you stood on the platform. Starting there
+        // makes the station a single tap rather than a two-part answer writing that date twice.
+        Assert.Equal(200, TripCandidateGrouping.Preselect(groups).RouteId);
+        // The order it is picked out of stays chronological regardless.
+        Assert.Equal([100, 200], groups.Select(g => g.RouteId));
+    }
+
+    [Fact]
+    public void WithNothingTerminatingHereTheEarliestIsPreselected()
+    {
+        var groups = TripCandidateGrouping.Group([
+            Candidate(1, 100, Day, Day.AddHours(18)),
+            Candidate(2, 200, Day, Day.AddHours(6))
+        ]);
+
+        Assert.Equal(200, TripCandidateGrouping.Preselect(groups).RouteId);
+        Assert.Null(TripCandidateGrouping.Preselect([]));
+    }
+
+    [Fact]
     public void WithinARouteTheEarliestInstanceLeads()
     {
         var groups = TripCandidateGrouping.Group([

@@ -96,9 +96,11 @@ export interface StationBackfillItem {
    */
   nonTrainCandidates: TripCandidateGroup[];
   /**
-   * The trip to preselect: the oldest endpoint-grade candidate where one exists, else the oldest
-   * of any grade. The oldest candidate overall is endpoint-grade only 15% of the time, so plain
-   * "oldest" would usually preselect a train that passed through without stopping.
+   * The trip to preselect: the oldest candidate, except that among that first day's trips one
+   * starting or ending here wins. Across days the oldest holds — an earlier trip that only passed
+   * and a later one that terminates here are two separate dates, which is what the "stopped, and
+   * got off later" answer is for. Within one day they are one visit carrying one date, so the
+   * terminating trip is preselected and the whole station is a single tap.
    */
   suggestedRouteInstanceId: number | null;
   suggestionIsEndpoint: boolean;

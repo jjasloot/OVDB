@@ -30,12 +30,12 @@ namespace OV_DB.Models
         /// </remarks>
         public List<TripCandidateGroupDTO> NonTrainCandidates { get; set; }
         /// <summary>
-        /// The trip to pre-select: the earliest one that starts or ends here, and only failing that
-        /// the earliest of any grade. An endpoint is the one grade that says you stood on the
-        /// platform, which makes "got on/off here" a single tap; the earliest candidate overall
-        /// merely passes 85% of the time, and leading with it turned most stations into the
-        /// two-part "stopped then, got off later" answer. That reading is still one click away —
-        /// select the earlier passing trip and the screen leads with it again.
+        /// The trip to pre-select: the earliest candidate, except that among the trips of that first
+        /// day one starting or ending here wins. Across days the earliest holds whatever grade it
+        /// carries — an earlier trip that merely passed and a later one that terminates here are two
+        /// dates, and the screen leads with "stopped then, got off later" for exactly that. Within
+        /// one day they are the same visit and the same date, so starting on the terminating service
+        /// makes it one tap instead. See <c>TripCandidateGrouping.Preselect</c>.
         /// </summary>
         public int? SuggestedRouteInstanceId { get; set; }
         /// <summary>True when the suggestion rests on the route starting or ending here.</summary>

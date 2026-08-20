@@ -113,17 +113,10 @@ namespace OV_DB.Controllers
             var trips = await matcher.FindStationTripsAsync(userId, station.StationId);
             var groups = TripCandidateGrouping.Group(trips.Offered);
 
-            // The earliest trip that starts or ends here, and only failing that the earliest of any
-            // grade. Groups arrive in chronological order, so either is a First over that order.
-            //
-            // Earliest-overall reads better on paper — the question is which trip brought you here
-            // first — but it costs a question every time: the earliest candidate merely passes
-            // 85% of the time, so the screen led with "stopped then, got off later", which is two
-            // decisions and a second screen. An endpoint is the one grade that is certain you stood
-            // on the platform, and answering it is one tap. Selecting an earlier passing trip by
-            // hand still leads with the two-date answer, so the careful reading is a click away
-            // rather than the default.
-            var suggested = groups.FirstOrDefault(g => g.IsEndpoint) ?? groups.FirstOrDefault();
+            // The earliest candidate, except that among that first day's trips one starting or
+            // ending here wins. See TripCandidateGrouping.Preselect for why the exception stops at
+            // the day boundary.
+            var suggested = TripCandidateGrouping.Preselect(groups);
 
             return Ok(new StationBackfillItemDTO
             {

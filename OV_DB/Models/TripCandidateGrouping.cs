@@ -54,5 +54,35 @@ namespace OV_DB.Models
                 // both ridden on the same day, the one boarded first leads.
                 .ThenBy(g => g.Instances[0].StartTime ?? DateTime.MinValue)
                 .ToList();
+
+        /// <summary>
+        /// Which trip the dating screen starts on: the earliest, except that among the trips of that
+        /// first day a route starting or ending here wins.
+        /// </summary>
+        /// <remarks>
+        /// Across days the earliest wins outright, whatever grade it carries. The question is which
+        /// trip brought you here first, and a terminating service in 2023 does not answer it better
+        /// than a passing one in 2016 — that pair is the "stopped then, got off later" case, which is
+        /// two dates and stays two decisions.
+        /// <para>
+        /// Within one day the two are the same visit: you passed through in the morning and got off
+        /// in the afternoon, and both facts carry that one date. Dates hold no time — the hour lives
+        /// on the instance — so there is no earlier and later to record, and starting on the
+        /// terminating service turns the station into one tap on "got on/off here" instead of a
+        /// two-part answer that would write the same date twice.
+        /// </para>
+        /// </remarks>
+        public static TripCandidateGroupDTO Preselect(List<TripCandidateGroupDTO> groups)
+        {
+            var earliest = groups.FirstOrDefault();
+            if (earliest == null)
+            {
+                return null;
+            }
+
+            var firstDay = earliest.Instances[0].Date.Date;
+            return groups.FirstOrDefault(g => g.IsEndpoint && g.Instances[0].Date.Date == firstDay)
+                ?? earliest;
+        }
     }
 }
