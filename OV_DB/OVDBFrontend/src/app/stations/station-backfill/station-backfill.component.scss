@@ -195,6 +195,27 @@ header {
   padding: 0;
 }
 
+/*
+ * Marked out rather than blended in. While these are on screen the list holds two kinds of evidence:
+ * a train calling at a railway station, and something that merely shares the street with it. The
+ * stripe says which is which without spending a column of the row on saying so.
+ */
+.row.non-train {
+  border-left: 3px solid rgb(128 128 128 / 35%);
+  padding-left: 5px;
+}
+
+/*
+ * At the foot of the list and quiet: on nearly every station the trains above it are the answer, and
+ * this is the way out for the ones where they are not.
+ */
+.non-train-toggle {
+  flex: none;
+  align-self: flex-start;
+  padding: 0;
+  opacity: 0.8;
+}
+
 .actions {
   display: flex;
   flex-wrap: wrap;

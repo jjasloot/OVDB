@@ -196,7 +196,8 @@ public class StationTripMatcherTests
 
         var candidates = await NewMatcher(context).FindTripsForStationAsync(1, 10);
 
-        // The backfill preselects the first of these, and "earliest" is the whole question.
+        // The backfill reads down this order to find what to pre-select, so "earliest" has to mean
+        // earliest here whatever grade the trips carry.
         Assert.Equal(
             [new DateTime(2016, 7, 9), new DateTime(2019, 4, 2), new DateTime(2023, 1, 1)],
             candidates.Select(c => c.Date));
@@ -239,6 +240,49 @@ public class StationTripMatcherTests
 
         Assert.All(candidates, c => Assert.True(c.IsTrain));
         Assert.Contains(91, candidates.Select(c => c.RouteInstanceId));
+    }
+
+    [Fact]
+    public async Task TheHiddenNonTrainsAreKeptForTheCallerThatOffersThem()
+    {
+        // Hidden from the list is not the same as thrown away: the backfill offers these behind a
+        // button, for the station whose only honest answer is a replacement bus.
+        using var context = await SeedAsync(isTrain: false);
+        await AddStationAsync(context, 10, "Halt", BaseLat, BaseLon);
+
+        context.RouteTypes.Add(new RouteType { TypeId = 2, Name = "Train", Colour = "#000", UserId = 1, IsTrain = true });
+        context.Routes.Add(new Route
+        {
+            RouteId = 2,
+            Name = "The train",
+            Share = Guid.NewGuid(),
+            RouteTypeId = 2,
+            LineString = EastWestLineThroughBase()
+        });
+        context.RoutesMaps.Add(new RouteMap { RouteMapId = 2, RouteId = 2, MapId = 1 });
+        context.RouteInstances.Add(new RouteInstance { RouteInstanceId = 91, RouteId = 2, Date = new DateTime(2015, 1, 1) });
+        await context.SaveChangesAsync();
+
+        var trips = await NewMatcher(context).FindStationTripsAsync(1, 10);
+
+        Assert.All(trips.Offered, c => Assert.True(c.IsTrain));
+        var withheld = Assert.Single(trips.Withheld);
+        Assert.False(withheld.IsTrain);
+        Assert.Equal(1, withheld.RouteInstanceId);
+    }
+
+    [Fact]
+    public async Task NothingIsWithheldWhenTheNonTrainsAreTheOffer()
+    {
+        // With no train in range the tram is already the list, so calling it withheld would put the
+        // same trip on screen twice.
+        using var context = await SeedAsync(isTrain: false);
+        await AddStationAsync(context, 10, "Halt", BaseLat, BaseLon);
+
+        var trips = await NewMatcher(context).FindStationTripsAsync(1, 10);
+
+        Assert.Single(trips.Offered);
+        Assert.Empty(trips.Withheld);
     }
 
     [Fact]

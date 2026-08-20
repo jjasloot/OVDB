@@ -90,6 +90,12 @@ export interface StationBackfillItem {
   regions: string[];
   candidates: TripCandidateGroup[];
   /**
+   * The non-train trips a train at this station keeps out of `candidates`, offered behind a button
+   * rather than not at all: the rule is right nearly always and wrong occasionally — a rail
+   * replacement bus, a station only ever reached by metro. Empty where nothing was held back.
+   */
+  nonTrainCandidates: TripCandidateGroup[];
+  /**
    * The trip to preselect: the oldest endpoint-grade candidate where one exists, else the oldest
    * of any grade. The oldest candidate overall is endpoint-grade only 15% of the time, so plain
    * "oldest" would usually preselect a train that passed through without stopping.

@@ -54,6 +54,19 @@ public sealed record TripCandidate(
     /// </summary>
     bool IsTrain);
 
+/// <summary>
+/// One station's candidate trips, split by the rule that a train at a railway station outranks
+/// everything else: what is offered, and what that rule held back.
+/// </summary>
+public sealed record StationTrips(
+    IReadOnlyList<TripCandidate> Offered,
+    /// <summary>
+    /// Non-train trips kept out of <see cref="Offered"/> because a train reaches this station.
+    /// Empty where the rule did not fire — with no train in range the non-trains <em>are</em> the
+    /// offer, so there is nothing being held back from the user.
+    /// </summary>
+    IReadOnlyList<TripCandidate> Withheld);
+
 /// <summary>A station a trip might explain having visited.</summary>
 public sealed record StationCandidate(
     int StationId,
@@ -67,6 +80,11 @@ public readonly record struct StopPoint(string Name, double Lattitude, double Lo
 public interface IStationTripMatcher
 {
     Task<IReadOnlyList<TripCandidate>> FindTripsForStationAsync(int userId, int stationId, CancellationToken cancellationToken = default);
+    /// <summary>
+    /// The same search, with what the train rule held back kept rather than dropped — for the one
+    /// caller that offers it as a second opinion instead of hiding it outright.
+    /// </summary>
+    Task<StationTrips> FindStationTripsAsync(int userId, int stationId, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<StationCandidate>> FindStationsForTripAsync(int userId, int routeInstanceId, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<StationCandidate>> MatchStopsAsync(IEnumerable<StopPoint> stops, CancellationToken cancellationToken = default);
 }
@@ -107,7 +125,10 @@ public class StationTripMatcher(OVDBDatabaseContext dbContext, IMatcherIndexCach
 
     private const double MetresPerDegreeLatitude = 111_320.0;
 
-    public async Task<IReadOnlyList<TripCandidate>> FindTripsForStationAsync(int userId, int stationId, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<TripCandidate>> FindTripsForStationAsync(int userId, int stationId, CancellationToken cancellationToken = default) =>
+        (await FindStationTripsAsync(userId, stationId, cancellationToken)).Offered;
+
+    public async Task<StationTrips> FindStationTripsAsync(int userId, int stationId, CancellationToken cancellationToken = default)
     {
         var station = await dbContext.Stations.AsNoTracking()
             .Where(s => s.Id == stationId)
@@ -115,7 +136,7 @@ public class StationTripMatcher(OVDBDatabaseContext dbContext, IMatcherIndexCach
             .SingleOrDefaultAsync(cancellationToken);
         if (station == null)
         {
-            return [];
+            return NoTrips;
         }
 
         var index = await GetIndexAsync(cancellationToken);
@@ -138,7 +159,7 @@ public class StationTripMatcher(OVDBDatabaseContext dbContext, IMatcherIndexCach
 
         if (nearest.Count == 0)
         {
-            return [];
+            return NoTrips;
         }
 
         var routeIds = nearest.Keys.ToList();
@@ -187,21 +208,32 @@ public class StationTripMatcher(OVDBDatabaseContext dbContext, IMatcherIndexCach
         // filter exists because a station is a railway station and a bus passing it explains
         // nothing — but with no train in range at all, a tram sharing the alignment is the only
         // thing on offer, and offering nothing is worse than offering it labelled for what it is.
-        var byTrain = candidates.ToList();
-        var trains = byTrain.Where(c => c.IsTrain).ToList();
-        var offered = trains.Count > 0 ? trains : byTrain;
+        // The rest are returned rather than dropped: the rule is right nearly always and wrong
+        // occasionally — a replacement bus, a station only ever reached by metro — and the caller
+        // that can ask for a second opinion needs something to show.
+        var all = candidates.ToList();
+        var trains = all.Where(c => c.IsTrain).ToList();
 
-        // Oldest first: the question this answers is "which trip first brought me here", and the
-        // backfill preselects the earliest. Strictly chronological: date, then time within the day.
-        // A trip with no time sorts first among that day's trips — it could have been any hour, so
-        // nothing shows it to be later than one that names a time. Evidence decides emphasis, never
-        // order.
-        return offered
+        return trains.Count > 0
+            ? new StationTrips(Ordered(trains), Ordered(all.Where(c => !c.IsTrain)))
+            : new StationTrips(Ordered(all), []);
+    }
+
+    /// <summary>
+    /// Oldest first: the question this answers is "which trip first brought me here", and the
+    /// backfill reads down this order to find what to pre-select. Strictly chronological — date,
+    /// then time within the day; grade is the caller's business, not the order's. A
+    /// trip with no time sorts first among that day's trips: it could have been any hour, so nothing
+    /// shows it to be later than one that names a time. Evidence decides emphasis, never order.
+    /// </summary>
+    private static List<TripCandidate> Ordered(IEnumerable<TripCandidate> candidates) =>
+        candidates
             .OrderBy(c => c.Date)
             .ThenBy(c => c.StartTime ?? DateTime.MinValue)
             .ThenByDescending(c => c.Evidence)
             .ToList();
-    }
+
+    private static readonly StationTrips NoTrips = new([], []);
 
     public async Task<IReadOnlyList<StationCandidate>> FindStationsForTripAsync(int userId, int routeInstanceId, CancellationToken cancellationToken = default)
     {

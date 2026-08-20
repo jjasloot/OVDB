@@ -122,6 +122,8 @@
     } @else if (!item()!.candidates[0].isTrain) {
       <!-- Only ever the whole list: other kinds of trip appear in place of trains, never beside them. -->
       <p class="note">{{ 'STATIONS.BACKFILL.NO_TRAINS_FALLBACK' | translate }}</p>
+    } @else if (showNonTrain()) {
+      <p class="note">{{ 'STATIONS.BACKFILL.NON_TRAIN_SHOWN' | translate }}</p>
     }
 
 
@@ -129,7 +131,12 @@
     @if (item()!.candidates.length > 0) {
       <mat-radio-group class="candidates" [ngModel]="selected()">
         @for (row of rows(); track row.instance.routeInstanceId) {
-          <div class="row">
+          <!-- Marked out where they are the exception: a bus among trains is worth a second look. -->
+          <div
+            class="row"
+            [class.non-train]="!row.group.isTrain"
+            [class.selected]="row.instance.routeInstanceId === selected()"
+          >
             <mat-radio-button
               [value]="row.instance.routeInstanceId"
               (change)="select(row.instance.routeInstanceId)"
@@ -164,6 +171,21 @@
           </div>
         }
       </mat-radio-group>
+    }
+
+    <!--
+      At the foot of the list, which is where you end up when nothing above it fits — the case this
+      exists for. Only ever shown when something was actually held back: where no train reaches the
+      station the other modes are already the list above.
+    -->
+    @if (nonTrain().length > 0) {
+      <button mat-button class="non-train-toggle" (click)="toggleNonTrain()">
+        @if (showNonTrain()) {
+          {{ 'STATIONS.BACKFILL.HIDE_NON_TRAIN' | translate }}
+        } @else {
+          {{ 'STATIONS.BACKFILL.SHOW_NON_TRAIN' | translate: { count: nonTrain().length } }}
+        }
+      </button>
     }
     </div>
     </div>

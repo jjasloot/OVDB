@@ -6,8 +6,9 @@ using OV_DB.Services;
 
 namespace OV_DB.Tests;
 
-// What the backfill pre-selects comes straight out of this ordering, so the ordering is the rule
-// worth pinning rather than the screen that reads it.
+// The backfill pre-selects by reading down this ordering — the earliest trip that starts or ends
+// at the station, else simply the earliest — so the ordering is the rule worth pinning rather than
+// the screen that reads it.
 public class TripCandidateGroupingTests
 {
     private static TripCandidate Candidate(
@@ -25,7 +26,7 @@ public class TripCandidateGroupingTests
             Candidate(2, 200, Day, Day.AddHours(6))
         ]);
 
-        // Both ridden the same day, so the one boarded first leads and gets pre-selected.
+        // Both ridden the same day and both of one grade, so the one boarded first leads.
         Assert.Equal([200, 100], groups.Select(g => g.RouteId));
     }
 

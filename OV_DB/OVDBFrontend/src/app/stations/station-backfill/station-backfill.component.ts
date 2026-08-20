@@ -1,4 +1,15 @@
-import { ChangeDetectionStrategy, Component, OnDestroy, OnInit, computed, inject, signal } from "@angular/core";
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  Injector,
+  OnDestroy,
+  OnInit,
+  afterNextRender,
+  computed,
+  inject,
+  signal,
+} from "@angular/core";
 import { LatLng, LatLngBounds, Layer, Map as LeafletMap, circleMarker, polyline } from "leaflet";
 import { LeafletModule } from "@bluehalo/ngx-leaflet";
 import { MatButton } from "@angular/material/button";
@@ -50,6 +61,8 @@ export class StationBackfillComponent implements OnInit, OnDestroy {
   private apiService = inject(ApiService);
   private mapTileLayersService = inject(MapTileLayersService);
   private translationService = inject(TranslationService);
+  private host = inject<ElementRef<HTMLElement>>(ElementRef);
+  private injector = inject(Injector);
 
   private baseLayers = this.mapTileLayersService.createBaseLayers();
   options = {
@@ -144,14 +157,14 @@ export class StationBackfillComponent implements OnInit, OnDestroy {
   private selectedRow() {
     const id = this.selected();
     return (
-      this.item()
-        ?.candidates.flatMap((group) => group.instances.map((instance) => ({ group, instance })))
+      this.groups()
+        .flatMap((group) => group.instances.map((instance) => ({ group, instance })))
         .find((row) => row.instance.routeInstanceId === id) ?? null
     );
   }
 
   private hasLaterEndpoint(afterDate: string): boolean {
-    return (this.item()?.candidates ?? []).some(
+    return this.groups().some(
       (group) => group.isEndpoint && group.instances.some((i) => i.date > afterDate)
     );
   }
@@ -183,9 +196,41 @@ export class StationBackfillComponent implements OnInit, OnDestroy {
     return done + remaining === 0 ? 0 : (done / (done + remaining)) * 100;
   });
 
+  /**
+   * The trips held back because a train reaches this station. Never the whole list: where no train
+   * does, the other modes are the list itself and this is empty.
+   */
+  nonTrain = computed(() => this.item()?.nonTrainCandidates ?? []);
+
+  /**
+   * Asked for on this station only, and forgotten when the next one loads. The train rule is right
+   * nearly every time, so it stays on by default; the exceptions — a rail replacement bus, a station
+   * reached that day by metro — need a way through it rather than a different default.
+   */
+  showNonTrain = signal(false);
+
+  /**
+   * The candidates on screen. Anything that picks a trip — the rows, the selection, which answer
+   * leads — goes through this, so a trip the user cannot see can never become the one selected.
+   */
+  private groups = computed(() => [
+    ...(this.item()?.candidates ?? []),
+    ...(this.showNonTrain() ? this.nonTrain() : []),
+  ]);
+
+  /**
+   * Every candidate, visible or not. Describing a trip already chosen is not the same as offering
+   * one: fold the non-train section away mid-flow and the date confirmed a moment ago still has to
+   * be nameable.
+   */
+  private allGroups = computed(() => [
+    ...(this.item()?.candidates ?? []),
+    ...this.nonTrain(),
+  ]);
+
   /** Flattened for the radio group: one row per route, plus the rest of a route's trips. */
   rows = computed(() => {
-    const groups = this.item()?.candidates ?? [];
+    const groups = this.groups();
     return groups.flatMap((group) =>
       (this.expanded() === group.routeId ? group.instances : group.instances.slice(0, 1)).map(
         (instance) => ({ group, instance })
@@ -209,6 +254,7 @@ export class StationBackfillComponent implements OnInit, OnDestroy {
       this.item.set(item);
       this.selected.set(item.suggestedRouteInstanceId);
       this.expanded.set(null);
+      this.showNonTrain.set(false);
       this.stage.set("stopped");
       this.stoppedTrip.set(null);
       this.drawnRouteId = null;
@@ -220,6 +266,7 @@ export class StationBackfillComponent implements OnInit, OnDestroy {
       }
 
       this.drawStation(item);
+      this.scrollSelectedIntoView();
       if (item.suggestedRouteInstanceId) {
         await this.drawRoute(this.routeIdFor(item.suggestedRouteInstanceId));
       }
@@ -227,6 +274,23 @@ export class StationBackfillComponent implements OnInit, OnDestroy {
       this.loading.set(false);
       this.firstLoad.set(false);
     }
+  }
+
+  /**
+   * Brings the pre-selected trip into view. It is no longer always the first row: the trip that
+   * starts or ends here is the one pre-selected, and on a fifty-row list that can sit well down the
+   * scroll — a checked radio nobody can see reads as nothing being chosen at all.
+   */
+  private scrollSelectedIntoView(): void {
+    afterNextRender(
+      () =>
+        this.host.nativeElement
+          .querySelector(".row.selected")
+          // "nearest" so a row already on screen does not move: the list is scanned from wherever
+          // the eye already is, and centring it every station would shuffle the rows under it.
+          ?.scrollIntoView({ block: "nearest" }),
+      { injector: this.injector }
+    );
   }
 
   /**
@@ -252,7 +316,7 @@ export class StationBackfillComponent implements OnInit, OnDestroy {
 
   private groupFor(routeInstanceId: number | null): TripCandidateGroup | null {
     return (
-      this.item()?.candidates.find((g) =>
+      this.allGroups().find((g) =>
         g.instances.some((i) => i.routeInstanceId === routeInstanceId)
       ) ?? null
     );
@@ -314,6 +378,21 @@ export class StationBackfillComponent implements OnInit, OnDestroy {
 
   toggle(routeId: number): void {
     this.expanded.update((current) => (current === routeId ? null : routeId));
+  }
+
+  /**
+   * Shows or hides the trips the train rule held back. Folding them away can take the selection with
+   * them, so the choice returns to the suggestion rather than pointing at a row that is no longer on
+   * screen.
+   */
+  async toggleNonTrain(): Promise<void> {
+    this.showNonTrain.update((showing) => !showing);
+    if (this.selectedRow()) {
+      return;
+    }
+    const fallback = this.item()?.suggestedRouteInstanceId ?? null;
+    this.selected.set(fallback);
+    await this.drawRoute(this.routeIdFor(fallback));
   }
 
   evidenceOf(group: TripCandidateGroup): "endpoint" | "nearby" {
@@ -399,8 +478,7 @@ export class StationBackfillComponent implements OnInit, OnDestroy {
    */
   private async selectLikelyEntryExit(stoppedTripId: number): Promise<void> {
     const stopped = this.instanceById(stoppedTripId);
-    const groups = this.item()?.candidates ?? [];
-    const later = groups
+    const later = this.groups()
       .flatMap((group) => group.instances.map((instance) => ({ group, instance })))
       .filter((row) => row.instance.routeInstanceId !== stoppedTripId)
       .filter((row) => !stopped || row.instance.date >= stopped.date)
@@ -540,8 +618,8 @@ export class StationBackfillComponent implements OnInit, OnDestroy {
       return null;
     }
     return (
-      this.item()
-        ?.candidates.flatMap((g) => g.instances)
+      this.allGroups()
+        .flatMap((g) => g.instances)
         .find((i) => i.routeInstanceId === routeInstanceId) ?? null
     );
   }

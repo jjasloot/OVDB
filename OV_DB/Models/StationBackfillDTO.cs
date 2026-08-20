@@ -18,10 +18,24 @@ namespace OV_DB.Models
         public IEnumerable<string> Regions { get; set; }
         public List<TripCandidateGroupDTO> Candidates { get; set; }
         /// <summary>
-        /// The trip to pre-select: the earliest candidate. The question is which trip brought you
-        /// here first, so a later terminating service must not outrank an earlier passing one.
-        /// Where the earliest only passes and a later one terminates here, the screen leads with
-        /// "stopped then, got off later" rather than pre-selecting the later trip outright.
+        /// The non-train trips a train at this station keeps out of <see cref="Candidates"/>, sent
+        /// so the screen can offer them behind a button. Empty where nothing was held back — with no
+        /// train in range the other modes are already the list.
+        /// </summary>
+        /// <remarks>
+        /// The rule that a train outranks a bus is right nearly every time and wrong occasionally: a
+        /// rail replacement bus, a station reached that day by metro, a tram sharing the platform.
+        /// Hiding those outright leaves the user with no way to date such a station at all, so they
+        /// stay one click away rather than nowhere.
+        /// </remarks>
+        public List<TripCandidateGroupDTO> NonTrainCandidates { get; set; }
+        /// <summary>
+        /// The trip to pre-select: the earliest one that starts or ends here, and only failing that
+        /// the earliest of any grade. An endpoint is the one grade that says you stood on the
+        /// platform, which makes "got on/off here" a single tap; the earliest candidate overall
+        /// merely passes 85% of the time, and leading with it turned most stations into the
+        /// two-part "stopped then, got off later" answer. That reading is still one click away —
+        /// select the earlier passing trip and the screen leads with it again.
         /// </summary>
         public int? SuggestedRouteInstanceId { get; set; }
         /// <summary>True when the suggestion rests on the route starting or ending here.</summary>

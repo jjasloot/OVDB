@@ -107,18 +107,23 @@ namespace OV_DB.Controllers
 
             if (station == null)
             {
-                return Ok(new StationBackfillItemDTO { Remaining = remaining, Candidates = [] });
+                return Ok(new StationBackfillItemDTO { Remaining = remaining, Candidates = [], NonTrainCandidates = [] });
             }
 
-            var candidates = await matcher.FindTripsForStationAsync(userId, station.StationId);
-            var groups = TripCandidateGrouping.Group(candidates);
+            var trips = await matcher.FindStationTripsAsync(userId, station.StationId);
+            var groups = TripCandidateGrouping.Group(trips.Offered);
 
-            // The earliest candidate, full stop. Groups arrive in chronological order, and the
-            // question this screen asks is which trip brought you here first — so pre-selecting a
-            // later terminating service over an earlier passing one would answer a different
-            // question. Where the earliest only passes and a later one terminates here, the screen
-            // leads with "stopped then, got off later" instead, which is the honest reading.
-            var suggested = groups.FirstOrDefault();
+            // The earliest trip that starts or ends here, and only failing that the earliest of any
+            // grade. Groups arrive in chronological order, so either is a First over that order.
+            //
+            // Earliest-overall reads better on paper — the question is which trip brought you here
+            // first — but it costs a question every time: the earliest candidate merely passes
+            // 85% of the time, so the screen led with "stopped then, got off later", which is two
+            // decisions and a second screen. An endpoint is the one grade that is certain you stood
+            // on the platform, and answering it is one tap. Selecting an earlier passing trip by
+            // hand still leads with the two-date answer, so the careful reading is a click away
+            // rather than the default.
+            var suggested = groups.FirstOrDefault(g => g.IsEndpoint) ?? groups.FirstOrDefault();
 
             return Ok(new StationBackfillItemDTO
             {
@@ -130,6 +135,10 @@ namespace OV_DB.Controllers
                 Longitude = station.Longitude,
                 Regions = station.Regions,
                 Candidates = groups,
+                // Sent with the station rather than fetched when asked for: it is the same search
+                // either way, so a second round trip would buy nothing, and the count is needed up
+                // front to know whether to offer the button at all.
+                NonTrainCandidates = TripCandidateGrouping.Group(trips.Withheld),
                 SuggestedRouteInstanceId = suggested?.Instances[0].RouteInstanceId,
                 SuggestionIsEndpoint = suggested?.IsEndpoint ?? false,
                 RegionProgress = await RegionProgressAsync(userId, station.StationId)
