@@ -17,4 +17,5 @@ public class TraewellingHub : Hub
     public const string PendingTripUpsertedMethod = "PendingTripUpserted";
     public const string PendingTripRemovedMethod = "PendingTripRemoved";
     public const string ConflictUpsertedMethod = "ConflictUpserted";
+    public const string ConflictRemovedMethod = "ConflictRemoved";
 }

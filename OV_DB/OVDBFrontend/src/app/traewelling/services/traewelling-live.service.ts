@@ -18,6 +18,7 @@ export class TraewellingLiveService {
   tripUpserted$ = new Subject<TrawellingTrip>();
   tripRemoved$ = new Subject<number>();
   conflictUpserted$ = new Subject<TrawellingConflict>();
+  conflictRemoved$ = new Subject<number>();
 
   connect(): void {
     if (this.connection) {
@@ -47,6 +48,9 @@ export class TraewellingLiveService {
       } catch (err) {
         console.error('Could not parse live Träwelling conflict payload', err);
       }
+    });
+    connection.on('ConflictRemoved', (statusId: number) => {
+      this.conflictRemoved$.next(statusId);
     });
 
     connection

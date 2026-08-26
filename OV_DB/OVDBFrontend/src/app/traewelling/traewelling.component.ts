@@ -87,7 +87,13 @@ export class TrawellingComponent implements OnInit, OnDestroy {
       this.liveService.tripUpserted$.subscribe(trip => this.upsertTrip(trip)),
       this.liveService.tripRemoved$.subscribe(statusId => this.removeTrip(statusId)),
       this.liveService.conflictUpserted$.subscribe(conflict => this.upsertConflict(conflict)),
+      this.liveService.conflictRemoved$.subscribe(statusId => this.removeConflict(statusId)),
     );
+  }
+
+  /** A conflict the backend decided has nothing left to report — a like, or an edit undone. */
+  private removeConflict(statusId: number): void {
+    this.conflicts = this.conflicts.filter(c => c.statusId !== statusId);
   }
 
   private upsertConflict(conflict: TrawellingConflict): void {

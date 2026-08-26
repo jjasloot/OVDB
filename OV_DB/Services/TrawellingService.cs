@@ -588,6 +588,13 @@ namespace OV_DB.Services
                     _dbContext.TrawellingInboxStatuses.Remove(row);
                     continue;
                 }
+                if (row.State == TrawellingInboxState.ChangedAfterImport && !UpstreamDiffers(conflict))
+                {
+                    // Nothing the card can show has actually moved. Rows flagged before the
+                    // webhook learned to tell a journey edit from a like are cleared here.
+                    _dbContext.TrawellingInboxStatuses.Remove(row);
+                    continue;
+                }
                 conflicts.Add(conflict);
             }
             await _dbContext.SaveChangesAsync();
@@ -852,6 +859,7 @@ namespace OV_DB.Services
             var pendingUpserted = false;
             var pendingRemoved = false;
             TrawellingInboxStatus conflictRow = null;
+            var conflictRemoved = false;
 
             switch (eventType)
             {
@@ -868,6 +876,19 @@ namespace OV_DB.Services
                                 && DismissedFingerprintMatches(inboxRow, status))
                             {
                                 break; // the same change the user already dismissed — don't nag
+                            }
+                            if (!await UpstreamDiffersAsync(user, statusId, status))
+                            {
+                                // A like, a tag or a body edit: nothing OVDB holds has moved, so
+                                // there is nothing to review.
+                                if (inboxRow?.State == TrawellingInboxState.ChangedAfterImport)
+                                {
+                                    // An earlier edit was undone upstream, or the user applied it
+                                    // elsewhere — either way the flag has nothing left to say
+                                    _dbContext.TrawellingInboxStatuses.Remove(inboxRow);
+                                    conflictRemoved = true;
+                                }
+                                break;
                             }
                             conflictRow = UpsertInboxRow(inboxRow, user.Id, statusId, statusJson, status, TrawellingInboxState.ChangedAfterImport);
                         }
@@ -914,6 +935,10 @@ namespace OV_DB.Services
 
             await PublishPendingTripChangeAsync(user, statusId, status, pendingUpserted, pendingRemoved);
             await PublishConflictChangeAsync(user, conflictRow);
+            if (conflictRemoved)
+            {
+                await PublishConflictRemovedAsync(user, statusId);
+            }
         }
 
         /// <summary>
@@ -935,6 +960,22 @@ namespace OV_DB.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error publishing live Träwelling conflict for status {StatusId}, user {UserId}", conflictRow.TrawellingStatusId, user.Id);
+            }
+        }
+
+        /// <summary>
+        /// Takes a conflict card off the open pages once it has nothing left to report.
+        /// </summary>
+        private async Task PublishConflictRemovedAsync(User user, int statusId)
+        {
+            try
+            {
+                await _traewellingHubContext.Clients.User(user.Id.ToString())
+                    .SendAsync(TraewellingHub.ConflictRemovedMethod, statusId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error publishing live Träwelling conflict removal for status {StatusId}, user {UserId}", statusId, user.Id);
             }
         }
 
@@ -1030,6 +1071,77 @@ namespace OV_DB.Services
                 checkin?.ManualArrival?.UtcDateTime.ToString("o"),
                 checkin?.Destination?.ArrivalPlanned?.UtcDateTime.ToString("o"),
                 checkin?.Destination?.ArrivalReal?.UtcDateTime.ToString("o"));
+        }
+
+        /// <summary>
+        /// Whether the upstream status still says something different from the RouteInstance that
+        /// was imported from it. Träwelling fires <c>checkin_update</c> for likes, tags, body edits
+        /// and visibility changes as well as for journey edits, and a notice about a trip whose
+        /// four comparable values all match asks the user to spot a difference that isn't there.
+        /// </summary>
+        /// <remarks>
+        /// Deliberately the same four comparisons, with the same tolerances, that the conflict card
+        /// renders: if the card cannot show a difference, there is no conflict to raise. A status
+        /// that cannot be mapped counts as different — losing a real upstream edit is the worse
+        /// failure of the two.
+        /// </remarks>
+        internal static bool UpstreamDiffers(RouteInstance instance, TrawellingTripDto newTrip)
+            => UpstreamDiffers(instance.Route?.From, instance.Route?.To, instance.StartTime, instance.EndTime, newTrip);
+
+        /// <summary>The same check against a conflict already built for the UI.</summary>
+        internal static bool UpstreamDiffers(TrawellingConflictDto conflict)
+            => UpstreamDiffers(conflict.RouteFrom, conflict.RouteTo, conflict.InstanceStartTime, conflict.InstanceEndTime, conflict.NewTrip);
+
+        private static bool UpstreamDiffers(string currentFrom, string currentTo, DateTime? currentStart, DateTime? currentEnd, TrawellingTripDto newTrip)
+        {
+            var transport = newTrip?.Transport;
+            if (transport == null)
+            {
+                return true;
+            }
+
+            return StationsDiffer(currentFrom, transport.Origin?.Name)
+                || StationsDiffer(currentTo, transport.Destination?.Name)
+                || TimesDiffer(currentStart, transport.Origin?.DepartureReal ?? transport.Origin?.DepartureScheduled)
+                || TimesDiffer(currentEnd, transport.Destination?.ArrivalReal ?? transport.Destination?.ArrivalScheduled);
+        }
+
+        /// <summary>Minute precision: sub-minute serialisation noise is not a change.</summary>
+        private static bool TimesDiffer(DateTime? current, DateTime? upstream)
+        {
+            if (!current.HasValue || !upstream.HasValue)
+            {
+                return current.HasValue != upstream.HasValue;
+            }
+            return current.Value.Ticks / TimeSpan.TicksPerMinute != upstream.Value.Ticks / TimeSpan.TicksPerMinute;
+        }
+
+        /// <summary>
+        /// OVDB route endpoints are user-editable text, so only a clear difference between two
+        /// known names counts — an endpoint the user renamed is not an upstream edit.
+        /// </summary>
+        private static bool StationsDiffer(string current, string upstream)
+        {
+            if (string.IsNullOrWhiteSpace(current) || string.IsNullOrWhiteSpace(upstream))
+            {
+                return false;
+            }
+            static string Normalise(string value) => string.Join(' ',
+                value.Split((char[])null, StringSplitOptions.RemoveEmptyEntries)).ToLowerInvariant();
+            return Normalise(current) != Normalise(upstream);
+        }
+
+        /// <summary>
+        /// <see cref="UpstreamDiffers"/> for a status that still has to be looked up and mapped.
+        /// </summary>
+        private async Task<bool> UpstreamDiffersAsync(User user, int statusId, TrawellingStatus status)
+        {
+            var instance = await FindImportedInstanceAsync(user, statusId);
+            if (instance == null)
+            {
+                return false; // nothing imported to conflict with
+            }
+            return UpstreamDiffers(instance, await MapStatusToTripDtoAsync(user, status));
         }
 
         private TrawellingInboxStatus UpsertInboxRow(TrawellingInboxStatus row, int userId, int statusId, string payloadJson, TrawellingStatus status, TrawellingInboxState state)
