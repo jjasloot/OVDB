@@ -66,4 +66,28 @@ namespace OV_DB.Models
         /// <summary>Latitude/longitude pairs, ready for Leaflet.</summary>
         public List<double[]> Coordinates { get; set; } = [];
     }
+
+    /// <summary>
+    /// Every station, with the two dates the station replay animates. Not scoped to a station map:
+    /// see <c>StatsController.GetStationReplay</c> for why the coverage circles need the lot.
+    /// </summary>
+    public class StationReplayDTO
+    {
+        public List<StationReplayStationDTO> Stations { get; set; } = [];
+    }
+
+    public class StationReplayStationDTO
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
+        public double Lat { get; set; }
+        public double Lon { get; set; }
+        /// <summary>
+        /// Carried separately from the dates because a visit is allowed to have neither: most of
+        /// them predate visit history, and "visited, date unknown" is not the same as "not visited".
+        /// </summary>
+        public bool Visited { get; set; }
+        public DateTime? Stopped { get; set; }
+        public DateTime? EntryExit { get; set; }
+    }
 }

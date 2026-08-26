@@ -7,6 +7,21 @@
   "UNDO": "Undo",
   "SAVE": "Save",
   "STATIONS": {
+    "REPLAY": {
+      "TITLE": "Playback",
+      "TAB_TITLE": "Station playback",
+      "NO_STATIONS": "No stations known yet.",
+      "LEVEL": "What counts as a visit",
+      "STOPPED": "Stopped at",
+      "ENTRY_EXIT": "Got on/off",
+      "COVERAGE": "Coverage circles",
+      "COVERAGE_HINT": "Each circle reaches exactly as far as the nearest station you had not visited yet, so it never contains one you had not been to. They grow and merge as the gaps fill in.",
+      "DATE": "reached by",
+      "STATIONS": "stations visited",
+      "SHARE": "of all stations",
+      "UNDATED": "without a date",
+      "UNDATED_HINT": "{{count}} visits have no date, so they cannot take a place on the timeline. They are drawn hollow and are on the map throughout."
+    },
     "VISIT": {
       "MARKED_STOPPED": "{{name}} marked as stopped at",
       "MARKED_ENTRY_EXIT": "{{name}} marked as got on/off",

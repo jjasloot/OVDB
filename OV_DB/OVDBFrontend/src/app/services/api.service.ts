@@ -33,7 +33,7 @@ import { RegionStat } from "../models/region.model";
 import { PunctualityStats } from "../models/punctuality.model";
 import { YearInReview } from "../models/year-in-review.model";
 import { MissingStation } from "../models/missing-station.model";
-import { Replay } from "../models/replay.model";
+import { Replay, StationReplay } from "../models/replay.model";
 import { Achievements } from "../models/achievements.model";
 import { Features } from "../models/features.model";
 import { UserProfile, UpdateProfile, ChangePassword, TraewellingTagMapping, TrainlogOperatorMapping } from "../models/user-profile.model";
@@ -493,6 +493,13 @@ export class ApiService {
       url += `?year=${year}`;
     }
     return this.httpClient.get<Replay>(url);
+  }
+
+  /** Every station plus the user's visit dates, for the station replay. Not map-scoped. */
+  getStationReplay(): Observable<StationReplay> {
+    return this.httpClient.get<StationReplay>(
+      environment.backend + "api/stats/station-replay"
+    );
   }
 
   getMissingStations(regionId: number): Observable<MissingStation[]> {

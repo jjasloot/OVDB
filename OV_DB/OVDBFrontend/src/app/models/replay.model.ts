@@ -38,3 +38,23 @@ export interface ReplayRegion {
   stoppedDates: string[];
   entryExitDates: string[];
 }
+
+/**
+ * Every station with the two dates the station replay animates. Not scoped to a station map: the
+ * coverage circles need the stations outside any one map, since a circle may only reach as far as
+ * the nearest station that has not been visited.
+ */
+export interface StationReplay {
+  stations: StationReplayStation[];
+}
+
+export interface StationReplayStation {
+  id: number;
+  name: string;
+  lat: number;
+  lon: number;
+  /** Separate from the dates: a visit is allowed to have neither, and that is not "unvisited". */
+  visited: boolean;
+  stopped: string | null;
+  entryExit: string | null;
+}

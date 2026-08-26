@@ -8,6 +8,7 @@ import { PunctualityStatsComponent } from './punctuality-stats/punctuality-stats
 import { YearInReviewComponent } from './year-in-review/year-in-review.component';
 import { StationCompletionComponent } from './station-completion/station-completion.component';
 import { MapReplayComponent } from './map-replay/map-replay.component';
+import { StationReplayComponent } from '../stations/station-replay/station-replay.component';
 import { AchievementsComponent } from './achievements/achievements.component';
 import { ApiService } from '../services/api.service';
 import { provideCharts, withDefaultRegisterables } from "ng2-charts";
@@ -20,7 +21,7 @@ import "chartjs-plugin-zoom";
   templateUrl: './stats.component.html',
   styleUrls: ['./stats.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [MatTabsModule, TimeStatsComponent, TranslateModule, UsedOperatorsComponent, RegionStatComponent, PunctualityStatsComponent, YearInReviewComponent, StationCompletionComponent, MapReplayComponent, AchievementsComponent],
+  imports: [MatTabsModule, TimeStatsComponent, TranslateModule, UsedOperatorsComponent, RegionStatComponent, PunctualityStatsComponent, YearInReviewComponent, StationCompletionComponent, MapReplayComponent, StationReplayComponent, AchievementsComponent],
   providers: [provideCharts(withDefaultRegisterables())]
 })
 export class StatsComponent implements OnInit {

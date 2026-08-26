@@ -6,6 +6,21 @@
   "CANCEL": "Annuleren",
   "UNDO": "Ongedaan maken",
   "STATIONS": {
+    "REPLAY": {
+      "TITLE": "Terugspelen",
+      "TAB_TITLE": "Stations terugspelen",
+      "NO_STATIONS": "Nog geen stations bekend.",
+      "LEVEL": "Wat als bezoek telt",
+      "STOPPED": "Gestopt",
+      "ENTRY_EXIT": "In-/uitgestapt",
+      "COVERAGE": "Dekkingscirkels",
+      "COVERAGE_HINT": "Elke cirkel reikt precies tot het dichtstbijzijnde station dat je nog niet bezocht had, dus er zit nooit een station in waar je niet was. Ze groeien en lopen in elkaar over als de gaten opgevuld raken.",
+      "DATE": "bereikt op",
+      "STATIONS": "stations bezocht",
+      "SHARE": "van alle stations",
+      "UNDATED": "zonder datum",
+      "UNDATED_HINT": "{{count}} bezoeken hebben geen datum en kunnen dus geen plek op de tijdlijn krijgen. Ze staan open getekend en zijn de hele tijd op de kaart te zien."
+    },
     "VISIT": {
       "MARKED_STOPPED": "{{name}} gemarkeerd als gestopt",
       "MARKED_ENTRY_EXIT": "{{name}} gemarkeerd als in-/uitgestapt",

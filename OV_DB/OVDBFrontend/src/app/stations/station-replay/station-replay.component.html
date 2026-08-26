@@ -1,0 +1,87 @@
+<div class="container">
+  @if (loading()) {
+    <div class="loading">
+      <mat-spinner diameter="40" />
+    </div>
+  } @else if (totalStations() === 0) {
+    <mat-card appearance="outlined">
+      <mat-card-content>
+        <p>{{ 'STATIONS.REPLAY.NO_STATIONS' | translate }}</p>
+      </mat-card-content>
+    </mat-card>
+  } @else {
+    <mat-card appearance="outlined">
+      <mat-card-content>
+        <div class="map" leaflet [leafletOptions]="options"
+          [leafletLayersControl]="leafletLayersControl" [leafletFitBounds]="bounds()"
+          (leafletMapReady)="onMapReady($event)"></div>
+
+        <div class="controls">
+          <button mat-icon-button (click)="togglePlay()" [disabled]="timelineLength() === 0"
+            [attr.aria-label]="(playing() ? 'STATS.REPLAY.PAUSE' : 'STATS.REPLAY.PLAY') | translate">
+            <mat-icon>{{ playing() ? 'pause' : 'play_arrow' }}</mat-icon>
+          </button>
+          <mat-slider [min]="0" [max]="timelineLength()" [step]="1" discrete class="slider">
+            <input matSliderThumb [value]="index()" (valueChange)="setIndex($event)"
+              [attr.aria-label]="'STATS.REPLAY.TIMELINE' | translate" />
+          </mat-slider>
+          <button mat-button (click)="reset()">{{ 'STATS.REPLAY.RESET' | translate }}</button>
+        </div>
+
+        <div class="options">
+          <!-- The same two claims the station map paints, and the stricter one draws smaller circles. -->
+          <mat-button-toggle-group [value]="level()" (change)="setLevel($event.value)"
+            [attr.aria-label]="'STATIONS.REPLAY.LEVEL' | translate">
+            <mat-button-toggle value="stopped">{{ 'STATIONS.REPLAY.STOPPED' | translate }}</mat-button-toggle>
+            <mat-button-toggle value="entryExit">{{ 'STATIONS.REPLAY.ENTRY_EXIT' | translate }}</mat-button-toggle>
+          </mat-button-toggle-group>
+          <mat-form-field class="speed">
+            <mat-label>{{ 'STATS.REPLAY.SPEED' | translate }}</mat-label>
+            <mat-select [value]="speed()" (selectionChange)="setSpeed($event.value)">
+              @for (option of speeds; track option) {
+                <mat-option [value]="option">{{ option }}&times;</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+          <mat-checkbox [checked]="showCoverage()" (change)="toggleCoverage()">
+            {{ 'STATIONS.REPLAY.COVERAGE' | translate }}
+          </mat-checkbox>
+        </div>
+
+        <div class="readout">
+          <div class="figure">
+            <span class="value">{{ (currentDate() | date: 'mediumDate') ?? '—' }}</span>
+            <span class="label">{{ 'STATIONS.REPLAY.DATE' | translate }}</span>
+          </div>
+          <div class="figure">
+            <span class="value">{{ revealed() }} / {{ totalStations() }}</span>
+            <span class="label">{{ 'STATIONS.REPLAY.STATIONS' | translate }}</span>
+          </div>
+          <div class="figure">
+            <span class="value">{{ percentage() | number: '1.0-1' }}%</span>
+            <span class="label">{{ 'STATIONS.REPLAY.SHARE' | translate }}</span>
+          </div>
+          @if (undated() > 0) {
+            <div class="figure">
+              <span class="value undated">{{ undated() }}</span>
+              <span class="label">{{ 'STATIONS.REPLAY.UNDATED' | translate }}</span>
+            </div>
+          }
+        </div>
+
+        @if (showCoverage()) {
+          <p class="hint">
+            <mat-icon inline>info</mat-icon>
+            {{ 'STATIONS.REPLAY.COVERAGE_HINT' | translate }}
+          </p>
+        }
+        @if (undated() > 0) {
+          <p class="hint">
+            <mat-icon inline>radio_button_unchecked</mat-icon>
+            {{ 'STATIONS.REPLAY.UNDATED_HINT' | translate: { count: undated() } }}
+          </p>
+        }
+      </mat-card-content>
+    </mat-card>
+  }
+</div>

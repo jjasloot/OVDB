@@ -342,6 +342,61 @@ namespace OV_DB.Controllers
         }
 
         /// <summary>
+        /// Every station, with when the user first stopped at and first got on or off at it, for the
+        /// station replay and its coverage circles.
+        /// </summary>
+        /// <remarks>
+        /// Deliberately not scoped to a station map. Visits belong to stations rather than to maps —
+        /// the same reasoning the route replay's station counts already follow — and the coverage
+        /// circles positively need the stations outside any one map: a circle may only reach as far
+        /// as the nearest station the user has *not* visited, and for a fully visited country that
+        /// station is always across the border. Scoped to the Netherlands alone, every Dutch circle
+        /// would find nothing to stop it.
+        /// </remarks>
+        [HttpGet("station-replay")]
+        public async Task<ActionResult<StationReplayDTO>> GetStationReplay(CancellationToken cancellationToken = default)
+        {
+            var userIdClaim = User.GetUserId();
+            if (userIdClaim < 0)
+            {
+                return Forbid();
+            }
+
+            // Two flat reads and a join in memory: a correlated subquery per station is a
+            // thirty-thousand-times-repeated lookup for what is one small table.
+            var stations = await _context.Stations.AsNoTracking()
+                .Where(s => !s.Hidden && !s.Special)
+                .Select(s => new { s.Id, s.Name, s.Lattitude, s.Longitude })
+                .ToListAsync(cancellationToken);
+
+            var visits = await _context.StationVisits.AsNoTracking()
+                .Where(sv => sv.UserId == userIdClaim)
+                .Select(sv => new { sv.StationId, sv.FirstStoppedDate, sv.FirstEntryExitDate })
+                .ToListAsync(cancellationToken);
+            var visitByStation = visits.ToDictionary(v => v.StationId);
+
+            var result = new StationReplayDTO();
+            foreach (var station in stations)
+            {
+                var visited = visitByStation.TryGetValue(station.Id, out var visit);
+                result.Stations.Add(new StationReplayStationDTO
+                {
+                    Id = station.Id,
+                    Name = station.Name,
+                    // Five decimals is a metre or so, which is far finer than a circle drawn at
+                    // country zoom needs, and it takes a third off the payload.
+                    Lat = Math.Round(station.Lattitude, 5),
+                    Lon = Math.Round(station.Longitude, 5),
+                    Visited = visited,
+                    Stopped = visited ? visit.FirstStoppedDate : null,
+                    EntryExit = visited ? visit.FirstEntryExitDate : null,
+                });
+            }
+
+            return Ok(result);
+        }
+
+        /// <summary>
         /// The stations in a region the user has not visited yet. Uses the same hidden/special
         /// exclusions as the region completion counts, so the numbers agree with the progress bars.
         /// </summary>

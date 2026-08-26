@@ -31,6 +31,14 @@
     <p>{{ 'LOADING' | translate }}</p>
     }
   </mat-tab>
+  <mat-tab [label]="'STATIONS.REPLAY.TAB_TITLE'|translate">
+    @defer (on viewport) {
+    <app-station-replay />
+    }
+    @placeholder {
+    <p>{{ 'LOADING' | translate }}</p>
+    }
+  </mat-tab>
   <mat-tab [label]="'STATS.COMPLETION.TITLE'|translate">
     @defer (on viewport) {
     <app-station-completion />
