@@ -61,11 +61,16 @@ export class WizzardStep2Component implements OnInit {
   id!: string;
   data!: OSMDataLine;
 
+  baseLayers = this.mapTileLayersService.createBaseLayers();
+
   options = {
-    layers: [this.mapTileLayersService.createThemedLayer(0.5)],
+    layers: [this.mapTileLayersService.defaultLayer(this.baseLayers)],
     zoom: 5,
   };
-  leafletLayersControl = {};
+  leafletLayersControl = {
+    baseLayers: this.baseLayers,
+    overlays: {},
+  };
   layers: Layer[] = [];
   bounds!: LatLngBounds;
   stops!: OSMLineStop[];
