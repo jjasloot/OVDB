@@ -2,10 +2,13 @@ using Microsoft.EntityFrameworkCore;
 using Moq;
 using OV_DB.Services;
 using OVDB_database.Database;
+using OVDB_database.Enums;
 using OVDB_database.Models;
 using Telegram.Bot;
 using Telegram.Bot.Requests.Abstractions;
 using Telegram.Bot.Types;
+using Telegram.Bot.Types.Enums;
+using Telegram.Bot.Types.ReplyMarkups;
 using OvdbUser = OVDB_database.Models.User;
 
 namespace OV_DB.Tests;
@@ -222,5 +225,131 @@ public class TelegramBotServiceTests
     public void TryParseStationAction_RejectsGarbage(string data)
     {
         Assert.False(TelegramBotService.TryParseStationAction(data, out _, out _));
+    }
+
+    // The share-location button is the bot's whole entry point, and a reply keyboard that isn't
+    // persistent gets folded away behind the keyboard icon as soon as the chat scrolls. The
+    // station replies carry inline keyboards, so they can never bring it back — these pin down
+    // that the messages which can carry it, do.
+    private static ReplyKeyboardMarkup CapturedReplyKeyboard(IRequest<Message> request)
+    {
+        var markup = request?.GetType().GetProperty("ReplyMarkup")?.GetValue(request);
+        return markup as ReplyKeyboardMarkup;
+    }
+
+    [Theory]
+    [InlineData("/start")]
+    [InlineData("/help")]
+    [InlineData("/start@ovdbbot")]
+    [InlineData("something it cannot parse")]
+    public async Task TextMessage_AnswersWithAPersistentLocationKeyboard(string text)
+    {
+        var dbContext = CreateInMemoryContext($"{nameof(TextMessage_AnswersWithAPersistentLocationKeyboard)}-{text}");
+
+        var captured = default(IRequest<Message>);
+        var mockBotClient = new Mock<ITelegramBotClient>();
+        mockBotClient
+            .Setup(c => c.SendRequest(It.IsAny<IRequest<Message>>(), It.IsAny<CancellationToken>()))
+            .Callback<IRequest<Message>, CancellationToken>((req, _) => captured = req)
+            .ReturnsAsync(new Message());
+
+        var service = new TelegramBotService(mockBotClient.Object, dbContext);
+
+        await service.HandleUpdateAsync(new Update
+        {
+            Message = new Message { Text = text, Chat = new Chat { Id = 42 }, From = new Telegram.Bot.Types.User { Id = 42 } }
+        });
+
+        var keyboard = CapturedReplyKeyboard(captured);
+        Assert.NotNull(keyboard);
+        Assert.True(keyboard.IsPersistent);
+        Assert.True(keyboard.Keyboard.SelectMany(row => row).Single().RequestLocation);
+    }
+
+    private static string CapturedText(IRequest<Message> request)
+    {
+        return request?.GetType().GetProperty("Text")?.GetValue(request) as string;
+    }
+
+    // The bot answers in the language the user picked in OVDB, and falls back to the language their
+    // Telegram client asks in when there is nothing stored — including for someone who has never
+    // registered, which is exactly who needs to understand the reply.
+    [Theory]
+    [InlineData(PreferredLanguage.Dutch, null, "📍 Deel je locatie")]
+    [InlineData(PreferredLanguage.English, "nl", "📍 Share your location")]
+    [InlineData(null, "nl-NL", "📍 Deel je locatie")]
+    [InlineData(null, "en-GB", "📍 Share your location")]
+    [InlineData(null, "de", "📍 Share your location")]
+    public async Task LocationKeyboard_SpeaksTheUsersLanguage(PreferredLanguage? stored, string telegramCode, string expectedButton)
+    {
+        var dbContext = CreateInMemoryContext($"{nameof(LocationKeyboard_SpeaksTheUsersLanguage)}-{stored}-{telegramCode}");
+        if (stored.HasValue)
+        {
+            dbContext.Users.Add(new OvdbUser { Id = 1, Email = "u@test.com", Password = "x", TelegramUserId = 42, PreferredLanguage = stored });
+            await dbContext.SaveChangesAsync();
+        }
+
+        var captured = default(IRequest<Message>);
+        var mockBotClient = new Mock<ITelegramBotClient>();
+        mockBotClient
+            .Setup(c => c.SendRequest(It.IsAny<IRequest<Message>>(), It.IsAny<CancellationToken>()))
+            .Callback<IRequest<Message>, CancellationToken>((req, _) => captured = req)
+            .ReturnsAsync(new Message());
+
+        var service = new TelegramBotService(mockBotClient.Object, dbContext);
+
+        await service.HandleUpdateAsync(new Update
+        {
+            Message = new Message
+            {
+                Text = "/start",
+                Chat = new Chat { Id = 42 },
+                From = new Telegram.Bot.Types.User { Id = 42, LanguageCode = telegramCode },
+            }
+        });
+
+        var keyboard = CapturedReplyKeyboard(captured);
+        Assert.NotNull(keyboard);
+        Assert.Equal(expectedButton, keyboard.Keyboard.SelectMany(row => row).Single().Text);
+    }
+
+    [Fact]
+    public async Task DutchUser_GetsADutchGreeting()
+    {
+        var dbContext = CreateInMemoryContext(nameof(DutchUser_GetsADutchGreeting));
+        dbContext.Users.Add(new OvdbUser { Id = 1, Email = "u@test.com", Password = "x", TelegramUserId = 7, PreferredLanguage = PreferredLanguage.Dutch });
+        await dbContext.SaveChangesAsync();
+
+        var captured = default(IRequest<Message>);
+        var mockBotClient = new Mock<ITelegramBotClient>();
+        mockBotClient
+            .Setup(c => c.SendRequest(It.IsAny<IRequest<Message>>(), It.IsAny<CancellationToken>()))
+            .Callback<IRequest<Message>, CancellationToken>((req, _) => captured = req)
+            .ReturnsAsync(new Message());
+
+        var service = new TelegramBotService(mockBotClient.Object, dbContext);
+
+        await service.HandleUpdateAsync(new Update
+        {
+            Message = new Message { Text = "hoi", Chat = new Chat { Id = 7 }, From = new Telegram.Bot.Types.User { Id = 7 } }
+        });
+
+        Assert.Equal(TelegramTexts.Get(TelegramText.NotUnderstood, PreferredLanguage.Dutch), CapturedText(captured));
+    }
+
+    // Every string has to exist in both languages, and differ: a pair that is accidentally the same
+    // English twice is a missing translation that no other test would notice.
+    [Fact]
+    public void EveryStringIsTranslated()
+    {
+        foreach (var text in System.Enum.GetValues<TelegramText>())
+        {
+            var en = TelegramTexts.Get(text, PreferredLanguage.English);
+            var nl = TelegramTexts.Get(text, PreferredLanguage.Dutch);
+            Assert.False(string.IsNullOrWhiteSpace(en), $"{text} has no English text");
+            Assert.False(string.IsNullOrWhiteSpace(nl), $"{text} has no Dutch text");
+            Assert.NotEqual(text.ToString(), en);
+            Assert.NotEqual(en, nl);
+        }
     }
 }

@@ -14,6 +14,7 @@ using OVDB_database.Models;
 using Microsoft.EntityFrameworkCore;
 using Telegram.Bot.Types.ReplyMarkups;
 using OV_DB.Models;
+using OV_DB.Helpers;
 using System.Runtime.CompilerServices;
 
 [assembly: InternalsVisibleTo("OV_DB.Tests")]
@@ -91,6 +92,10 @@ namespace OV_DB.Services
             {
                 await HandleCallbackQueryAsync(update.CallbackQuery);
             }
+            else if (update.Type == UpdateType.Message && IsCommand(update.Message))
+            {
+                await HandleCommandAsync(update.Message);
+            }
             else if (update.Type == UpdateType.Message)
             {
                 await HandleUnknownMessageAsync(update.Message);
@@ -105,14 +110,22 @@ namespace OV_DB.Services
             var user = await _dbContext.Users.SingleOrDefaultAsync(u => u.TelegramUserId == userId);
             if (user == null)
             {
-                await HandleUnknownUserAsync(message);
+                await HandleUnknownUserAsync(message, LanguageFromTelegram(message.From?.LanguageCode));
+                return;
+            }
+            var language = LanguageFor(user, message.From?.LanguageCode);
+
+            var nearbyStations = await GetNearbyStationsAsync(location.Latitude, location.Longitude, user.Id);
+            if (nearbyStations.Count == 0)
+            {
+                // An inline keyboard with no buttons would leave a header pointing at nothing
+                await _botClient.SendMessage(message.Chat.Id, Text(TelegramText.NoStationsNearby, language),
+                    replyMarkup: LocationKeyboard(language));
                 return;
             }
 
-            var nearbyStations = await GetNearbyStationsAsync(location.Latitude, location.Longitude, user.Id);
-
-            var responseText = "Nearby stations:\n";
-            await _botClient.SendMessage(message.Chat.Id, responseText, replyMarkup: GetStationsInlineKeyboard(nearbyStations));
+            await _botClient.SendMessage(message.Chat.Id, Text(TelegramText.NearbyStations, language),
+                replyMarkup: GetStationsInlineKeyboard(nearbyStations));
         }
 
         private string FormatStation(StationDTO station)
@@ -144,9 +157,10 @@ namespace OV_DB.Services
             var user = await _dbContext.Users.SingleOrDefaultAsync(u => u.TelegramUserId == userId);
             if (user == null)
             {
-                await HandleUnknownUserAsync(callbackQuery.Message);
+                await HandleUnknownUserAsync(callbackQuery.Message, LanguageFromTelegram(callbackQuery.From?.LanguageCode));
                 return;
             }
+            var language = LanguageFor(user, callbackQuery.From?.LanguageCode);
 
             var station = await _dbContext.Stations.Include(s => s.Regions).SingleOrDefaultAsync(s => s.Id == stationId);
             if (station == null)
@@ -203,19 +217,25 @@ namespace OV_DB.Services
                 {
                     var totalStationsInRegion = await _dbContext.Stations.Where(s=>!s.Special && !s.Hidden).CountAsync(s => s.Regions.Any(r => r.Id== region));
                     var visitedStationsInRegion = await _dbContext.StationVisits.CountAsync(sv => sv.UserId == user.Id && sv.Station.Regions.Any(r => r.Id == region) && !sv.Station.Special && !sv.Station.Hidden);
-                    var regionName = await _dbContext.Regions.Where(r => r.Id == region).Select(r => r.Name).FirstOrDefaultAsync();
+                    // Regions carry both names; the bot says the one the user reads everywhere else.
+                    var names = await _dbContext.Regions.Where(r => r.Id == region)
+                        .Select(r => new { r.Name, r.NameNL })
+                        .FirstOrDefaultAsync();
+                    var regionName = language == PreferredLanguage.Dutch
+                        ? names?.NameNL ?? names?.Name
+                        : names?.Name;
                     var percentageVisited = Math.Round((double)visitedStationsInRegion / totalStationsInRegion * 100, 2);
                     percentageMessage += $"{regionName}: {percentageVisited}%\n\r";
                 }
 
                 var visit = await _stationVisitService.GetAsync(user.Id, stationId);
-                var level = visit == null
-                    ? "❌"
-                    : visit.FirstEntryExitDate.HasValue ? "🚉 in-/uitgestapt" : "✅ gestopt";
+                var level = Text(visit == null
+                    ? TelegramText.LevelNone
+                    : visit.FirstEntryExitDate.HasValue ? TelegramText.LevelEntryExit : TelegramText.LevelStopped, language);
 
                 await _botClient.SendMessage(callbackQuery.Message.Chat.Id,
                     $"{station.Name}: {level}\n\r{percentageMessage}",
-                    replyMarkup: BuildStationActions(stationId, visit));
+                    replyMarkup: BuildStationActions(stationId, visit, language));
                 await _botClient.AnswerCallbackQuery(callbackQuery.Id, "✅");
             }
         }
@@ -267,34 +287,97 @@ namespace OV_DB.Services
         /// What can be done next: an unvisited station can be marked at either level, a stopped-at
         /// one raised, an entry/exit one corrected back down, and anything visited removed.
         /// </summary>
-        private static InlineKeyboardMarkup BuildStationActions(int stationId, StationVisit visit)
+        private static InlineKeyboardMarkup BuildStationActions(int stationId, StationVisit visit, PreferredLanguage language)
         {
             var buttons = new List<InlineKeyboardButton>();
             if (visit == null)
             {
-                buttons.Add(InlineKeyboardButton.WithCallbackData("Gestopt", $"st:{stationId}"));
-                buttons.Add(InlineKeyboardButton.WithCallbackData("In-/uitgestapt", $"ee:{stationId}"));
+                buttons.Add(InlineKeyboardButton.WithCallbackData(Text(TelegramText.ActionStopped, language), $"st:{stationId}"));
+                buttons.Add(InlineKeyboardButton.WithCallbackData(Text(TelegramText.ActionEntryExit, language), $"ee:{stationId}"));
             }
             else
             {
                 buttons.Add(visit.FirstEntryExitDate.HasValue
-                    ? InlineKeyboardButton.WithCallbackData("Alleen gestopt", $"st:{stationId}")
-                    : InlineKeyboardButton.WithCallbackData("In-/uitgestapt", $"ee:{stationId}"));
-                buttons.Add(InlineKeyboardButton.WithCallbackData("Verwijderen", $"rm:{stationId}"));
+                    ? InlineKeyboardButton.WithCallbackData(Text(TelegramText.ActionOnlyStopped, language), $"st:{stationId}")
+                    : InlineKeyboardButton.WithCallbackData(Text(TelegramText.ActionEntryExit, language), $"ee:{stationId}"));
+                buttons.Add(InlineKeyboardButton.WithCallbackData(Text(TelegramText.ActionRemove, language), $"rm:{stationId}"));
             }
             return new InlineKeyboardMarkup(buttons);
         }
 
-        private async Task HandleUnknownMessageAsync(Message message)
+        /// <summary>
+        /// The one thing this bot needs from the phone. Persistent, because a reply keyboard that
+        /// isn't gets folded away behind the keyboard icon the moment the chat scrolls, and the
+        /// station replies carry inline keyboards of their own — they can't bring it back.
+        /// </summary>
+        private static ReplyKeyboardMarkup LocationKeyboard(PreferredLanguage language)
+            => new(KeyboardButton.WithRequestLocation(Text(TelegramText.ShareLocationButton, language)))
+            {
+                IsPersistent = true,
+                ResizeKeyboard = true,
+            };
+
+        private static string Text(TelegramText text, PreferredLanguage language) => TelegramTexts.Get(text, language);
+
+        /// <summary>
+        /// The language the user set in OVDB, falling back to the one their Telegram client asks in.
+        /// A stored preference wins: it is the language they chose for this data.
+        /// </summary>
+        private static PreferredLanguage LanguageFor(OVDB_database.Models.User user, string telegramLanguageCode)
+            => user?.PreferredLanguage ?? LanguageFromTelegram(telegramLanguageCode);
+
+        /// <summary>Telegram sends IETF tags like "nl" or "en-GB"; only the language part counts.</summary>
+        private static PreferredLanguage LanguageFromTelegram(string languageCode)
+            => LanguageHelper.FromLanguageCode(languageCode?.Split('-')[0]);
+
+        /// <summary>
+        /// The language for someone who has sent something that loads no user: their stored
+        /// preference if they are registered at all, otherwise their Telegram client's.
+        /// </summary>
+        private async Task<PreferredLanguage> LanguageForSenderAsync(Message message)
         {
-            var responseText = "Sorry, I didn't understand that. Please share your location to find nearby stations.";
-            await _botClient.SendMessage(message.Chat.Id, responseText, replyMarkup:  KeyboardButton.WithRequestLocation("Share your location"));
+            var telegramUserId = message.From?.Id;
+            if (telegramUserId.HasValue)
+            {
+                var stored = await _dbContext.Users
+                    .Where(u => u.TelegramUserId == telegramUserId.Value)
+                    .Select(u => u.PreferredLanguage)
+                    .FirstOrDefaultAsync();
+                if (stored.HasValue)
+                {
+                    return stored.Value;
+                }
+            }
+            return LanguageFromTelegram(message.From?.LanguageCode);
         }
 
-        private async Task HandleUnknownUserAsync(Message message)
+        private static bool IsCommand(Message message)
         {
-            var responseText = "Sorry, I couldn't identify you. Please make sure you have registered your Telegram user ID.";
-            await _botClient.SendMessage(message.Chat.Id, responseText);
+            return message.Text?.StartsWith('/') == true;
+        }
+
+        /// <summary>
+        /// /start and /help both answer the same question, and both are worth answering with the
+        /// keyboard attached: a fresh chat has no keyboard at all until some message brings one.
+        /// </summary>
+        private async Task HandleCommandAsync(Message message)
+        {
+            var language = await LanguageForSenderAsync(message);
+            var command = message.Text.Split(' ', '@')[0].ToLowerInvariant();
+            var responseText = Text(command is "/start" or "/help" ? TelegramText.Welcome : TelegramText.UnknownCommand, language);
+            await _botClient.SendMessage(message.Chat.Id, responseText, replyMarkup: LocationKeyboard(language));
+        }
+
+        private async Task HandleUnknownMessageAsync(Message message)
+        {
+            var language = await LanguageForSenderAsync(message);
+            await _botClient.SendMessage(message.Chat.Id, Text(TelegramText.NotUnderstood, language),
+                replyMarkup: LocationKeyboard(language));
+        }
+
+        private async Task HandleUnknownUserAsync(Message message, PreferredLanguage language)
+        {
+            await _botClient.SendMessage(message.Chat.Id, Text(TelegramText.UnknownUser, language));
         }
 
         private async Task<List<StationDTO>> GetNearbyStationsAsync(double latitude, double longitude, int userId)
