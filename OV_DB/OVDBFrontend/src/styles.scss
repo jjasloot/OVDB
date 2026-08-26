@@ -355,3 +355,9 @@ body {
     background: #1e88e5;
   }
 }
+
+// Dark-mode basemap fallback for browsers without WebGL 2, where the vector
+// basemap cannot run at all. See MapTileLayersService.invertedLightTiles().
+.leaflet-tile-pane .ovdb-inverted-tiles {
+  filter: invert(1) hue-rotate(180deg) brightness(0.85) contrast(0.9) saturate(0.6);
+}
