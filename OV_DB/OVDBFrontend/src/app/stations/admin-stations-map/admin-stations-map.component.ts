@@ -269,8 +269,11 @@ export class AdminStationsMapComponent implements OnInit {
       });
   }
   loadNewStation() {
-    if (!this.selectedNewStationId) return;
-    this.apiService.importStation(this.selectedNewStationId).subscribe(() => {
+    // The API route constrains the id to a long, so a pasted id with stray
+    // whitespace would 404 instead of importing.
+    const osmId = this.selectedNewStationId?.trim();
+    if (!osmId) return;
+    this.apiService.importStation(osmId).subscribe(() => {
       this.getData();
       this.selectedNewStationId = undefined;
     });
