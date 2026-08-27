@@ -1,5 +1,5 @@
 import { Injectable, inject } from "@angular/core";
-import { Layer, tileLayer } from "leaflet";
+import { Layer, Map as LeafletMap, tileLayer } from "leaflet";
 import { maplibreGL } from "@maplibre/maplibre-gl-leaflet";
 import { setWorkerUrl, type Map as MaplibreMap } from "maplibre-gl";
 import { ThemeService } from "./theme.service";
@@ -23,6 +23,13 @@ const OFM_DARK_STYLE = "https://tiles.openfreemap.org/styles/dark";
 
 /** The top of the MapLibre zoom range, for zoom ranges that should not end. */
 const MAX_STYLE_ZOOM = 24;
+
+/**
+ * How far the dark layer lets the map zoom in. Leaflet's `TileLayer` default,
+ * which every raster layer here uses unchanged, so the map's zoom range stays
+ * the same whichever base layer is selected — see `declareZoomLimit`.
+ */
+const DARK_MAX_ZOOM = 18;
 
 // One colour per kind of track, but deliberately a near-neutral set rather than
 // seven distinct hues. Most maps here carry route lines on top, each in its own
@@ -195,7 +202,8 @@ export class MapTileLayersService {
     }
 
     ensureWorkerUrl();
-    const layer = maplibreGL({ style: OFM_DARK_STYLE });
+    const layer = maplibreGL({ style: OFM_DARK_STYLE, maxZoom: DARK_MAX_ZOOM });
+    declareZoomLimit(layer);
     // Every add, not just the first: taking the layer off the map destroys the
     // WebGL map, and putting it back builds a fresh one. Switching to another
     // base layer and back therefore lands on a map that has had neither the
@@ -209,6 +217,41 @@ export class MapTileLayersService {
     });
     return layer;
   }
+}
+
+/** Leaflet's zoom-limit bookkeeping, which `GridLayer` uses and the typings do not expose. */
+type ZoomLimitMap = LeafletMap & {
+  _addZoomLimit(layer: Layer): void;
+  _removeZoomLimit(layer: Layer): void;
+};
+
+/**
+ * Makes a layer contribute its `maxZoom` to the map, the way a tile layer does.
+ *
+ * Leaflet takes a map's zoom range from its layers, and only `GridLayer` ever
+ * registers one: its `beforeAdd` calls `map._addZoomLimit` and its `onRemove`
+ * takes it back off again. The MapLibre layer is a plain `L.Layer`, so with it
+ * as the base layer `map.getMaxZoom()` was `Infinity` — and
+ * `MarkerClusterGroup.onAdd` throws "Map has no maxZoom specified" on such a
+ * map and adds nothing at all, which took every clustered station off every map
+ * in dark mode. The map still reported holding the cluster, so the stations came
+ * back only once another base layer put a zoom limit back and something added
+ * them again.
+ *
+ * The raster dark tiles this layer replaced were a `TileLayer` and carried a
+ * maxZoom of their own, which is why nothing needed this until now.
+ */
+function declareZoomLimit(layer: Layer): void {
+  const baseOnRemove = layer.onRemove?.bind(layer);
+  layer.beforeAdd = (map: LeafletMap) => {
+    (map as ZoomLimitMap)._addZoomLimit(layer);
+    return layer;
+  };
+  layer.onRemove = (map: LeafletMap) => {
+    baseOnRemove?.(map);
+    (map as ZoomLimitMap)._removeZoomLimit(layer);
+    return layer;
+  };
 }
 
 /**
