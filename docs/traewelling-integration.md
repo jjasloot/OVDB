@@ -106,20 +106,20 @@ Imports a specific Träwelling trip as an OVDB RouteInstance.
 ```
 
 ### POST /api/traewelling/resync
-Walks the whole statuses listing, past pages holding nothing new, and adds everything still
-unknown to the inbox. The history button next to refresh on the Träwelling page.
+Queues a walk of the whole statuses listing, past pages holding nothing new, adding everything
+still unknown to the inbox. The history button next to refresh on the Träwelling page.
 
-**Response:**
+A whole history takes minutes to walk — longer than a request survives behind the reverse
+proxy — so this returns **202 Accepted** immediately and `TraewellingResyncService` does the
+walking. One walk per user: `queued: false` means one was already running.
+
 ```json
-{
-  "added": 3,
-  "pagesRead": 27,
-  "complete": true
-}
+{ "queued": true }
 ```
 
-`complete: false` means the walk stopped on an error or the 1000-page safety limit, so older
-check-ins may still be missing; a rerun starts at page 1 again.
+Progress and outcome arrive over the hub (see Live updates), not in this response.
+`resyncRunning` on `GET /status` says whether one is still going, so a page opened midway
+shows it too.
 
 ### GET /api/traewelling/stats
 Returns statistics about the user's Träwelling integration.
@@ -136,6 +136,22 @@ Returns statistics about the user's Träwelling integration.
 
 ### DELETE /api/traewelling/disconnect
 Disconnects the Träwelling account by removing stored tokens.
+
+## Live updates (`/traewellingHub`)
+
+JWT-authenticated SignalR hub, delivering only the connected user's own events. Every payload
+is a JSON string in the same shape as the REST responses, so the client parses rather than
+maps it.
+
+| Event | Sent when |
+| --- | --- |
+| `PendingTripUpserted` / `PendingTripRemoved` | A webhook event changed the unimported list |
+| `ConflictUpserted` / `ConflictRemoved` | A webhook event changed the conflict list |
+| `ResyncProgress` | Every five pages of a running resync: `{ pagesRead, added }` |
+| `ResyncFinished` | A resync ended: `{ added, pagesRead, complete }` |
+
+`complete: false` means the walk stopped on an error or the 1000-page safety limit, so older
+check-ins may still be missing; a rerun starts at page 1 again.
 
 ## Authentication & Authorization
 

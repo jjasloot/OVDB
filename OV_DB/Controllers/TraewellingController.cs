@@ -28,14 +28,17 @@ namespace OV_DB.Controllers
         private readonly OVDBDatabaseContext _dbContext;
         private readonly ILogger<TraewellingController> _logger;
         private readonly ITraewellingRateLimiter _rateLimiter;
+        private readonly ITraewellingResyncQueue _resyncQueue;
 
         public TraewellingController(ITrawellingService trawellingService,
-            OVDBDatabaseContext dbContext, ILogger<TraewellingController> logger, ITraewellingRateLimiter rateLimiter)
+            OVDBDatabaseContext dbContext, ILogger<TraewellingController> logger, ITraewellingRateLimiter rateLimiter,
+            ITraewellingResyncQueue resyncQueue)
         {
             _trawellingService = trawellingService;
             _dbContext = dbContext;
             _logger = logger;
             _rateLimiter = rateLimiter;
+            _resyncQueue = resyncQueue;
         }
 
         /// <summary>
@@ -268,7 +271,8 @@ namespace OV_DB.Controllers
                     user = userInfo,
                     liveSyncAvailable = _trawellingService.IsLiveSyncAvailable,
                     liveSyncEnabled = user.TraewellingWebhookId.HasValue,
-                    liveSyncHealth = webhookHealth.ToString()
+                    liveSyncHealth = webhookHealth.ToString(),
+                    resyncRunning = _resyncQueue.IsRunning(user.Id)
                 });
             }
             catch (Exception ex)
@@ -315,8 +319,10 @@ namespace OV_DB.Controllers
         }
 
         /// <summary>
-        /// Walk the complete Träwelling history to pick up check-ins the regular sweep stops
-        /// short of: ones older than check-ins that were already imported.
+        /// Queue a walk of the complete Träwelling history to pick up check-ins the regular
+        /// sweep stops short of: ones older than check-ins that were already imported.
+        /// Walking a whole history takes minutes, so the walk itself runs on
+        /// <see cref="TraewellingResyncService"/> and reports over the hub.
         /// </summary>
         [HttpPost("resync")]
         public async Task<IActionResult> ResyncFullHistory()
@@ -334,24 +340,12 @@ namespace OV_DB.Controllers
                 if (!_trawellingService.IsConnected(user))
                     return BadRequest("Träwelling account not connected or tokens expired");
 
-                // Deliberately not the request's token: a long walk that outlives an impatient
-                // browser or a proxy timeout should still finish and keep what it found.
-                var result = await _trawellingService.SweepInboxAsync(user, TrawellingSweepMode.Full);
-
-                if (!result.Success && _rateLimiter.IsLimited)
-                    return StatusCode(429, "Träwelling is rate limiting us, please try again in a minute");
-
-                return Ok(new
-                {
-                    added = result.Added,
-                    pagesRead = result.PagesRead,
-                    complete = result.Success && result.ReachedEnd
-                });
+                return Accepted(new { queued = _resyncQueue.TryEnqueue(userId.Value) });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error resyncing Träwelling history");
-                return StatusCode(500, "Error resyncing Träwelling history");
+                _logger.LogError(ex, "Error queueing Träwelling resync");
+                return StatusCode(500, "Error queueing Träwelling resync");
             }
         }
 

@@ -31,6 +31,9 @@ namespace OV_DB.Services
     /// <param name="ReachedEnd">True when the walk ran out of pages rather than stopping at a cap.</param>
     public record TrawellingSweepResult(bool Success, int Added, int PagesRead, bool ReachedEnd);
 
+    /// <summary>How far a sweep has got, reported after every page.</summary>
+    public record TrawellingSweepProgress(int PagesRead, int Added);
+
     public interface ITrawellingService
     {
         /// <summary>
@@ -103,8 +106,9 @@ namespace OV_DB.Services
         /// </summary>
         /// <param name="user">User to sweep for</param>
         /// <param name="mode">How far back to read the listing</param>
+        /// <param name="progress">Reported after every page; the only sign of life during a full walk</param>
         /// <param name="cancellationToken">Cancellation token</param>
-        Task<TrawellingSweepResult> SweepInboxAsync(User user, TrawellingSweepMode mode = TrawellingSweepMode.WhenStale, System.Threading.CancellationToken cancellationToken = default);
+        Task<TrawellingSweepResult> SweepInboxAsync(User user, TrawellingSweepMode mode = TrawellingSweepMode.WhenStale, IProgress<TrawellingSweepProgress> progress = null, System.Threading.CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Remove a status from the inbox after it has been imported or ignored

@@ -35,6 +35,13 @@ public class TrawellingInboxSweepTests
         return $$$"""{"data":[{{{data}}}],"links":{"next":{{{nextLink}}}}}""";
     }
 
+    // Progress<T> hands its reports to the thread pool, which would make the order they are
+    // asserted in a race.
+    private sealed class InlineProgress<T>(Action<T> report) : IProgress<T>
+    {
+        public void Report(T value) => report(value);
+    }
+
     private sealed class PagedHandler(Dictionary<int, string> pages) : HttpMessageHandler
     {
         public List<int> RequestedPages { get; } = [];
@@ -140,14 +147,18 @@ public class TrawellingInboxSweepTests
     {
         var (service, user, context, handler) = NewService(NewestKnownOldestMissing());
         SeedInbox(context, (101, "2026-08-20T10:00:00+02:00"), (102, "2026-08-19T10:00:00+02:00"));
+        var reported = new List<TrawellingSweepProgress>();
 
-        var result = await service.SweepInboxAsync(user, TrawellingSweepMode.Full);
+        var result = await service.SweepInboxAsync(user, TrawellingSweepMode.Full,
+            new InlineProgress<TrawellingSweepProgress>(reported.Add));
 
         Assert.True(result.Success);
         Assert.True(result.ReachedEnd);
         Assert.Equal(1, result.Added);
         Assert.Equal([1, 2], handler.RequestedPages);
         Assert.Contains(50, context.TrawellingInboxStatuses.Select(s => s.TrawellingStatusId));
+        // One report per page, so the page it is on is visible while the walk runs.
+        Assert.Equal([(1, 0), (2, 1)], reported.Select(p => (p.PagesRead, p.Added)));
     }
 
     [Fact]

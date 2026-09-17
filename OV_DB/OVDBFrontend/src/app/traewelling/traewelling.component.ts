@@ -18,7 +18,9 @@ import {
   TrawellingConflict,
   TrawellingConflictAction,
   TraewellingAlert,
-  TraewellingAlertTranslation
+  TraewellingAlertTranslation,
+  TrawellingResyncProgress,
+  TrawellingResyncResult
 } from '../models/traewelling.model';
 import { TripCardComponent } from './components/trip-card/trip-card.component';
 import { ConflictCardComponent } from './components/conflict-card/conflict-card.component';
@@ -55,6 +57,7 @@ export class TrawellingComponent implements OnInit, OnDestroy {
   alerts: TraewellingAlert[] = [];
   isLoading = true;
   isResyncing = false;
+  resyncProgress: TrawellingResyncProgress | null = null;
   isLoadingMore = false;
   hasMorePages = false;
   currentPage = 1;
@@ -65,9 +68,9 @@ export class TrawellingComponent implements OnInit, OnDestroy {
     await this.loadConnectionStatus();
     if (this.connectionStatus?.connected) {
       await Promise.all([this.loadTrips(), this.loadAlerts(), this.loadConflicts()]);
-      if (this.connectionStatus.liveSyncEnabled) {
-        this.startLiveUpdates();
-      }
+      // Also without live sync: a resync started here reports over the same hub.
+      this.startLiveUpdates();
+      this.isResyncing = this.connectionStatus.resyncRunning === true;
     }
     this.isLoading = false;
   }
@@ -89,6 +92,8 @@ export class TrawellingComponent implements OnInit, OnDestroy {
       this.liveService.tripRemoved$.subscribe(statusId => this.removeTrip(statusId)),
       this.liveService.conflictUpserted$.subscribe(conflict => this.upsertConflict(conflict)),
       this.liveService.conflictRemoved$.subscribe(statusId => this.removeConflict(statusId)),
+      this.liveService.resyncProgress$.subscribe(progress => this.resyncProgress = progress),
+      this.liveService.resyncFinished$.subscribe(result => this.finishResync(result)),
     );
   }
 
@@ -203,25 +208,38 @@ export class TrawellingComponent implements OnInit, OnDestroy {
     }
   }
 
+  /**
+   * Only queues the walk — it takes minutes and reports over the hub, so the spinner runs
+   * until a ResyncFinished arrives rather than until this request returns.
+   */
   async resyncFullHistory() {
     if (this.isResyncing) return;
     this.isResyncing = true;
+    this.resyncProgress = null;
     try {
-      const result = await this.trawellingService.resyncFullHistory();
-      const messageKey = !result.complete
-        ? 'TRAEWELLING.RESYNC_INCOMPLETE'
-        : result.added > 0 ? 'TRAEWELLING.RESYNC_FOUND' : 'TRAEWELLING.RESYNC_NOTHING_FOUND';
+      await this.trawellingService.resyncFullHistory();
       this.snackBar.open(
-        this.translateService.instant(messageKey, { count: result.added }),
+        this.translateService.instant('TRAEWELLING.RESYNC_STARTED'),
         this.translateService.instant('CLOSE'),
         { duration: 5000 });
-      if (result.added > 0) {
-        await this.loadTrips();
-      }
     } catch {
-      // The global error interceptor already showed a toast
-    } finally {
       this.isResyncing = false;
+      // The global error interceptor already showed a toast
+    }
+  }
+
+  private async finishResync(result: TrawellingResyncResult) {
+    this.isResyncing = false;
+    this.resyncProgress = null;
+    const messageKey = !result.complete
+      ? 'TRAEWELLING.RESYNC_INCOMPLETE'
+      : result.added > 0 ? 'TRAEWELLING.RESYNC_FOUND' : 'TRAEWELLING.RESYNC_NOTHING_FOUND';
+    this.snackBar.open(
+      this.translateService.instant(messageKey, { count: result.added }),
+      this.translateService.instant('CLOSE'),
+      { duration: 8000 });
+    if (result.added > 0) {
+      await this.loadTrips();
     }
   }
 

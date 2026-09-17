@@ -329,7 +329,7 @@ namespace OV_DB.Services
 
         private static readonly TimeSpan SweepStaleness = TimeSpan.FromHours(1);
 
-        public async Task<TrawellingSweepResult> SweepInboxAsync(User user, TrawellingSweepMode mode = TrawellingSweepMode.WhenStale, CancellationToken cancellationToken = default)
+        public async Task<TrawellingSweepResult> SweepInboxAsync(User user, TrawellingSweepMode mode = TrawellingSweepMode.WhenStale, IProgress<TrawellingSweepProgress> progress = null, CancellationToken cancellationToken = default)
         {
             var added = 0;
             var pagesRead = 0;
@@ -433,6 +433,8 @@ namespace OV_DB.Services
                     if (newOnPage > 0)
                         await _dbContext.SaveChangesAsync(cancellationToken);
 
+                    progress?.Report(new TrawellingSweepProgress(pagesRead, added));
+
                     if (string.IsNullOrEmpty(statusesResponse.Links?.Next))
                     {
                         reachedEnd = true;
@@ -499,7 +501,7 @@ namespace OV_DB.Services
                 // The inbox is the source of the list; the statuses API is only touched by the
                 // sweep (skipped when fresh, forced by the frontend's refresh action). A failed
                 // sweep still returns the current — possibly stale — inbox contents.
-                await SweepInboxAsync(user, refresh ? TrawellingSweepMode.Force : TrawellingSweepMode.WhenStale, cancellationToken);
+                await SweepInboxAsync(user, refresh ? TrawellingSweepMode.Force : TrawellingSweepMode.WhenStale, cancellationToken: cancellationToken);
 
                 const int pageSize = 15;
                 var query = _dbContext.TrawellingInboxStatuses

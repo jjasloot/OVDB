@@ -24,7 +24,17 @@
       </button>
       }
     </mat-card-header>
-    <mat-card-content></mat-card-content>
+    <mat-card-content>
+      @if (isResyncing) {
+      <div class="resync-progress">
+        <mat-spinner diameter="18"></mat-spinner>
+        <span>
+          {{ (resyncProgress ? 'TRAEWELLING.RESYNC_PROGRESS' : 'TRAEWELLING.RESYNC_RUNNING') | translate:{
+            pages: resyncProgress?.pagesRead, count: resyncProgress?.added } }}
+        </span>
+      </div>
+      }
+    </mat-card-content>
   </mat-card>
 
   <!-- Platform Alerts -->

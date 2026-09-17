@@ -3,12 +3,18 @@ import { HubConnection, HubConnectionBuilder } from '@microsoft/signalr';
 import { Subject } from 'rxjs';
 import { environment } from 'src/environments/environment';
 import { AuthenticationService } from '../../services/authentication.service';
-import { TrawellingConflict, TrawellingTrip } from '../../models/traewelling.model';
+import {
+  TrawellingConflict,
+  TrawellingResyncProgress,
+  TrawellingResyncResult,
+  TrawellingTrip
+} from '../../models/traewelling.model';
 
 /**
  * Live updates for the unimported-trips list, pushed by the backend when Träwelling
- * webhook events arrive. The hub is JWT-authenticated and only delivers the current
- * user's own events. Payloads are JSON strings shaped exactly like the REST responses.
+ * webhook events arrive and while a full-history resync runs. The hub is JWT-authenticated
+ * and only delivers the current user's own events. Payloads are JSON strings shaped exactly
+ * like the REST responses.
  */
 @Injectable({ providedIn: 'root' })
 export class TraewellingLiveService {
@@ -19,6 +25,8 @@ export class TraewellingLiveService {
   tripRemoved$ = new Subject<number>();
   conflictUpserted$ = new Subject<TrawellingConflict>();
   conflictRemoved$ = new Subject<number>();
+  resyncProgress$ = new Subject<TrawellingResyncProgress>();
+  resyncFinished$ = new Subject<TrawellingResyncResult>();
 
   connect(): void {
     if (this.connection) {
@@ -51,6 +59,20 @@ export class TraewellingLiveService {
     });
     connection.on('ConflictRemoved', (statusId: number) => {
       this.conflictRemoved$.next(statusId);
+    });
+    connection.on('ResyncProgress', (progressJson: string) => {
+      try {
+        this.resyncProgress$.next(JSON.parse(progressJson) as TrawellingResyncProgress);
+      } catch (err) {
+        console.error('Could not parse Träwelling resync progress payload', err);
+      }
+    });
+    connection.on('ResyncFinished', (resultJson: string) => {
+      try {
+        this.resyncFinished$.next(JSON.parse(resultJson) as TrawellingResyncResult);
+      } catch (err) {
+        console.error('Could not parse Träwelling resync result payload', err);
+      }
     });
 
     connection

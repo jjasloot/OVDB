@@ -19,7 +19,7 @@ import {
   TraewellingAlert,
   TrawellingConflict,
   TrawellingConflictAction,
-  TrawellingResyncResult
+  TrawellingResyncQueued
 } from '../../models/traewelling.model';
 import { TraewellingTagMapping } from '../../models/user-profile.model';
 import { ApiService } from '../../services/api.service';
@@ -59,8 +59,9 @@ export class TrawellingService {
       );
   }
 
-  async resyncFullHistory(): Promise<TrawellingResyncResult> {
-    return firstValueFrom(this.http.post<TrawellingResyncResult>(`${this.baseUrl}/resync`, {})
+  /** Queues the walk; it reports over the hub, not in this response. */
+  async resyncFullHistory(): Promise<TrawellingResyncQueued> {
+    return firstValueFrom(this.http.post<TrawellingResyncQueued>(`${this.baseUrl}/resync`, {})
       .pipe(first())
       );
   }

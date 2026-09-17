@@ -55,7 +55,7 @@ namespace OV_DB.Services
             foreach (var user in connectedUsers)
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                if ((await trawellingService.SweepInboxAsync(user, TrawellingSweepMode.Force, cancellationToken)).Success)
+                if ((await trawellingService.SweepInboxAsync(user, TrawellingSweepMode.Force, cancellationToken: cancellationToken)).Success)
                     swept++;
                 // Daily job, so latency is free — don't burst through the shared rate limit
                 await Task.Delay(TimeSpan.FromSeconds(5), cancellationToken);
