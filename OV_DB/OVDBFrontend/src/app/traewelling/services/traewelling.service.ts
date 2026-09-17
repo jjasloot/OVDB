@@ -18,7 +18,8 @@ import {
   RoutesListResponse,
   TraewellingAlert,
   TrawellingConflict,
-  TrawellingConflictAction
+  TrawellingConflictAction,
+  TrawellingResyncResult
 } from '../../models/traewelling.model';
 import { TraewellingTagMapping } from '../../models/user-profile.model';
 import { ApiService } from '../../services/api.service';
@@ -54,6 +55,12 @@ export class TrawellingService {
       params = params.set('refresh', 'true');
     }
     return firstValueFrom(this.http.get<TrawellingTripsResponse>(`${this.baseUrl}/unimported`, { params })
+      .pipe(first())
+      );
+  }
+
+  async resyncFullHistory(): Promise<TrawellingResyncResult> {
+    return firstValueFrom(this.http.post<TrawellingResyncResult>(`${this.baseUrl}/resync`, {})
       .pipe(first())
       );
   }

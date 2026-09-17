@@ -158,6 +158,13 @@ export interface TrawellingIgnoreResponse {
   message?: string;
 }
 
+export interface TrawellingResyncResult {
+  added: number;
+  pagesRead: number;
+  /** False when the walk stopped on an error or the page limit, so older check-ins may remain unseen. */
+  complete: boolean;
+}
+
 export interface RoutesListResponse {
   count: number;
   routes: RouteSearchResult[];

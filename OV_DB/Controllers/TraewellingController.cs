@@ -315,6 +315,47 @@ namespace OV_DB.Controllers
         }
 
         /// <summary>
+        /// Walk the complete Träwelling history to pick up check-ins the regular sweep stops
+        /// short of: ones older than check-ins that were already imported.
+        /// </summary>
+        [HttpPost("resync")]
+        public async Task<IActionResult> ResyncFullHistory()
+        {
+            try
+            {
+                var userId = GetCurrentUserId();
+                if (!userId.HasValue)
+                    return Unauthorized();
+
+                var user = await _dbContext.Users.FindAsync(userId.Value);
+                if (user == null)
+                    return NotFound("User not found");
+
+                if (!_trawellingService.IsConnected(user))
+                    return BadRequest("Träwelling account not connected or tokens expired");
+
+                // Deliberately not the request's token: a long walk that outlives an impatient
+                // browser or a proxy timeout should still finish and keep what it found.
+                var result = await _trawellingService.SweepInboxAsync(user, TrawellingSweepMode.Full);
+
+                if (!result.Success && _rateLimiter.IsLimited)
+                    return StatusCode(429, "Träwelling is rate limiting us, please try again in a minute");
+
+                return Ok(new
+                {
+                    added = result.Added,
+                    pagesRead = result.PagesRead,
+                    complete = result.Success && result.ReachedEnd
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error resyncing Träwelling history");
+                return StatusCode(500, "Error resyncing Träwelling history");
+            }
+        }
+
+        /// <summary>
         /// Ignore a Träwelling status so it doesn't show up in unimported list
         /// </summary>
         [HttpPost("ignore")]

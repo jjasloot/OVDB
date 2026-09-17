@@ -85,7 +85,13 @@ Returns connection status and Träwelling user info if connected.
 ```
 
 ### GET /api/traewelling/unimported?page=1
-Returns paginated list of Träwelling trips not yet imported to OVDB.
+Returns paginated list of Träwelling trips not yet imported to OVDB. Reads the local inbox;
+`refresh=true` sweeps the statuses API first instead of waiting for the hourly staleness check.
+
+The regular sweep reads at most 10 pages and stops at the first page holding nothing new,
+which is correct only while check-ins arrive in order. One that was missed — a webhook that
+never landed, a check-in made before the account was connected — sits behind pages of
+already-imported ones and is out of its reach.
 
 ### POST /api/traewelling/import
 Imports a specific Träwelling trip as an OVDB RouteInstance.
@@ -99,8 +105,21 @@ Imports a specific Träwelling trip as an OVDB RouteInstance.
 }
 ```
 
-### POST /api/traewelling/process-backlog?maxPages=5
-Processes multiple pages of Träwelling history to import trips in bulk and enhance existing RouteInstances with timing data.
+### POST /api/traewelling/resync
+Walks the whole statuses listing, past pages holding nothing new, and adds everything still
+unknown to the inbox. The history button next to refresh on the Träwelling page.
+
+**Response:**
+```json
+{
+  "added": 3,
+  "pagesRead": 27,
+  "complete": true
+}
+```
+
+`complete: false` means the walk stopped on an error or the 1000-page safety limit, so older
+check-ins may still be missing; a rerun starts at page 1 again.
 
 ### GET /api/traewelling/stats
 Returns statistics about the user's Träwelling integration.

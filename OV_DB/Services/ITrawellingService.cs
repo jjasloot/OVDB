@@ -7,6 +7,30 @@ using OVDB_database.Models;
 
 namespace OV_DB.Services
 {
+    /// <summary>
+    /// How far back a sweep reads the Träwelling statuses listing.
+    /// </summary>
+    public enum TrawellingSweepMode
+    {
+        /// <summary>Skip entirely while the last sweep is still fresh.</summary>
+        WhenStale,
+
+        /// <summary>Sweep now, stopping at the first page that holds nothing new.</summary>
+        Force,
+
+        /// <summary>
+        /// Walk the whole listing, past pages that hold nothing new. The only way to reach a
+        /// check-in that was missed while newer ones were already imported.
+        /// </summary>
+        Full,
+    }
+
+    /// <param name="Success">False when the listing could not be read.</param>
+    /// <param name="Added">Statuses newly added to the inbox.</param>
+    /// <param name="PagesRead">Pages of the statuses listing that were fetched.</param>
+    /// <param name="ReachedEnd">True when the walk ran out of pages rather than stopping at a cap.</param>
+    public record TrawellingSweepResult(bool Success, int Added, int PagesRead, bool ReachedEnd);
+
     public interface ITrawellingService
     {
         /// <summary>
@@ -75,14 +99,12 @@ namespace OV_DB.Services
 
         /// <summary>
         /// Reconcile the local inbox with the Träwelling statuses API: adds unknown statuses
-        /// as pending, removes pending rows that were deleted upstream. Skipped when the last
-        /// sweep is fresh, unless forced.
+        /// as pending, removes pending rows that were deleted upstream.
         /// </summary>
         /// <param name="user">User to sweep for</param>
-        /// <param name="force">Sweep even when the last sweep is recent</param>
+        /// <param name="mode">How far back to read the listing</param>
         /// <param name="cancellationToken">Cancellation token</param>
-        /// <returns>True when the sweep completed (or was fresh enough to skip)</returns>
-        Task<bool> SweepInboxAsync(User user, bool force = false, System.Threading.CancellationToken cancellationToken = default);
+        Task<TrawellingSweepResult> SweepInboxAsync(User user, TrawellingSweepMode mode = TrawellingSweepMode.WhenStale, System.Threading.CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Remove a status from the inbox after it has been imported or ignored

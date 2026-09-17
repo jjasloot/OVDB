@@ -54,6 +54,7 @@ export class TrawellingComponent implements OnInit, OnDestroy {
   conflicts: TrawellingConflict[] = [];
   alerts: TraewellingAlert[] = [];
   isLoading = true;
+  isResyncing = false;
   isLoadingMore = false;
   hasMorePages = false;
   currentPage = 1;
@@ -199,6 +200,28 @@ export class TrawellingComponent implements OnInit, OnDestroy {
       await this.loadTrips(true);
     } finally {
       this.isLoading = false;
+    }
+  }
+
+  async resyncFullHistory() {
+    if (this.isResyncing) return;
+    this.isResyncing = true;
+    try {
+      const result = await this.trawellingService.resyncFullHistory();
+      const messageKey = !result.complete
+        ? 'TRAEWELLING.RESYNC_INCOMPLETE'
+        : result.added > 0 ? 'TRAEWELLING.RESYNC_FOUND' : 'TRAEWELLING.RESYNC_NOTHING_FOUND';
+      this.snackBar.open(
+        this.translateService.instant(messageKey, { count: result.added }),
+        this.translateService.instant('CLOSE'),
+        { duration: 5000 });
+      if (result.added > 0) {
+        await this.loadTrips();
+      }
+    } catch {
+      // The global error interceptor already showed a toast
+    } finally {
+      this.isResyncing = false;
     }
   }
 
