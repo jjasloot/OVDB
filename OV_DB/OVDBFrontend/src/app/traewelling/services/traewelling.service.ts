@@ -18,7 +18,8 @@ import {
   RoutesListResponse,
   TraewellingAlert,
   TrawellingConflict,
-  TrawellingConflictAction
+  TrawellingConflictAction,
+  TrawellingResyncQueued
 } from '../../models/traewelling.model';
 import { TraewellingTagMapping } from '../../models/user-profile.model';
 import { ApiService } from '../../services/api.service';
@@ -54,6 +55,13 @@ export class TrawellingService {
       params = params.set('refresh', 'true');
     }
     return firstValueFrom(this.http.get<TrawellingTripsResponse>(`${this.baseUrl}/unimported`, { params })
+      .pipe(first())
+      );
+  }
+
+  /** Queues the walk; it reports over the hub, not in this response. */
+  async resyncFullHistory(): Promise<TrawellingResyncQueued> {
+    return firstValueFrom(this.http.post<TrawellingResyncQueued>(`${this.baseUrl}/resync`, {})
       .pipe(first())
       );
   }

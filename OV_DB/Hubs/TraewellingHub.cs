@@ -4,9 +4,10 @@ using Microsoft.AspNetCore.SignalR;
 namespace OV_DB.Hubs;
 
 /// <summary>
-/// Per-user live updates for the Träwelling unimported-trips list, fed by webhook events.
-/// Authenticated with the regular JWT (access_token query parameter on the handshake);
-/// events go through Clients.User so they only reach the owning user's connections.
+/// Per-user live updates for the Träwelling unimported-trips list, fed by webhook events
+/// and by full-history resyncs. Authenticated with the regular JWT (access_token query
+/// parameter on the handshake); events go through Clients.User so they only reach the
+/// owning user's connections.
 /// </summary>
 [Authorize]
 public class TraewellingHub : Hub
@@ -18,4 +19,9 @@ public class TraewellingHub : Hub
     public const string PendingTripRemovedMethod = "PendingTripRemoved";
     public const string ConflictUpsertedMethod = "ConflictUpserted";
     public const string ConflictRemovedMethod = "ConflictRemoved";
+
+    // A resync outlives the request that asked for it, so its progress and its outcome
+    // reach the page only here.
+    public const string ResyncProgressMethod = "ResyncProgress";
+    public const string ResyncFinishedMethod = "ResyncFinished";
 }

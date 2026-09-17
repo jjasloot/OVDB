@@ -193,6 +193,11 @@ namespace OV_DB
                 services.AddHostedService<TraewellingInboxSweepService>();
             }
 
+            // Not behind that flag: this one only acts on a user pressing the button, and
+            // then it has to run wherever they pressed it.
+            services.AddSingleton<ITraewellingResyncQueue, TraewellingResyncQueue>();
+            services.AddHostedService<TraewellingResyncService>();
+
             // Register named HttpClients for different services to avoid socket exhaustion
             services.AddHttpClient("OSM", client =>
             {

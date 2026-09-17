@@ -8,6 +8,8 @@ export interface TrawellingConnectionStatus {
   liveSyncAvailable?: boolean;
   liveSyncEnabled?: boolean;
   liveSyncHealth?: 'NotEnabled' | 'Active' | 'DisabledUpstream' | 'Missing' | 'Unknown';
+  /** A full-history resync started earlier is still walking; its finish still arrives over the hub. */
+  resyncRunning?: boolean;
 }
 
 export interface TrawellingUser {
@@ -156,6 +158,24 @@ export interface TrawellingIgnoreRequest {
 export interface TrawellingIgnoreResponse {
   success: boolean;
   message?: string;
+}
+
+/** 202 response of the resync endpoint: false when one was already running for this user. */
+export interface TrawellingResyncQueued {
+  queued: boolean;
+}
+
+/** Pushed over the hub every few pages while the walk runs. */
+export interface TrawellingResyncProgress {
+  pagesRead: number;
+  added: number;
+}
+
+export interface TrawellingResyncResult {
+  added: number;
+  pagesRead: number;
+  /** False when the walk stopped on an error or the page limit, so older check-ins may remain unseen. */
+  complete: boolean;
 }
 
 export interface RoutesListResponse {

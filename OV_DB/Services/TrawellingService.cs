@@ -321,21 +321,28 @@ namespace OV_DB.Services
             }
         }
 
-        private const int SweepMaxPages = 5;
+        private const int SweepMaxPages = 10;
+
+        // Safety valve for the full walk rather than a depth to tune: a rerun starts at page 1
+        // again, so hitting this is not something the user can page past.
+        private const int FullSweepMaxPages = 1000;
+
         private static readonly TimeSpan SweepStaleness = TimeSpan.FromHours(1);
 
-        public async Task<bool> SweepInboxAsync(User user, bool force = false, CancellationToken cancellationToken = default)
+        public async Task<TrawellingSweepResult> SweepInboxAsync(User user, TrawellingSweepMode mode = TrawellingSweepMode.WhenStale, IProgress<TrawellingSweepProgress> progress = null, CancellationToken cancellationToken = default)
         {
+            var added = 0;
+            var pagesRead = 0;
             try
             {
-                if (!force && user.TrawellingLastSweepAt.HasValue &&
+                if (mode == TrawellingSweepMode.WhenStale && user.TrawellingLastSweepAt.HasValue &&
                     DateTime.UtcNow - user.TrawellingLastSweepAt.Value < SweepStaleness)
                 {
-                    return true;
+                    return new TrawellingSweepResult(true, 0, 0, false);
                 }
 
                 if (!await EnsureValidTokenAsync(user))
-                    return false;
+                    return new TrawellingSweepResult(false, 0, 0, false);
 
                 // Ensure we have the username for this user
                 if (string.IsNullOrEmpty(user.TrawellingUsername))
@@ -344,7 +351,7 @@ namespace OV_DB.Services
                     if (userInfo == null)
                     {
                         _logger.LogError("Could not fetch Träwelling username for user {UserId}", user.Id);
-                        return false;
+                        return new TrawellingSweepResult(false, 0, 0, false);
                     }
                     user.TrawellingUsername = userInfo.Username;
                     await _dbContext.SaveChangesAsync(cancellationToken);
@@ -370,9 +377,10 @@ namespace OV_DB.Services
 
                 var seenIds = new HashSet<int>();
                 DateTime? oldestSweptDeparture = null;
-                var added = 0;
+                var maxPages = mode == TrawellingSweepMode.Full ? FullSweepMaxPages : SweepMaxPages;
+                var reachedEnd = false;
 
-                for (var page = 1; page <= SweepMaxPages; page++)
+                for (var page = 1; page <= maxPages; page++)
                 {
                     var response = await SendAsync(() =>
                         CreateApiRequest(HttpMethod.Get, $"{_baseUrl}/user/{user.TrawellingUsername}/statuses?page={page}", user),
@@ -381,13 +389,17 @@ namespace OV_DB.Services
                     if (!response.IsSuccessStatusCode)
                     {
                         _logger.LogError("Inbox sweep failed for user {UserId}. Status: {StatusCode}", user.Id, response.StatusCode);
-                        return false;
+                        return new TrawellingSweepResult(false, added, pagesRead, false);
                     }
 
+                    pagesRead++;
                     var responseContent = await response.Content.ReadAsStringAsync(cancellationToken);
                     var statusesResponse = JsonConvert.DeserializeObject<TrawellingStatusesResponse>(responseContent);
                     if (statusesResponse?.Data == null || statusesResponse.Data.Count == 0)
+                    {
+                        reachedEnd = true;
                         break;
+                    }
 
                     var newOnPage = 0;
                     foreach (var status in statusesResponse.Data)
@@ -416,11 +428,27 @@ namespace OV_DB.Services
                         added++;
                     }
 
-                    // Statuses are ordered newest-first: a full page without anything new means
-                    // everything older is already known too.
-                    if (newOnPage == 0 || string.IsNullOrEmpty(statusesResponse.Links?.Next))
+                    // Keep what this page found before asking for the next one, so a walk that is
+                    // cut short still leaves the inbox fuller than it was.
+                    if (newOnPage > 0)
+                        await _dbContext.SaveChangesAsync(cancellationToken);
+
+                    progress?.Report(new TrawellingSweepProgress(pagesRead, added));
+
+                    if (string.IsNullOrEmpty(statusesResponse.Links?.Next))
+                    {
+                        reachedEnd = true;
+                        break;
+                    }
+
+                    // Statuses are ordered newest-first, so a page without anything new only
+                    // means everything older is known too while nothing was ever missed.
+                    if (newOnPage == 0 && mode != TrawellingSweepMode.Full)
                         break;
                 }
+
+                if (mode == TrawellingSweepMode.Full && !reachedEnd)
+                    _logger.LogWarning("Full inbox sweep for user {UserId} stopped at the {MaxPages}-page limit", user.Id, FullSweepMaxPages);
 
                 // Heal upstream deletes: a pending row inside the swept departure range that no
                 // longer appears in the listing was deleted on Träwelling. Nothing was curated
@@ -445,7 +473,7 @@ namespace OV_DB.Services
 
                 if (added > 0)
                     _logger.LogInformation("Inbox sweep added {Added} statuses for user {UserId}", added, user.Id);
-                return true;
+                return new TrawellingSweepResult(true, added, pagesRead, reachedEnd);
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
@@ -454,7 +482,7 @@ namespace OV_DB.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error sweeping Träwelling inbox for user {UserId}", user.Id);
-                return false;
+                return new TrawellingSweepResult(false, added, pagesRead, false);
             }
         }
 
@@ -473,7 +501,7 @@ namespace OV_DB.Services
                 // The inbox is the source of the list; the statuses API is only touched by the
                 // sweep (skipped when fresh, forced by the frontend's refresh action). A failed
                 // sweep still returns the current — possibly stale — inbox contents.
-                await SweepInboxAsync(user, force: refresh, cancellationToken);
+                await SweepInboxAsync(user, refresh ? TrawellingSweepMode.Force : TrawellingSweepMode.WhenStale, cancellationToken: cancellationToken);
 
                 const int pageSize = 15;
                 var query = _dbContext.TrawellingInboxStatuses

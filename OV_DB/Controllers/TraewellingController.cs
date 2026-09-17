@@ -28,14 +28,17 @@ namespace OV_DB.Controllers
         private readonly OVDBDatabaseContext _dbContext;
         private readonly ILogger<TraewellingController> _logger;
         private readonly ITraewellingRateLimiter _rateLimiter;
+        private readonly ITraewellingResyncQueue _resyncQueue;
 
         public TraewellingController(ITrawellingService trawellingService,
-            OVDBDatabaseContext dbContext, ILogger<TraewellingController> logger, ITraewellingRateLimiter rateLimiter)
+            OVDBDatabaseContext dbContext, ILogger<TraewellingController> logger, ITraewellingRateLimiter rateLimiter,
+            ITraewellingResyncQueue resyncQueue)
         {
             _trawellingService = trawellingService;
             _dbContext = dbContext;
             _logger = logger;
             _rateLimiter = rateLimiter;
+            _resyncQueue = resyncQueue;
         }
 
         /// <summary>
@@ -268,7 +271,8 @@ namespace OV_DB.Controllers
                     user = userInfo,
                     liveSyncAvailable = _trawellingService.IsLiveSyncAvailable,
                     liveSyncEnabled = user.TraewellingWebhookId.HasValue,
-                    liveSyncHealth = webhookHealth.ToString()
+                    liveSyncHealth = webhookHealth.ToString(),
+                    resyncRunning = _resyncQueue.IsRunning(user.Id)
                 });
             }
             catch (Exception ex)
@@ -311,6 +315,37 @@ namespace OV_DB.Controllers
             {
                 _logger.LogError(ex, "Error getting unimported trips");
                 return StatusCode(500, "Error fetching unimported trips");
+            }
+        }
+
+        /// <summary>
+        /// Queue a walk of the complete Träwelling history to pick up check-ins the regular
+        /// sweep stops short of: ones older than check-ins that were already imported.
+        /// Walking a whole history takes minutes, so the walk itself runs on
+        /// <see cref="TraewellingResyncService"/> and reports over the hub.
+        /// </summary>
+        [HttpPost("resync")]
+        public async Task<IActionResult> ResyncFullHistory()
+        {
+            try
+            {
+                var userId = GetCurrentUserId();
+                if (!userId.HasValue)
+                    return Unauthorized();
+
+                var user = await _dbContext.Users.FindAsync(userId.Value);
+                if (user == null)
+                    return NotFound("User not found");
+
+                if (!_trawellingService.IsConnected(user))
+                    return BadRequest("Träwelling account not connected or tokens expired");
+
+                return Accepted(new { queued = _resyncQueue.TryEnqueue(userId.Value) });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error queueing Träwelling resync");
+                return StatusCode(500, "Error queueing Träwelling resync");
             }
         }
 

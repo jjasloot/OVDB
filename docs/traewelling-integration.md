@@ -85,7 +85,13 @@ Returns connection status and Träwelling user info if connected.
 ```
 
 ### GET /api/traewelling/unimported?page=1
-Returns paginated list of Träwelling trips not yet imported to OVDB.
+Returns paginated list of Träwelling trips not yet imported to OVDB. Reads the local inbox;
+`refresh=true` sweeps the statuses API first instead of waiting for the hourly staleness check.
+
+The regular sweep reads at most 10 pages and stops at the first page holding nothing new,
+which is correct only while check-ins arrive in order. One that was missed — a webhook that
+never landed, a check-in made before the account was connected — sits behind pages of
+already-imported ones and is out of its reach.
 
 ### POST /api/traewelling/import
 Imports a specific Träwelling trip as an OVDB RouteInstance.
@@ -99,8 +105,21 @@ Imports a specific Träwelling trip as an OVDB RouteInstance.
 }
 ```
 
-### POST /api/traewelling/process-backlog?maxPages=5
-Processes multiple pages of Träwelling history to import trips in bulk and enhance existing RouteInstances with timing data.
+### POST /api/traewelling/resync
+Queues a walk of the whole statuses listing, past pages holding nothing new, adding everything
+still unknown to the inbox. The history button next to refresh on the Träwelling page.
+
+A whole history takes minutes to walk — longer than a request survives behind the reverse
+proxy — so this returns **202 Accepted** immediately and `TraewellingResyncService` does the
+walking. One walk per user: `queued: false` means one was already running.
+
+```json
+{ "queued": true }
+```
+
+Progress and outcome arrive over the hub (see Live updates), not in this response.
+`resyncRunning` on `GET /status` says whether one is still going, so a page opened midway
+shows it too.
 
 ### GET /api/traewelling/stats
 Returns statistics about the user's Träwelling integration.
@@ -117,6 +136,22 @@ Returns statistics about the user's Träwelling integration.
 
 ### DELETE /api/traewelling/disconnect
 Disconnects the Träwelling account by removing stored tokens.
+
+## Live updates (`/traewellingHub`)
+
+JWT-authenticated SignalR hub, delivering only the connected user's own events. Every payload
+is a JSON string in the same shape as the REST responses, so the client parses rather than
+maps it.
+
+| Event | Sent when |
+| --- | --- |
+| `PendingTripUpserted` / `PendingTripRemoved` | A webhook event changed the unimported list |
+| `ConflictUpserted` / `ConflictRemoved` | A webhook event changed the conflict list |
+| `ResyncProgress` | Every five pages of a running resync: `{ pagesRead, added }` |
+| `ResyncFinished` | A resync ended: `{ added, pagesRead, complete }` |
+
+`complete: false` means the walk stopped on an error or the 1000-page safety limit, so older
+check-ins may still be missing; a rerun starts at page 1 again.
 
 ## Authentication & Authorization
 

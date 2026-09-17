@@ -30,6 +30,16 @@
     align-self: center;
   }
 
+  .resync-button {
+    align-self: center;
+  }
+
+  .resync-progress {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
   .conflicts-container {
     margin-bottom: 16px;
 
