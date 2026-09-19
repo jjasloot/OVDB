@@ -139,7 +139,7 @@ public class StationTripMatcher(OVDBDatabaseContext dbContext, IMatcherIndexCach
             return NoTrips;
         }
 
-        var index = await GetIndexAsync(cancellationToken);
+        var index = await GetRouteIndexAsync(cancellationToken);
 
         // Nearest approach per route, not per segment: a line that runs alongside a station for a
         // while would otherwise be reported many times over.
@@ -247,7 +247,7 @@ public class StationTripMatcher(OVDBDatabaseContext dbContext, IMatcherIndexCach
             return [];
         }
 
-        var index = await GetIndexAsync(cancellationToken);
+        var index = await GetStationIndexAsync(cancellationToken);
         var line = Simplify(trip.LineString);
         var coordinates = line.Coordinates;
 
@@ -280,7 +280,12 @@ public class StationTripMatcher(OVDBDatabaseContext dbContext, IMatcherIndexCach
             .Select(s => new { s.Id, s.Name, s.Lattitude, s.Longitude })
             .ToListAsync(cancellationToken);
 
-        var endpoints = index.RouteEndpoints.TryGetValue(trip.RouteId, out var ends) ? ends : default;
+        // Taken from the geometry in hand rather than from the route index: this is the same
+        // simplified line that index would have recorded the ends of, so asking for it would mean
+        // building every other route's geometry to learn what is already on this stack.
+        var endpoints = coordinates.Length < 2
+            ? default((double X1, double Y1, double X2, double Y2))
+            : (coordinates[0].X, coordinates[0].Y, coordinates[^1].X, coordinates[^1].Y);
         var results = stations.Select(s => new StationCandidate(
             s.Id,
             s.Name,
@@ -304,12 +309,13 @@ public class StationTripMatcher(OVDBDatabaseContext dbContext, IMatcherIndexCach
     /// </remarks>
     public async Task<IReadOnlyList<StationCandidate>> MatchStopsAsync(IEnumerable<StopPoint> stops, CancellationToken cancellationToken = default)
     {
-        var index = await GetIndexAsync(cancellationToken);
-        var matched = new Dictionary<int, double>();
-        // Stops arrive in the order the relation lists them, which is the order they are ridden in.
-        // Keeping it means the suggestion list reads like the journey instead of like an index.
-        var order = new List<int>();
+        // Only the station index: a calling pattern says nothing about route geometry, so building
+        // it here would be hundreds of megabytes read to answer a question about points.
+        var index = await GetStationIndexAsync(cancellationToken);
 
+        // Geometry first, names afterwards. The name rule needs the database and a calling pattern
+        // runs to dozens of stops, so this is one query where it used to be one per stop.
+        var picks = new List<(StopPoint Stop, int StationId, double Distance)>();
         foreach (var stop in stops)
         {
             StationPoint? best = null;
@@ -326,73 +332,79 @@ public class StationTripMatcher(OVDBDatabaseContext dbContext, IMatcherIndexCach
                 bestDistance = distance;
             }
 
-            if (best == null)
+            if (best != null)
+            {
+                picks.Add((stop, best.Value.StationId, bestDistance));
+            }
+        }
+
+        if (picks.Count == 0)
+        {
+            return [];
+        }
+
+        var pickedIds = picks.Select(p => p.StationId).Distinct().ToList();
+        var names = await dbContext.Stations.AsNoTracking()
+            .Where(s => pickedIds.Contains(s.Id))
+            .Select(s => new { s.Id, s.Name })
+            .ToDictionaryAsync(s => s.Id, s => s.Name, cancellationToken);
+
+        var matched = new Dictionary<int, double>();
+        // Stops arrive in the order the relation lists them, which is the order they are ridden in.
+        // Keeping it means the suggestion list reads like the journey instead of like an index.
+        var order = new List<int>();
+
+        foreach (var (stop, stationId, distance) in picks)
+        {
+            if (!names.TryGetValue(stationId, out var name))
             {
                 continue;
             }
 
             // Beyond the tight radius, only take it if the names agree.
-            if (bestDistance > StopMatchMetres && !await NameAgreesAsync(best.Value.StationId, stop.Name, cancellationToken))
+            if (distance > StopMatchMetres && !NameMatches(name, stop.Name))
             {
                 continue;
             }
 
-            if (!matched.TryGetValue(best.Value.StationId, out var existing))
+            if (!matched.TryGetValue(stationId, out var existing))
             {
-                matched[best.Value.StationId] = bestDistance;
-                order.Add(best.Value.StationId);
+                matched[stationId] = distance;
+                order.Add(stationId);
             }
-            else if (bestDistance < existing)
+            else if (distance < existing)
             {
-                matched[best.Value.StationId] = bestDistance;
+                matched[stationId] = distance;
             }
         }
-
-        if (order.Count == 0)
-        {
-            return [];
-        }
-
-        var names = await dbContext.Stations.AsNoTracking()
-            .Where(s => order.Contains(s.Id))
-            .Select(s => new { s.Id, s.Name })
-            .ToDictionaryAsync(s => s.Id, s => s.Name, cancellationToken);
 
         return order
-            .Where(names.ContainsKey)
             .Select(id => new StationCandidate(id, names[id], VisitEvidence.Stopover, matched[id]))
             .ToList();
     }
 
-    private async Task<bool> NameAgreesAsync(int stationId, string stopName, CancellationToken cancellationToken)
-    {
-        if (string.IsNullOrWhiteSpace(stopName))
-        {
-            return false;
-        }
-        var name = await dbContext.Stations.AsNoTracking()
-            .Where(s => s.Id == stationId)
-            .Select(s => s.Name)
-            .SingleOrDefaultAsync(cancellationToken);
-        return NameMatches(name, stopName);
-    }
-
     /// <summary>
-    /// Counts first, then the index: two cheap queries are worth paying so a route imported a minute
-    /// ago is never invisible because a cached index predates it.
+    /// Count first, then the index: a cheap query is worth paying so a route imported a minute ago
+    /// is never invisible because a cached index predates it.
     /// </summary>
-    private async Task<MatcherIndex> GetIndexAsync(CancellationToken cancellationToken)
+    private async Task<RouteIndex> GetRouteIndexAsync(CancellationToken cancellationToken)
     {
         // Counted without a predicate on the geometry. "WHERE LineString IS NOT NULL" measured at
         // 1.16 s against 10 ms for a plain count — MariaDB reads the geometry blobs to evaluate it —
         // and it ran on every station in the backfill. The fingerprint only has to notice change, so
         // rows are as good a signal as rows-with-geometry.
         var routeCount = await dbContext.Routes.CountAsync(cancellationToken);
-        var stationCount = await dbContext.Stations.CountAsync(s => !s.Hidden && !s.Special, cancellationToken);
-        return await indexCache.GetAsync(routeCount, stationCount, BuildIndexAsync, cancellationToken);
+        return await indexCache.GetRoutesAsync(routeCount, BuildRouteIndexAsync, cancellationToken);
     }
 
-    private async Task<MatcherIndex> BuildIndexAsync(CancellationToken cancellationToken)
+    /// <summary>The same, for stations — counted and cached apart from the routes.</summary>
+    private async Task<StationIndex> GetStationIndexAsync(CancellationToken cancellationToken)
+    {
+        var stationCount = await dbContext.Stations.CountAsync(s => !s.Hidden && !s.Special, cancellationToken);
+        return await indexCache.GetStationsAsync(stationCount, BuildStationIndexAsync, cancellationToken);
+    }
+
+    private async Task<RouteIndex> BuildRouteIndexAsync(CancellationToken cancellationToken)
     {
         var segments = new STRtree<RouteSegment>();
         var endpoints = new Dictionary<int, (double, double, double, double)>();
@@ -438,6 +450,16 @@ public class StationTripMatcher(OVDBDatabaseContext dbContext, IMatcherIndexCach
         }
         segments.Build();
 
+        return new RouteIndex
+        {
+            Segments = segments,
+            Endpoints = endpoints,
+            RouteCount = routeRowCount
+        };
+    }
+
+    private async Task<StationIndex> BuildStationIndexAsync(CancellationToken cancellationToken)
+    {
         var stations = new STRtree<StationPoint>();
         var stationRows = dbContext.Stations.AsNoTracking()
             .Where(s => !s.Hidden && !s.Special)
@@ -454,12 +476,9 @@ public class StationTripMatcher(OVDBDatabaseContext dbContext, IMatcherIndexCach
         }
         stations.Build();
 
-        return new MatcherIndex
+        return new StationIndex
         {
-            Segments = segments,
             Stations = stations,
-            RouteEndpoints = endpoints,
-            RouteCount = routeRowCount,
             StationCount = stationRowCount
         };
     }
@@ -467,9 +486,9 @@ public class StationTripMatcher(OVDBDatabaseContext dbContext, IMatcherIndexCach
     private static Geometry Simplify(Geometry line) =>
         DouglasPeuckerSimplifier.Simplify(line, SimplifyMetres / MetresPerDegreeLatitude);
 
-    private VisitEvidence EvidenceFor(MatcherIndex index, int routeId, string stationName, string from, string to, double lattitude, double longitude)
+    private VisitEvidence EvidenceFor(RouteIndex index, int routeId, string stationName, string from, string to, double lattitude, double longitude)
     {
-        var endpoints = index.RouteEndpoints.TryGetValue(routeId, out var ends) ? ends : default;
+        var endpoints = index.Endpoints.TryGetValue(routeId, out var ends) ? ends : default;
         return EvidenceFrom(endpoints, stationName, from, to, lattitude, longitude);
     }
 
