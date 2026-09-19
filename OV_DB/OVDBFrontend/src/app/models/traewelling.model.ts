@@ -148,6 +148,8 @@ export interface LinkToRouteInstanceResponse {
   /** Linking is an import, so it carries the same station suggestions a fresh import would. */
   routeInstanceId?: number;
   stationSuggestions?: StationSuggestion[];
+  /** The calling pattern could not be read, so no stations are being offered for this trip. */
+  stationSuggestionsUnavailable?: boolean;
 }
 
 // Ignore functionality

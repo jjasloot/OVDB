@@ -152,6 +152,7 @@
   "ROUTES.ASSIGNREGIONS": "Assign regions",
   "STATS.COMPACT": "Compact",
   "ROUTEINSTANCE.SAVE_ERROR": "Could not save the trip. Please try again.",
+  "ROUTEINSTANCE.SUGGESTIONS_UNAVAILABLE": "The trip was saved, but this trip's calling pattern could not be read, so no stations are being suggested.",
   "TRAEWELLING.IGNORE_ERROR": "Could not ignore the trip. Please try again.",
   "IMPORTER.STEP1": "Search for a line and a type, add a network to limit results.",
   "IMPORTER.REFERENCE": "Name of the line",

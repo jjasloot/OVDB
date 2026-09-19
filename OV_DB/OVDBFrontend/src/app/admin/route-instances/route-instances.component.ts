@@ -316,8 +316,18 @@ export class RouteInstancesComponent implements OnInit {
     const body = response as {
       routeInstanceId?: number;
       stationSuggestions?: StationSuggestion[];
+      stationSuggestionsUnavailable?: boolean;
     };
     const suggestions = body?.stationSuggestions;
+    if (body?.stationSuggestionsUnavailable) {
+      // Said once and gone on its own: nothing was lost that the user can act on, and a notice
+      // they have to dismiss would cost more attention than the news is worth.
+      this.snackBar.open(
+        this.translateService.instant('ROUTEINSTANCE.SUGGESTIONS_UNAVAILABLE'),
+        undefined,
+        { duration: 6000 }
+      );
+    }
     if (!suggestions?.length) {
       // No Träwelling calling pattern on this save, so this may instead be the first trip on a
       // freshly imported OSM route — which is the moment its stops finally have a date.

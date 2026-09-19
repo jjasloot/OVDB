@@ -3,6 +3,7 @@ using Newtonsoft.Json;
 using OV_DB.Models;
 using OVDB_database.Database;
 using OVDB_database.Models;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -10,9 +11,27 @@ using System.Threading.Tasks;
 
 namespace OV_DB.Services;
 
+/// <summary>
+/// What an import's calling pattern turned into, and whether it could be read at all.
+/// </summary>
+/// <remarks>
+/// The two are genuinely different and the user deserves to be told which: no stations means
+/// there was nothing left to offer, while <c>Unavailable</c> means the question was
+/// never answered, and those suggestions are not coming back — they are computed at import and
+/// never stored.
+/// </remarks>
+public sealed record StationSuggestionResult(List<StationSuggestionDTO> Stations, bool Unavailable)
+{
+    /// <summary>Asked and answered; there was simply nothing to offer.</summary>
+    public static StationSuggestionResult Nothing => new([], false);
+
+    /// <summary>Never asked, or asked and not answered in time.</summary>
+    public static StationSuggestionResult NotAvailable => new([], true);
+}
+
 public interface IStationSuggestionService
 {
-    Task<List<StationSuggestionDTO>> FromTrawellingStatusAsync(User user, string statusPayloadJson, CancellationToken cancellationToken = default);
+    Task<StationSuggestionResult> FromTrawellingStatusAsync(User user, string statusPayloadJson, CancellationToken cancellationToken = default);
     Task<List<StationSuggestionDTO>> FromStopsAsync(int userId, IEnumerable<StopPoint> stops, CancellationToken cancellationToken = default);
 }
 
@@ -27,17 +46,26 @@ public interface IStationSuggestionService
 public class StationSuggestionService(
     OVDBDatabaseContext dbContext,
     IStationTripMatcher matcher,
-    ITrawellingService trawellingService) : IStationSuggestionService
+    ITrawellingService trawellingService,
+    ITraewellingRateLimiter rateLimiter) : IStationSuggestionService
 {
+    /// <summary>
+    /// How long the one upstream call is given. The trip is already saved by the time this runs,
+    /// so the only thing waiting longer buys is suggestions — and the user is sitting in front of
+    /// a screen that will not finish until this does. A second or two is a normal answer; anything
+    /// beyond this is Träwelling being slow, and the rate limiter alone can sleep a minute.
+    /// </summary>
+    private static readonly TimeSpan StopoverFetchTimeout = TimeSpan.FromSeconds(5);
+
     /// <summary>
     /// Reads the trip id out of a stored check-in payload and asks Träwelling what that trip calls
     /// at. The payload is already on hand at import, so this costs one API call rather than two.
     /// </summary>
-    public async Task<List<StationSuggestionDTO>> FromTrawellingStatusAsync(User user, string statusPayloadJson, CancellationToken cancellationToken = default)
+    public async Task<StationSuggestionResult> FromTrawellingStatusAsync(User user, string statusPayloadJson, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(statusPayloadJson))
         {
-            return [];
+            return StationSuggestionResult.Nothing;
         }
 
         TrawellingStatus status;
@@ -47,16 +75,43 @@ public class StationSuggestionService(
         }
         catch (JsonException)
         {
-            return [];
+            return StationSuggestionResult.Nothing;
         }
 
         var tripId = status?.Checkin?.Trip ?? 0;
         if (tripId == 0)
         {
-            return [];
+            return StationSuggestionResult.Nothing;
         }
 
-        var stopovers = await trawellingService.GetTripStopoversAsync(user, tripId, cancellationToken);
+        // Known to be blocked, so there is nothing to find out by trying: the call would sleep out
+        // the window before it even left. Say so now rather than a minute from now.
+        if (rateLimiter.IsLimited)
+        {
+            return StationSuggestionResult.NotAvailable;
+        }
+
+        List<TrawellingStopover> stopovers;
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        timeout.CancelAfter(StopoverFetchTimeout);
+        try
+        {
+            stopovers = await trawellingService.GetTripStopoversAsync(user, tripId, timeout.Token);
+        }
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            // Ours, not the caller's: the request is still live and wants an answer, just without
+            // the suggestions.
+            return StationSuggestionResult.NotAvailable;
+        }
+
+        if (stopovers.Count == 0)
+        {
+            // Either the trip publishes no calling pattern or the fetch failed — GetTripStopoversAsync
+            // reports both by answering with nothing. Told as one thing, because to the user they are:
+            // this trip's calling pattern could not be read, so no stations are being offered.
+            return StationSuggestionResult.NotAvailable;
+        }
 
         // Only the section actually ridden. The endpoint answers with the whole trip, and the
         // stations before boarding or beyond where the user got off were never reached — offering
@@ -67,7 +122,7 @@ public class StationSuggestionService(
             .Where(s => s.Station?.Latitude != null && s.Station?.Longitude != null)
             .Select(s => new StopPoint(s.Station.Name, s.Station.Latitude.Value, s.Station.Longitude.Value));
 
-        return await FromStopsAsync(user.Id, stops, cancellationToken);
+        return new StationSuggestionResult(await FromStopsAsync(user.Id, stops, cancellationToken), false);
     }
 
     /// <summary>

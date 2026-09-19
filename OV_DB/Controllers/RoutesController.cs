@@ -1169,7 +1169,7 @@ namespace OV_DB.Controllers
             }
             await _context.SaveChangesAsync();
 
-            var suggestions = new List<StationSuggestionDTO>();
+            var suggestions = StationSuggestionResult.Nothing;
             if (update.TraewellingStatusId.HasValue)
             {
                 // This is the import moment, and the only place the calling pattern is worth
@@ -1180,16 +1180,20 @@ namespace OV_DB.Controllers
                     .Select(s => s.PayloadJson)
                     .FirstOrDefaultAsync();
 
-                var user = await _context.Users.SingleOrDefaultAsync(u => u.Id == userIdClaim);
-                if (payload != null && user != null)
-                {
-                    suggestions = await suggestionService.FromTrawellingStatusAsync(user, payload);
-                }
-
-                // The status is imported now; its Träwelling inbox row is no longer pending
+                // The status is imported now; its Träwelling inbox row is no longer pending.
+                // Before the suggestions rather than after: the trip is saved either way, and the
+                // fetch below can be abandoned — if the client has gone, skipping this would leave
+                // an imported trip sitting in the inbox pretending it still needs importing.
                 await _context.TrawellingInboxStatuses
                     .Where(s => s.UserId == userIdClaim && s.TrawellingStatusId == update.TraewellingStatusId.Value)
                     .ExecuteDeleteAsync();
+
+                var user = await _context.Users.SingleOrDefaultAsync(u => u.Id == userIdClaim);
+                if (payload != null && user != null)
+                {
+                    suggestions = await suggestionService.FromTrawellingStatusAsync(
+                        user, payload, HttpContext.RequestAborted);
+                }
             }
 
             // Stations this trip calls at that are not marked. Proposals only — the response carries
@@ -1198,7 +1202,10 @@ namespace OV_DB.Controllers
             return Ok(new
             {
                 routeInstanceId = savedInstance?.RouteInstanceId,
-                stationSuggestions = suggestions
+                stationSuggestions = suggestions.Stations,
+                // So the page can say the pattern went unread, rather than silently offering
+                // nothing and leaving it looking like there was nothing to offer.
+                stationSuggestionsUnavailable = suggestions.Unavailable
             });
         }
 
