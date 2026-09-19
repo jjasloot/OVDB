@@ -227,6 +227,24 @@ header {
   padding: 32px 0;
 }
 
+// The one-off wait at the start of a session. Same centred shape as the all-done panel, with the
+// bar held to a readable width rather than stretched across the page.
+.preparing {
+  text-align: center;
+  padding: 32px 0;
+  max-width: 420px;
+  margin: 0 auto;
+
+  mat-progress-bar {
+    margin-top: 16px;
+  }
+
+  .remaining {
+    margin-top: 8px;
+    opacity: 0.7;
+  }
+}
+
 // Dimmed while the next station is fetched. The map deliberately stays mounted underneath, so the
 // tile layer and the chosen base layer survive from one station to the next.
 .work.busy {

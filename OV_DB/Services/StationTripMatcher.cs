@@ -77,6 +77,9 @@ public sealed record StationCandidate(
 /// <summary>A station an operator says a train calls at, as named by the source it came from.</summary>
 public readonly record struct StopPoint(string Name, double Lattitude, double Longitude);
 
+/// <summary>How far the route index has got, for a caller that warmed it deliberately.</summary>
+public readonly record struct MatcherWarmupProgress(int Processed, int Total);
+
 public interface IStationTripMatcher
 {
     Task<IReadOnlyList<TripCandidate>> FindTripsForStationAsync(int userId, int stationId, CancellationToken cancellationToken = default);
@@ -87,6 +90,18 @@ public interface IStationTripMatcher
     Task<StationTrips> FindStationTripsAsync(int userId, int stationId, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<StationCandidate>> FindStationsForTripAsync(int userId, int routeInstanceId, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<StationCandidate>> MatchStopsAsync(IEnumerable<StopPoint> stops, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Whether the route index is already built for the data as it stands, answered without
+    /// building it. Lets a caller offer to wait knowingly rather than stall mid-request.
+    /// </summary>
+    Task<bool> IsRouteIndexWarmAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Builds the route index unless it is already in hand. Same build the first match would
+    /// have triggered, only deliberate and watchable — see <see cref="IMatcherWarmupQueue"/>.
+    /// </summary>
+    Task WarmRouteIndexAsync(IProgress<MatcherWarmupProgress> progress = null, CancellationToken cancellationToken = default);
 }
 
 /// <summary>
@@ -394,7 +409,21 @@ public class StationTripMatcher(OVDBDatabaseContext dbContext, IMatcherIndexCach
         // and it ran on every station in the backfill. The fingerprint only has to notice change, so
         // rows are as good a signal as rows-with-geometry.
         var routeCount = await dbContext.Routes.CountAsync(cancellationToken);
-        return await indexCache.GetRoutesAsync(routeCount, BuildRouteIndexAsync, cancellationToken);
+        return await indexCache.GetRoutesAsync(
+            routeCount, token => BuildRouteIndexAsync(routeCount, null, token), cancellationToken);
+    }
+
+    public async Task<bool> IsRouteIndexWarmAsync(CancellationToken cancellationToken = default)
+    {
+        var routeCount = await dbContext.Routes.CountAsync(cancellationToken);
+        return indexCache.HasRoutes(routeCount);
+    }
+
+    public async Task WarmRouteIndexAsync(IProgress<MatcherWarmupProgress> progress = null, CancellationToken cancellationToken = default)
+    {
+        var routeCount = await dbContext.Routes.CountAsync(cancellationToken);
+        await indexCache.GetRoutesAsync(
+            routeCount, token => BuildRouteIndexAsync(routeCount, progress, token), cancellationToken);
     }
 
     /// <summary>The same, for stations — counted and cached apart from the routes.</summary>
@@ -404,7 +433,11 @@ public class StationTripMatcher(OVDBDatabaseContext dbContext, IMatcherIndexCach
         return await indexCache.GetStationsAsync(stationCount, BuildStationIndexAsync, cancellationToken);
     }
 
-    private async Task<RouteIndex> BuildRouteIndexAsync(CancellationToken cancellationToken)
+    /// <param name="total">
+    /// Rows expected, from the count the fingerprint was taken with. Only for reporting — the
+    /// fingerprint itself is the rows actually seen, counted below.
+    /// </param>
+    private async Task<RouteIndex> BuildRouteIndexAsync(int total, IProgress<MatcherWarmupProgress> progress, CancellationToken cancellationToken)
     {
         var segments = new STRtree<RouteSegment>();
         var endpoints = new Dictionary<int, (double, double, double, double)>();
@@ -426,6 +459,9 @@ public class StationTripMatcher(OVDBDatabaseContext dbContext, IMatcherIndexCach
         await foreach (var route in routes.WithCancellation(cancellationToken))
         {
             routeRowCount++;
+            // Reported before the skip below, so a run of routes without geometry still moves the
+            // bar rather than looking like a stall.
+            progress?.Report(new MatcherWarmupProgress(routeRowCount, total));
             if (route.LineString == null)
             {
                 continue;
@@ -449,6 +485,7 @@ public class StationTripMatcher(OVDBDatabaseContext dbContext, IMatcherIndexCach
             endpoints[route.RouteId] = (first.X, first.Y, last.X, last.Y);
         }
         segments.Build();
+        progress?.Report(new MatcherWarmupProgress(routeRowCount, Math.Max(total, routeRowCount)));
 
         return new RouteIndex
         {

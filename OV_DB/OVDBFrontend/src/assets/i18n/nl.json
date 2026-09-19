@@ -46,6 +46,9 @@
       "FEWER_TRIPS": "Toon minder"
     },
     "BACKFILL": {
+      "PREPARING_TITLE": "Route-index wordt opgebouwd",
+      "PREPARING": "Elk station hier wordt vergeleken met de geometrie van je routes, die één keer per sessie wordt ingeladen. Dit duurt een paar seconden; daarna begint de wachtrij vanzelf.",
+      "PREPARING_PROGRESS": "{{processed}} van {{total}} routes geïndexeerd",
       "REMAINING": "Nog {{count}} zonder datum",
       "REGION_PROGRESS": "{{region}}: {{dated}} van {{total}} gedateerd",
       "NO_CANDIDATES": "Geen van je ritten komt langs dit station, dus er valt nog niets aan te dateren. Meer ritten importeren kan dat veranderen.",

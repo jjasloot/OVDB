@@ -1,5 +1,23 @@
 <div class="page">
-  @if (firstLoad()) {
+  <!--
+    Checked before firstLoad: the index build is the reason that first station is slow to arrive,
+    and a bare spinner for ten seconds reads as a page that has broken rather than one getting ready.
+  -->
+  @if (preparing()) {
+    <div class="preparing">
+      <h2>{{ 'STATIONS.BACKFILL.PREPARING_TITLE' | translate }}</h2>
+      <p>{{ 'STATIONS.BACKFILL.PREPARING' | translate }}</p>
+      <!-- Indeterminate until the first report lands, so the bar never sits at zero looking stuck. -->
+      @if (warmupTotal() > 0) {
+        <mat-progress-bar mode="determinate" [value]="warmupPercent()" />
+        <p class="remaining">
+          {{ 'STATIONS.BACKFILL.PREPARING_PROGRESS' | translate: { processed: warmupProcessed(), total: warmupTotal() } }}
+        </p>
+      } @else {
+        <mat-progress-bar mode="indeterminate" />
+      }
+    </div>
+  } @else if (firstLoad()) {
     <mat-spinner diameter="32" />
   } @else if (!hasWork()) {
     <div class="done">

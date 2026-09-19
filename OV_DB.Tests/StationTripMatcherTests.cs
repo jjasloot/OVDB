@@ -581,6 +581,48 @@ public class StationTripMatcherTests
     }
 
     [Fact]
+    public async Task WarmingBuildsTheRouteIndexUpFrontAndOnlyOnce()
+    {
+        // What the backfill page asks for on the way in, so the first station does not sit through
+        // the build with nothing to show for it.
+        using var context = await SeedAsync();
+        await AddStationAsync(context, 10, "Halt", BaseLat, BaseLon);
+        var cache = new CountingCache();
+        var matcher = new StationTripMatcher(context, cache);
+
+        Assert.False(await matcher.IsRouteIndexWarmAsync());
+
+        await matcher.WarmRouteIndexAsync();
+
+        Assert.True(await matcher.IsRouteIndexWarmAsync());
+        Assert.Equal(1, cache.RouteBuilds);
+
+        // And the work it was warmed for now costs nothing more.
+        Assert.Single(await matcher.FindTripsForStationAsync(1, 10));
+        Assert.Equal(1, cache.RouteBuilds);
+    }
+
+    [Fact]
+    public async Task WarmingReportsEveryRouteRowItPassed()
+    {
+        using var context = await SeedAsync();
+        var reports = new List<MatcherWarmupProgress>();
+        var matcher = NewMatcher(context);
+
+        await matcher.WarmRouteIndexAsync(new CollectingProgress(reports.Add));
+
+        // One route in the seed, so the bar has somewhere to end up rather than a total of zero.
+        Assert.NotEmpty(reports);
+        Assert.Equal(1, reports[^1].Processed);
+        Assert.Equal(1, reports[^1].Total);
+    }
+
+    private sealed class CollectingProgress(Action<MatcherWarmupProgress> report) : IProgress<MatcherWarmupProgress>
+    {
+        public void Report(MatcherWarmupProgress value) => report(value);
+    }
+
+    [Fact]
     public async Task MatchingStopsNeverBuildsTheRouteIndex()
     {
         // The import path. Route geometry is hundreds of megabytes and a calling pattern says
@@ -651,6 +693,8 @@ public class StationTripMatcherTests
                 StationBuilds++;
                 return build(ct);
             }, cancellationToken);
+
+        public bool HasRoutes(int routeCount) => _inner.HasRoutes(routeCount);
 
         public void Invalidate() => _inner.Invalidate();
     }

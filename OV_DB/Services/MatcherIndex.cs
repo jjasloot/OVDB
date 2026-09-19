@@ -62,6 +62,11 @@ public interface IMatcherIndexCache
     Task<RouteIndex> GetRoutesAsync(int routeCount, Func<CancellationToken, Task<RouteIndex>> build, CancellationToken cancellationToken = default);
     /// <summary>The same, for stations.</summary>
     Task<StationIndex> GetStationsAsync(int stationCount, Func<CancellationToken, Task<StationIndex>> build, CancellationToken cancellationToken = default);
+    /// <summary>
+    /// Whether a route index built from this count is already in hand — asked, unlike
+    /// <see cref="GetRoutesAsync"/>, without building one if it is not.
+    /// </summary>
+    bool HasRoutes(int routeCount);
     void Invalidate();
 }
 
@@ -91,6 +96,8 @@ public sealed class MatcherIndexCache : IMatcherIndexCache, IDisposable
 
     public Task<StationIndex> GetStationsAsync(int stationCount, Func<CancellationToken, Task<StationIndex>> build, CancellationToken cancellationToken = default) =>
         _stations.GetAsync(stationCount, build, cancellationToken);
+
+    public bool HasRoutes(int routeCount) => _routes.Holds(routeCount);
 
     public void Invalidate()
     {
@@ -138,6 +145,18 @@ public sealed class MatcherIndexCache : IMatcherIndexCache, IDisposable
             {
                 _gate.Release();
             }
+        }
+
+        /// <summary>
+        /// Whether this slot already holds an index for that count. Deliberately outside the
+        /// gate: a build in flight would otherwise make the caller wait for the very thing it
+        /// is asking whether it needs to wait for. A build finishing under the read only costs
+        /// a stale "no", which asks for a warm-up that finds the work already done.
+        /// </summary>
+        public bool Holds(int count)
+        {
+            var index = _index;
+            return index != null && fingerprint(index) == count;
         }
 
         public void Invalidate()

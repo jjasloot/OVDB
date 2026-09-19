@@ -47,6 +47,9 @@
       "FEWER_TRIPS": "Show fewer"
     },
     "BACKFILL": {
+      "PREPARING_TITLE": "Getting the route index ready",
+      "PREPARING": "Every station here is matched against your route geometry, which is loaded once per session. This takes a few seconds; the queue starts as soon as it is done.",
+      "PREPARING_PROGRESS": "{{processed}} of {{total}} routes indexed",
       "REMAINING": "{{count}} still undated",
       "REGION_PROGRESS": "{{region}}: {{dated}} of {{total}} dated",
       "NO_CANDIDATES": "No trip of yours passes this station, so there is nothing to date it from yet. Importing more trips may change that.",
