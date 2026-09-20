@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   ElementRef,
   Injector,
   OnDestroy,
@@ -10,6 +11,7 @@ import {
   inject,
   signal,
 } from "@angular/core";
+import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { LatLng, LatLngBounds, Layer, Map as LeafletMap, circleMarker, polyline } from "leaflet";
 import { LeafletModule } from "@bluehalo/ngx-leaflet";
 import { MatButton } from "@angular/material/button";
@@ -21,9 +23,11 @@ import { DatePipe, DecimalPipe } from "@angular/common";
 import { TranslateModule } from "@ngx-translate/core";
 import { firstValueFrom } from "rxjs";
 import { ApiService } from "src/app/services/api.service";
+import { StationsLiveService } from "../services/stations-live.service";
 import { MapTileLayersService } from "src/app/services/map-tile-layers.service";
 import { TranslationService } from "src/app/services/translation.service";
 import {
+  BackfillWarmupProgress,
   StationBackfillItem,
   StationVisitLevel,
   TripCandidateGroup,
@@ -59,6 +63,8 @@ import {
 })
 export class StationBackfillComponent implements OnInit, OnDestroy {
   private apiService = inject(ApiService);
+  private live = inject(StationsLiveService);
+  private destroyRef = inject(DestroyRef);
   private mapTileLayersService = inject(MapTileLayersService);
   private translationService = inject(TranslationService);
   private host = inject<ElementRef<HTMLElement>>(ElementRef);
@@ -73,6 +79,19 @@ export class StationBackfillComponent implements OnInit, OnDestroy {
 
   item = signal<StationBackfillItem | null>(null);
   loading = signal(true);
+  /**
+   * True while the route index every station in this queue is answered from is being built. It is
+   * a one-off of a few seconds at the start of a session, and it is shown rather than hidden
+   * behind the first station's spinner because it is long enough to look like something is wrong.
+   */
+  preparing = signal(false);
+  private warmup = signal<BackfillWarmupProgress | null>(null);
+  warmupPercent = computed(() => {
+    const progress = this.warmup();
+    return !progress || progress.total === 0 ? 0 : (progress.processed / progress.total) * 100;
+  });
+  warmupProcessed = computed(() => this.warmup()?.processed ?? 0);
+  warmupTotal = computed(() => this.warmup()?.total ?? 0);
   saving = signal(false);
   selected = signal<number | null>(null);
   layers = signal<Layer[]>([]);
@@ -240,6 +259,87 @@ export class StationBackfillComponent implements OnInit, OnDestroy {
   expanded = signal<number | null>(null);
 
   ngOnInit(): void {
+    void this.start();
+  }
+
+  /**
+   * How long to wait for the build to report back before loading anyway. The finished event is
+   * the normal path; this only catches a connection dropped mid-build, where waiting forever
+   * would be the worst of the options. Loading anyway is no worse than the old behaviour: the
+   * request either finds the index warm or sits through the rest of the build.
+   */
+  private static readonly WARMUP_TIMEOUT_MS = 120_000;
+  private warmupTimeout: ReturnType<typeof setTimeout> | null = null;
+  /** Whether starting the queue is still this page's to do. See claimStart. */
+  private pendingStart = true;
+
+  /**
+   * Gets the route index built before asking for the first station, rather than having that
+   * request sit through the build with nothing to show for it.
+   *
+   * Subscribed before asking, because asking is what starts the build: an event that lands
+   * between the two would be emitted to nobody, and the page would wait out the timeout for
+   * something already finished.
+   */
+  private async start(): Promise<void> {
+    try {
+      await this.live.connect();
+      this.live.warmupProgress$
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe((progress) => this.warmup.set(progress));
+      this.live.warmupFinished$
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe(() => this.finishPreparing());
+
+      const status = await firstValueFrom(this.apiService.prepareBackfill());
+      if (status.ready) {
+        if (this.claimStart()) {
+          void this.load();
+        }
+        return;
+      }
+    } catch {
+      // Preparing is an optimisation, never a gate. If any of it fails, fall through to the
+      // request that builds the index itself - which is what this page did before.
+      if (this.claimStart()) {
+        void this.load();
+      }
+      return;
+    }
+
+    // A build already running from an earlier visit may have finished while the answer above was
+    // in flight, in which case the queue is already on its way and there is nothing to show.
+    if (!this.pendingStart) {
+      return;
+    }
+    this.preparing.set(true);
+    this.warmupTimeout = setTimeout(
+      () => this.finishPreparing(),
+      StationBackfillComponent.WARMUP_TIMEOUT_MS
+    );
+  }
+
+  /**
+   * The queue is started exactly once, by whichever of the finished event, the watchdog or the
+   * answer to prepare gets there first.
+   */
+  private claimStart(): boolean {
+    if (!this.pendingStart) {
+      return false;
+    }
+    this.pendingStart = false;
+    return true;
+  }
+
+  private finishPreparing(): void {
+    if (!this.claimStart()) {
+      return;
+    }
+    if (this.warmupTimeout !== null) {
+      clearTimeout(this.warmupTimeout);
+      this.warmupTimeout = null;
+    }
+    this.preparing.set(false);
     void this.load();
   }
 
@@ -310,6 +410,10 @@ export class StationBackfillComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.mapResize?.disconnect();
+    if (this.warmupTimeout !== null) {
+      clearTimeout(this.warmupTimeout);
+    }
+    this.live.disconnect();
   }
 
   private mapResize: ResizeObserver | null = null;

@@ -52,6 +52,36 @@ namespace OV_DB.Controllers
         private const double BandDegrees = 0.25;
 
         /// <summary>
+        /// Says whether the queue can be worked straight away, and starts getting ready if not.
+        /// </summary>
+        /// <remarks>
+        /// Every station in the queue is answered by the same route index, and building it reads
+        /// all of the route geometry. Cold, that used to happen inside the first station request:
+        /// seconds of unexplained spinner, and a request long enough to be at a proxy's mercy.
+        /// The page asks here first, and on <c>ready: false</c> waits on the hub instead, watching
+        /// the build rather than a blocked request.
+        /// </remarks>
+        [HttpPost("prepare")]
+        public async Task<IActionResult> Prepare([FromServices] IMatcherWarmupQueue warmupQueue)
+        {
+            var userId = User.GetUserId();
+            if (userId < 0)
+            {
+                return Forbid();
+            }
+
+            if (await matcher.IsRouteIndexWarmAsync())
+            {
+                return Ok(new { ready = true });
+            }
+
+            // Already queued from another tab is just as good: that build warms the one index
+            // everything here shares, and its finished event goes to every connection this user has.
+            warmupQueue.TryEnqueue(userId);
+            return Ok(new { ready = false });
+        }
+
+        /// <summary>
         /// The next undated visit to work on. <paramref name="skip"/> steps past ones the user has
         /// looked at and left alone, without recording anything about them.
         /// <paramref name="stationId"/> asks for one particular station instead, which is how undo

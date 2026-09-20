@@ -632,8 +632,8 @@ namespace OV_DB.Controllers
                     return BadRequest("Failed to link status to RouteInstance. Status may already be linked or RouteInstance may not exist.");
 
                 var suggestions = payload == null
-                    ? []
-                    : await suggestionService.FromTrawellingStatusAsync(user, payload);
+                    ? StationSuggestionResult.Nothing
+                    : await suggestionService.FromTrawellingStatusAsync(user, payload, HttpContext.RequestAborted);
 
                 return Ok(new
                 {
@@ -647,7 +647,8 @@ namespace OV_DB.Controllers
                         trawellingStatusId = routeInstance.TrawellingStatusId
                     },
                     routeInstanceId = routeInstance.RouteInstanceId,
-                    stationSuggestions = suggestions
+                    stationSuggestions = suggestions.Stations,
+                    stationSuggestionsUnavailable = suggestions.Unavailable
                 });
             }
             catch (Exception ex)

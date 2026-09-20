@@ -114,7 +114,8 @@ namespace OV_DB
                         var path = context.HttpContext.Request.Path;
                         if (!string.IsNullOrEmpty(accessToken)
                             && (path.StartsWithSegments("/traewellingHub")
-                                || path.StartsWithSegments("/mapGenerationHub")))
+                                || path.StartsWithSegments("/mapGenerationHub")
+                                || path.StartsWithSegments("/stationsHub")))
                         {
                             context.Token = accessToken;
                         }
@@ -198,6 +199,11 @@ namespace OV_DB
             services.AddSingleton<ITraewellingResyncQueue, TraewellingResyncQueue>();
             services.AddHostedService<TraewellingResyncService>();
 
+            // Same arrangement for the route index: opening the backfill page queues the build
+            // rather than stalling the first station request on it.
+            services.AddSingleton<IMatcherWarmupQueue, MatcherWarmupQueue>();
+            services.AddHostedService<MatcherWarmupService>();
+
             // Register named HttpClients for different services to avoid socket exhaustion
             services.AddHttpClient("OSM", client =>
             {
@@ -278,6 +284,7 @@ namespace OV_DB
             {
                 r.MapHub<MapGenerationHub>("/mapGenerationHub");
                 r.MapHub<TraewellingHub>("/traewellingHub");
+                r.MapHub<StationsHub>("/stationsHub");
                 r.MapControllers();
                 r.MapSwagger();
             });

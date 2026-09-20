@@ -965,6 +965,9 @@ namespace OV_DB.Controllers
               .ThenInclude(ri => ri.RouteInstanceMaps)
               .ThenInclude(rim => rim.Map)
               .Where(r => r.RouteMaps.Any(rm => rm.Map.UserId == userIdClaim))
+              // One query per collection instead of one join across all of them: joined, the route
+              // row — geometry and all — is repeated once per trip per property per map.
+              .AsSplitQuery()
               .SingleOrDefaultAsync();
             if (route == null)
             {
@@ -999,6 +1002,8 @@ namespace OV_DB.Controllers
               // shared map anywhere would be readable by id enumeration.
               .Where(r => r.RouteMaps.Any(rm => rm.Map.MapGuid == mapGuid
                                                 && (!string.IsNullOrWhiteSpace(rm.Map.SharingLinkName) || rm.Map.UserId == userIdClaim)))
+              // See above: the joined shape repeats the route's geometry on every row.
+              .AsSplitQuery()
               .SingleOrDefaultAsync();
             if (route == null)
             {
@@ -1026,17 +1031,34 @@ namespace OV_DB.Controllers
             {
                 return Forbid();
             }
-            var route = await _context.Routes
-                .Where(r => r.RouteId == update.RouteId && r.RouteMaps.Any(rm => rm.Map.UserId == userIdClaim))
-                .Include(r => r.RouteInstances)
-                .ThenInclude(ri => ri.RouteInstanceProperties)
-                .Include(r => r.RouteInstances)
-                .ThenInclude(ri => ri.RouteInstanceMaps)
-                .SingleOrDefaultAsync();
+            // Ownership only. Pulling the route in with every trip it has ever had attached — each
+            // row carrying a copy of the route's geometry, which is megabytes on a long line — was
+            // most of what made saving one trip feel slow.
+            var routeExists = await _context.Routes
+                .AnyAsync(r => r.RouteId == update.RouteId && r.RouteMaps.Any(rm => rm.Map.UserId == userIdClaim));
 
-            if (route == null)
+            if (!routeExists)
             {
                 return NotFound();
+            }
+
+            // Read at most once, and only if a duration is actually computed: the timezone lookup
+            // wants the first and last coordinate, and the geometry is expensive to fetch for
+            // nothing.
+            // Fully qualified: SharpKml.Dom is in scope here and has a LineString of its own.
+            NetTopologySuite.Geometries.LineString geometry = null;
+            var geometryRead = false;
+            async Task<NetTopologySuite.Geometries.LineString> RouteGeometryAsync()
+            {
+                if (!geometryRead)
+                {
+                    geometry = await _context.Routes
+                        .Where(r => r.RouteId == update.RouteId)
+                        .Select(r => r.LineString)
+                        .SingleOrDefaultAsync();
+                    geometryRead = true;
+                }
+                return geometry;
             }
 
             // A newly created instance only gets its id once saved, and the caller needs it to date
@@ -1045,7 +1067,12 @@ namespace OV_DB.Controllers
 
             if (update.RouteInstanceId.HasValue)
             {
-                var current = route.RouteInstances.SingleOrDefault(ri => ri.RouteInstanceId == update.RouteInstanceId);
+                var current = await _context.RouteInstances
+                    .Where(ri => ri.RouteInstanceId == update.RouteInstanceId.Value && ri.RouteId == update.RouteId)
+                    .Include(ri => ri.RouteInstanceProperties)
+                    .Include(ri => ri.RouteInstanceMaps)
+                    .AsSplitQuery()
+                    .SingleOrDefaultAsync();
                 savedInstance = current;
                 if (current != null)
                 {
@@ -1061,7 +1088,7 @@ namespace OV_DB.Controllers
                         current.DurationHours = _timezoneService.CalculateDurationInHours(
                             current.StartTime.Value,
                             current.EndTime.Value,
-                            route.LineString);
+                            await RouteGeometryAsync());
                     }
                     else
                     {
@@ -1108,6 +1135,7 @@ namespace OV_DB.Controllers
             {
                 var newInstance = new RouteInstance
                 {
+                    RouteId = update.RouteId,
                     Date = update.Date,
                     StartTime = update.StartTime,
                     EndTime = update.EndTime,
@@ -1122,7 +1150,7 @@ namespace OV_DB.Controllers
                     newInstance.DurationHours = _timezoneService.CalculateDurationInHours(
                         newInstance.StartTime.Value,
                         newInstance.EndTime.Value,
-                        route.LineString);
+                        await RouteGeometryAsync());
                 }
 
                 newInstance.RouteInstanceProperties = new List<RouteInstanceProperty>();
@@ -1136,12 +1164,12 @@ namespace OV_DB.Controllers
                             Value = rip.Value
                         });
                 });
-                route.RouteInstances.Add(newInstance);
+                _context.RouteInstances.Add(newInstance);
                 savedInstance = newInstance;
             }
             await _context.SaveChangesAsync();
 
-            var suggestions = new List<StationSuggestionDTO>();
+            var suggestions = StationSuggestionResult.Nothing;
             if (update.TraewellingStatusId.HasValue)
             {
                 // This is the import moment, and the only place the calling pattern is worth
@@ -1152,16 +1180,20 @@ namespace OV_DB.Controllers
                     .Select(s => s.PayloadJson)
                     .FirstOrDefaultAsync();
 
-                var user = await _context.Users.SingleOrDefaultAsync(u => u.Id == userIdClaim);
-                if (payload != null && user != null)
-                {
-                    suggestions = await suggestionService.FromTrawellingStatusAsync(user, payload);
-                }
-
-                // The status is imported now; its Träwelling inbox row is no longer pending
+                // The status is imported now; its Träwelling inbox row is no longer pending.
+                // Before the suggestions rather than after: the trip is saved either way, and the
+                // fetch below can be abandoned — if the client has gone, skipping this would leave
+                // an imported trip sitting in the inbox pretending it still needs importing.
                 await _context.TrawellingInboxStatuses
                     .Where(s => s.UserId == userIdClaim && s.TrawellingStatusId == update.TraewellingStatusId.Value)
                     .ExecuteDeleteAsync();
+
+                var user = await _context.Users.SingleOrDefaultAsync(u => u.Id == userIdClaim);
+                if (payload != null && user != null)
+                {
+                    suggestions = await suggestionService.FromTrawellingStatusAsync(
+                        user, payload, HttpContext.RequestAborted);
+                }
             }
 
             // Stations this trip calls at that are not marked. Proposals only — the response carries
@@ -1170,7 +1202,10 @@ namespace OV_DB.Controllers
             return Ok(new
             {
                 routeInstanceId = savedInstance?.RouteInstanceId,
-                stationSuggestions = suggestions
+                stationSuggestions = suggestions.Stations,
+                // So the page can say the pattern went unread, rather than silently offering
+                // nothing and leaving it looking like there was nothing to offer.
+                stationSuggestionsUnavailable = suggestions.Unavailable
             });
         }
 

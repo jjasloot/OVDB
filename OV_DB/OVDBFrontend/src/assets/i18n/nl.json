@@ -46,6 +46,9 @@
       "FEWER_TRIPS": "Toon minder"
     },
     "BACKFILL": {
+      "PREPARING_TITLE": "Route-index wordt opgebouwd",
+      "PREPARING": "Elk station hier wordt vergeleken met de geometrie van je routes, die één keer per sessie wordt ingeladen. Dit duurt een paar seconden; daarna begint de wachtrij vanzelf.",
+      "PREPARING_PROGRESS": "{{processed}} van {{total}} routes geïndexeerd",
       "REMAINING": "Nog {{count}} zonder datum",
       "REGION_PROGRESS": "{{region}}: {{dated}} van {{total}} gedateerd",
       "NO_CANDIDATES": "Geen van je ritten komt langs dit station, dus er valt nog niets aan te dateren. Meer ritten importeren kan dat veranderen.",
@@ -147,6 +150,7 @@
   "ROUTES.ASSIGNREGIONS": "Regio's toewijzen",
   "STATS.COMPACT": "Compact",
   "ROUTEINSTANCE.SAVE_ERROR": "Kon de rit niet opslaan. Probeer het opnieuw.",
+  "ROUTEINSTANCE.SUGGESTIONS_UNAVAILABLE": "De rit is opgeslagen, maar de stopplaatsen van deze rit konden niet worden opgehaald. Er worden daarom geen stations voorgesteld.",
   "TRAEWELLING.IGNORE_ERROR": "Kon de rit niet negeren. Probeer het opnieuw.",
   "IMPORTER.STEP1": "Zoek op een naam en een type. Voeg een netwerk toe om resultaten te beperken.",
   "IMPORTER.REFERENCE": "Naam van de lijn",

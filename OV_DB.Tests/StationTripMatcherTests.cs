@@ -341,7 +341,7 @@ public class StationTripMatcherTests
 
         var candidates = await matcher.FindTripsForStationAsync(1, 10);
 
-        Assert.Equal(2, cache.Builds);
+        Assert.Equal(2, cache.RouteBuilds);
         Assert.Contains(90, candidates.Select(c => c.RouteInstanceId));
     }
 
@@ -576,7 +576,86 @@ public class StationTripMatcherTests
         await matcher.FindStationsForTripAsync(1, 1);
         await matcher.FindTripsForStationAsync(1, 10);
 
-        Assert.Equal(1, cache.Builds);
+        Assert.Equal(1, cache.RouteBuilds);
+        Assert.Equal(1, cache.StationBuilds);
+    }
+
+    [Fact]
+    public async Task WarmingBuildsTheRouteIndexUpFrontAndOnlyOnce()
+    {
+        // What the backfill page asks for on the way in, so the first station does not sit through
+        // the build with nothing to show for it.
+        using var context = await SeedAsync();
+        await AddStationAsync(context, 10, "Halt", BaseLat, BaseLon);
+        var cache = new CountingCache();
+        var matcher = new StationTripMatcher(context, cache);
+
+        Assert.False(await matcher.IsRouteIndexWarmAsync());
+
+        await matcher.WarmRouteIndexAsync();
+
+        Assert.True(await matcher.IsRouteIndexWarmAsync());
+        Assert.Equal(1, cache.RouteBuilds);
+
+        // And the work it was warmed for now costs nothing more.
+        Assert.Single(await matcher.FindTripsForStationAsync(1, 10));
+        Assert.Equal(1, cache.RouteBuilds);
+    }
+
+    [Fact]
+    public async Task WarmingReportsEveryRouteRowItPassed()
+    {
+        using var context = await SeedAsync();
+        var reports = new List<MatcherWarmupProgress>();
+        var matcher = NewMatcher(context);
+
+        await matcher.WarmRouteIndexAsync(new CollectingProgress(reports.Add));
+
+        // One route in the seed, so the bar has somewhere to end up rather than a total of zero.
+        Assert.NotEmpty(reports);
+        Assert.Equal(1, reports[^1].Processed);
+        Assert.Equal(1, reports[^1].Total);
+    }
+
+    private sealed class CollectingProgress(Action<MatcherWarmupProgress> report) : IProgress<MatcherWarmupProgress>
+    {
+        public void Report(MatcherWarmupProgress value) => report(value);
+    }
+
+    [Fact]
+    public async Task MatchingStopsNeverBuildsTheRouteIndex()
+    {
+        // The import path. Route geometry is hundreds of megabytes and a calling pattern says
+        // nothing about it, so a trip on a freshly imported line must not pay to rebuild it - which
+        // is exactly what a shared fingerprint made every Traewelling import do.
+        using var context = await SeedAsync();
+        await AddStationAsync(context, 10, "Halt", BaseLat, BaseLon);
+        var cache = new CountingCache();
+        var matcher = new StationTripMatcher(context, cache);
+
+        var matched = await matcher.MatchStopsAsync([new StopPoint("Halt", BaseLat, BaseLon)]);
+
+        Assert.Equal(10, Assert.Single(matched).StationId);
+        Assert.Equal(0, cache.RouteBuilds);
+        Assert.Equal(1, cache.StationBuilds);
+    }
+
+    [Fact]
+    public async Task AStationAddedAfterTheIndexWasBuiltIsStillMatched()
+    {
+        // The station half of the same guarantee: the counts have to catch a new station on their
+        // own now that stations no longer ride along on the route fingerprint.
+        using var context = await SeedAsync();
+        var cache = new CountingCache();
+        var matcher = new StationTripMatcher(context, cache);
+        Assert.Empty(await matcher.MatchStopsAsync([new StopPoint("Halt", BaseLat, BaseLon)]));
+
+        await AddStationAsync(context, 10, "Halt", BaseLat, BaseLon);
+
+        var matched = await matcher.MatchStopsAsync([new StopPoint("Halt", BaseLat, BaseLon)]);
+
+        Assert.Equal(10, Assert.Single(matched).StationId);
+        Assert.Equal(2, cache.StationBuilds);
     }
 
     [Fact]
@@ -591,20 +670,31 @@ public class StationTripMatcherTests
         cache.Invalidate();
         await matcher.FindTripsForStationAsync(1, 10);
 
-        Assert.Equal(2, cache.Builds);
+        Assert.Equal(2, cache.RouteBuilds);
     }
 
     private sealed class CountingCache : IMatcherIndexCache
     {
         private readonly MatcherIndexCache _inner = new();
-        public int Builds { get; private set; }
+        public int RouteBuilds { get; private set; }
+        public int StationBuilds { get; private set; }
+        public int Builds => RouteBuilds + StationBuilds;
 
-        public Task<MatcherIndex> GetAsync(int routeCount, int stationCount, Func<CancellationToken, Task<MatcherIndex>> build, CancellationToken cancellationToken = default) =>
-            _inner.GetAsync(routeCount, stationCount, ct =>
+        public Task<RouteIndex> GetRoutesAsync(int routeCount, Func<CancellationToken, Task<RouteIndex>> build, CancellationToken cancellationToken = default) =>
+            _inner.GetRoutesAsync(routeCount, ct =>
             {
-                Builds++;
+                RouteBuilds++;
                 return build(ct);
             }, cancellationToken);
+
+        public Task<StationIndex> GetStationsAsync(int stationCount, Func<CancellationToken, Task<StationIndex>> build, CancellationToken cancellationToken = default) =>
+            _inner.GetStationsAsync(stationCount, ct =>
+            {
+                StationBuilds++;
+                return build(ct);
+            }, cancellationToken);
+
+        public bool HasRoutes(int routeCount) => _inner.HasRoutes(routeCount);
 
         public void Invalidate() => _inner.Invalidate();
     }

@@ -15,6 +15,7 @@ import { MultipleEdit } from "../models/multipleEdit.model";
 import { RouteInstance } from "../models/routeInstance.model";
 import { StationMap } from "../models/stationMap.model";
 import {
+  BackfillReadiness,
   OSMStop,
   RouteGeometry,
   StationBackfillItem,
@@ -581,6 +582,16 @@ export class ApiService {
       skip +
       (stationId === null ? "" : "&stationId=" + stationId);
     return this.httpClient.get<StationBackfillItem>(url);
+  }
+
+  /**
+   * Asks whether the dating queue is ready to work, and starts getting it ready if not. A false
+   * answer means the route index is being built; the page waits for the hub rather than firing
+   * the first station request into a build it would sit through unexplained.
+   */
+  prepareBackfill(): Observable<BackfillReadiness> {
+    const url = environment.backend + "api/stationbackfill/prepare";
+    return this.httpClient.post<BackfillReadiness>(url, {});
   }
 
   /** Retires a station from the dating queue. Says nothing about whether it was visited. */

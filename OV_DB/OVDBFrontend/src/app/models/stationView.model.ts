@@ -157,3 +157,19 @@ export interface StationSuggestionsForRoute {
   routeInstanceId: number | null;
   stations: StationSuggestion[];
 }
+
+/** Whether the backfill queue can be worked straight away, or is still getting ready. */
+export interface BackfillReadiness {
+  ready: boolean;
+}
+
+/** How far the route index has got, while the backfill page waits for it. */
+export interface BackfillWarmupProgress {
+  processed: number;
+  total: number;
+}
+
+/** The end of that wait. `ready: false` means the build failed rather than finished. */
+export interface BackfillWarmupResult {
+  ready: boolean;
+}

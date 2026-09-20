@@ -1880,6 +1880,12 @@ namespace OV_DB.Services
                 var stopovers = data[tripId.ToString()] ?? data.Properties().FirstOrDefault()?.Value;
                 return stopovers?.ToObject<List<TrawellingStopover>>() ?? [];
             }
+            catch (OperationCanceledException)
+            {
+                // The caller gave up waiting, which is a decision rather than a fault. Passed on
+                // so it can say the pattern went unread instead of being told there was none.
+                throw;
+            }
             catch (Exception ex)
             {
                 // A missing calling pattern costs suggestions, not the import. Never fail the one

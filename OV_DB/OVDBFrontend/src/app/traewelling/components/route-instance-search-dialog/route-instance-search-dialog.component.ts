@@ -198,6 +198,14 @@ export class RouteInstanceSearchDialogComponent implements OnInit {
    * pattern was fetched once, here, and is not stored.
    */
   private offerStationSuggestions(response: LinkToRouteInstanceResponse): void {
+    if (response.stationSuggestionsUnavailable) {
+      // No action button: this is news, not a question, and it should clear itself.
+      this.snackBar.open(
+        this.translateService.instant('ROUTEINSTANCE.SUGGESTIONS_UNAVAILABLE'),
+        undefined,
+        { duration: 6000 }
+      );
+    }
     const stations = response.stationSuggestions;
     if (!stations?.length) {
       return;
