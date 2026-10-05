@@ -37,7 +37,6 @@ export interface RegionNetworkSummary {
   edgeCount: number;
   assembledAt: string | null;
   classifiedByRelations: boolean;
-  coveredKm: number;
 }
 
 export interface RegionNetworks {
@@ -77,6 +76,20 @@ export interface NetworkCompletion {
   totalKm: number;
   bonusKm: number;
   edges: CoveredEdge[];
+}
+
+/** Mirrors OVDB_database.Models.NetworkOverrideKind. */
+export enum NetworkOverrideKind {
+  Excluded = 0,
+  ForceRail = 1,
+  ForceUrbanRail = 2,
+}
+
+export interface NetworkWayOverride {
+  id: number;
+  osmWayId: number;
+  kind: NetworkOverrideKind;
+  createdAt: string;
 }
 
 export interface MissingRun {

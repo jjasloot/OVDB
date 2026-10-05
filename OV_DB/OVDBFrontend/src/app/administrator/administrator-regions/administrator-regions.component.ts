@@ -15,6 +15,7 @@ import { MatInput } from "@angular/material/input";
 import { MatTooltip } from "@angular/material/tooltip";
 import { FormsModule } from "@angular/forms";
 import { NetworkCompletionService } from "src/app/services/network-completion.service";
+import { TranslateModule, TranslateService } from "@ngx-translate/core";
 
 @Component({
   selector: "app-administrator-regions",
@@ -35,7 +36,8 @@ import { NetworkCompletionService } from "src/app/services/network-completion.se
     MatLabel,
     MatInput,
     MatTooltip,
-    FormsModule
+    FormsModule,
+    TranslateModule
   ]
 })
 export class AdministratorRegionsComponent implements OnInit {
@@ -51,6 +53,7 @@ export class AdministratorRegionsComponent implements OnInit {
   networkProgress: Record<number, number> = {};
 
   private networkService = inject(NetworkCompletionService);
+  private translateService = inject(TranslateService);
 
   constructor() {
     this.signalRService.regionUpdates$.pipe(takeUntilDestroyed()).subscribe((update) => {
@@ -66,7 +69,7 @@ export class AdministratorRegionsComponent implements OnInit {
 
   assembleNetwork(regionId: number, refresh = false) {
     this.networkService.assemble(regionId, refresh).subscribe(() => {
-      this.snackBar.open("Network assembly queued", undefined, { duration: 3000 });
+      this.snackBar.open(this.translateService.instant("STATS.NETWORK.QUEUED"), undefined, { duration: 3000 });
     });
   }
 

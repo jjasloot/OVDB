@@ -228,6 +228,9 @@ namespace OV_DB.Controllers
                     _logger.LogDebug("Route {RouteName} regions {Before} => {After}", route.Name, regionsBefore, string.Join(", ", route.Regions.Select(r => r.Name)));
                 }
                 await _dbContext.SaveChangesAsync(cancellationToken);
+                // A route newly assigned to a region with an assembled network must get matched.
+                foreach (var route in routes)
+                    OV_DB.Services.Network.NetworkMatchQueueService.Queue.Enqueue(new OV_DB.Services.Network.RouteChanged(route.RouteId));
                 count += batchSize;
                 _logger.LogInformation("Added regions to {Count} routes", count);
             } while (routes.Count > 0);

@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using OVDB_database.Database;
 using OVDB_database.Models;
+using OV_DB.Services;
 
 namespace OV_DB.Services.Network;
 
@@ -25,31 +26,56 @@ public interface INetworkMatchIndexCache
 
 /// <summary>
 /// Match indexes keyed by network id and version: a route save must not rebuild a 137k-sample
-/// index, and a reassembly (which bumps the version) must not reuse the old one.
+/// index, and a reassembly (which bumps the version) must not reuse the old one. Only completed
+/// indexes are cached — never a task bound to a caller's scoped DbContext — and, like
+/// <see cref="MatcherIndexCache"/>, entries idle for half an hour are dropped: the work is
+/// bursty (an assembly, then nothing for days) and resident indexes cost tens of MB each on the NAS.
 /// </summary>
-public sealed class NetworkMatchIndexCache : INetworkMatchIndexCache
+public sealed class NetworkMatchIndexCache : INetworkMatchIndexCache, IDisposable
 {
-    private readonly ConcurrentDictionary<int, (int Version, Lazy<Task<NetworkMatchIndex>> Index)> _entries = new();
+    private static readonly TimeSpan IdleTimeout = TimeSpan.FromMinutes(30);
+
+    private sealed class Entry
+    {
+        public int Version;
+        public NetworkMatchIndex Index;
+        public DateTime LastUsedUtc;
+    }
+
+    private readonly ConcurrentDictionary<int, Entry> _entries = new();
+    private readonly Timer _sweep;
+
+    public NetworkMatchIndexCache()
+    {
+        _sweep = new Timer(_ => DropIdle(), null, IdleTimeout, IdleTimeout);
+    }
 
     public async Task<NetworkMatchIndex> GetAsync(OVDBDatabaseContext db, RegionNetwork network, CancellationToken cancellationToken)
     {
         if (_entries.TryGetValue(network.Id, out var entry) && entry.Version == network.Version)
-            return await entry.Index.Value;
+        {
+            entry.LastUsedUtc = DateTime.UtcNow;
+            return entry.Index;
+        }
 
-        var lazy = new Lazy<Task<NetworkMatchIndex>>(() => BuildAsync(db, network, cancellationToken));
-        _entries[network.Id] = (network.Version, lazy);
-        try
-        {
-            return await lazy.Value;
-        }
-        catch
-        {
-            _entries.TryRemove(network.Id, out _);
-            throw;
-        }
+        // Two callers racing here both build; the queue is single-threaded and route saves are
+        // rare enough that a duplicate build beats holding a lock across a database read.
+        var index = await BuildAsync(db, network, cancellationToken);
+        _entries[network.Id] = new Entry { Version = network.Version, Index = index, LastUsedUtc = DateTime.UtcNow };
+        return index;
     }
 
     public void Invalidate(int networkId) => _entries.TryRemove(networkId, out _);
+
+    private void DropIdle()
+    {
+        var cutoff = DateTime.UtcNow - IdleTimeout;
+        foreach (var (id, entry) in _entries)
+            if (entry.LastUsedUtc < cutoff)
+                _entries.TryRemove(id, out _);
+    }
+
+    public void Dispose() => _sweep.Dispose();
 
     private static async Task<NetworkMatchIndex> BuildAsync(OVDBDatabaseContext db, RegionNetwork network, CancellationToken cancellationToken)
     {

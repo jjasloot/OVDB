@@ -16,10 +16,10 @@
     <button mat-button (click)="refreshRoutesForRegion(region.id)">
       <mat-icon [fontIcon]="'refresh'"></mat-icon>
     </button>
-    <button mat-button (click)="assembleNetwork(region.id)" matTooltip="Assemble the rail networks of this region from the cached OpenStreetMap data">
+    <button mat-button (click)="assembleNetwork(region.id)" [matTooltip]="'STATS.NETWORK.ASSEMBLE' | translate">
       <mat-icon [fontIcon]="'route'"></mat-icon>
     </button>
-    <button mat-button (click)="assembleNetwork(region.id, true)" matTooltip="Refetch from OpenStreetMap and assemble the rail networks">
+    <button mat-button (click)="assembleNetwork(region.id, true)" [matTooltip]="'STATS.NETWORK.REFRESH_OSM' | translate">
       <mat-icon [fontIcon]="'cloud_download'"></mat-icon>
     </button>
   </mat-card-header>

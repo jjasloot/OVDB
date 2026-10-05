@@ -337,9 +337,13 @@ job and reused across routes.
 ### 5.3 Work items
 
 `RouteChanged`: delete the route's rows; for each Ready network whose region is in
-`route.Regions` (maintained by `RouteRegionsService`), match and insert. Enqueued from the
-four call sites of `AssignRegionsToRouteAsync` (`RoutesController` ×2, `ImporterController`,
-`AdminController`), after region assignment, and when a route's type changes.
+`route.Regions` (maintained by `RouteRegionsService`), match and insert. Enqueued after region
+assignment at every route creation (`RoutesController` KML/GPX imports, `ImporterController`
+wizard), on type changes (route update, edit-multiple, type deletion), and from
+`AdminController`'s batch region reassignment — a route newly placed in a region with an
+assembled network must get matched. Route geometry is immutable after creation in OVDB (no
+controller assigns `LineString` on an existing route; a redrawn route is a new route), so there
+is no geometry-edit hook to add; if that ever changes, that path must enqueue too.
 
 `NetworkChanged`: rows are already gone (cascade); load the network once; iterate routes in
 `route.Regions ∋ region` with `MatchesRailNetworks`, in pages of a few hundred (13k routes ≈
@@ -350,12 +354,13 @@ four call sites of `AssignRegionsToRouteAsync` (`RoutesController` ×2, `Importe
 `NetworkCompletionController` (`/api/networks`), all `[Authorize]`:
 
 - **`GET /api/networks/regions`** — regions with Ready networks, per mode: `totalKm`,
-  `bonusKmTotal`, `edgeCount`, `assembledAt`, `classifiedByRelations`, and the caller's
-  `coveredKm`. Drives the picker.
-- **`GET /api/networks/{regionId}/{mode}/geometry`** — static: `{ version, totalKm, edges:
+  `bonusKm`, `edgeCount`, `assembledAt`, `classifiedByRelations`. Drives the picker; it is
+  deliberately user-independent (the covered km come from the completion call for the
+  selected network, not from scanning every match row to fill a dropdown).
+- **`GET /api/networks/{networkId}/geometry`** — static: `{ version, totalKm, edges:
   [{ id, name, fromStation, toStation, lengthKm, isPassenger, geometry }] }` with simplified
   GeoJSON; `ETag: "{Version}"`, `Cache-Control: private`. NL rail ≈ 1–2 MB raw, ~300 KB gzipped.
-- **`GET /api/networks/{regionId}/{mode}/completion?from=&to=`** — the per-user part:
+- **`GET /api/networks/{networkId}/completion?from=&to=`** — the per-user part:
 
   ```csharp
   var rows = await db.RouteNetworkEdges
@@ -380,10 +385,14 @@ four call sites of `AssignRegionsToRouteAsync` (`RoutesController` ×2, `Importe
   vertices the simplifier kept, the cut lands exactly where the ride ended even on edges whose
   simplified length differs from the full one by several percent (measured worst case 94 %).
 
-- **`GET /api/networks/{regionId}/{mode}/missing`** — uncovered runs ≥ 500 m, grouped by edge
+- **`GET /api/networks/{networkId}/missing`** — uncovered runs ≥ 500 m, grouped by edge
   name and station span, summed km, descending: the "what should I ride next" list.
-- **Curation:** `GET/POST/DELETE /api/networks/region/{regionId}/overrides` (admin); a POST
-  enqueues reassembly of that region from the cached fetch.
+- **Curation (admin):** `GET /api/networks/region/{regionId}/overrides`;
+  `POST …/overrides` with `{ osmWayIds, kind }` upserts one override per way (Excluded /
+  ForceRail / ForceUrbanRail); `DELETE …/overrides/{osmWayId}` removes one. Both mutations
+  enqueue a reassembly of the region from the cached fetch, so the map changes without an
+  Overpass call. `GET /api/networks/edges/{edgeId}/ways` returns the OSM way ids an edge was
+  built from — what the map's override action sends.
 - **Admin:** `POST /api/networks/region/{regionId}/assemble` (`refresh=true` refetches OSM);
   `GET …/status`.
 

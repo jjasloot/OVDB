@@ -26,7 +26,7 @@ public class NetworkCompletionController(OVDBDatabaseContext dbContext, IHubCont
         string OsmDataTimestamp, int EdgeCount, int Version, double TotalKm, double BonusKm, bool ClassifiedByRelations, string Error);
 
     public sealed record RegionNetworksDto(int RegionId, string Name, string NameNL, int? ParentRegionId, List<RegionNetworkSummaryDto> Networks);
-    public sealed record RegionNetworkSummaryDto(int Id, NetworkMode Mode, int Version, double TotalKm, double BonusKm, int EdgeCount, DateTime? AssembledAt, bool ClassifiedByRelations, double CoveredKm);
+    public sealed record RegionNetworkSummaryDto(int Id, NetworkMode Mode, int Version, double TotalKm, double BonusKm, int EdgeCount, DateTime? AssembledAt, bool ClassifiedByRelations);
 
     public sealed record GeometryEdgeDto(long Id, string Name, string FromStation, string ToStation, double LengthKm, bool IsPassenger, Geometry Geometry);
     public sealed record GeometryDto(int Version, double TotalKm, double BonusKm, List<GeometryEdgeDto> Edges);
@@ -66,6 +66,82 @@ public class NetworkCompletionController(OVDBDatabaseContext dbContext, IHubCont
         return Ok();
     }
 
+    // ---- curation (admin) --------------------------------------------------------------------
+
+    public sealed record OverrideDto(long Id, long OsmWayId, NetworkOverrideKind Kind, DateTime CreatedAt);
+    public sealed record OverrideRequest(long[] OsmWayIds, NetworkOverrideKind Kind);
+
+    /// <summary>The OSM ways an edge was built from — what an override is keyed by.</summary>
+    [HttpGet("edges/{edgeId:long}/ways")]
+    public async Task<ActionResult<long[]>> EdgeWaysAsync(long edgeId)
+    {
+        var json = await dbContext.NetworkEdges.Where(e => e.Id == edgeId).Select(e => e.OsmWayIds).FirstOrDefaultAsync();
+        if (json == null)
+            return NotFound();
+        return Newtonsoft.Json.JsonConvert.DeserializeObject<long[]>(json) ?? [];
+    }
+
+    [HttpGet("region/{regionId:int}/overrides")]
+    public async Task<ActionResult<List<OverrideDto>>> OverridesAsync(int regionId)
+    {
+        if (!User.IsAdmin())
+            return Forbid();
+        return await dbContext.NetworkWayOverrides
+            .Where(o => o.RegionId == regionId)
+            .OrderByDescending(o => o.CreatedAt)
+            .Select(o => new OverrideDto(o.Id, o.OsmWayId, o.Kind, o.CreatedAt))
+            .ToListAsync();
+    }
+
+    /// <summary>
+    /// Force ways out of the network or into a mode, then reassemble the region from the cached
+    /// fetch so the change shows up. Upserts: a way already overridden gets the new kind.
+    /// </summary>
+    [HttpPost("region/{regionId:int}/overrides")]
+    public async Task<ActionResult<List<OverrideDto>>> AddOverridesAsync(int regionId, [FromBody] OverrideRequest request)
+    {
+        if (!User.IsAdmin())
+            return Forbid();
+        if (request?.OsmWayIds == null || request.OsmWayIds.Length == 0)
+            return BadRequest();
+        if (!await dbContext.Regions.AnyAsync(r => r.Id == regionId))
+            return NotFound();
+
+        var wayIds = request.OsmWayIds.Distinct().ToList();
+        var existing = await dbContext.NetworkWayOverrides
+            .Where(o => o.RegionId == regionId && wayIds.Contains(o.OsmWayId))
+            .ToListAsync();
+        foreach (var wayId in wayIds)
+        {
+            var row = existing.FirstOrDefault(o => o.OsmWayId == wayId);
+            if (row == null)
+                dbContext.NetworkWayOverrides.Add(new NetworkWayOverride { RegionId = regionId, OsmWayId = wayId, Kind = request.Kind, CreatedAt = DateTime.UtcNow });
+            else
+                row.Kind = request.Kind;
+        }
+        await dbContext.SaveChangesAsync();
+
+        await hubContext.Clients.All.SendAsync(MapGenerationHub.NetworkUpdateMethod, regionId, 0);
+        RegionNetworkAssemblyService.Queue.Enqueue(new NetworkAssemblyRequest(regionId, RefreshFromOsm: false));
+        return await OverridesAsync(regionId);
+    }
+
+    [HttpDelete("region/{regionId:int}/overrides/{osmWayId:long}")]
+    public async Task<IActionResult> RemoveOverrideAsync(int regionId, long osmWayId)
+    {
+        if (!User.IsAdmin())
+            return Forbid();
+        var removed = await dbContext.NetworkWayOverrides
+            .Where(o => o.RegionId == regionId && o.OsmWayId == osmWayId)
+            .ExecuteDeleteAsync();
+        if (removed == 0)
+            return NotFound();
+
+        await hubContext.Clients.All.SendAsync(MapGenerationHub.NetworkUpdateMethod, regionId, 0);
+        RegionNetworkAssemblyService.Queue.Enqueue(new NetworkAssemblyRequest(regionId, RefreshFromOsm: false));
+        return NoContent();
+    }
+
     [HttpGet("region/{regionId:int}/status")]
     public async Task<ActionResult<NetworkStatusDto[]>> StatusAsync(int regionId)
     {
@@ -80,41 +156,25 @@ public class NetworkCompletionController(OVDBDatabaseContext dbContext, IHubCont
 
     // ---- read path -------------------------------------------------------------------------
 
-    /// <summary>Regions with at least one Ready network, with per-mode totals and the caller's covered km. Drives the picker.</summary>
+    /// <summary>
+    /// Regions with at least one Ready network and their per-mode totals. Drives the picker.
+    /// Deliberately user-independent: the caller's covered km come from the completion call for
+    /// the selected network, not from scanning every match row the user has to fill a dropdown.
+    /// </summary>
     [HttpGet("regions")]
     public async Task<ActionResult<List<RegionNetworksDto>>> RegionsAsync()
     {
-        var userId = User.GetUserId();
         var networks = await dbContext.RegionNetworks
             .Where(n => n.Status == NetworkStatus.Ready && n.EdgeCount > 0)
             .Select(n => new { n.Id, n.RegionId, n.Region.Name, n.Region.NameNL, n.Region.ParentRegionId, n.Mode, n.Version, n.TotalKm, n.BonusKm, n.EdgeCount, n.AssembledAt, n.ClassifiedByRelations })
             .ToListAsync();
-        if (networks.Count == 0)
-            return new List<RegionNetworksDto>();
-
-        // Covered km per network for this user: union bitmaps per edge, so an edge two routes
-        // share counts once. Grouped in memory - the rows are small (≤ 51 bytes each).
-        var networkIds = networks.Select(n => n.Id).ToList();
-        var rows = await OwnedMatchRows(userId, null, null)
-            .Where(m => networkIds.Contains(m.Edge.RegionNetworkId) && m.Edge.IsPassenger)
-            .Select(m => new { m.Edge.RegionNetworkId, m.NetworkEdgeId, m.CoveredSamples, m.Edge.SampleCount, m.Edge.LengthKm })
-            .ToListAsync();
-        var coveredByNetwork = rows
-            .GroupBy(r => r.RegionNetworkId)
-            .ToDictionary(g => g.Key, g => g.GroupBy(r => r.NetworkEdgeId).Sum(e =>
-            {
-                var union = new bool[e.First().SampleCount];
-                foreach (var row in e)
-                    NetworkLattice.OrInto(union, row.CoveredSamples);
-                return e.First().LengthKm * NetworkLattice.PopCount(union) / union.Length;
-            }));
 
         return networks
             .GroupBy(n => new { n.RegionId, n.Name, n.NameNL, n.ParentRegionId })
             .OrderBy(g => g.Key.Name)
             .Select(g => new RegionNetworksDto(g.Key.RegionId, g.Key.Name, g.Key.NameNL, g.Key.ParentRegionId,
                 g.OrderBy(n => n.Mode).Select(n => new RegionNetworkSummaryDto(n.Id, n.Mode, n.Version, n.TotalKm, n.BonusKm, n.EdgeCount,
-                    n.AssembledAt, n.ClassifiedByRelations, Math.Round(coveredByNetwork.GetValueOrDefault(n.Id), 1))).ToList()))
+                    n.AssembledAt, n.ClassifiedByRelations)).ToList()))
             .ToList();
     }
 

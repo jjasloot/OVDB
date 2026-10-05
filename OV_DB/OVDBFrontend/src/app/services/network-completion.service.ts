@@ -6,7 +6,9 @@ import {
   MissingRun,
   NetworkCompletion,
   NetworkGeometry,
+  NetworkOverrideKind,
   NetworkStatusRow,
+  NetworkWayOverride,
   RegionNetworks,
 } from '../models/network-completion.model';
 
@@ -43,6 +45,24 @@ export class NetworkCompletionService {
 
   rematch(regionId: number): Observable<void> {
     return this.httpClient.post<void>(this.base + 'region/' + regionId + '/rematch', {});
+  }
+
+  /** The OSM way ids an edge was built from — overrides are keyed by these. */
+  edgeWays(edgeId: number): Observable<number[]> {
+    return this.httpClient.get<number[]>(this.base + 'edges/' + edgeId + '/ways');
+  }
+
+  overrides(regionId: number): Observable<NetworkWayOverride[]> {
+    return this.httpClient.get<NetworkWayOverride[]>(this.base + 'region/' + regionId + '/overrides');
+  }
+
+  /** Upserts the override for each way and queues a reassembly from the cached fetch. */
+  addOverrides(regionId: number, osmWayIds: number[], kind: NetworkOverrideKind): Observable<NetworkWayOverride[]> {
+    return this.httpClient.post<NetworkWayOverride[]>(this.base + 'region/' + regionId + '/overrides', { osmWayIds, kind });
+  }
+
+  removeOverride(regionId: number, osmWayId: number): Observable<void> {
+    return this.httpClient.delete<void>(this.base + 'region/' + regionId + '/overrides/' + osmWayId);
   }
 
   private range(from?: Date | null, to?: Date | null): HttpParams {

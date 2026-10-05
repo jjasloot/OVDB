@@ -9,7 +9,9 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { LeafletModule } from '@bluehalo/ngx-leaflet';
 import { LatLng, LatLngBounds, Layer, Polyline, geoJSON, latLng, polyline } from 'leaflet';
 import type { Feature, FeatureCollection, GeoJsonObject, LineString, Position } from 'geojson';
-import { forkJoin } from 'rxjs';
+import { Subject, forkJoin, of } from 'rxjs';
+import { catchError, switchMap } from 'rxjs/operators';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MapTileLayersService } from 'src/app/services/map-tile-layers.service';
 import { NetworkCompletionService } from 'src/app/services/network-completion.service';
 import { TranslationService } from 'src/app/services/translation.service';
@@ -83,6 +85,41 @@ export class NetworkCompletionComponent implements OnInit {
 
   private edgeLayers = new Map<number, Layer[]>();
 
+  /** The selected network id; switchMap makes a fast second selection win over a slow first response. */
+  private selection$ = new Subject<number | null>();
+
+  constructor() {
+    this.selection$
+      .pipe(
+        switchMap((networkId) => {
+          if (networkId == null) {
+            return of(null);
+          }
+          this.loadingNetwork.set(true);
+          return forkJoin({
+            geometry: this.service.geometry(networkId),
+            completion: this.service.completion(networkId),
+            missing: this.service.missing(networkId),
+          }).pipe(catchError(() => of(null)));
+        }),
+        takeUntilDestroyed()
+      )
+      .subscribe((result) => {
+        this.loadingNetwork.set(false);
+        if (!result) {
+          this.layers.set([]);
+          this.geometry.set(null);
+          this.completion.set(null);
+          this.missing.set([]);
+          return;
+        }
+        this.geometry.set(result.geometry);
+        this.completion.set(result.completion);
+        this.missing.set(result.missing);
+        this.buildLayers(result.geometry, result.completion);
+      });
+  }
+
   ngOnInit(): void {
     this.service.regions().subscribe({
       next: (regions) => {
@@ -137,29 +174,7 @@ export class NetworkCompletionComponent implements OnInit {
   }
 
   private loadNetwork(): void {
-    const network = this.selectedNetwork();
-    if (!network) {
-      this.layers.set([]);
-      this.geometry.set(null);
-      this.completion.set(null);
-      this.missing.set([]);
-      return;
-    }
-    this.loadingNetwork.set(true);
-    forkJoin({
-      geometry: this.service.geometry(network.id),
-      completion: this.service.completion(network.id),
-      missing: this.service.missing(network.id),
-    }).subscribe({
-      next: ({ geometry, completion, missing }) => {
-        this.geometry.set(geometry);
-        this.completion.set(completion);
-        this.missing.set(missing);
-        this.buildLayers(geometry, completion);
-        this.loadingNetwork.set(false);
-      },
-      error: () => this.loadingNetwork.set(false),
-    });
+    this.selection$.next(this.selectedNetwork()?.id ?? null);
   }
 
   private buildLayers(geometry: NetworkGeometry, completion: NetworkCompletion): void {
