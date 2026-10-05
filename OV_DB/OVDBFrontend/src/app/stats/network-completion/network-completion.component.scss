@@ -1,0 +1,143 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+mat-card-title {
+  padding: 16px 16px 0;
+}
+
+.loading {
+  display: flex;
+  justify-content: center;
+  padding: 32px;
+}
+
+.pickers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+}
+
+.pickers mat-form-field {
+  min-width: 240px;
+}
+
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 16px;
+}
+
+.tile mat-card-content {
+  display: flex;
+  flex-direction: column;
+  padding-top: 16px;
+}
+
+.tile .value {
+  font-size: 1.9rem;
+  font-weight: 500;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.tile .label {
+  font-size: 0.8rem;
+  opacity: 0.7;
+}
+
+.caveat {
+  margin: 0;
+  font-size: 0.85rem;
+  opacity: 0.75;
+}
+
+.map-container {
+  position: relative;
+  height: 60vh;
+  min-height: 360px;
+}
+
+.map {
+  height: 100%;
+  border-radius: 4px;
+}
+
+.loading-indicator {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.15);
+  z-index: 500;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  font-size: 0.85rem;
+  opacity: 0.85;
+}
+
+.legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.swatch {
+  display: inline-block;
+  width: 22px;
+  height: 0;
+  border-top: 4px solid;
+  border-radius: 2px;
+}
+
+.swatch.ridden { border-color: #2e7d32; }
+.swatch.missing { border-color: #c62828; border-top-width: 2px; }
+.swatch.bonus { border-color: #00838f; border-top-style: dashed; }
+
+.missing {
+  margin: 0;
+  padding-left: 0;
+  list-style: none;
+  columns: 320px;
+}
+
+.missing li {
+  break-inside: avoid;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 3px 0;
+}
+
+.missing .run {
+  background: none;
+  border: none;
+  padding: 0;
+  text-align: left;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+}
+
+.missing .run:hover,
+.missing .run:focus-visible {
+  text-decoration: underline;
+  outline: none;
+}
+
+.missing .km {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.75;
+}

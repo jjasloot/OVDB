@@ -15,6 +15,10 @@ export class SignalRService {
   updates$ = new Subject<{ requestIdentifier: string; percentage: number }>();
   regionUpdates$ = new Subject<{ regionId: number; percentage: number, updatedRoutes: number | null }>();
   stationUpdates$ = new Subject<{ regionId: number; percentage: number }>();
+  /** Progress of a region's rail network assembly (both modes in one job). */
+  networkUpdates$ = new Subject<{ regionId: number; percentage: number }>();
+  /** Progress of rematching all routes against one network after (re)assembly. */
+  networkMatchUpdates$ = new Subject<{ networkId: number; percentage: number }>();
   connect() {
     if (this.connection) {
       return;
@@ -34,6 +38,12 @@ export class SignalRService {
     });
     connection.on("RefreshStations", (regionId, percentage) => {
       this.stationUpdates$.next({ regionId, percentage });
+    });
+    connection.on("RefreshNetwork", (regionId, percentage) => {
+      this.networkUpdates$.next({ regionId, percentage });
+    });
+    connection.on("RefreshNetworkMatches", (networkId, percentage) => {
+      this.networkMatchUpdates$.next({ networkId, percentage });
     });
     connection.onclose(() => (this.connected = false));
     this.startPromise = connection

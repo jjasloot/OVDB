@@ -47,6 +47,14 @@
     <p>{{ 'LOADING' | translate }}</p>
     }
   </mat-tab>
+  <mat-tab [label]="'STATS.NETWORK.TITLE'|translate">
+    @defer (on viewport) {
+    <app-network-completion />
+    }
+    @placeholder {
+    <p>{{ 'LOADING' | translate }}</p>
+    }
+  </mat-tab>
   <mat-tab [label]="'STATS.YEARREVIEW.TITLE'|translate">
     @defer (on viewport) {
     <app-year-in-review />

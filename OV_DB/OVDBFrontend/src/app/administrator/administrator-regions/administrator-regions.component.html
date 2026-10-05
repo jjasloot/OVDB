@@ -16,6 +16,12 @@
     <button mat-button (click)="refreshRoutesForRegion(region.id)">
       <mat-icon [fontIcon]="'refresh'"></mat-icon>
     </button>
+    <button mat-button (click)="assembleNetwork(region.id)" matTooltip="Assemble the rail networks of this region from the cached OpenStreetMap data">
+      <mat-icon [fontIcon]="'route'"></mat-icon>
+    </button>
+    <button mat-button (click)="assembleNetwork(region.id, true)" matTooltip="Refetch from OpenStreetMap and assemble the rail networks">
+      <mat-icon [fontIcon]="'cloud_download'"></mat-icon>
+    </button>
   </mat-card-header>
   <mat-card-content>
     @if(progressUpdates[region.id]!=null){
@@ -23,6 +29,11 @@
       Progress: {{ progressUpdates[region.id] }}% @if(updateResult[region.id]!=null){
       : {{updateResult[region.id]}}
       }
+    </mat-chip><br />
+    }
+    @if(networkProgress[region.id]!=null){
+    <mat-chip [class.finished]="networkProgress[region.id]>=100">
+      Network: {{ networkProgress[region.id] }}%
     </mat-chip><br />
     }
     @for(subregion of region.subRegions; track subregion.id) {

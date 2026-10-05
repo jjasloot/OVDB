@@ -1,0 +1,100 @@
+<div class="container">
+  @if (loading()) {
+    <div class="loading">
+      <mat-spinner diameter="40" />
+    </div>
+  } @else if (regions().length === 0) {
+    <mat-card appearance="outlined">
+      <mat-card-content>
+        <p>{{ 'STATS.NETWORK.NO_NETWORKS' | translate }}</p>
+      </mat-card-content>
+    </mat-card>
+  } @else {
+    <div class="pickers">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>{{ 'STATS.NETWORK.REGION' | translate }}</mat-label>
+        <mat-select [value]="selectedRegionId()" (valueChange)="selectRegion($event)">
+          @for (region of regions(); track region.regionId) {
+            <mat-option [value]="region.regionId">{{ regionName(region) }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <mat-button-toggle-group [value]="selectedMode()" (valueChange)="selectMode($event)" hideSingleSelectionIndicator>
+        @for (mode of availableModes(); track mode) {
+          <mat-button-toggle [value]="mode">
+            {{ (mode === NetworkMode.Rail ? 'STATS.NETWORK.RAIL' : 'STATS.NETWORK.URBAN_RAIL') | translate }}
+          </mat-button-toggle>
+        }
+      </mat-button-toggle-group>
+    </div>
+
+    @if (completion(); as completion) {
+      <div class="tiles">
+        <mat-card appearance="outlined" class="tile">
+          <mat-card-content>
+            <span class="value">{{ completion.percent | number: '1.1-1' }}%</span>
+            <span class="label">{{ 'STATS.NETWORK.PERCENT_LABEL' | translate }}</span>
+          </mat-card-content>
+        </mat-card>
+        <mat-card appearance="outlined" class="tile">
+          <mat-card-content>
+            <span class="value">{{ completion.coveredKm | number: '1.0-0' }} / {{ completion.totalKm | number: '1.0-0' }}</span>
+            <span class="label">{{ 'STATS.NETWORK.KM_RIDDEN' | translate }}</span>
+          </mat-card-content>
+        </mat-card>
+        @if (completion.bonusKm > 0) {
+          <mat-card appearance="outlined" class="tile">
+            <mat-card-content>
+              <span class="value">+{{ completion.bonusKm | number: '1.0-0' }}</span>
+              <span class="label">{{ 'STATS.NETWORK.BONUS' | translate }}</span>
+            </mat-card-content>
+          </mat-card>
+        }
+      </div>
+      @if (selectedNetwork(); as network) {
+        @if (!network.classifiedByRelations) {
+          <p class="caveat">{{ 'STATS.NETWORK.BY_TAGS' | translate }}</p>
+        }
+      }
+    }
+
+    <div class="map-container">
+      <div
+        class="map"
+        leaflet
+        [leafletOptions]="options"
+        [leafletLayers]="layers()"
+        [leafletLayersControl]="leafletLayersControl"
+        [leafletFitBounds]="bounds()"
+      ></div>
+      @if (loadingNetwork()) {
+        <div class="loading-indicator">
+          <mat-spinner diameter="40" />
+        </div>
+      }
+    </div>
+    <div class="legend">
+      <span><i class="swatch ridden"></i>{{ 'STATS.NETWORK.LEGEND_RIDDEN' | translate }}</span>
+      <span><i class="swatch missing"></i>{{ 'STATS.NETWORK.LEGEND_MISSING' | translate }}</span>
+      <span><i class="swatch bonus"></i>{{ 'STATS.NETWORK.LEGEND_BONUS' | translate }}</span>
+    </div>
+
+    <mat-card appearance="outlined">
+      <mat-card-title>{{ 'STATS.NETWORK.MISSING' | translate }}</mat-card-title>
+      <mat-card-content>
+        @if (missing().length === 0) {
+          <p>{{ 'STATS.NETWORK.NONE_MISSING' | translate }}</p>
+        } @else {
+          <ul class="missing">
+            @for (run of missing(); track $index) {
+              <li>
+                <button type="button" class="run" (click)="focusMissing(run)">{{ runLabel(run) }}</button>
+                <span class="km">{{ run.missingKm | number: '1.1-1' }} km</span>
+              </li>
+            }
+          </ul>
+        }
+      </mat-card-content>
+    </mat-card>
+  }
+</div>

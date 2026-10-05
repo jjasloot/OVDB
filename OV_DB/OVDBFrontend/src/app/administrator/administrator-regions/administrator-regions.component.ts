@@ -14,6 +14,7 @@ import { MatFormField, MatLabel } from "@angular/material/form-field";
 import { MatInput } from "@angular/material/input";
 import { MatTooltip } from "@angular/material/tooltip";
 import { FormsModule } from "@angular/forms";
+import { NetworkCompletionService } from "src/app/services/network-completion.service";
 
 @Component({
   selector: "app-administrator-regions",
@@ -46,6 +47,10 @@ export class AdministratorRegionsComponent implements OnInit {
   regions!: Region[];
   progressUpdates: Record<number, number> = {};
   updateResult: Record<number, number> = {};
+  /** Rail network assembly progress per region (docs/region-network-completion.md). */
+  networkProgress: Record<number, number> = {};
+
+  private networkService = inject(NetworkCompletionService);
 
   constructor() {
     this.signalRService.regionUpdates$.pipe(takeUntilDestroyed()).subscribe((update) => {
@@ -53,6 +58,15 @@ export class AdministratorRegionsComponent implements OnInit {
       if (update.updatedRoutes != null) {
         this.updateResult[update.regionId] = update.updatedRoutes;
       }
+    });
+    this.signalRService.networkUpdates$.pipe(takeUntilDestroyed()).subscribe((update) => {
+      this.networkProgress[update.regionId] = update.percentage;
+    });
+  }
+
+  assembleNetwork(regionId: number, refresh = false) {
+    this.networkService.assemble(regionId, refresh).subscribe(() => {
+      this.snackBar.open("Network assembly queued", undefined, { duration: 3000 });
     });
   }
 
