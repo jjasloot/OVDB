@@ -109,6 +109,9 @@ namespace OV_DB.Controllers
             _context.RouteTypes.Remove(routeType);
             _context.Routes.UpdateRange(routes);
             await _context.SaveChangesAsync();
+            // Without a type these routes no longer match rail networks; drop their coverage.
+            foreach (var route in routes)
+                OV_DB.Services.Network.NetworkMatchQueueService.Queue.Enqueue(new OV_DB.Services.Network.RouteChanged(route.RouteId));
             return Ok();
         }
 

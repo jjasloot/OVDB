@@ -44,6 +44,8 @@ public static class PortCheck
         services.AddSingleton<IHubContext<MapGenerationHub>, ConsoleHubContext>();
         services.AddSingleton<IOverpassService, NoOverpass>();
         services.AddSingleton<RegionNetworkAssemblyService>();
+        services.AddSingleton<INetworkMatchIndexCache, NetworkMatchIndexCache>();
+        services.AddScoped<INetworkMatchService, NetworkMatchService>();
         await using var provider = services.BuildServiceProvider();
 
         using (var scope = provider.CreateScope())
@@ -59,6 +61,19 @@ public static class PortCheck
         await service.AssembleAsync(new NetworkAssemblyRequest(regionId, RefreshFromOsm: false));
         Console.WriteLine($"App assembly finished in {watch.Elapsed.TotalSeconds:F1}s");
 
+        // The assembly service enqueued NetworkChanged items for the (absent) queue service; run
+        // the matcher directly instead, exactly as the queue would.
+        using (var scope = provider.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<OVDBDatabaseContext>();
+            var matcher = scope.ServiceProvider.GetRequiredService<INetworkMatchService>();
+            var networkIds = await db.RegionNetworks.Where(n => n.RegionId == regionId).Select(n => n.Id).ToListAsync();
+            watch.Restart();
+            foreach (var id in networkIds)
+                await matcher.RematchNetworkAsync(id, p => { Console.Write($"\r  matching network {id}: {p}%   "); return Task.CompletedTask; });
+            Console.WriteLine($"\rApp matching finished in {watch.Elapsed.TotalSeconds:F1}s");
+        }
+
         using (var scope = provider.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<OVDBDatabaseContext>();
@@ -66,16 +81,38 @@ public static class PortCheck
             foreach (var n in networks)
             {
                 var edges = await db.NetworkEdges.Where(e => e.RegionNetworkId == n.Id)
-                    .Select(e => new { e.LengthKm, e.SampleCount, e.IsPassenger, HasTwins = e.HiddenTwins != null, HasStation = e.FromStation != null || e.ToStation != null })
+                    .Select(e => new { e.Id, e.LengthKm, e.SampleCount, e.IsPassenger, HasTwins = e.HiddenTwins != null, HasStation = e.FromStation != null || e.ToStation != null })
                     .ToListAsync();
                 Console.WriteLine($"=== {n.Mode} | {n.Status} | v{n.Version} | relations={n.ClassifiedByRelations} | osm {n.OsmDataTimestamp}");
                 Console.WriteLine($"  {n.EdgeCount,6:N0} edges | passenger {n.TotalKm,8:N1} km | non-passenger {n.BonusKm,7:N1} km");
                 Console.WriteLine($"  {edges.Count(e => e.HasTwins),6:N0} edges with hidden twins | {edges.Count(e => e.HasStation),6:N0} with a station label | {edges.Sum(e => e.SampleCount),8:N0} lattice samples | max edge {edges.Max(e => e.LengthKm):N2} km");
                 if (!string.IsNullOrEmpty(n.Error))
                     Console.WriteLine($"  ERROR: {n.Error}");
+
+                // Coverage the way the completion endpoint computes it, but over every instanced
+                // route regardless of owner — the lab matched the whole dev database too.
+                var rows = await db.RouteNetworkEdges
+                    .Where(m => m.Edge.RegionNetworkId == n.Id && m.Route.RouteInstances.Any())
+                    .Select(m => new { m.NetworkEdgeId, m.CoveredSamples })
+                    .ToListAsync();
+                var byEdge = edges.ToDictionary(e => e.Id);
+                double covered = 0, bonus = 0;
+                var partial = 0;
+                foreach (var g in rows.GroupBy(r => r.NetworkEdgeId))
+                {
+                    var e = byEdge[g.Key];
+                    var union = new bool[e.SampleCount];
+                    foreach (var r in g)
+                        NetworkLattice.OrInto(union, r.CoveredSamples);
+                    var pop = NetworkLattice.PopCount(union);
+                    if (pop < union.Length) partial++;
+                    var km = e.LengthKm * pop / union.Length;
+                    if (e.IsPassenger) covered += km; else bonus += km;
+                }
+                Console.WriteLine($"  coverage @15m (all instanced routes): {covered,8:N1} / {n.TotalKm:N1} km = {(n.TotalKm > 0 ? covered / n.TotalKm * 100 : 0):F1}% | bonus {bonus:N1} km | {rows.Count:N0} match rows | {partial:N0} partially covered edges");
             }
         }
-        Console.WriteLine("Compare with the lab's run-<regionId>.log: passenger/non-passenger km must match (edge counts differ by design: 10 km cap vs the lab's 5 km).");
+        Console.WriteLine("Compare with the lab's run-<regionId>.log (15 m rows): km and percentages must match.");
     }
 
     private sealed class NoOverpass : IOverpassService

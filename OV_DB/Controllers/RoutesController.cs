@@ -7,6 +7,7 @@ using OV_DB.Helpers;
 using OV_DB.Mappings;
 using OV_DB.Models;
 using OV_DB.Services;
+using OV_DB.Services.Network;
 using OVDB_database.Database;
 using OVDB_database.Models;
 using SharpKml.Base;
@@ -337,6 +338,8 @@ namespace OV_DB.Controllers
             try
             {
                 await _context.SaveChangesAsync();
+                // The type decides whether the route covers rail networks at all.
+                NetworkMatchQueueService.Queue.Enqueue(new RouteChanged(id));
             }
             catch (DbUpdateConcurrencyException)
             {
@@ -571,6 +574,7 @@ namespace OV_DB.Controllers
                 routes.Add(route);
                 _context.Routes.Add(route);
                 await _context.SaveChangesAsync();
+                NetworkMatchQueueService.Queue.Enqueue(new RouteChanged(route.RouteId));
             }
             return routes;
         }
@@ -637,6 +641,7 @@ namespace OV_DB.Controllers
             _context.Add(route);
 
             await _context.SaveChangesAsync();
+            NetworkMatchQueueService.Queue.Enqueue(new RouteChanged(route.RouteId));
             return new List<Route> { route };
         }
 
@@ -948,6 +953,11 @@ namespace OV_DB.Controllers
 
 
             await _context.SaveChangesAsync();
+            if (editMultiple.UpdateType)
+            {
+                foreach (var route in selectedRoutes)
+                    NetworkMatchQueueService.Queue.Enqueue(new RouteChanged(route.RouteId));
+            }
 
             return Ok();
         }

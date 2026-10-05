@@ -143,11 +143,12 @@ public class RegionNetworkAssemblyService(
             built.Edges.GetValueOrDefault(NetworkMode.UrbanRail)?.Count ?? 0, built.ClassifiedByRelations);
         await Report(region.Id, 80, cancellationToken);
 
-        // 3. Persist, one mode at a time.
+        // 3. Persist, one mode at a time, then hand each network to the matcher.
         foreach (var network in networks)
         {
             var drafts = built.Edges.GetValueOrDefault(network.Mode) ?? new List<NetworkEdgeDraft>();
             await PersistAsync(db, network.Id, drafts, built, track.OsmTimestamp, cancellationToken);
+            NetworkMatchQueueService.Queue.Enqueue(new NetworkChanged(network.Id));
         }
         await Report(region.Id, 100, cancellationToken);
     }

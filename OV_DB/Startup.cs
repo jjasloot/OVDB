@@ -231,6 +231,9 @@ namespace OV_DB
             services.AddHostedService<RefreshRoutesService>();
             services.AddHostedService<RefreshRoutesWithoutRegionsService>();
             services.AddHostedService<OV_DB.Services.Network.RegionNetworkAssemblyService>();
+            services.AddHostedService<OV_DB.Services.Network.NetworkMatchQueueService>();
+            services.AddScoped<OV_DB.Services.Network.INetworkMatchService, OV_DB.Services.Network.NetworkMatchService>();
+            services.AddSingleton<OV_DB.Services.Network.INetworkMatchIndexCache, OV_DB.Services.Network.NetworkMatchIndexCache>();
 
             NetTopologySuite.NtsGeometryServices.Instance = new NetTopologySuite.NtsGeometryServices(
    NetTopologySuite.Geometries.GeometryOverlay.NG);

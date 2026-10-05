@@ -456,9 +456,11 @@ payload a few KB.
    PUT copies fields explicitly, so the current UI cannot reset `MatchesRailNetworks`; it must
    not be added to that PUT until the checkbox exists, or the old frontend would post it false.
 2. Matching service and queue hooks; rematch NL; compare numbers with the lab (99.6 % rail,
-   93.7 % urban at 20 m — expect ~equal at 15 m).
-3. Read API, stats page with partial rendering, missing list.
-4. Curation UI and overrides; admin assembly actions.
+   93.7 % urban at 20 m — expect ~equal at 15 m). **Done** — identical to the lab (§11.1).
+3. Read API, stats page with partial rendering, missing list. **Done**: `Network` tab in
+   Stats, `NetworkCompletionController` read endpoints, admin assemble/refresh buttons.
+4. Curation UI and overrides: the override *table and assembly logic* exist; the map-side
+   toggle UI and the override endpoints are still to do.
 5. Provinces and neighbouring countries on demand; per-sub-region fetch when a large country is
    wanted; a Swiss region to confirm rack railways.
 
@@ -553,9 +555,20 @@ this before emitting intervals; the "within ~1 %" constraint on `SimplifiedGeome
 
 **Port acceptance (same day):** the app's `RegionNetworkAssemblyService`, fed from the lab's
 cached fetches via `port-check`, persisted NL Rail 2,762.1 / 361.7 km and UrbanRail
-486.9 / 56.2 km (passenger / non-passenger) — identical to the lab — with 745 + 842 edges
-carrying hidden twins, 755 + 873 station labels and a maximum edge of 9.99 km. Dedup, twin
-attachment, splitting and the cap all survived the move.
+486.9 / 56.2 km (passenger / non-passenger) — identical to the lab, and with the lab's cap
+raised to 10 km identical edge counts too (1,437 / 1,309) — with 745 + 842 edges carrying
+hidden twins, 755 + 873 station labels and a maximum edge of 9.99 km. Dedup, twin attachment,
+splitting and the cap all survived the move.
+
+**Matching acceptance (slice 2):** the app's `NetworkMatchService` rematched NL in 35 s and
+the completion math over all instanced routes gave Rail 2,749.9 / 2,762.1 km = 99.6 % and
+UrbanRail 457.6 / 486.9 km = 94.0 % — the lab's 15 m figures to 0.1 km. Bonus km reads
+~12 km higher in the app (162 vs 150) only because the lab's bonus column is still the old
+binary ≥ 75 % figure while the app credits partially ridden freight chunks fractionally.
+Two seed findings: the first seed flagged "Trainbus" (`TrainlogType=bus`, a rail-replacement
+type named after trains) and "Funicular train" (exported as `helicopter`) as rail-bound; the
+migration now treats `TrainlogType` as authoritative where set, so the name heuristic only
+decides for types without one.
 
 ## Appendix A — decisions
 

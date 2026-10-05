@@ -28,8 +28,10 @@ bonus km.
 dotnet run -- port-check 1          # acceptance check for the APP port
 ```
 
-`port-check` runs the app's real `RegionNetworkAssemblyService` (the lab references `OV_DB` for
-this, so building the lab builds the web app too) against the dev database, seeded from this
-folder's cached Overpass responses so no Overpass call is made. It applies pending migrations to
-the dev database first and prints the persisted network rows; passenger/non-passenger km must
-match the lab's `run-<regionId>.log` to 0.1 km. Never point it at production.
+`port-check` runs the app's real `RegionNetworkAssemblyService` and `NetworkMatchService` (the
+lab references `OV_DB` for this, so building the lab builds the web app too) against the dev
+database, seeded from this folder's cached Overpass responses so no Overpass call is made. It
+applies pending migrations to the dev database first and prints the persisted network rows and
+the resulting coverage; passenger km and percentages must match the lab's `run-<regionId>.log`
+15 m rows to 0.1 km (the lab's bonus column is still binary, the app's is fractional, so bonus
+reads a little higher in the app). Never point it at production.

@@ -19,6 +19,7 @@ using OV_DB.Enum;
 using OV_DB.Helpers;
 using OV_DB.Models;
 using OV_DB.Services;
+using OV_DB.Services.Network;
 using OVDB_database.Database;
 using OVDB_database.Models;
 
@@ -682,6 +683,7 @@ namespace OV_DB.Controllers
 
             _context.Routes.Add(route);
             await _context.SaveChangesAsync();
+            NetworkMatchQueueService.Queue.Enqueue(new RouteChanged(route.RouteId));
             return Ok(route);
         }
     }
