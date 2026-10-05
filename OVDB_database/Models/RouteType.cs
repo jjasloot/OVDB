@@ -26,5 +26,12 @@ namespace OVDB_database.Models
         public bool IsTrain { get; set; }
         [JsonProperty]
         public string TrainlogType { get; set; }
+        /// <summary>
+        /// Routes of this type run on rails and can cover network edges (trains, trams, metros).
+        /// OVDB-native: network matching must not depend on TrainlogType, which is Trainlog's
+        /// export vocabulary, nor on IsTrain, which means "train" specifically for statistics.
+        /// </summary>
+        [JsonProperty]
+        public bool MatchesRailNetworks { get; set; }
     }
 }

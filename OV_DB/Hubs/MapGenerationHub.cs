@@ -10,6 +10,8 @@ public class MapGenerationHub : Hub
     public const string GenerationUpdateMethod = "GenerationUpdate";
     public const string RegionUpdateMethod = "RefreshRoutes";
     public const string RegionStationUpdateMethod = "RefreshStations";
+    /// <summary>(regionId, progress 0..100) while a region's rail networks are being assembled.</summary>
+    public const string NetworkUpdateMethod = "RefreshNetwork";
 
     // Clients join a group keyed by their own map-generation request id so progress for that
     // request is delivered only to them, instead of being broadcast to every connected client.

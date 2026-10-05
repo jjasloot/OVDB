@@ -108,6 +108,82 @@ namespace OVDB_database.Migrations
                     b.ToTable("Maps");
                 });
 
+            modelBuilder.Entity("OVDB_database.Models.NetworkEdge", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("FromStation")
+                        .HasColumnType("longtext");
+
+                    b.Property<LineString>("Geometry")
+                        .HasColumnType("linestring");
+
+                    b.Property<MultiLineString>("HiddenTwins")
+                        .HasColumnType("multilinestring");
+
+                    b.Property<bool>("IsPassenger")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<double>("LengthKm")
+                        .HasColumnType("double");
+
+                    b.Property<string>("Name")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("OsmWayIds")
+                        .HasColumnType("longtext");
+
+                    b.Property<int>("RegionNetworkId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("SampleCount")
+                        .HasColumnType("int");
+
+                    b.Property<LineString>("SimplifiedGeometry")
+                        .HasColumnType("linestring");
+
+                    b.Property<string>("ToStation")
+                        .HasColumnType("longtext");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RegionNetworkId");
+
+                    b.ToTable("NetworkEdges");
+                });
+
+            modelBuilder.Entity("OVDB_database.Models.NetworkWayOverride", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("Kind")
+                        .HasColumnType("int");
+
+                    b.Property<long>("OsmWayId")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("RegionId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RegionId", "OsmWayId")
+                        .IsUnique();
+
+                    b.ToTable("NetworkWayOverrides");
+                });
+
             modelBuilder.Entity("OVDB_database.Models.Operator", b =>
                 {
                     b.Property<int>("Id")
@@ -223,6 +299,55 @@ namespace OVDB_database.Migrations
                     b.HasIndex("ParentRegionId");
 
                     b.ToTable("Regions");
+                });
+
+            modelBuilder.Entity("OVDB_database.Models.RegionNetwork", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime?>("AssembledAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<double>("BonusKm")
+                        .HasColumnType("double");
+
+                    b.Property<bool>("ClassifiedByRelations")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<int>("EdgeCount")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Error")
+                        .HasColumnType("longtext");
+
+                    b.Property<int>("Mode")
+                        .HasColumnType("int");
+
+                    b.Property<string>("OsmDataTimestamp")
+                        .HasColumnType("longtext");
+
+                    b.Property<int>("RegionId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<double>("TotalKm")
+                        .HasColumnType("double");
+
+                    b.Property<int>("Version")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RegionId", "Mode")
+                        .IsUnique();
+
+                    b.ToTable("RegionNetworks");
                 });
 
             modelBuilder.Entity("OVDB_database.Models.Request", b =>
@@ -449,6 +574,27 @@ namespace OVDB_database.Migrations
                     b.ToTable("RoutesMaps");
                 });
 
+            modelBuilder.Entity("OVDB_database.Models.RouteNetworkEdge", b =>
+                {
+                    b.Property<int>("RouteId")
+                        .HasColumnType("int");
+
+                    b.Property<long>("NetworkEdgeId")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("CoveredCount")
+                        .HasColumnType("int");
+
+                    b.Property<byte[]>("CoveredSamples")
+                        .HasColumnType("longblob");
+
+                    b.HasKey("RouteId", "NetworkEdgeId");
+
+                    b.HasIndex("NetworkEdgeId");
+
+                    b.ToTable("RouteNetworkEdges");
+                });
+
             modelBuilder.Entity("OVDB_database.Models.RouteType", b =>
                 {
                     b.Property<int>("TypeId")
@@ -462,6 +608,9 @@ namespace OVDB_database.Migrations
                         .HasColumnType("longtext");
 
                     b.Property<bool>("IsTrain")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<bool>("MatchesRailNetworks")
                         .HasColumnType("tinyint(1)");
 
                     b.Property<string>("Name")
@@ -1040,6 +1189,28 @@ namespace OVDB_database.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("OVDB_database.Models.NetworkEdge", b =>
+                {
+                    b.HasOne("OVDB_database.Models.RegionNetwork", "Network")
+                        .WithMany("Edges")
+                        .HasForeignKey("RegionNetworkId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Network");
+                });
+
+            modelBuilder.Entity("OVDB_database.Models.NetworkWayOverride", b =>
+                {
+                    b.HasOne("OVDB_database.Models.Region", "Region")
+                        .WithMany()
+                        .HasForeignKey("RegionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Region");
+                });
+
             modelBuilder.Entity("OVDB_database.Models.RefreshToken", b =>
                 {
                     b.HasOne("OVDB_database.Models.User", "User")
@@ -1058,6 +1229,17 @@ namespace OVDB_database.Migrations
                         .HasForeignKey("ParentRegionId");
 
                     b.Navigation("ParentRegion");
+                });
+
+            modelBuilder.Entity("OVDB_database.Models.RegionNetwork", b =>
+                {
+                    b.HasOne("OVDB_database.Models.Region", "Region")
+                        .WithMany()
+                        .HasForeignKey("RegionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Region");
                 });
 
             modelBuilder.Entity("OVDB_database.Models.Request", b =>
@@ -1136,6 +1318,25 @@ namespace OVDB_database.Migrations
                         .IsRequired();
 
                     b.Navigation("Map");
+
+                    b.Navigation("Route");
+                });
+
+            modelBuilder.Entity("OVDB_database.Models.RouteNetworkEdge", b =>
+                {
+                    b.HasOne("OVDB_database.Models.NetworkEdge", "Edge")
+                        .WithMany("Matches")
+                        .HasForeignKey("NetworkEdgeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("OVDB_database.Models.Route", "Route")
+                        .WithMany()
+                        .HasForeignKey("RouteId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Edge");
 
                     b.Navigation("Route");
                 });
@@ -1387,9 +1588,19 @@ namespace OVDB_database.Migrations
                     b.Navigation("RouteMaps");
                 });
 
+            modelBuilder.Entity("OVDB_database.Models.NetworkEdge", b =>
+                {
+                    b.Navigation("Matches");
+                });
+
             modelBuilder.Entity("OVDB_database.Models.Region", b =>
                 {
                     b.Navigation("SubRegions");
+                });
+
+            modelBuilder.Entity("OVDB_database.Models.RegionNetwork", b =>
+                {
+                    b.Navigation("Edges");
                 });
 
             modelBuilder.Entity("OVDB_database.Models.Route", b =>

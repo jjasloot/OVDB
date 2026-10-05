@@ -38,6 +38,10 @@ namespace OVDB_database.Database
         public DbSet<TrawellingInboxStatus> TrawellingInboxStatuses { get; set; }
         public DbSet<RefreshToken> RefreshTokens { get; set; }
         public DbSet<StationMergeIgnore> StationMergeIgnores { get; set; }
+        public DbSet<RegionNetwork> RegionNetworks { get; set; }
+        public DbSet<NetworkEdge> NetworkEdges { get; set; }
+        public DbSet<RouteNetworkEdge> RouteNetworkEdges { get; set; }
+        public DbSet<NetworkWayOverride> NetworkWayOverrides { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder options)
         {
@@ -72,6 +76,24 @@ namespace OVDB_database.Database
             // One level below the country suits almost every country, so existing rows and new
             // regions both default to it rather than to 0, which would collect nothing.
             modelBuilder.Entity<Region>().Property(r => r.AchievementRegionDepth).HasDefaultValue(1);
+
+            // Network completion: cascades do all the invalidation. Reassembling a network deletes
+            // its edges and thereby their match rows; deleting a route deletes its match rows.
+            modelBuilder.Entity<NetworkEdge>()
+                .HasOne(e => e.Network).WithMany(n => n.Edges)
+                .HasForeignKey(e => e.RegionNetworkId).OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<RouteNetworkEdge>()
+                .HasOne(m => m.Edge).WithMany(e => e.Matches)
+                .HasForeignKey(m => m.NetworkEdgeId).OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<RouteNetworkEdge>()
+                .HasOne(m => m.Route).WithMany()
+                .HasForeignKey(m => m.RouteId).OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<NetworkWayOverride>()
+                .HasOne(o => o.Region).WithMany()
+                .HasForeignKey(o => o.RegionId).OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<RegionNetwork>()
+                .HasOne(n => n.Region).WithMany()
+                .HasForeignKey(n => n.RegionId).OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<Operator>(entity =>
              {

@@ -230,6 +230,7 @@ namespace OV_DB
             services.AddHostedService<UpdateRegionService>();
             services.AddHostedService<RefreshRoutesService>();
             services.AddHostedService<RefreshRoutesWithoutRegionsService>();
+            services.AddHostedService<OV_DB.Services.Network.RegionNetworkAssemblyService>();
 
             NetTopologySuite.NtsGeometryServices.Instance = new NetTopologySuite.NtsGeometryServices(
    NetTopologySuite.Geometries.GeometryOverlay.NG);
