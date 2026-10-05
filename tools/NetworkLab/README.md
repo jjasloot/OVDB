@@ -19,6 +19,17 @@ per tolerance), so the tolerance question is answered by comparing one run's out
 `viewer.html` in a browser and drag the exported `data/network-*.geojson` files onto it to eyeball
 covered/uncovered per tolerance.
 
-Edges are flagged `passenger` (OSM `usage` ∉ freight/industrial/military/test; service tracks are
-excluded at fetch time). The percentage counts passenger km only; covered non-passenger edges are
-reported separately as bonus km.
+Edges are flagged `passenger` by the public-transport route relations (third cached fetch) with
+the `usage`/`traffic_mode` tag heuristic as fallback; service tracks are excluded at fetch time.
+The percentage counts passenger km only; covered non-passenger edges are reported separately as
+bonus km.
+
+```powershell
+dotnet run -- port-check 1          # acceptance check for the APP port
+```
+
+`port-check` runs the app's real `RegionNetworkAssemblyService` (the lab references `OV_DB` for
+this, so building the lab builds the web app too) against the dev database, seeded from this
+folder's cached Overpass responses so no Overpass call is made. It applies pending migrations to
+the dev database first and prints the persisted network rows; passenger/non-passenger km must
+match the lab's `run-<regionId>.log` to 0.1 km. Never point it at production.

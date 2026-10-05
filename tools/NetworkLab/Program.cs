@@ -19,10 +19,14 @@ switch (args.FirstOrDefault())
     case "run" when args.Length >= 2 && int.TryParse(args[1], out var regionId):
         await RunAsync(regionId);
         break;
+    case "port-check" when args.Length >= 2 && int.TryParse(args[1], out var checkRegionId):
+        await PortCheck.RunAsync(checkRegionId, connectionString, dataDir);
+        break;
     default:
         Console.WriteLine("Usage:");
         Console.WriteLine("  dotnet run -- regions [nameFilter]   list regions with ids");
         Console.WriteLine("  dotnet run -- run <regionId>         fetch(cached) + assemble + match + export");
+        Console.WriteLine("  dotnet run -- port-check <regionId>  run the APP's assembly service on the dev db from the lab's caches");
         return;
 }
 

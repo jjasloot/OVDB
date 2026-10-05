@@ -193,8 +193,8 @@ public class NetworkTopologyTests
     [Theory]
     [InlineData(100, 5)]   // 0, 25, 50, 75, 100
     [InlineData(125, 6)]
-    [InlineData(137, 7)]   // 0..125 plus the end sample at 137
-    [InlineData(10, 2)]    // 0 plus the end sample
+    [InlineData(137, 7)]   // six 25 m steps would end at 150; the count rounds up so the end is a sample
+    [InlineData(10, 2)]    // start and end
     public void Lattice_SampleCountMatchesSamples(double lengthM, int expected)
     {
         var line = new[] { new Coordinate(0, 0), new Coordinate(lengthM * 0.4, 0), new Coordinate(lengthM, 0) };
@@ -204,19 +204,33 @@ public class NetworkTopologyTests
     }
 
     [Fact]
-    public void Intervals_FromRuns_AreFractionsWithHalfSpacingMargins()
+    public void Lattice_StoredCountIsTheContract_RegardlessOfProjection()
     {
-        var bits = new[] { true, true, true, true, false, false, false, false, true, true, true }; // 11 samples, L = 250 m
-        var intervals = NetworkLattice.RunsToIntervals(bits, 250);
+        // The same edge projected at two different latitudes (as after a region re-import moved
+        // the centroid) must sample into the same number of bits as the stored count.
+        var geo = new[] { new Coordinate(5.0, 52.0), new Coordinate(5.0137, 52.0) }; // ~940 m
+        var storedCount = NetworkLattice.SampleCount(NetworkLattice.PolylineLength(new NetworkGeo.LocalProjection(52.0).Project(geo)));
+        var shifted = new NetworkGeo.LocalProjection(52.5).Project(geo);
+
+        Assert.Equal(storedCount, NetworkLattice.Sample(shifted, storedCount).Length);
+        Assert.Equal(0.0, NetworkLattice.Fraction(0, storedCount));
+        Assert.Equal(1.0, NetworkLattice.Fraction(storedCount - 1, storedCount));
+    }
+
+    [Fact]
+    public void Intervals_FromRuns_AreFractionsWithHalfStepMargins()
+    {
+        var bits = new[] { true, true, true, true, false, false, false, false, true, true, true }; // 11 samples
+        var intervals = NetworkLattice.RunsToIntervals(bits);
 
         Assert.Equal(2, intervals.Count);
         Assert.Equal(0.0, intervals[0][0], 3);
-        Assert.Equal(0.35, intervals[0][1], 3);   // (75 + 12.5) / 250
-        Assert.Equal(0.75, intervals[1][0], 3);   // (200 − 12.5) / 250
+        Assert.Equal(0.35, intervals[0][1], 3);   // (3 + 0.5) / 10
+        Assert.Equal(0.75, intervals[1][0], 3);   // (8 − 0.5) / 10
         Assert.Equal(1.0, intervals[1][1], 3);
 
         var full = new[] { true, true, true, true, true, true, true, true, true, true, true };
-        var whole = NetworkLattice.RunsToIntervals(full, 250);
+        var whole = NetworkLattice.RunsToIntervals(full);
         Assert.Single(whole);
         Assert.Equal(0.0, whole[0][0], 3);
         Assert.Equal(1.0, whole[0][1], 3);

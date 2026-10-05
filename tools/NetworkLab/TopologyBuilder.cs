@@ -36,7 +36,7 @@ public sealed class NetworkEdgeDraft
 
 public static class TopologyBuilder
 {
-    public const double MaxEdgeKm = 5.0;
+    public const double MaxEdgeKm = 10.0; // same cap as the app, so port-check edge counts match exactly
     public const double MinClippedEdgeKm = 0.1;
 
     private static readonly GeometryFactory Factory = new(new PrecisionModel(), 4326);

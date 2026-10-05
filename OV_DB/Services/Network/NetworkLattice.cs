@@ -7,23 +7,34 @@ namespace OV_DB.Services.Network;
 /// <summary>
 /// The one definition of the coverage lattice, shared by assembly (which stores
 /// <c>NetworkEdge.SampleCount</c>), the matcher (which sets bits) and the completion read path
-/// (which turns bits into intervals). Sample i sits at chainage min(i · 25 m, L); the count is
-/// floor(L / 25) + 1, plus one more sample at L when L is not a lattice multiple.
+/// (which turns bits into intervals).
+///
+/// The STORED COUNT is the contract. Assembly computes n = floor(L / 25) + 1 (plus one when L is
+/// not a multiple of 25 m) from the projected length and stores it; from then on sample i sits
+/// at chainage i · L / (n − 1) and has fraction i / (n − 1). Nothing downstream depends on the
+/// projection or on 25 m being exact: a region whose geometry is re-imported later (moving the
+/// centroid the projection is anchored at) cannot shift bit positions under stored bitmaps.
 /// </summary>
 public static class NetworkLattice
 {
+    /// <summary>Nominal spacing; only used to choose the count at assembly.</summary>
     public const double SpacingM = 25;
 
-    /// <summary>Sample points on the lattice over a projected (metres) polyline.</summary>
-    public static Coordinate[] Sample(Coordinate[] projected)
+    /// <summary>Sample points for assembly: the count is derived from the projected length.</summary>
+    public static Coordinate[] Sample(Coordinate[] projected) =>
+        Sample(projected, SampleCount(PolylineLength(projected)));
+
+    /// <summary>Sample points for a stored count: exactly <paramref name="sampleCount"/> points, uniformly by chainage.</summary>
+    public static Coordinate[] Sample(Coordinate[] projected, int sampleCount)
     {
         var cumulative = Cumulative(projected);
         var total = cumulative[^1];
-        var samples = new Coordinate[SampleCount(total)];
+        var n = Math.Max(2, sampleCount);
+        var samples = new Coordinate[n];
         var seg = 1;
-        for (var i = 0; i < samples.Length; i++)
+        for (var i = 0; i < n; i++)
         {
-            var chainage = Math.Min(i * SpacingM, total);
+            var chainage = total * i / (n - 1);
             while (seg < projected.Length - 1 && cumulative[seg] < chainage)
                 seg++;
             var segLen = cumulative[seg] - cumulative[seg - 1];
@@ -88,25 +99,29 @@ public static class NetworkLattice
 
     // ---- intervals ----------------------------------------------------------------------------
 
+    /// <summary>Fraction of edge length at sample i on a lattice of <paramref name="sampleCount"/> samples.</summary>
+    public static double Fraction(int i, int sampleCount) =>
+        sampleCount <= 1 ? 0 : Math.Clamp((double)i / (sampleCount - 1), 0, 1);
+
     /// <summary>
     /// Run-length encode covered samples into [start, end] fractions of the edge's full length.
-    /// A run of samples a..b covers the line between them plus half a spacing on each side, so a
+    /// A run of samples a..b covers the line between them plus half a step on each side, so a
     /// fully covered edge yields exactly [0, 1].
     /// </summary>
-    public static List<double[]> RunsToIntervals(bool[] bits, double totalM)
+    public static List<double[]> RunsToIntervals(bool[] bits)
     {
         var result = new List<double[]>();
-        if (totalM <= 0)
+        var n = bits.Length;
+        if (n < 2)
             return result;
+        var margin = 0.5 / (n - 1);
         var i = 0;
-        while (i < bits.Length)
+        while (i < n)
         {
             if (!bits[i]) { i++; continue; }
             var j = i;
-            while (j + 1 < bits.Length && bits[j + 1]) j++;
-            var startM = Math.Max(0, Math.Min(i * SpacingM, totalM) - SpacingM / 2);
-            var endM = Math.Min(totalM, Math.Min(j * SpacingM, totalM) + SpacingM / 2);
-            result.Add([startM / totalM, endM / totalM]);
+            while (j + 1 < n && bits[j + 1]) j++;
+            result.Add([Math.Max(0, Fraction(i, n) - margin), Math.Min(1, Fraction(j, n) + margin)]);
             i = j + 1;
         }
         return result;

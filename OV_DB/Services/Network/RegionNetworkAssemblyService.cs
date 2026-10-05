@@ -137,7 +137,7 @@ public class RegionNetworkAssemblyService(
             RailStations = railStations.Select(s => new NetworkStop(new Coordinate(s.Longitude, s.Lattitude), s.Name)).ToList(),
             UrbanStops = stops.Stops.Select(s => new NetworkStop(new Coordinate(s.Lon, s.Lat), s.Name)).ToList(),
         };
-        var built = NetworkTopologyBuilder.Build(input, p => Report(region.Id, 20 + p * 60 / 100, cancellationToken).GetAwaiter().GetResult());
+        var built = NetworkTopologyBuilder.Build(input, p => _ = Report(region.Id, 20 + p * 60 / 100, cancellationToken));
         logger.LogInformation("Assembled {Region}: {Rail} rail edges, {Urban} urban edges (relations: {ByRelations})",
             region.Name, built.Edges.GetValueOrDefault(NetworkMode.Rail)?.Count ?? 0,
             built.Edges.GetValueOrDefault(NetworkMode.UrbanRail)?.Count ?? 0, built.ClassifiedByRelations);
@@ -175,6 +175,10 @@ public class RegionNetworkAssemblyService(
 
     private async Task PersistAsync(OVDBDatabaseContext db, int networkId, List<NetworkEdgeDraft> drafts, NetworkAssemblyResult built, string osmTimestamp, CancellationToken cancellationToken)
     {
+        // One transaction per network: a failure mid-insert must not leave a half-populated
+        // network behind. ExecuteDelete and the batched SaveChanges all join it.
+        await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
+
         // Old edges go first; the database-level cascade takes their match rows with them.
         await db.NetworkEdges.Where(e => e.RegionNetworkId == networkId).ExecuteDeleteAsync(cancellationToken);
 
@@ -208,6 +212,7 @@ public class RegionNetworkAssemblyService(
         network.Status = NetworkStatus.Ready;
         network.Error = null;
         await db.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
         db.ChangeTracker.Clear();
     }
 

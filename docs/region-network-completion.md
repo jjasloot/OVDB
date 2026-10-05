@@ -279,13 +279,15 @@ gone).
 
 - `LengthKm`: haversine over the coordinates (extract `DistanceCalculationHelper`'s private
   formula into a shared helper; no ×1.0064 — that is a route-import calibration).
-- **The match lattice** is a uniform chainage lattice over the full geometry: sample *i* sits
-  at chainage `min(i · 25 m, L)`, `SampleCount = floor(L / 25) + 1`, plus one more sample at
-  `L` when `L` is not a lattice multiple; the fraction of sample *i* is `chainage_i / L`.
-  Fixed here and never recomputed — assembly, matcher and read path must agree bit for bit,
-  and intervals are exact by construction. (The lab's `Sample()` interpolates per *segment*
-  with `ceil(segLen/25)` steps, which gives variable spacing and a vertex-dependent count; that
-  is fine inside dedup and splitting, but the port must not reuse it for matching.)
+- **The match lattice — the stored count is the contract.** Assembly computes
+  `SampleCount = floor(L / 25) + 1` (plus one when `L` is not a multiple of 25 m) from the
+  projected length and stores it. From then on sample *i* sits at chainage `i · L / (n − 1)`
+  and has fraction `i / (n − 1)`; nothing downstream depends on the projection or on 25 m being
+  exact. This matters because the projection is anchored at the region centroid and
+  `Region.Geometry` is rewritten on every region re-import — a count recomputed from a moved
+  centroid could shift bit positions under stored bitmaps. (`NetworkLattice` in the app; the
+  lab's per-segment `Sample()` inside dedup and splitting is a different, assembly-internal
+  sampler and must not be reused for matching.)
 - `SimplifiedGeometry`: Douglas-Peucker 0.0001° (~10 m), endpoints preserved by construction.
 - `TotalKm`/`BonusKm`/`EdgeCount` on the network row.
 
@@ -365,7 +367,7 @@ four call sites of `AssignRegionsToRouteAsync` (`RoutesController` ×2, `Importe
       .ToListAsync();
   // per edge: union = OR of bitmaps; coveredKm += LengthKm * popcount(union) / SampleCount
   // intervals = run-length encode union into [start, end] fractions of the FULL geometry's
-  //             length (a run a..b spans chainage(a) − 12.5 m .. chainage(b) + 12.5 m, so a
+  //             length (a run a..b spans fraction (a − ½)/(n − 1) .. (b + ½)/(n − 1), so a
   //             fully covered edge is exactly [0, 1]), then re-expressed as fractions of the
   //             SIMPLIFIED geometry's length via the kept vertices (SimplifiedChainage), 3 decimals
   // → { percent, coveredKm, totalKm, bonusKm,
@@ -447,6 +449,12 @@ payload a few KB.
 1. Migration: four tables, `RouteType.MatchesRailNetworks` with its seed. Entities, assembly
    service, three cached fetches, classification, topology, dedup, splitting. Assemble
    **Netherlands** and eyeball the network against the lab's output before matching exists.
+   **Done (branch `network-completion`, 2026-10-05).** Acceptance harness:
+   `tools/NetworkLab> dotnet run -- port-check <regionId>` runs the app's real
+   `RegionNetworkAssemblyService` against the dev database from the lab's cached fetches and
+   prints the persisted rows; passenger/bonus km must equal the lab's to 0.1 km. The route-types
+   PUT copies fields explicitly, so the current UI cannot reset `MatchesRailNetworks`; it must
+   not be added to that PUT until the checkbox exists, or the old frontend would post it false.
 2. Matching service and queue hooks; rematch NL; compare numbers with the lab (99.6 % rail,
    93.7 % urban at 20 m — expect ~equal at 15 m).
 3. Read API, stats page with partial rendering, missing list.
@@ -542,6 +550,12 @@ intervals are **re-expressed in the simplified geometry's own chainage**, mapped
 vertices Douglas-Peucker keeps (it preserves original vertex coordinates exactly, so the
 piecewise-linear mapping between the two chainages is lossless). The completion endpoint does
 this before emitting intervals; the "within ~1 %" constraint on `SimplifiedGeometry` is gone.
+
+**Port acceptance (same day):** the app's `RegionNetworkAssemblyService`, fed from the lab's
+cached fetches via `port-check`, persisted NL Rail 2,762.1 / 361.7 km and UrbanRail
+486.9 / 56.2 km (passenger / non-passenger) — identical to the lab — with 745 + 842 edges
+carrying hidden twins, 755 + 873 station labels and a maximum edge of 9.99 km. Dedup, twin
+attachment, splitting and the cap all survived the move.
 
 ## Appendix A — decisions
 
