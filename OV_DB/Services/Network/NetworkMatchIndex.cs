@@ -61,7 +61,7 @@ public sealed class NetworkMatchIndex
     /// <summary>
     /// Match one route: per candidate edge, the samples within tolerance of the route (directly
     /// or via a hidden-twin probe). Only edges with at least <see cref="MinStoredSamples"/>
-    /// covered samples are returned.
+    /// covered samples (or, on a shorter edge, all of them) are returned.
     /// </summary>
     public Dictionary<long, bool[]> Match(LineString routeGeometry)
     {
@@ -116,11 +116,19 @@ public sealed class NetworkMatchIndex
                     count++;
                 }
             }
-            if (count >= MinStoredSamples)
+            if (IsStored(count, samples.Length))
                 result[_edgeIds[edgeIdx]] = bits;
         }
         return result;
     }
+
+    /// <summary>
+    /// Enough evidence to store a row: <see cref="MinStoredSamples"/> covered samples, or, on an
+    /// edge too short to have that many (a sub-50 m junction connector), every sample. Without
+    /// the second clause such slivers could never be covered and completion could never reach 100%.
+    /// </summary>
+    internal static bool IsStored(int covered, int sampleCount) =>
+        covered >= MinStoredSamples || (sampleCount < MinStoredSamples && covered == sampleCount && covered > 0);
 
     private static Coordinate[][] BuildProbes(Coordinate[] samples, MultiLineString hiddenTwins, NetworkGeo.LocalProjection projection)
     {

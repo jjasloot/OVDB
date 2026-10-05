@@ -86,11 +86,16 @@ namespace OV_DB.Services
             var processedRoutes = 0;
             var progress = 0;
             var updatedRoutes = 0;
+            var changed = new System.Collections.Generic.List<int>();
             foreach (var route in routes)
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 var updated = await routeRegionsService.AssignRegionsToRouteAsync(route);
-                if (updated) updatedRoutes += 1;
+                if (updated)
+                {
+                    updatedRoutes += 1;
+                    changed.Add(route.RouteId);
+                }
                 processedRoutes++;
                 var newProgress = (processedRoutes * 98) / totalRoutes;
                 if (newProgress != progress)
@@ -101,6 +106,9 @@ namespace OV_DB.Services
             }
 
             await dbContext.SaveChangesAsync(cancellationToken);
+            // A route that gained regions may now fall in an assembled network.
+            foreach (var routeId in changed)
+                Network.NetworkMatchQueueService.Queue.Enqueue(new Network.RouteChanged(routeId));
 
             await hubContext.Clients.All.SendAsync(MapGenerationHub.RegionUpdateMethod, 0, 100, updatedRoutes, cancellationToken);
         }

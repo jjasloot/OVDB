@@ -5,4 +5,6 @@ export interface RouteType {
     colour: string;
     isTrain: boolean;
     trainlogType: string;
+    /** Routes of this type run on rails and count towards rail network completion. */
+    matchesRailNetworks: boolean;
 }

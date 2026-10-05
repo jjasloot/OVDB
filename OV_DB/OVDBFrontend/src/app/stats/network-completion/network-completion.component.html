@@ -66,6 +66,7 @@
         [leafletLayers]="layers()"
         [leafletLayersControl]="leafletLayersControl"
         [leafletFitBounds]="bounds()"
+        (leafletMapReady)="onMapReady($event)"
       ></div>
       @if (loadingNetwork()) {
         <div class="loading-indicator">
@@ -109,12 +110,21 @@
           } @else {
             <p class="hint">{{ 'STATS.NETWORK.SELECT_EDGE_HINT' | translate }}</p>
           }
-          @if (overrides().length > 0) {
+          @if (overrideGroups().length > 0) {
             <ul class="overrides">
-              @for (override of overrides(); track override.id) {
+              @for (group of overrideGroups(); track group.kind + group.createdAt) {
                 <li>
-                  <span>{{ overrideKindLabel(override.kind) | translate }} · way {{ override.osmWayId }}</span>
-                  <button mat-icon-button (click)="removeOverride(override)" [attr.aria-label]="'STATS.NETWORK.REMOVE' | translate">
+                  <span>
+                    {{ overrideKindLabel(group.kind) | translate }} ·
+                    {{ 'STATS.NETWORK.WAYS' | translate: { count: group.osmWayIds.length } }} ·
+                    {{ group.createdAt | date: 'short' }}
+                  </span>
+                  <button
+                    mat-icon-button
+                    [disabled]="overriding()"
+                    (click)="removeOverrideGroup(group)"
+                    [attr.aria-label]="'STATS.NETWORK.REMOVE' | translate"
+                  >
                     <mat-icon fontIcon="undo" />
                   </button>
                 </li>

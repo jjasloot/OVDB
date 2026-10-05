@@ -106,6 +106,8 @@
   "ADDTYPE.NAME": "Name",
   "ADDTYPE.COLOUR": "Colour",
   "ADDTYPE.ISTRAIN": "This is a train",
+  "ADDTYPE.MATCHES_RAIL_NETWORKS": "Runs on rails (counts for network completion)",
+  "ADDTYPE.MATCHES_RAIL_NETWORKS_HINT": "Trains, trams, metros, light rail: routes of this type colour the rail network maps under Statistics.",
   "ROUTETYPES.NODATA": "No types created. Create a new types using the button in the bottom right.",
   "ROUTESLIST.SEARCH": "Search...",
   "ROUTESLIST.NAME": "Name",
@@ -607,7 +609,13 @@
       "NON_PASSENGER": "outside the passenger network",
       "ASSEMBLE": "Assemble network",
       "REFRESH_OSM": "Refresh from OpenStreetMap",
-      "QUEUED": "Network assembly queued"
+      "QUEUED": "Network assembly queued",
+      "QUEUE_FAILED": "Could not queue the network assembly",
+      "LOAD_FAILED": "Could not load the network; try again later.",
+      "OVERRIDE_FAILED": "Could not save the change; the overrides have been reloaded.",
+      "ADMIN_PROGRESS": "Network: {{percent}}%",
+      "WAYS": "{{count}} OSM ways",
+      "ADMIN_FAILED": "Network assembly failed; the previous version stays online."
     }
   },
   "MENU": {

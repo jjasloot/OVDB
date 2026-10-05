@@ -288,6 +288,7 @@ namespace OV_DB.Controllers
             dbRoute.To = route.To;
             dbRoute.OverrideColour = route.OverrideColour;
             dbRoute.OperatingCompany = route.OperatingCompany;
+            var typeChanged = dbRoute.RouteTypeId != route.RouteTypeId;
             dbRoute.RouteTypeId = route.RouteTypeId;
             dbRoute.OverrideDistance = route.OverrideDistance;
             dbRoute.Operators = [];
@@ -338,8 +339,10 @@ namespace OV_DB.Controllers
             try
             {
                 await _context.SaveChangesAsync();
-                // The type decides whether the route covers rail networks at all.
-                NetworkMatchQueueService.Queue.Enqueue(new RouteChanged(id));
+                // The type decides whether the route covers rail networks at all; nothing else this
+                // endpoint edits (names, maps, dates) changes the match rows, which are per route.
+                if (typeChanged)
+                    NetworkMatchQueueService.Queue.Enqueue(new RouteChanged(id));
             }
             catch (DbUpdateConcurrencyException)
             {
@@ -1260,8 +1263,11 @@ namespace OV_DB.Controllers
             {
                 return NotFound();
             }
-            await routeRegionsService.AssignRegionsToRouteAsync(route);
+            var updated = await routeRegionsService.AssignRegionsToRouteAsync(route);
             await _context.SaveChangesAsync();
+            // New regions may carry an assembled network the route has not been matched against.
+            if (updated)
+                NetworkMatchQueueService.Queue.Enqueue(new RouteChanged(route.RouteId));
             return Ok();
         }
 

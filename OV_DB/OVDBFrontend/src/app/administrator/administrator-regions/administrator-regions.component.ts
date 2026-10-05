@@ -16,6 +16,7 @@ import { MatTooltip } from "@angular/material/tooltip";
 import { FormsModule } from "@angular/forms";
 import { NetworkCompletionService } from "src/app/services/network-completion.service";
 import { TranslateModule, TranslateService } from "@ngx-translate/core";
+import { NetworkStatus } from "src/app/models/network-completion.model";
 
 @Component({
   selector: "app-administrator-regions",
@@ -51,6 +52,8 @@ export class AdministratorRegionsComponent implements OnInit {
   updateResult: Record<number, number> = {};
   /** Rail network assembly progress per region (docs/region-network-completion.md). */
   networkProgress: Record<number, number> = {};
+  /** Why the last network assembly of a region failed; absent when it succeeded. */
+  networkError: Record<number, string> = {};
 
   private networkService = inject(NetworkCompletionService);
   private translateService = inject(TranslateService);
@@ -64,12 +67,30 @@ export class AdministratorRegionsComponent implements OnInit {
     });
     this.signalRService.networkUpdates$.pipe(takeUntilDestroyed()).subscribe((update) => {
       this.networkProgress[update.regionId] = update.percentage;
+      if (update.percentage === 0) {
+        delete this.networkError[update.regionId];
+      }
+      if (update.percentage >= 100) {
+        // 100 also ends a failed run; the status says which, and why.
+        this.networkService.status(update.regionId).subscribe({
+          next: (rows) => {
+            const failed = rows.find((r) => r.status === NetworkStatus.Failed);
+            if (failed) {
+              this.networkError[update.regionId] = failed.error ?? "";
+            } else {
+              delete this.networkError[update.regionId];
+            }
+          },
+          error: () => undefined,
+        });
+      }
     });
   }
 
   assembleNetwork(regionId: number, refresh = false) {
-    this.networkService.assemble(regionId, refresh).subscribe(() => {
-      this.snackBar.open(this.translateService.instant("STATS.NETWORK.QUEUED"), undefined, { duration: 3000 });
+    this.networkService.assemble(regionId, refresh).subscribe({
+      next: () => this.snackBar.open(this.translateService.instant("STATS.NETWORK.QUEUED"), undefined, { duration: 3000 }),
+      error: () => this.snackBar.open(this.translateService.instant("STATS.NETWORK.QUEUE_FAILED"), undefined, { duration: 5000 }),
     });
   }
 

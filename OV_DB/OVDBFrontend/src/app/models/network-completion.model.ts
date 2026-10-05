@@ -71,6 +71,8 @@ export interface CoveredEdge {
 }
 
 export interface NetworkCompletion {
+  /** The network version the coverage was read against; must equal the geometry's. */
+  version: number;
   percent: number;
   coveredKm: number;
   totalKm: number;
@@ -90,6 +92,13 @@ export interface NetworkWayOverride {
   osmWayId: number;
   kind: NetworkOverrideKind;
   createdAt: string;
+}
+
+/** The overrides one curation action created: same kind, same timestamp. Undone as a unit. */
+export interface NetworkOverrideGroup {
+  kind: NetworkOverrideKind;
+  createdAt: string;
+  osmWayIds: number[];
 }
 
 export interface MissingRun {

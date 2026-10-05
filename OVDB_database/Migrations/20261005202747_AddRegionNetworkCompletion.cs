@@ -23,7 +23,8 @@ namespace OVDB_database.Migrations
             // One-off seed of the OVDB-native rail-bound flag from what exists today. Where
             // Trainlog's export type is set it is authoritative - a type named "Treinvervangende
             // bus" with TrainlogType=bus must NOT match rail networks - otherwise the stats flag
-            // or the type's name decides. Runs exactly once here rather than at startup, and is
+            // or the type's name decides, never for a name that says bus (a rail-replacement bus
+            // without a Trainlog type). Runs exactly once here rather than at startup, and is
             // idempotent on the flag itself. The route types UI owns the value from here on.
             migrationBuilder.Sql(@"
 UPDATE RouteTypes
@@ -31,9 +32,10 @@ SET MatchesRailNetworks = 1
 WHERE MatchesRailNetworks = 0 AND (
     CASE
         WHEN TrainlogType IS NOT NULL AND TrainlogType <> ''
-            THEN LOWER(TrainlogType) IN ('train', 'tram', 'metro')
-        ELSE IsTrain = 1
-            OR LOWER(Name) REGEXP 'trein|train|zug|rail|tram|metro|subway|u-bahn|s-bahn|stadtbahn|light rail'
+            THEN LOWER(TrainlogType) IN ('train', 'rail', 'tram', 'metro')
+        ELSE (IsTrain = 1
+              OR LOWER(Name) REGEXP 'trein|train|zug|rail|tram|metro|subway|u-bahn|s-bahn|stadtbahn|light rail')
+             AND LOWER(Name) NOT REGEXP 'bus'
     END
 );");
 

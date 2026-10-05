@@ -33,6 +33,29 @@ public static class NetworkGeo
 
     public static double LengthKm(IReadOnlyList<Coordinate> coords) => LengthKm(coords, 0, coords.Count);
 
+    /// <summary>
+    /// A line as a GeoJSON LineString, coordinates [lon, lat] rounded to 6 decimals (~0.1 m).
+    /// Written by hand on purpose: the MVC pipeline serialises with Newtonsoft, which renders an NTS
+    /// geometry as its object graph (coordinate sequences, envelopes, NaN Z/M — several times the
+    /// size and not GeoJSON at all), and rounding keeps the national network payload small.
+    /// </summary>
+    public static string ToGeoJson(LineString line)
+    {
+        var sb = new System.Text.StringBuilder(32 + line.NumPoints * 24);
+        sb.Append("{\"type\":\"LineString\",\"coordinates\":[");
+        var coords = line.Coordinates;
+        for (var i = 0; i < coords.Length; i++)
+        {
+            if (i > 0) sb.Append(',');
+            sb.Append('[')
+              .Append(Math.Round(coords[i].X, 6).ToString("0.######", System.Globalization.CultureInfo.InvariantCulture))
+              .Append(',')
+              .Append(Math.Round(coords[i].Y, 6).ToString("0.######", System.Globalization.CultureInfo.InvariantCulture))
+              .Append(']');
+        }
+        return sb.Append("]}").ToString();
+    }
+
     private const double MetresPerDegree = 111_320;
 
     /// <summary>

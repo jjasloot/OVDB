@@ -203,6 +203,16 @@ namespace OV_DB
                 // Overpass responses are large JSON bodies that compress ~10x.
                 AutomaticDecompression = System.Net.DecompressionMethods.All
             });
+            // Network assembly asks Overpass for up to 900 s ([timeout:900]); the 240 s above would
+            // abandon those answers. OverpassService picks this client from the query's own timeout.
+            services.AddHttpClient(OverpassService.LongQueryClientName, client =>
+            {
+                client.DefaultRequestHeaders.Add("User-Agent", "OVDB/1.0 (contact-me jaapslootbeek@gmail.com)");
+                client.Timeout = TimeSpan.FromSeconds(1020);
+            }).ConfigurePrimaryHttpMessageHandler(() => new System.Net.Http.SocketsHttpHandler
+            {
+                AutomaticDecompression = System.Net.DecompressionMethods.All
+            });
             // Singleton so the per-endpoint failure cooldowns are shared across requests.
             services.AddSingleton<IOverpassService, OverpassService>();
             // Bounded cache for parsed OSM relation data; entries are sized by element

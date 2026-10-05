@@ -25,20 +25,58 @@ public sealed record NetworkAssemblyRequest(int RegionId, bool RefreshFromOsm);
 /// <summary>
 /// Assembles a region's rail networks (both modes) from OSM in the background: three cached
 /// Overpass fetches, classification by route relations, topology, dedup, splitting, and
-/// persistence as <see cref="NetworkEdge"/> rows. Modelled on <see cref="UpdateRegionService"/>:
-/// a static queue, one scope per item, one failure never kills the loop, progress over SignalR.
+/// publication as <see cref="NetworkEdge"/> rows together with every route's match rows.
+/// Modelled on <see cref="UpdateRegionService"/>: a static queue, one scope per item, one failure
+/// never kills the loop, progress over SignalR. A network that was published before stays
+/// readable at its old version throughout, and after a failed run.
 /// </summary>
 public class RegionNetworkAssemblyService(
     IServiceProvider serviceProvider,
     IHubContext<MapGenerationHub> hubContext,
     IOverpassService overpassService,
+    INetworkMatchIndexCache indexCache,
     IConfiguration configuration,
     ILogger<RegionNetworkAssemblyService> logger) : IHostedService, IDisposable
 {
-    public static readonly ConcurrentQueue<NetworkAssemblyRequest> Queue = new();
+    private static readonly ConcurrentQueue<int> Queue = new();
+    /// <summary>Regions waiting in <see cref="Queue"/>, with whether any request for them asked for a refetch.</summary>
+    private static readonly ConcurrentDictionary<int, bool> Pending = new();
+
+    /// <summary>
+    /// Queue a run for a region. Requests for a region that is already waiting merge into that
+    /// run (a refetch wins): undoing an override way by way, or a burst of curation clicks, then
+    /// costs one reassembly instead of one per click. A request arriving while the region is
+    /// being assembled queues a fresh run, because the running one may have read stale overrides.
+    /// </summary>
+    public static void Enqueue(int regionId, bool refreshFromOsm)
+    {
+        while (true)
+        {
+            if (Pending.TryAdd(regionId, refreshFromOsm))
+            {
+                Queue.Enqueue(regionId);
+                return;
+            }
+            // Already waiting: merge. Losing a race to the dequeue just means trying to add again;
+            // a run that dequeued the region reads the overrides afterwards, so it sees this change.
+            if (Pending.TryGetValue(regionId, out var refresh) && Pending.TryUpdate(regionId, refresh || refreshFromOsm, refresh))
+                return;
+        }
+    }
+
+    internal static bool TryDequeue(out NetworkAssemblyRequest request)
+    {
+        request = null;
+        if (!Queue.TryDequeue(out var regionId))
+            return false;
+        Pending.TryRemove(regionId, out var refresh);
+        request = new NetworkAssemblyRequest(regionId, refresh);
+        return true;
+    }
 
     private const int PersistBatchSize = 500;
     private const double SimplifyToleranceDeg = 0.0001; // ≈ 10 m
+    private const string InterruptedError = "Interrupted by an application restart; assemble again.";
 
     private static readonly GeometryFactory Factory = new(new PrecisionModel(), 4326);
 
@@ -52,11 +90,36 @@ public class RegionNetworkAssemblyService(
         return Task.CompletedTask;
     }
 
+    /// <summary>
+    /// The queue lives in memory, so a run that was queued or in progress when the app stopped is
+    /// gone. Say so rather than showing it as running forever; the published data is unaffected.
+    /// </summary>
+    private async Task ResetInterruptedRunsAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            using var scope = serviceProvider.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<OVDBDatabaseContext>();
+            var reset = await db.RegionNetworks
+                .Where(n => n.Status == NetworkStatus.Queued || n.Status == NetworkStatus.Assembling)
+                .ExecuteUpdateAsync(s => s
+                    .SetProperty(n => n.Status, NetworkStatus.Failed)
+                    .SetProperty(n => n.Error, InterruptedError), cancellationToken);
+            if (reset > 0)
+                logger.LogWarning("Marked {Count} network assembly runs interrupted by the last shutdown as failed", reset);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            logger.LogError(ex, "Could not reset interrupted network assembly runs");
+        }
+    }
+
     private async Task ProcessQueueAsync(CancellationToken cancellationToken)
     {
+        await ResetInterruptedRunsAsync(cancellationToken);
         while (!cancellationToken.IsCancellationRequested)
         {
-            if (Queue.TryDequeue(out var request))
+            if (TryDequeue(out var request))
             {
                 try
                 {
@@ -70,7 +133,7 @@ public class RegionNetworkAssemblyService(
                 {
                     logger.LogError(ex, "Failed to assemble the networks of region {RegionId}; continuing with the queue", request.RegionId);
                     await MarkFailedAsync(request.RegionId, ex.Message);
-                    await hubContext.Clients.All.SendAsync(MapGenerationHub.NetworkUpdateMethod, request.RegionId, 100, cancellationToken);
+                    await Report(request.RegionId, 100, cancellationToken);
                 }
             }
             else
@@ -143,12 +206,27 @@ public class RegionNetworkAssemblyService(
             built.Edges.GetValueOrDefault(NetworkMode.UrbanRail)?.Count ?? 0, built.ClassifiedByRelations);
         await Report(region.Id, 80, cancellationToken);
 
-        // 3. Persist, one mode at a time, then hand each network to the matcher.
-        foreach (var network in networks)
+        // 3. Publish, one mode at a time: edges and every route's match rows in one transaction,
+        //    so readers switch from the old version to the new one with its coverage complete.
+        //    The write lock keeps the match queue from interleaving route rematches.
+        var matcher = scope.ServiceProvider.GetRequiredService<INetworkMatchService>();
+        await NetworkWriteLock.Instance.WaitAsync(cancellationToken);
+        try
         {
-            var drafts = built.Edges.GetValueOrDefault(network.Mode) ?? new List<NetworkEdgeDraft>();
-            await PersistAsync(db, network.Id, drafts, built, track.OsmTimestamp, cancellationToken);
-            NetworkMatchQueueService.Queue.Enqueue(new NetworkChanged(network.Id));
+            for (var i = 0; i < networks.Count; i++)
+            {
+                var network = networks[i];
+                var drafts = built.Edges.GetValueOrDefault(network.Mode) ?? new List<NetworkEdgeDraft>();
+                var span = 20 / networks.Count;
+                var start = 80 + i * span;
+                await PublishAsync(db, matcher, network.Id, drafts, built, track.OsmTimestamp,
+                    // Capped below the span's end: 100 is reserved for "committed, reload now".
+                    p => Report(region.Id, start + Math.Min(p, 99) * span / 100, cancellationToken), cancellationToken);
+            }
+        }
+        finally
+        {
+            NetworkWriteLock.Instance.Release();
         }
         await Report(region.Id, 100, cancellationToken);
     }
@@ -165,56 +243,77 @@ public class RegionNetworkAssemblyService(
                 networks.Add(created);
             }
         }
+        // Status only describes this run; readers go by Version, so published data stays visible.
         foreach (var network in networks)
-        {
             network.Status = NetworkStatus.Assembling;
-            network.Error = null;
-        }
         await db.SaveChangesAsync(cancellationToken);
-        return networks;
+        var ordered = networks.OrderBy(n => n.Mode).ToList();
+        db.ChangeTracker.Clear();
+        return ordered;
     }
 
-    private async Task PersistAsync(OVDBDatabaseContext db, int networkId, List<NetworkEdgeDraft> drafts, NetworkAssemblyResult built, string osmTimestamp, CancellationToken cancellationToken)
+    /// <summary>
+    /// Replace a network's edges and all its match rows and bump its version, as one unit.
+    /// The app's DbContext retries transient failures, which only works with a user transaction
+    /// when the whole unit runs through the execution strategy; each attempt therefore starts
+    /// from a clean change tracker and creates fresh entities.
+    /// </summary>
+    private async Task PublishAsync(OVDBDatabaseContext db, INetworkMatchService matcher, int networkId, List<NetworkEdgeDraft> drafts,
+        NetworkAssemblyResult built, string osmTimestamp, Func<int, Task> progress, CancellationToken cancellationToken)
     {
-        // One transaction per network: a failure mid-insert must not leave a half-populated
-        // network behind. ExecuteDelete and the batched SaveChanges all join it.
-        await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
-
-        // Old edges go first; the database-level cascade takes their match rows with them.
-        await db.NetworkEdges.Where(e => e.RegionNetworkId == networkId).ExecuteDeleteAsync(cancellationToken);
-
-        var batch = new List<NetworkEdge>(PersistBatchSize);
-        foreach (var draft in drafts)
+        NetworkMatchIndex index = null;
+        var version = 0;
+        var strategy = db.Database.CreateExecutionStrategy();
+        await strategy.ExecuteAsync(async () =>
         {
-            batch.Add(ToEntity(draft, networkId, built.Projection));
-            if (batch.Count == PersistBatchSize)
+            db.ChangeTracker.Clear();
+            await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
+
+            // Old edges go first; the database-level cascade takes their match rows with them.
+            await db.NetworkEdges.Where(e => e.RegionNetworkId == networkId).ExecuteDeleteAsync(cancellationToken);
+
+            var batch = new List<NetworkEdge>(PersistBatchSize);
+            foreach (var draft in drafts)
+            {
+                batch.Add(ToEntity(draft, networkId, built.Projection));
+                if (batch.Count == PersistBatchSize)
+                {
+                    db.NetworkEdges.AddRange(batch);
+                    await db.SaveChangesAsync(cancellationToken);
+                    db.ChangeTracker.Clear();
+                    batch.Clear();
+                }
+            }
+            if (batch.Count > 0)
             {
                 db.NetworkEdges.AddRange(batch);
                 await db.SaveChangesAsync(cancellationToken);
                 db.ChangeTracker.Clear();
-                batch.Clear();
             }
-        }
-        if (batch.Count > 0)
-        {
-            db.NetworkEdges.AddRange(batch);
+
+            var network = await db.RegionNetworks.FirstAsync(n => n.Id == networkId, cancellationToken);
+            network.EdgeCount = drafts.Count;
+            network.TotalKm = Math.Round(drafts.Where(d => d.IsPassenger).Sum(d => d.LengthKm), 3);
+            network.BonusKm = Math.Round(drafts.Where(d => !d.IsPassenger).Sum(d => d.LengthKm), 3);
+            network.ClassifiedByRelations = built.ClassifiedByRelations;
+            network.OsmDataTimestamp = osmTimestamp;
+            network.AssembledAt = DateTime.UtcNow;
+            network.Version++;
+            network.Status = NetworkStatus.Ready;
+            network.Error = null;
             await db.SaveChangesAsync(cancellationToken);
             db.ChangeTracker.Clear();
-        }
 
-        var network = await db.RegionNetworks.FirstAsync(n => n.Id == networkId, cancellationToken);
-        network.EdgeCount = drafts.Count;
-        network.TotalKm = Math.Round(drafts.Where(d => d.IsPassenger).Sum(d => d.LengthKm), 3);
-        network.BonusKm = Math.Round(drafts.Where(d => !d.IsPassenger).Sum(d => d.LengthKm), 3);
-        network.ClassifiedByRelations = built.ClassifiedByRelations;
-        network.OsmDataTimestamp = osmTimestamp;
-        network.AssembledAt = DateTime.UtcNow;
-        network.Version++;
-        network.Status = NetworkStatus.Ready;
-        network.Error = null;
-        await db.SaveChangesAsync(cancellationToken);
-        await transaction.CommitAsync(cancellationToken);
+            // Match against the uncommitted new edges, inside the same transaction.
+            index = await NetworkMatchIndexCache.BuildAsync(db, network, cancellationToken);
+            await matcher.WriteMatchesAsync(network, index, progress, cancellationToken);
+
+            await transaction.CommitAsync(cancellationToken);
+            version = network.Version;
+        });
         db.ChangeTracker.Clear();
+        // Only now does the index describe committed data.
+        indexCache.Store(networkId, version, index);
     }
 
     private static NetworkEdge ToEntity(NetworkEdgeDraft draft, int networkId, NetworkGeo.LocalProjection projection)
@@ -244,9 +343,12 @@ public class RegionNetworkAssemblyService(
     {
         try
         {
+            // Only the networks this run had not yet published: a mode that already committed is
+            // Ready, and every network keeps serving its last published version either way.
             using var scope = serviceProvider.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<OVDBDatabaseContext>();
-            await db.RegionNetworks.Where(n => n.RegionId == regionId)
+            await db.RegionNetworks
+                .Where(n => n.RegionId == regionId && (n.Status == NetworkStatus.Queued || n.Status == NetworkStatus.Assembling))
                 .ExecuteUpdateAsync(s => s
                     .SetProperty(n => n.Status, NetworkStatus.Failed)
                     .SetProperty(n => n.Error, error.Length > 1000 ? error[..1000] : error));
@@ -257,8 +359,18 @@ public class RegionNetworkAssemblyService(
         }
     }
 
-    private Task Report(int regionId, int progress, CancellationToken cancellationToken) =>
-        hubContext.Clients.All.SendAsync(MapGenerationHub.NetworkUpdateMethod, regionId, progress, cancellationToken);
+    /// <summary>Progress is best effort: a SignalR failure must never fail a run or stop the queue.</summary>
+    private async Task Report(int regionId, int progress, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await hubContext.Clients.All.SendAsync(MapGenerationHub.NetworkUpdateMethod, regionId, progress, cancellationToken);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            logger.LogWarning(ex, "Could not report assembly progress of region {RegionId}", regionId);
+        }
+    }
 
     // ---- Overpass -----------------------------------------------------------------------------
 
@@ -308,10 +420,10 @@ public class RegionNetworkAssemblyService(
             try
             {
                 var candidate = await overpassService.QueryAsync(query, cancellationToken);
-                if (!string.IsNullOrWhiteSpace(candidate) && candidate.Contains("\"elements\"") && candidate.TrimEnd().EndsWith("}"))
+                if (IsCompleteResponse(candidate, out var problem))
                     response = candidate;
                 else
-                    logger.LogWarning("Overpass returned an incomplete response (attempt {Attempt})", attempt);
+                    logger.LogWarning("Overpass returned an unusable response (attempt {Attempt}): {Problem}", attempt, problem);
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
@@ -325,6 +437,34 @@ public class RegionNetworkAssemblyService(
         await File.WriteAllTextAsync(tempPath, response, cancellationToken);
         File.Move(tempPath, path, overwrite: true);
         return path;
+    }
+
+    private static readonly System.Text.RegularExpressions.Regex RemarkPattern =
+        new("\"remark\"\\s*:\\s*\"([^\"]*)\"", System.Text.RegularExpressions.RegexOptions.Compiled);
+
+    /// <summary>
+    /// Overpass reports a query timeout or memory exhaustion with HTTP 200 and well-formed JSON
+    /// whose <c>elements</c> are empty or cut short, plus a top-level <c>remark</c> saying
+    /// "runtime error". Caching that would publish a network with track missing, and keep
+    /// republishing it from the cache, so such a response is a failed attempt. The remark comes
+    /// after the elements, so only the tail of a (possibly very large) body is searched.
+    /// </summary>
+    internal static bool IsCompleteResponse(string body, out string problem)
+    {
+        problem = null;
+        if (string.IsNullOrWhiteSpace(body) || !body.Contains("\"elements\"") || !body.TrimEnd().EndsWith('}'))
+        {
+            problem = "empty or truncated";
+            return false;
+        }
+        var tail = body.Length > 4096 ? body[^4096..] : body;
+        var remark = RemarkPattern.Match(tail);
+        if (remark.Success && remark.Groups[1].Value.Contains("error", StringComparison.OrdinalIgnoreCase))
+        {
+            problem = remark.Groups[1].Value;
+            return false;
+        }
+        return true;
     }
 
     public Task StopAsync(CancellationToken cancellationToken)

@@ -13,14 +13,28 @@ using OV_DB.Services;
 namespace OV_DB.Services.Network;
 
 public abstract record NetworkMatchWorkItem;
-/// <summary>A route was created, its geometry or type changed: rematch it against every network of its regions.</summary>
+/// <summary>A route was created, its geometry, type or regions changed: rematch it against every network of its regions.</summary>
 public sealed record RouteChanged(int RouteId) : NetworkMatchWorkItem;
-/// <summary>A network was (re)assembled: rematch every eligible route of its region against it.</summary>
+/// <summary>Rematch every eligible route of a network's region against it (an admin rematch).</summary>
 public sealed record NetworkChanged(int RegionNetworkId) : NetworkMatchWorkItem;
+
+/// <summary>
+/// Serialises every write to network edges and match rows across the two background queues.
+/// Without it, a route rematch running while its region is republished either writes rows for
+/// edges the publish is deleting (and fails on the foreign key) or commits just before the
+/// publish's own match pass read the route, losing the change. Writes are rare and short next
+/// to how often the data is read, so one lock costs nothing noticeable.
+/// </summary>
+public static class NetworkWriteLock
+{
+    public static readonly SemaphoreSlim Instance = new(1, 1);
+}
 
 public interface INetworkMatchIndexCache
 {
     Task<NetworkMatchIndex> GetAsync(OVDBDatabaseContext db, RegionNetwork network, CancellationToken cancellationToken);
+    /// <summary>Seed the cache with an index built during a publish, so the next route save doesn't rebuild it.</summary>
+    void Store(int networkId, int version, NetworkMatchIndex index);
     void Invalidate(int networkId);
 }
 
@@ -58,12 +72,15 @@ public sealed class NetworkMatchIndexCache : INetworkMatchIndexCache, IDisposabl
             return entry.Index;
         }
 
-        // Two callers racing here both build; the queue is single-threaded and route saves are
-        // rare enough that a duplicate build beats holding a lock across a database read.
+        // Two callers racing here both build; writes are serialised by NetworkWriteLock and
+        // route saves are rare, so a duplicate build beats holding a lock across a database read.
         var index = await BuildAsync(db, network, cancellationToken);
-        _entries[network.Id] = new Entry { Version = network.Version, Index = index, LastUsedUtc = DateTime.UtcNow };
+        Store(network.Id, network.Version, index);
         return index;
     }
+
+    public void Store(int networkId, int version, NetworkMatchIndex index) =>
+        _entries[networkId] = new Entry { Version = version, Index = index, LastUsedUtc = DateTime.UtcNow };
 
     public void Invalidate(int networkId) => _entries.TryRemove(networkId, out _);
 
@@ -77,7 +94,12 @@ public sealed class NetworkMatchIndexCache : INetworkMatchIndexCache, IDisposabl
 
     public void Dispose() => _sweep.Dispose();
 
-    private static async Task<NetworkMatchIndex> BuildAsync(OVDBDatabaseContext db, RegionNetwork network, CancellationToken cancellationToken)
+    /// <summary>
+    /// Build an index from the database as <paramref name="db"/> currently sees it. Inside a
+    /// publish transaction that is the uncommitted new edges, which is exactly what the publish
+    /// matches against; such an index must only be stored once the transaction committed.
+    /// </summary>
+    public static async Task<NetworkMatchIndex> BuildAsync(OVDBDatabaseContext db, RegionNetwork network, CancellationToken cancellationToken)
     {
         var edges = await db.NetworkEdges
             .Where(e => e.RegionNetworkId == network.Id)
@@ -90,14 +112,26 @@ public sealed class NetworkMatchIndexCache : INetworkMatchIndexCache, IDisposabl
 
 public interface INetworkMatchService
 {
+    /// <summary>Replace one route's match rows, atomically. The caller holds <see cref="NetworkWriteLock"/>.</summary>
     Task MatchRouteAsync(int routeId, CancellationToken cancellationToken = default);
+
+    /// <summary>Replace all match rows of a published network, atomically. The caller holds <see cref="NetworkWriteLock"/>.</summary>
     Task RematchNetworkAsync(int regionNetworkId, Func<int, Task> progress = null, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Match every eligible route of the network's region and add the rows, inside the caller's
+    /// transaction (assembly publishes edges and rows as one unit). Returns the row count.
+    /// </summary>
+    Task<int> WriteMatchesAsync(RegionNetwork network, NetworkMatchIndex index, Func<int, Task> progress, CancellationToken cancellationToken);
 }
 
 /// <summary>
-/// Writes <see cref="RouteNetworkEdge"/> rows: per route on change, per network after assembly.
-/// Eligibility is the OVDB-native <c>RouteType.MatchesRailNetworks</c>; a route of any
-/// rail-bound type matches every network of its regions (geometry decides what it covers).
+/// Writes <see cref="RouteNetworkEdge"/> rows: per route on change, per network on publish or
+/// rematch. Eligibility is the OVDB-native <c>RouteType.MatchesRailNetworks</c>; a route of any
+/// rail-bound type matches every published network of its regions (geometry decides what it covers).
+/// Every delete-and-insert runs as one transaction through the execution strategy (the app's
+/// DbContext retries on transient failures, which forbids bare user transactions), so a reader
+/// never sees a route or network with its old rows gone and its new rows not yet written.
 /// </summary>
 public class NetworkMatchService(OVDBDatabaseContext db, INetworkMatchIndexCache indexCache, ILogger<NetworkMatchService> logger) : INetworkMatchService
 {
@@ -116,40 +150,67 @@ public class NetworkMatchService(OVDBDatabaseContext db, INetworkMatchIndexCache
             })
             .FirstOrDefaultAsync(cancellationToken);
 
-        await db.RouteNetworkEdges.Where(m => m.RouteId == routeId).ExecuteDeleteAsync(cancellationToken);
-        if (route == null || !route.Eligible || route.LineString == null || route.RegionIds.Count == 0)
-            return;
-
-        var networks = await db.RegionNetworks
-            .Where(n => n.Status == NetworkStatus.Ready && route.RegionIds.Contains(n.RegionId))
-            .ToListAsync(cancellationToken);
+        // Matching is pure CPU on cached indexes; do it before opening the transaction.
         var rows = new List<RouteNetworkEdge>();
-        foreach (var network in networks)
+        if (route != null && route.Eligible && route.LineString != null && route.RegionIds.Count > 0)
         {
-            var index = await indexCache.GetAsync(db, network, cancellationToken);
-            foreach (var (edgeId, bits) in index.Match(route.LineString))
-                rows.Add(ToRow(route.RouteId, edgeId, bits));
+            var networks = await db.RegionNetworks
+                .AsNoTracking()
+                .Where(n => n.Version > 0 && route.RegionIds.Contains(n.RegionId))
+                .ToListAsync(cancellationToken);
+            foreach (var network in networks)
+            {
+                var index = await indexCache.GetAsync(db, network, cancellationToken);
+                foreach (var (edgeId, bits) in index.Match(route.LineString))
+                    rows.Add(ToRow(routeId, edgeId, bits));
+            }
         }
-        if (rows.Count > 0)
+
+        var strategy = db.Database.CreateExecutionStrategy();
+        await strategy.ExecuteAsync(async () =>
         {
-            db.RouteNetworkEdges.AddRange(rows);
-            await db.SaveChangesAsync(cancellationToken);
             db.ChangeTracker.Clear();
-        }
+            await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
+            await db.RouteNetworkEdges.Where(m => m.RouteId == routeId).ExecuteDeleteAsync(cancellationToken);
+            if (rows.Count > 0)
+            {
+                // Fresh entities per attempt: a retried attempt must not see the previous one's state.
+                db.RouteNetworkEdges.AddRange(rows.Select(Clone));
+                await db.SaveChangesAsync(cancellationToken);
+            }
+            await transaction.CommitAsync(cancellationToken);
+        });
+        db.ChangeTracker.Clear();
     }
 
     public async Task RematchNetworkAsync(int regionNetworkId, Func<int, Task> progress = null, CancellationToken cancellationToken = default)
     {
-        var network = await db.RegionNetworks.FirstOrDefaultAsync(n => n.Id == regionNetworkId, cancellationToken);
-        if (network == null || network.Status != NetworkStatus.Ready)
+        var network = await db.RegionNetworks.AsNoTracking().FirstOrDefaultAsync(n => n.Id == regionNetworkId, cancellationToken);
+        if (network == null || network.Version == 0)
             return;
 
-        // Reassembly already cascaded the old rows away; a standalone rematch (after a constant
-        // change, say) must clear them itself.
-        await db.RouteNetworkEdges.Where(m => m.Edge.RegionNetworkId == network.Id).ExecuteDeleteAsync(cancellationToken);
         indexCache.Invalidate(network.Id);
         var index = await indexCache.GetAsync(db, network, cancellationToken);
 
+        var matched = 0;
+        var strategy = db.Database.CreateExecutionStrategy();
+        await strategy.ExecuteAsync(async () =>
+        {
+            db.ChangeTracker.Clear();
+            await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
+            await db.RouteNetworkEdges.Where(m => m.Edge.RegionNetworkId == network.Id).ExecuteDeleteAsync(cancellationToken);
+            // 100 means "committed, reload now": never report it from inside the transaction.
+            matched = await WriteMatchesAsync(network, index, progress == null ? null : p => progress(Math.Min(p, 99)), cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+        });
+        db.ChangeTracker.Clear();
+        if (progress != null)
+            await progress(100);
+        logger.LogInformation("Rematched network {NetworkId} ({Mode}): {Rows} match rows", network.Id, network.Mode, matched);
+    }
+
+    public async Task<int> WriteMatchesAsync(RegionNetwork network, NetworkMatchIndex index, Func<int, Task> progress, CancellationToken cancellationToken)
+    {
         var routeIds = await db.Routes
             .Where(r => r.Regions.Any(reg => reg.Id == network.RegionId) && r.RouteType != null && r.RouteType.MatchesRailNetworks && r.LineString != null)
             .OrderBy(r => r.RouteId)
@@ -180,9 +241,12 @@ public class NetworkMatchService(OVDBDatabaseContext db, INetworkMatchIndexCache
             }
             done += page.Length;
             if (progress != null)
-                await progress(routeIds.Count == 0 ? 100 : done * 100 / routeIds.Count);
+                await progress(done * 100 / routeIds.Count);
         }
-        logger.LogInformation("Rematched network {NetworkId} ({Mode}): {Routes} routes, {Rows} match rows", network.Id, network.Mode, routeIds.Count, matched);
+        if (routeIds.Count == 0 && progress != null)
+            await progress(100);
+        logger.LogInformation("Matched {Routes} routes against network {NetworkId} ({Mode}): {Rows} match rows", routeIds.Count, network.Id, network.Mode, matched);
+        return matched;
     }
 
     private static RouteNetworkEdge ToRow(int routeId, long edgeId, bool[] bits) => new()
@@ -191,5 +255,13 @@ public class NetworkMatchService(OVDBDatabaseContext db, INetworkMatchIndexCache
         NetworkEdgeId = edgeId,
         CoveredSamples = NetworkLattice.ToBytes(bits),
         CoveredCount = NetworkLattice.PopCount(bits),
+    };
+
+    private static RouteNetworkEdge Clone(RouteNetworkEdge row) => new()
+    {
+        RouteId = row.RouteId,
+        NetworkEdgeId = row.NetworkEdgeId,
+        CoveredSamples = row.CoveredSamples,
+        CoveredCount = row.CoveredCount,
     };
 }

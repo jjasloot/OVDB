@@ -64,8 +64,25 @@ namespace OV_DB.Controllers
             return Ok(routeType.TypeId);
         }
 
+        /// <summary>
+        /// The update body. <see cref="MatchesRailNetworks"/> is nullable so a client that predates
+        /// the flag (and omits it) leaves the stored value alone instead of clearing it.
+        /// </summary>
+        public sealed class RouteTypeUpdate
+        {
+            public int TypeId { get; set; }
+            [System.ComponentModel.DataAnnotations.Required]
+            public string Name { get; set; }
+            public string NameNL { get; set; }
+            [System.ComponentModel.DataAnnotations.Required]
+            public string Colour { get; set; }
+            public bool IsTrain { get; set; }
+            public string TrainlogType { get; set; }
+            public bool? MatchesRailNetworks { get; set; }
+        }
+
         [HttpPut]
-        public async Task<ActionResult> UpdateRouteType([FromBody] RouteType routeType)
+        public async Task<ActionResult> UpdateRouteType([FromBody] RouteTypeUpdate routeType)
         {
             var userIdClaim = User.GetUserId();
             if (userIdClaim < 0)
@@ -82,8 +99,18 @@ namespace OV_DB.Controllers
             dbRouteType.Colour = routeType.Colour;
             dbRouteType.IsTrain = routeType.IsTrain;
             dbRouteType.TrainlogType = routeType.TrainlogType;
+            var railFlagChanged = routeType.MatchesRailNetworks is { } matches && matches != dbRouteType.MatchesRailNetworks;
+            if (railFlagChanged)
+                dbRouteType.MatchesRailNetworks = routeType.MatchesRailNetworks.Value;
 
             await _context.SaveChangesAsync();
+            if (railFlagChanged)
+            {
+                // The flag decides whether this type's routes cover rail networks at all.
+                var routeIds = await _context.Routes.Where(r => r.RouteTypeId == dbRouteType.TypeId && r.LineString != null).Select(r => r.RouteId).ToListAsync();
+                foreach (var routeId in routeIds)
+                    OV_DB.Services.Network.NetworkMatchQueueService.Queue.Enqueue(new OV_DB.Services.Network.RouteChanged(routeId));
+            }
             return Ok(routeType.TypeId);
         }
 

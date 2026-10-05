@@ -16,10 +16,12 @@
     <button mat-button (click)="refreshRoutesForRegion(region.id)">
       <mat-icon [fontIcon]="'refresh'"></mat-icon>
     </button>
-    <button mat-button (click)="assembleNetwork(region.id)" [matTooltip]="'STATS.NETWORK.ASSEMBLE' | translate">
+    <button mat-button (click)="assembleNetwork(region.id)" [matTooltip]="'STATS.NETWORK.ASSEMBLE' | translate"
+      [attr.aria-label]="'STATS.NETWORK.ASSEMBLE' | translate">
       <mat-icon [fontIcon]="'route'"></mat-icon>
     </button>
-    <button mat-button (click)="assembleNetwork(region.id, true)" [matTooltip]="'STATS.NETWORK.REFRESH_OSM' | translate">
+    <button mat-button (click)="assembleNetwork(region.id, true)" [matTooltip]="'STATS.NETWORK.REFRESH_OSM' | translate"
+      [attr.aria-label]="'STATS.NETWORK.REFRESH_OSM' | translate">
       <mat-icon [fontIcon]="'cloud_download'"></mat-icon>
     </button>
   </mat-card-header>
@@ -31,10 +33,13 @@
       }
     </mat-chip><br />
     }
-    @if(networkProgress[region.id]!=null){
-    <mat-chip [class.finished]="networkProgress[region.id]>=100">
-      Network: {{ networkProgress[region.id] }}%
+    @if(networkProgress[region.id] !== undefined){
+    <mat-chip [class.finished]="networkProgress[region.id] >= 100 && networkError[region.id] === undefined">
+      {{ 'STATS.NETWORK.ADMIN_PROGRESS' | translate: { percent: networkProgress[region.id] } }}
     </mat-chip><br />
+    }
+    @if(networkError[region.id] !== undefined){
+    <p class="network-error">{{ 'STATS.NETWORK.ADMIN_FAILED' | translate }} {{ networkError[region.id] }}</p>
     }
     @for(subregion of region.subRegions; track subregion.id) {
     @if(subregion.subRegions.length>0){

@@ -220,17 +220,19 @@ namespace OV_DB.Controllers
             {
                 routes = await _dbContext.Routes.OrderBy(r => r.Name).Where(r => r.LineString != null).Include(r => r.Regions).Skip(count).Take(batchSize).ToListAsync(cancellationToken);
 
+                var changed = new List<int>();
                 foreach (var route in routes)
                 {
                     cancellationToken.ThrowIfCancellationRequested();
                     var regionsBefore = string.Join(", ", route.Regions.Select(r => r.Name));
-                    await routeRegionsService.AssignRegionsToRouteAsync(route);
+                    if (await routeRegionsService.AssignRegionsToRouteAsync(route))
+                        changed.Add(route.RouteId);
                     _logger.LogDebug("Route {RouteName} regions {Before} => {After}", route.Name, regionsBefore, string.Join(", ", route.Regions.Select(r => r.Name)));
                 }
                 await _dbContext.SaveChangesAsync(cancellationToken);
-                // A route newly assigned to a region with an assembled network must get matched.
-                foreach (var route in routes)
-                    OV_DB.Services.Network.NetworkMatchQueueService.Queue.Enqueue(new OV_DB.Services.Network.RouteChanged(route.RouteId));
+                // A route whose regions changed may now fall in (or out of) an assembled network.
+                foreach (var routeId in changed)
+                    OV_DB.Services.Network.NetworkMatchQueueService.Queue.Enqueue(new OV_DB.Services.Network.RouteChanged(routeId));
                 count += batchSize;
                 _logger.LogInformation("Added regions to {Count} routes", count);
             } while (routes.Count > 0);

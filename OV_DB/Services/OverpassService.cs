@@ -93,7 +93,7 @@ namespace OV_DB.Services
             if (candidates.Count == 0)
                 candidates = eligible;
 
-            var httpClient = _httpClientFactory.CreateClient("OSM");
+            var httpClient = _httpClientFactory.CreateClient(ClientFor(query));
             foreach (var endpoint in candidates)
             {
                 var stopwatch = System.Diagnostics.Stopwatch.StartNew();
@@ -129,6 +129,26 @@ namespace OV_DB.Services
             }
             _logger.LogError("All eligible Overpass endpoints failed for query");
             return null;
+        }
+
+        /// <summary>Named client for queries that allow Overpass more time than the "OSM" client waits.</summary>
+        public const string LongQueryClientName = "OSM-LongQuery";
+        /// <summary>The "OSM" client's timeout, minus headroom for transfer after Overpass finishes.</summary>
+        private const int ShortClientMaxQuerySeconds = 180;
+
+        private static readonly System.Text.RegularExpressions.Regex QueryTimeoutPattern =
+            new(@"\[timeout:(\d+)\]", System.Text.RegularExpressions.RegexOptions.Compiled);
+
+        /// <summary>
+        /// A query's own <c>[timeout:N]</c> says how long Overpass may work on it; waiting less than
+        /// that turns every slow but healthy answer into a failure (and a mirror cooldown).
+        /// </summary>
+        internal static string ClientFor(string query)
+        {
+            var match = QueryTimeoutPattern.Match(query);
+            return match.Success && int.TryParse(match.Groups[1].Value, out var seconds) && seconds > ShortClientMaxQuerySeconds
+                ? LongQueryClientName
+                : "OSM";
         }
 
         private static TimeSpan? GetRetryAfter(HttpResponseMessage response)

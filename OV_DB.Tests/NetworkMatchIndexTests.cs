@@ -86,6 +86,32 @@ public class NetworkMatchIndexTests
     }
 
     [Fact]
+    public void ShortConnectorRiddenEndToEnd_IsCovered()
+    {
+        // A 30 m junction connector has fewer lattice samples than MinStoredSamples; riding over
+        // it must still cover it, or completion can never reach 100%.
+        var geometry = Line((5.00, 52.0), (5.00044, 52.0));
+        var count = NetworkLattice.SampleCount(NetworkLattice.PolylineLength(Projection.Project(geometry.Coordinates)));
+        Assert.True(count < NetworkMatchIndex.MinStoredSamples);
+        var index = new NetworkMatchIndex([new MatchableEdge(7, geometry, count, null)], Projection);
+
+        var result = index.Match(Line((4.99, 52.0), (5.01, 52.0)));
+
+        Assert.True(result.ContainsKey(7));
+        Assert.All(result[7], Assert.True);
+    }
+
+    [Theory]
+    [InlineData(4, 80, true)]    // the normal threshold
+    [InlineData(3, 80, false)]   // a crossing on a long edge
+    [InlineData(2, 2, true)]     // a short edge ridden end to end
+    [InlineData(1, 2, false)]    // a short edge only touched
+    [InlineData(1, 1, true)]     // a degenerate one-sample edge
+    [InlineData(0, 1, false)]
+    public void IsStored_RequiresEnoughEvidence(int covered, int sampleCount, bool expected) =>
+        Assert.Equal(expected, NetworkMatchIndex.IsStored(covered, sampleCount));
+
+    [Fact]
     public void TwoRoutes_UnionAcrossBitmaps()
     {
         var edge = Edge(1);

@@ -106,6 +106,8 @@
   "ADDTYPE.NAME": "Naam",
   "ADDTYPE.COLOUR": "Kleur",
   "ADDTYPE.ISTRAIN": "Dit is een trein",
+  "ADDTYPE.MATCHES_RAIL_NETWORKS": "Rijdt over rails (telt mee voor netwerkdekking)",
+  "ADDTYPE.MATCHES_RAIL_NETWORKS_HINT": "Treinen, trams, metro's, sneltrams: routes van dit type kleuren de spoornetkaarten onder Statistieken.",
   "ROUTETYPES.NODATA": "Geen types aangemaakt. Maak een nieuw type via de knop rechtsonderin.",
   "ROUTESLIST.SEARCH": "Zoeken...",
   "ROUTESLIST.NAME": "Naam",
@@ -605,7 +607,13 @@
       "NON_PASSENGER": "buiten het reizigersnetwerk",
       "ASSEMBLE": "Netwerk opbouwen",
       "REFRESH_OSM": "Vernieuwen vanuit OpenStreetMap",
-      "QUEUED": "Netwerkopbouw in de wachtrij gezet"
+      "QUEUED": "Netwerkopbouw in de wachtrij gezet",
+      "QUEUE_FAILED": "Kon de netwerkopbouw niet in de wachtrij zetten",
+      "LOAD_FAILED": "Kon het netwerk niet laden; probeer het later opnieuw.",
+      "OVERRIDE_FAILED": "Kon de wijziging niet opslaan; de aanpassingen zijn opnieuw geladen.",
+      "ADMIN_PROGRESS": "Netwerk: {{percent}}%",
+      "WAYS": "{{count}} OSM-wegen",
+      "ADMIN_FAILED": "Netwerkopbouw mislukt; de vorige versie blijft online."
     }
   },
   "MENU": {

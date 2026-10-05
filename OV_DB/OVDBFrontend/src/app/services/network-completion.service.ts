@@ -61,14 +61,24 @@ export class NetworkCompletionService {
     return this.httpClient.post<NetworkWayOverride[]>(this.base + 'region/' + regionId + '/overrides', { osmWayIds, kind });
   }
 
-  removeOverride(regionId: number, osmWayId: number): Observable<void> {
-    return this.httpClient.delete<void>(this.base + 'region/' + regionId + '/overrides/' + osmWayId);
+  /** Removes the overrides of several ways (one curated stretch) with a single reassembly. */
+  removeOverrides(regionId: number, osmWayIds: number[]): Observable<void> {
+    return this.httpClient.post<void>(this.base + 'region/' + regionId + '/overrides/remove', { osmWayIds });
   }
 
+  /**
+   * Trip dates are calendar days, so the range is sent as days (yyyy-MM-dd, both inclusive).
+   * toISOString() would shift a Dutch midnight to the previous day in UTC and drop that day's trips.
+   */
   private range(from?: Date | null, to?: Date | null): HttpParams {
     let params = new HttpParams();
-    if (from) params = params.set('from', from.toISOString());
-    if (to) params = params.set('to', to.toISOString());
+    if (from) params = params.set('from', this.day(from));
+    if (to) params = params.set('to', this.day(to));
     return params;
+  }
+
+  private day(date: Date): string {
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
   }
 }

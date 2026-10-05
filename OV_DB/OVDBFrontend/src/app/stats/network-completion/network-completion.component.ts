@@ -1,5 +1,5 @@
-import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
-import { DecimalPipe } from '@angular/common';
+import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
+import { DatePipe, DecimalPipe } from '@angular/common';
 import { MatButton, MatIconButton } from '@angular/material/button';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatCard, MatCardContent, MatCardTitle } from '@angular/material/card';
@@ -12,10 +12,10 @@ import { MatProgressSpinner } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { LeafletModule } from '@bluehalo/ngx-leaflet';
-import { LatLng, LatLngBounds, Layer, Polyline, geoJSON, latLng, polyline } from 'leaflet';
+import { LatLng, LatLngBounds, Layer, Map as LeafletMap, Polyline, geoJSON, latLng, polyline } from 'leaflet';
 import type { Feature, FeatureCollection, GeoJsonObject, LineString, Position } from 'geojson';
-import { Subject, forkJoin, of } from 'rxjs';
-import { catchError, switchMap } from 'rxjs/operators';
+import { Observable, Subject, forkJoin, of } from 'rxjs';
+import { catchError, map, switchMap } from 'rxjs/operators';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MapTileLayersService } from 'src/app/services/map-tile-layers.service';
 import { NetworkCompletionService } from 'src/app/services/network-completion.service';
@@ -27,6 +27,7 @@ import {
   NetworkGeometry,
   NetworkGeometryEdge,
   NetworkMode,
+  NetworkOverrideGroup,
   NetworkOverrideKind,
   NetworkWayOverride,
   RegionNetworks,
@@ -44,6 +45,7 @@ import {
   styleUrl: './network-completion.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
+    DatePipe,
     DecimalPipe,
     LeafletModule,
     MatButton,
@@ -67,6 +69,7 @@ export class NetworkCompletionComponent implements OnInit {
   private authService = inject(AuthenticationService);
   private signalRService = inject(SignalRService);
   private snackBar = inject(MatSnackBar);
+  private destroyRef = inject(DestroyRef);
 
   readonly NetworkMode = NetworkMode;
   readonly NetworkOverrideKind = NetworkOverrideKind;
@@ -76,6 +79,17 @@ export class NetworkCompletionComponent implements OnInit {
   /** The edge last clicked on the map, the subject of the curation actions. */
   selectedEdge = signal<NetworkGeometryEdge | null>(null);
   overrides = signal<NetworkWayOverride[]>([]);
+  /** One entry per curation action (same kind and timestamp): a curated stretch is many OSM ways. */
+  overrideGroups = computed<NetworkOverrideGroup[]>(() => {
+    const groups = new Map<string, NetworkOverrideGroup>();
+    for (const o of this.overrides()) {
+      const key = `${o.kind}|${o.createdAt}`;
+      const group = groups.get(key) ?? { kind: o.kind, createdAt: o.createdAt, osmWayIds: [] };
+      group.osmWayIds.push(o.osmWayId);
+      groups.set(key, group);
+    }
+    return [...groups.values()];
+  });
   overriding = signal(false);
 
   loading = signal(true);
@@ -105,52 +119,130 @@ export class NetworkCompletionComponent implements OnInit {
   leafletLayersControl = { baseLayers: this.baseLayers, overlays: {} };
 
   private edgeLayers = new Map<number, Layer[]>();
+  /** The network the map was last fitted to: reloads of the same network keep the user's view. */
+  private fittedNetworkId: number | null = null;
 
   /** The selected network id; switchMap makes a fast second selection win over a slow first response. */
   private selection$ = new Subject<number | null>();
+  /** The region whose overrides to show; switchMap drops a slow answer for a region no longer selected. */
+  private overrides$ = new Subject<number | null>();
 
   constructor() {
     this.selection$
       .pipe(
         switchMap((networkId) => {
           if (networkId == null) {
-            return of(null);
+            return of({ networkId, result: null, failed: false });
           }
           this.loadingNetwork.set(true);
-          return forkJoin({
-            geometry: this.service.geometry(networkId),
-            completion: this.service.completion(networkId),
-            missing: this.service.missing(networkId),
-          }).pipe(catchError(() => of(null)));
+          return this.fetchNetwork(networkId, 1).pipe(
+            map((result) => ({ networkId, result, failed: false })),
+            catchError(() => of({ networkId, result: null, failed: true }))
+          );
         }),
         takeUntilDestroyed()
       )
-      .subscribe((result) => {
+      .subscribe(({ networkId, result, failed }) => {
         this.loadingNetwork.set(false);
+        if (failed) {
+          this.snackBar.open(this.translateService.instant('STATS.NETWORK.LOAD_FAILED'), undefined, { duration: 5000 });
+        }
         if (!result) {
           this.layers.set([]);
           this.geometry.set(null);
           this.completion.set(null);
           this.missing.set([]);
+          this.fittedNetworkId = null;
           return;
         }
         this.geometry.set(result.geometry);
         this.completion.set(result.completion);
         this.missing.set(result.missing);
-        this.buildLayers(result.geometry, result.completion);
+        this.buildLayers(result.geometry, result.completion, networkId);
+        // The selected edge belongs to the old version when the network was republished.
+        const selected = this.selectedEdge();
+        if (selected && !result.geometry.edges.some((e) => e.id === selected.id)) {
+          this.selectedEdge.set(null);
+        }
       });
 
-    // A reassembly (after an override, or an admin refresh) reports 100 % over SignalR: reload
-    // the selected network and the region list so the map shows the new state without a refresh.
+    this.overrides$
+      .pipe(
+        switchMap((regionId) =>
+          !this.isAdmin || regionId == null
+            ? of([] as NetworkWayOverride[])
+            : this.service.overrides(regionId).pipe(catchError(() => of([] as NetworkWayOverride[])))
+        ),
+        takeUntilDestroyed()
+      )
+      .subscribe((overrides) => this.overrides.set(overrides));
+
+    // The hub connection is shared app-wide; make sure it exists when this page is opened directly.
+    this.signalRService.connect();
+
+    // A reassembly (after an override, or an admin refresh) reports 100 % once its new version
+    // is committed: reload the region list, keep the selection valid, and redraw.
     this.signalRService.networkUpdates$.pipe(takeUntilDestroyed()).subscribe((update) => {
       if (update.percentage >= 100 && update.regionId === this.selectedRegionId()) {
-        this.service.regions().subscribe((regions) => {
-          this.regions.set(regions);
-          this.loadNetwork();
-          this.loadOverrides();
-        });
+        this.reloadRegions();
       }
     });
+    // An admin rematch rewrites the coverage of one network without changing its geometry.
+    this.signalRService.networkMatchUpdates$.pipe(takeUntilDestroyed()).subscribe((update) => {
+      if (update.percentage >= 100 && update.networkId === this.selectedNetwork()?.id) {
+        this.loadNetwork();
+      }
+    });
+  }
+
+  /**
+   * Geometry and completion of one network. A republish can land between the two requests; the
+   * completion then describes edges the geometry doesn't have, so fetch again (bounded).
+   */
+  private fetchNetwork(
+    networkId: number,
+    attempt: number
+  ): Observable<{ geometry: NetworkGeometry; completion: NetworkCompletion; missing: MissingRun[] }> {
+    return forkJoin({
+      geometry: this.service.geometry(networkId),
+      completion: this.service.completion(networkId),
+      missing: this.service.missing(networkId),
+    }).pipe(
+      switchMap((result) =>
+        result.geometry.version !== result.completion.version && attempt < 3
+          ? this.fetchNetwork(networkId, attempt + 1)
+          : of(result)
+      )
+    );
+  }
+
+  private reloadRegions(): void {
+    this.service.regions().subscribe({
+      next: (regions) => {
+        this.regions.set(regions);
+        const regionId = this.selectedRegionId();
+        if (regionId != null && regions.some((r) => r.regionId === regionId)) {
+          this.ensureValidMode();
+          this.loadNetwork();
+          this.loadOverrides();
+        } else if (regions.length > 0) {
+          this.selectRegion(regions[0].regionId);
+        } else {
+          this.selectedRegionId.set(null);
+          this.loadNetwork();
+          this.loadOverrides();
+        }
+      },
+      error: () => this.snackBar.open(this.translateService.instant('STATS.NETWORK.LOAD_FAILED'), undefined, { duration: 5000 }),
+    });
+  }
+
+  /** Keep the mode toggle on a mode the selected region has. */
+  private ensureValidMode(): void {
+    const modes = this.availableModes();
+    if (!modes.includes(this.selectedMode()) && modes.length > 0) {
+      this.selectedMode.set(modes[0]);
+    }
   }
 
   // ---- curation (admin) ----------------------------------------------------------------------
@@ -177,31 +269,65 @@ export class NetworkCompletionComponent implements OnInit {
       .pipe(switchMap((ways) => this.service.addOverrides(regionId, ways, kind)))
       .subscribe({
         next: (overrides) => {
-          this.overrides.set(overrides);
+          if (this.selectedRegionId() === regionId) this.overrides.set(overrides);
           this.overriding.set(false);
           this.selectedEdge.set(null);
           this.snackBar.open(this.translateService.instant('STATS.NETWORK.OVERRIDE_QUEUED'), undefined, { duration: 4000 });
         },
-        error: () => this.overriding.set(false),
+        error: () => {
+          this.overriding.set(false);
+          this.snackBar.open(this.translateService.instant('STATS.NETWORK.OVERRIDE_FAILED'), undefined, { duration: 5000 });
+        },
       });
   }
 
-  removeOverride(override: NetworkWayOverride): void {
+  removeOverrideGroup(group: NetworkOverrideGroup): void {
     const regionId = this.selectedRegionId();
-    if (regionId == null) return;
-    this.service.removeOverride(regionId, override.osmWayId).subscribe(() => {
-      this.overrides.update((list) => list.filter((o) => o.id !== override.id));
-      this.snackBar.open(this.translateService.instant('STATS.NETWORK.OVERRIDE_QUEUED'), undefined, { duration: 4000 });
+    if (regionId == null || this.overriding()) return;
+    this.overriding.set(true);
+    this.service.removeOverrides(regionId, group.osmWayIds).subscribe({
+      next: () => {
+        this.overriding.set(false);
+        if (this.selectedRegionId() === regionId) {
+          const removed = new Set(group.osmWayIds);
+          this.overrides.update((list) => list.filter((o) => !removed.has(o.osmWayId)));
+        }
+        this.snackBar.open(this.translateService.instant('STATS.NETWORK.OVERRIDE_QUEUED'), undefined, { duration: 4000 });
+      },
+      error: () => {
+        this.overriding.set(false);
+        this.snackBar.open(this.translateService.instant('STATS.NETWORK.OVERRIDE_FAILED'), undefined, { duration: 5000 });
+        this.loadOverrides();
+      },
     });
   }
 
   private loadOverrides(): void {
-    const regionId = this.selectedRegionId();
-    if (!this.isAdmin || regionId == null) {
-      this.overrides.set([]);
-      return;
-    }
-    this.service.overrides(regionId).subscribe((overrides) => this.overrides.set(overrides));
+    this.overrides$.next(this.selectedRegionId());
+  }
+
+  /**
+   * The page lives in a tab: the map is created, and fitted, while its container may still be
+   * 0×0 (hidden tab, tab animation), which leaves Leaflet at a far-out zoom with stale tiles.
+   * Tell Leaflet about every size change; refit only when the map becomes visible again, so a
+   * later window resize keeps the user's view.
+   */
+  onMapReady(map: LeafletMap): void {
+    const container = map.getContainer();
+    let hidden = true;
+    const observer = new ResizeObserver(() => {
+      if (container.clientWidth === 0 || container.clientHeight === 0) {
+        hidden = true;
+        return;
+      }
+      map.invalidateSize();
+      if (hidden) {
+        hidden = false;
+        map.fitBounds(this.bounds());
+      }
+    });
+    observer.observe(container);
+    this.destroyRef.onDestroy(() => observer.disconnect());
   }
 
   ngOnInit(): void {
@@ -213,7 +339,10 @@ export class NetworkCompletionComponent implements OnInit {
           this.selectRegion(regions[0].regionId);
         }
       },
-      error: () => this.loading.set(false),
+      error: () => {
+        this.loading.set(false);
+        this.snackBar.open(this.translateService.instant('STATS.NETWORK.LOAD_FAILED'), undefined, { duration: 5000 });
+      },
     });
   }
 
@@ -223,10 +352,7 @@ export class NetworkCompletionComponent implements OnInit {
 
   selectRegion(regionId: number): void {
     this.selectedRegionId.set(regionId);
-    const modes = this.availableModes();
-    if (!modes.includes(this.selectedMode()) && modes.length > 0) {
-      this.selectedMode.set(modes[0]);
-    }
+    this.ensureValidMode();
     this.selectedEdge.set(null);
     this.loadNetwork();
     this.loadOverrides();
@@ -234,11 +360,21 @@ export class NetworkCompletionComponent implements OnInit {
 
   selectMode(mode: NetworkMode): void {
     this.selectedMode.set(mode);
+    this.selectedEdge.set(null);
     this.loadNetwork();
   }
 
-  /** Zoom to the edges of one missing run. */
+  /**
+   * Zoom to the edges of one missing run. For admins it also selects the run's longest edge for
+   * curation: the keyboard path to the curation actions, which otherwise need a map click.
+   */
   focusMissing(run: MissingRun): void {
+    if (this.isAdmin) {
+      const edges = (this.geometry()?.edges ?? []).filter((e) => run.edgeIds.includes(e.id));
+      if (edges.length > 0) {
+        this.selectedEdge.set(edges.reduce((a, b) => (b.lengthKm > a.lengthKm ? b : a)));
+      }
+    }
     const bounds = new LatLngBounds([]);
     for (const id of run.edgeIds) {
       for (const layer of this.edgeLayers.get(id) ?? []) {
@@ -263,7 +399,7 @@ export class NetworkCompletionComponent implements OnInit {
     this.selection$.next(this.selectedNetwork()?.id ?? null);
   }
 
-  private buildLayers(geometry: NetworkGeometry, completion: NetworkCompletion): void {
+  private buildLayers(geometry: NetworkGeometry, completion: NetworkCompletion, networkId: number): void {
     this.edgeLayers.clear();
     const covered = new Map<number, CoveredEdge>(completion.edges.map((e) => [e.id, e]));
 
@@ -305,8 +441,35 @@ export class NetworkCompletionComponent implements OnInit {
     }
 
     this.layers.set([base, ...overlays]);
-    const bounds = base.getBounds();
-    if (bounds.isValid()) this.bounds.set(bounds);
+    // Fit only when another network is shown: a reload after curation must not throw the
+    // admin out of the junction they were zoomed in on.
+    if (this.fittedNetworkId !== networkId) {
+      const bounds = this.mainBounds(geometry.edges);
+      if (bounds.isValid()) {
+        this.bounds.set(bounds);
+        this.fittedNetworkId = networkId;
+      }
+    }
+  }
+
+  /**
+   * The bounds of the network's main body. A region polygon can include far-flung territory —
+   * the Netherlands' includes Aruba, whose tram is in the urban network — and fitting to all of
+   * it shows half the globe. Edges more than 1,500 km from the median edge position are left
+   * out of the fit (they are still drawn, a pan away).
+   */
+  private mainBounds(edges: NetworkGeometryEdge[]): LatLngBounds {
+    const starts = edges.map((e) => this.toLatLngs(e.geometry)).filter((l) => l.length > 0);
+    if (starts.length === 0) return new LatLngBounds([]);
+    const median = (values: number[]) => values.sort((a, b) => a - b)[Math.floor(values.length / 2)];
+    const center = latLng(median(starts.map((l) => l[0].lat)), median(starts.map((l) => l[0].lng)));
+    const bounds = new LatLngBounds([]);
+    for (const line of starts) {
+      if (center.distanceTo(line[0]) <= 1_500_000) {
+        for (const point of line) bounds.extend(point);
+      }
+    }
+    return bounds;
   }
 
   private baseStyle(edge: NetworkGeometryEdge) {

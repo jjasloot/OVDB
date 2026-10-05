@@ -12,6 +12,11 @@ namespace OVDB_database.Models;
 /// </summary>
 public enum NetworkMode { Rail = 0, UrbanRail = 1 }
 
+/// <summary>
+/// The state of the latest assembly run, not whether the network can be read: a network is
+/// readable once it has been published (<see cref="RegionNetwork.Version"/> &gt; 0), and stays
+/// readable at its last published version while a reassembly runs or after one failed.
+/// </summary>
 public enum NetworkStatus { Queued = 0, Assembling = 1, Ready = 2, Failed = 3 }
 
 /// <summary>
@@ -34,7 +39,9 @@ public class RegionNetwork
     /// <summary>
     /// Bumped on every reassembly; the ETag of the geometry payload. App-managed on purpose:
     /// MariaDB has no rowversion type, and an auto-updating timestamp would change on any row
-    /// touch rather than only when the geometry did.
+    /// touch rather than only when the geometry did. Zero means never published: not readable.
+    /// A version's edges and its match rows are committed in one transaction, so a reader never
+    /// sees new edges without their coverage.
     /// </summary>
     public int Version { get; set; }
     /// <summary>Passenger-service length: the completion denominator.</summary>

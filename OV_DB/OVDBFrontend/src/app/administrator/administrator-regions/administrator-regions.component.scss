@@ -8,3 +8,9 @@
 mat-chip.finished{
   background-color: greenyellow;
 }
+
+.network-error {
+  margin: 4px 0 8px;
+  color: var(--mat-sys-error, #b3261e);
+  font-size: 0.9rem;
+}

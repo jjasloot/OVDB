@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Net.Http.Headers;
 using NetTopologySuite.Geometries;
 using OV_DB.Extensions;
 using OV_DB.Hubs;
@@ -16,23 +17,32 @@ using OVDB_database.Models;
 
 namespace OV_DB.Controllers;
 
-/// <summary>Region rail network completion (docs/region-network-completion.md): assembly, status and the read path.</summary>
+/// <summary>
+/// Region rail network completion (docs/region-network-completion.md): assembly, status and the
+/// read path. A network is readable once published (Version &gt; 0), whatever its latest run is doing.
+/// </summary>
 [Route("api/networks")]
 [ApiController]
 [Authorize]
 public class NetworkCompletionController(OVDBDatabaseContext dbContext, IHubContext<MapGenerationHub> hubContext) : ControllerBase
 {
+    /// <summary>Upper bound on ways in one override request: an edge has tens, a whole line a few hundred.</summary>
+    public const int MaxOverrideWays = 2000;
+    /// <summary>A reader retries this often when a publish lands between its queries.</summary>
+    private const int ConsistentReadAttempts = 3;
+
     public sealed record NetworkStatusDto(int Id, NetworkMode Mode, NetworkStatus Status, DateTime? AssembledAt,
         string OsmDataTimestamp, int EdgeCount, int Version, double TotalKm, double BonusKm, bool ClassifiedByRelations, string Error);
 
     public sealed record RegionNetworksDto(int RegionId, string Name, string NameNL, int? ParentRegionId, List<RegionNetworkSummaryDto> Networks);
     public sealed record RegionNetworkSummaryDto(int Id, NetworkMode Mode, int Version, double TotalKm, double BonusKm, int EdgeCount, DateTime? AssembledAt, bool ClassifiedByRelations);
 
-    public sealed record GeometryEdgeDto(long Id, string Name, string FromStation, string ToStation, double LengthKm, bool IsPassenger, Geometry Geometry);
+    /// <summary><see cref="Geometry"/> is GeoJSON written by <see cref="NetworkGeo.ToGeoJson"/> and embedded as-is.</summary>
+    public sealed record GeometryEdgeDto(long Id, string Name, string FromStation, string ToStation, double LengthKm, bool IsPassenger, Newtonsoft.Json.Linq.JRaw Geometry);
     public sealed record GeometryDto(int Version, double TotalKm, double BonusKm, List<GeometryEdgeDto> Edges);
 
     public sealed record CoveredEdgeDto(long Id, List<double[]> Intervals);
-    public sealed record CompletionDto(double Percent, double CoveredKm, double TotalKm, double BonusKm, List<CoveredEdgeDto> Edges);
+    public sealed record CompletionDto(int Version, double Percent, double CoveredKm, double TotalKm, double BonusKm, List<CoveredEdgeDto> Edges);
 
     public sealed record MissingDto(string Name, string FromStation, string ToStation, double MissingKm, long[] EdgeIds);
 
@@ -47,8 +57,7 @@ public class NetworkCompletionController(OVDBDatabaseContext dbContext, IHubCont
         if (!await dbContext.Regions.AnyAsync(r => r.Id == regionId))
             return NotFound();
 
-        await hubContext.Clients.All.SendAsync(MapGenerationHub.NetworkUpdateMethod, regionId, 0);
-        RegionNetworkAssemblyService.Queue.Enqueue(new NetworkAssemblyRequest(regionId, refresh));
+        await QueueAssemblyAsync(regionId, refresh);
         return Ok();
     }
 
@@ -58,12 +67,25 @@ public class NetworkCompletionController(OVDBDatabaseContext dbContext, IHubCont
     {
         if (!User.IsAdmin())
             return Forbid();
-        var networkIds = await dbContext.RegionNetworks.Where(n => n.RegionId == regionId && n.Status == NetworkStatus.Ready).Select(n => n.Id).ToListAsync();
+        var networkIds = await dbContext.RegionNetworks.Where(n => n.RegionId == regionId && n.Version > 0).Select(n => n.Id).ToListAsync();
         if (networkIds.Count == 0)
             return NotFound();
         foreach (var id in networkIds)
             NetworkMatchQueueService.Queue.Enqueue(new NetworkChanged(id));
         return Ok();
+    }
+
+    /// <summary>
+    /// Record the run as queued (the published data stays readable) and enqueue it. A region
+    /// without network rows yet gets them when the run starts.
+    /// </summary>
+    private async Task QueueAssemblyAsync(int regionId, bool refresh)
+    {
+        await dbContext.RegionNetworks
+            .Where(n => n.RegionId == regionId && n.Status != NetworkStatus.Assembling)
+            .ExecuteUpdateAsync(s => s.SetProperty(n => n.Status, NetworkStatus.Queued));
+        RegionNetworkAssemblyService.Enqueue(regionId, refresh);
+        await hubContext.Clients.All.SendAsync(MapGenerationHub.NetworkUpdateMethod, regionId, 0);
     }
 
     // ---- curation (admin) --------------------------------------------------------------------
@@ -75,6 +97,8 @@ public class NetworkCompletionController(OVDBDatabaseContext dbContext, IHubCont
     [HttpGet("edges/{edgeId:long}/ways")]
     public async Task<ActionResult<long[]>> EdgeWaysAsync(long edgeId)
     {
+        if (!User.IsAdmin())
+            return Forbid();
         var json = await dbContext.NetworkEdges.Where(e => e.Id == edgeId).Select(e => e.OsmWayIds).FirstOrDefaultAsync();
         if (json == null)
             return NotFound();
@@ -89,7 +113,8 @@ public class NetworkCompletionController(OVDBDatabaseContext dbContext, IHubCont
         return await dbContext.NetworkWayOverrides
             .Where(o => o.RegionId == regionId)
             .OrderByDescending(o => o.CreatedAt)
-            .Select(o => new OverrideDto(o.Id, o.OsmWayId, o.Kind, o.CreatedAt))
+            // Stored as UTC; say so, or the client renders it as local time.
+            .Select(o => new OverrideDto(o.Id, o.OsmWayId, o.Kind, DateTime.SpecifyKind(o.CreatedAt, DateTimeKind.Utc)))
             .ToListAsync();
     }
 
@@ -103,27 +128,63 @@ public class NetworkCompletionController(OVDBDatabaseContext dbContext, IHubCont
         if (!User.IsAdmin())
             return Forbid();
         if (request?.OsmWayIds == null || request.OsmWayIds.Length == 0)
-            return BadRequest();
+            return BadRequest("No ways given.");
+        if (request.OsmWayIds.Length > MaxOverrideWays)
+            return BadRequest($"At most {MaxOverrideWays} ways per request.");
+        if (request.OsmWayIds.Any(id => id <= 0))
+            return BadRequest("OSM way ids are positive.");
+        if (!System.Enum.IsDefined(request.Kind))
+            return BadRequest("Unknown override kind.");
         if (!await dbContext.Regions.AnyAsync(r => r.Id == regionId))
             return NotFound();
 
+        // One timestamp per request: the ways of one curated stretch share it, which is how the
+        // UI groups them into a single entry with a single undo.
+        var now = DateTime.UtcNow;
         var wayIds = request.OsmWayIds.Distinct().ToList();
         var existing = await dbContext.NetworkWayOverrides
             .Where(o => o.RegionId == regionId && wayIds.Contains(o.OsmWayId))
-            .ToListAsync();
+            .ToDictionaryAsync(o => o.OsmWayId);
         foreach (var wayId in wayIds)
         {
-            var row = existing.FirstOrDefault(o => o.OsmWayId == wayId);
-            if (row == null)
-                dbContext.NetworkWayOverrides.Add(new NetworkWayOverride { RegionId = regionId, OsmWayId = wayId, Kind = request.Kind, CreatedAt = DateTime.UtcNow });
-            else
+            if (existing.TryGetValue(wayId, out var row))
+            {
                 row.Kind = request.Kind;
+                row.CreatedAt = now;
+            }
+            else
+            {
+                dbContext.NetworkWayOverrides.Add(new NetworkWayOverride { RegionId = regionId, OsmWayId = wayId, Kind = request.Kind, CreatedAt = now });
+            }
         }
         await dbContext.SaveChangesAsync();
 
-        await hubContext.Clients.All.SendAsync(MapGenerationHub.NetworkUpdateMethod, regionId, 0);
-        RegionNetworkAssemblyService.Queue.Enqueue(new NetworkAssemblyRequest(regionId, RefreshFromOsm: false));
+        await QueueAssemblyAsync(regionId, refresh: false);
         return await OverridesAsync(regionId);
+    }
+
+    public sealed record RemoveOverridesRequest(long[] OsmWayIds);
+
+    /// <summary>Remove the overrides of several ways at once (one curated stretch) with a single reassembly.</summary>
+    [HttpPost("region/{regionId:int}/overrides/remove")]
+    public async Task<IActionResult> RemoveOverridesAsync(int regionId, [FromBody] RemoveOverridesRequest request)
+    {
+        if (!User.IsAdmin())
+            return Forbid();
+        if (request?.OsmWayIds == null || request.OsmWayIds.Length == 0)
+            return BadRequest("No ways given.");
+        if (request.OsmWayIds.Length > MaxOverrideWays)
+            return BadRequest($"At most {MaxOverrideWays} ways per request.");
+
+        var wayIds = request.OsmWayIds.Distinct().ToList();
+        var removed = await dbContext.NetworkWayOverrides
+            .Where(o => o.RegionId == regionId && wayIds.Contains(o.OsmWayId))
+            .ExecuteDeleteAsync();
+        if (removed == 0)
+            return NotFound();
+
+        await QueueAssemblyAsync(regionId, refresh: false);
+        return NoContent();
     }
 
     [HttpDelete("region/{regionId:int}/overrides/{osmWayId:long}")]
@@ -137,19 +198,20 @@ public class NetworkCompletionController(OVDBDatabaseContext dbContext, IHubCont
         if (removed == 0)
             return NotFound();
 
-        await hubContext.Clients.All.SendAsync(MapGenerationHub.NetworkUpdateMethod, regionId, 0);
-        RegionNetworkAssemblyService.Queue.Enqueue(new NetworkAssemblyRequest(regionId, RefreshFromOsm: false));
+        await QueueAssemblyAsync(regionId, refresh: false);
         return NoContent();
     }
 
+    /// <summary>Per-mode state of a region's networks. The failure text is for admins only: it can carry internals.</summary>
     [HttpGet("region/{regionId:int}/status")]
     public async Task<ActionResult<NetworkStatusDto[]>> StatusAsync(int regionId)
     {
+        var isAdmin = User.IsAdmin();
         var rows = await dbContext.RegionNetworks
             .Where(n => n.RegionId == regionId)
             .OrderBy(n => n.Mode)
             .Select(n => new NetworkStatusDto(n.Id, n.Mode, n.Status, n.AssembledAt, n.OsmDataTimestamp, n.EdgeCount,
-                n.Version, n.TotalKm, n.BonusKm, n.ClassifiedByRelations, n.Error))
+                n.Version, n.TotalKm, n.BonusKm, n.ClassifiedByRelations, isAdmin ? n.Error : null))
             .ToListAsync();
         return rows.ToArray();
     }
@@ -157,15 +219,15 @@ public class NetworkCompletionController(OVDBDatabaseContext dbContext, IHubCont
     // ---- read path -------------------------------------------------------------------------
 
     /// <summary>
-    /// Regions with at least one Ready network and their per-mode totals. Drives the picker.
-    /// Deliberately user-independent: the caller's covered km come from the completion call for
-    /// the selected network, not from scanning every match row the user has to fill a dropdown.
+    /// Regions with at least one published, non-empty network and their per-mode totals. Drives
+    /// the picker. Deliberately user-independent: the caller's covered km come from the
+    /// completion call for the selected network, not from scanning every match row the user has.
     /// </summary>
     [HttpGet("regions")]
     public async Task<ActionResult<List<RegionNetworksDto>>> RegionsAsync()
     {
         var networks = await dbContext.RegionNetworks
-            .Where(n => n.Status == NetworkStatus.Ready && n.EdgeCount > 0)
+            .Where(n => n.Version > 0 && n.EdgeCount > 0)
             .Select(n => new { n.Id, n.RegionId, n.Region.Name, n.Region.NameNL, n.Region.ParentRegionId, n.Mode, n.Version, n.TotalKm, n.BonusKm, n.EdgeCount, n.AssembledAt, n.ClassifiedByRelations })
             .ToListAsync();
 
@@ -182,109 +244,156 @@ public class NetworkCompletionController(OVDBDatabaseContext dbContext, IHubCont
     [HttpGet("{networkId:int}/geometry")]
     public async Task<ActionResult<GeometryDto>> GeometryAsync(int networkId)
     {
-        var network = await dbContext.RegionNetworks.FirstOrDefaultAsync(n => n.Id == networkId && n.Status == NetworkStatus.Ready);
-        if (network == null)
-            return NotFound();
+        for (var attempt = 1; ; attempt++)
+        {
+            var network = await dbContext.RegionNetworks.AsNoTracking().FirstOrDefaultAsync(n => n.Id == networkId && n.Version > 0);
+            if (network == null)
+                return NotFound();
 
-        var etag = $"\"{network.Version}\"";
-        if (Request.Headers.IfNoneMatch.Any(v => v == etag))
-            return StatusCode(StatusCodes.Status304NotModified);
-        Response.Headers.ETag = etag;
-        Response.Headers.CacheControl = "private, max-age=0, must-revalidate";
+            // A 304 must repeat the validators of the 200 it stands for.
+            var etag = new EntityTagHeaderValue($"\"{network.Version}\"");
+            Response.Headers.ETag = etag.ToString();
+            Response.Headers.CacheControl = "private, no-cache";
+            if (IfNoneMatchHits(etag))
+                return StatusCode(StatusCodes.Status304NotModified);
 
-        var edges = await dbContext.NetworkEdges
-            .Where(e => e.RegionNetworkId == networkId)
-            .Select(e => new GeometryEdgeDto(e.Id, e.Name, e.FromStation, e.ToStation, e.LengthKm, e.IsPassenger, e.SimplifiedGeometry))
-            .ToListAsync();
-        return new GeometryDto(network.Version, network.TotalKm, network.BonusKm, edges);
+            var rows = await dbContext.NetworkEdges
+                .Where(e => e.RegionNetworkId == networkId)
+                .Select(e => new { e.Id, e.Name, e.FromStation, e.ToStation, e.LengthKm, e.IsPassenger, e.SimplifiedGeometry })
+                .ToListAsync();
+            var edges = rows
+                .Select(e => new GeometryEdgeDto(e.Id, e.Name, e.FromStation, e.ToStation, e.LengthKm, e.IsPassenger,
+                    new Newtonsoft.Json.Linq.JRaw(NetworkGeo.ToGeoJson(e.SimplifiedGeometry))))
+                .ToList();
+            if (attempt < ConsistentReadAttempts && await VersionChangedAsync(network))
+                continue;
+            return new GeometryDto(network.Version, network.TotalKm, network.BonusKm, edges);
+        }
     }
 
     /// <summary>
     /// The caller's coverage of one network, exact to the sample: per covered edge the covered
     /// runs as [start, end] fractions of the SIMPLIFIED geometry's length, ready to cut.
+    /// <paramref name="from"/> and <paramref name="to"/> are calendar days, both inclusive.
     /// </summary>
     [HttpGet("{networkId:int}/completion")]
-    public async Task<ActionResult<CompletionDto>> CompletionAsync(int networkId, [FromQuery] DateTime? from = null, [FromQuery] DateTime? to = null)
+    public async Task<ActionResult<CompletionDto>> CompletionAsync(int networkId, [FromQuery] DateOnly? from = null, [FromQuery] DateOnly? to = null)
     {
         var userId = User.GetUserId();
-        var network = await dbContext.RegionNetworks.FirstOrDefaultAsync(n => n.Id == networkId && n.Status == NetworkStatus.Ready);
-        if (network == null)
-            return NotFound();
-
-        var rows = await OwnedMatchRows(userId, from, to)
-            .Where(m => m.Edge.RegionNetworkId == networkId)
-            .Select(m => new { m.NetworkEdgeId, m.CoveredSamples })
-            .ToListAsync();
-        if (rows.Count == 0)
-            return new CompletionDto(0, 0, network.TotalKm, 0, new List<CoveredEdgeDto>());
-
-        var edgeIds = rows.Select(r => r.NetworkEdgeId).Distinct().ToList();
-        var edges = await dbContext.NetworkEdges
-            .Where(e => edgeIds.Contains(e.Id))
-            .Select(e => new { e.Id, e.SampleCount, e.LengthKm, e.IsPassenger, e.Geometry, e.SimplifiedGeometry })
-            .ToDictionaryAsync(e => e.Id);
-
-        double coveredKm = 0, bonusKm = 0;
-        var covered = new List<CoveredEdgeDto>(edgeIds.Count);
-        foreach (var group in rows.GroupBy(r => r.NetworkEdgeId))
+        for (var attempt = 1; ; attempt++)
         {
-            var edge = edges[group.Key];
-            var union = new bool[edge.SampleCount];
-            foreach (var row in group)
-                NetworkLattice.OrInto(union, row.CoveredSamples);
-            var km = edge.LengthKm * NetworkLattice.PopCount(union) / union.Length;
-            if (edge.IsPassenger) coveredKm += km; else bonusKm += km;
+            var network = await dbContext.RegionNetworks.AsNoTracking().FirstOrDefaultAsync(n => n.Id == networkId && n.Version > 0);
+            if (network == null)
+                return NotFound();
 
-            var remap = new SimplifiedChainage(edge.Geometry.Coordinates, edge.SimplifiedGeometry.Coordinates);
-            var intervals = NetworkLattice.RunsToIntervals(union)
-                .Select(iv => new[] { Math.Round(remap.ToSimplifiedFraction(iv[0]), 3), Math.Round(remap.ToSimplifiedFraction(iv[1]), 3) })
-                .ToList();
-            covered.Add(new CoveredEdgeDto(edge.Id, intervals));
+            var rows = await OwnedMatchRows(userId, from, to)
+                .Where(m => m.Edge.RegionNetworkId == networkId)
+                .Select(m => new { m.NetworkEdgeId, m.CoveredSamples })
+                .ToListAsync();
+            var edgeIds = rows.Select(r => r.NetworkEdgeId).Distinct().ToList();
+            var edges = await dbContext.NetworkEdges
+                .Where(e => edgeIds.Contains(e.Id))
+                .Select(e => new { e.Id, e.SampleCount, e.LengthKm, e.IsPassenger, e.Geometry, e.SimplifiedGeometry })
+                .ToDictionaryAsync(e => e.Id);
+
+            // A publish between the two queries replaces every edge: read again rather than mix versions.
+            if (attempt < ConsistentReadAttempts && await VersionChangedAsync(network))
+                continue;
+
+            double coveredKm = 0, bonusKm = 0;
+            var covered = new List<CoveredEdgeDto>(edgeIds.Count);
+            foreach (var group in rows.GroupBy(r => r.NetworkEdgeId))
+            {
+                if (!edges.TryGetValue(group.Key, out var edge))
+                    continue;
+                var union = new bool[edge.SampleCount];
+                foreach (var row in group)
+                    NetworkLattice.OrInto(union, row.CoveredSamples);
+                var km = edge.LengthKm * NetworkLattice.PopCount(union) / union.Length;
+                if (edge.IsPassenger) coveredKm += km; else bonusKm += km;
+
+                var remap = new SimplifiedChainage(edge.Geometry.Coordinates, edge.SimplifiedGeometry.Coordinates);
+                var intervals = NetworkLattice.RunsToIntervals(union)
+                    .Select(iv => new[] { Math.Round(remap.ToSimplifiedFraction(iv[0]), 3), Math.Round(remap.ToSimplifiedFraction(iv[1]), 3) })
+                    .ToList();
+                covered.Add(new CoveredEdgeDto(edge.Id, intervals));
+            }
+
+            var percent = network.TotalKm <= 0 ? 0 : Math.Min(100, coveredKm / network.TotalKm * 100);
+            return new CompletionDto(network.Version, Math.Round(percent, 1), Math.Round(coveredKm, 1), network.TotalKm, Math.Round(bonusKm, 1), covered);
         }
-
-        var percent = network.TotalKm <= 0 ? 0 : Math.Min(100, coveredKm / network.TotalKm * 100);
-        return new CompletionDto(Math.Round(percent, 1), Math.Round(coveredKm, 1), network.TotalKm, Math.Round(bonusKm, 1), covered);
     }
 
-    /// <summary>Uncovered passenger track grouped by line name and station span: what to ride next.</summary>
+    /// <summary>Uncovered passenger track as connected stretches per line name and station span: what to ride next.</summary>
     [HttpGet("{networkId:int}/missing")]
-    public async Task<ActionResult<List<MissingDto>>> MissingAsync(int networkId, [FromQuery] DateTime? from = null, [FromQuery] DateTime? to = null, [FromQuery] double minKm = 0.5)
+    public async Task<ActionResult<List<MissingDto>>> MissingAsync(int networkId, [FromQuery] DateOnly? from = null, [FromQuery] DateOnly? to = null, [FromQuery] double minKm = 0.5)
     {
         var userId = User.GetUserId();
-        if (!await dbContext.RegionNetworks.AnyAsync(n => n.Id == networkId && n.Status == NetworkStatus.Ready))
-            return NotFound();
-
-        var edges = await dbContext.NetworkEdges
-            .Where(e => e.RegionNetworkId == networkId && e.IsPassenger)
-            .Select(e => new { e.Id, e.Name, e.FromStation, e.ToStation, e.SampleCount, e.LengthKm })
-            .ToListAsync();
-        var rows = await OwnedMatchRows(userId, from, to)
-            .Where(m => m.Edge.RegionNetworkId == networkId && m.Edge.IsPassenger)
-            .Select(m => new { m.NetworkEdgeId, m.CoveredSamples })
-            .ToListAsync();
-        var coveredFraction = rows.GroupBy(r => r.NetworkEdgeId).ToDictionary(g => g.Key, g =>
+        for (var attempt = 1; ; attempt++)
         {
-            var count = edges.First(e => e.Id == g.Key).SampleCount;
-            var union = new bool[count];
-            foreach (var row in g)
-                NetworkLattice.OrInto(union, row.CoveredSamples);
-            return (double)NetworkLattice.PopCount(union) / count;
-        });
+            var network = await dbContext.RegionNetworks.AsNoTracking().FirstOrDefaultAsync(n => n.Id == networkId && n.Version > 0);
+            if (network == null)
+                return NotFound();
 
-        return edges
-            .Select(e => new { e, MissingKm = e.LengthKm * (1 - coveredFraction.GetValueOrDefault(e.Id)) })
-            .Where(x => x.MissingKm >= 0.05)
-            .GroupBy(x => new { Name = x.e.Name ?? "", x.e.FromStation, x.e.ToStation })
-            .Select(g => new MissingDto(g.Key.Name, g.Key.FromStation, g.Key.ToStation, Math.Round(g.Sum(x => x.MissingKm), 2), g.Select(x => x.e.Id).ToArray()))
-            .Where(m => m.MissingKm >= minKm)
-            .OrderByDescending(m => m.MissingKm)
-            .ToList();
+            var edges = await dbContext.NetworkEdges
+                .Where(e => e.RegionNetworkId == networkId && e.IsPassenger)
+                .Select(e => new { e.Id, e.Name, e.FromStation, e.ToStation, e.SampleCount, e.LengthKm, e.SimplifiedGeometry })
+                .ToListAsync();
+            var rows = await OwnedMatchRows(userId, from, to)
+                .Where(m => m.Edge.RegionNetworkId == networkId && m.Edge.IsPassenger)
+                .Select(m => new { m.NetworkEdgeId, m.CoveredSamples })
+                .ToListAsync();
+            if (attempt < ConsistentReadAttempts && await VersionChangedAsync(network))
+                continue;
+
+            var sampleCounts = edges.ToDictionary(e => e.Id, e => e.SampleCount);
+            var coveredFraction = new Dictionary<long, double>();
+            foreach (var group in rows.GroupBy(r => r.NetworkEdgeId))
+            {
+                if (!sampleCounts.TryGetValue(group.Key, out var count))
+                    continue;
+                var union = new bool[count];
+                foreach (var row in group)
+                    NetworkLattice.OrInto(union, row.CoveredSamples);
+                coveredFraction[group.Key] = (double)NetworkLattice.PopCount(union) / count;
+            }
+
+            var uncovered = edges
+                .Select(e => new MissingEdge(e.Id, e.Name, e.FromStation, e.ToStation,
+                    e.LengthKm * (1 - coveredFraction.GetValueOrDefault(e.Id)),
+                    e.SimplifiedGeometry.StartPoint.Coordinate, e.SimplifiedGeometry.EndPoint.Coordinate))
+                .Where(e => e.MissingKm >= 0.05)
+                .ToList();
+            return MissingRuns.Group(uncovered, minKm)
+                .Select(g => new MissingDto(g.Name, g.FromStation, g.ToStation, g.MissingKm, g.EdgeIds))
+                .ToList();
+        }
     }
 
-    /// <summary>Match rows of routes the caller owns and has actually travelled (an instance in the optional date range).</summary>
-    private IQueryable<RouteNetworkEdge> OwnedMatchRows(int userId, DateTime? from, DateTime? to) =>
-        dbContext.RouteNetworkEdges
+    private async Task<bool> VersionChangedAsync(RegionNetwork network) =>
+        await dbContext.RegionNetworks.Where(n => n.Id == network.Id).Select(n => n.Version).FirstOrDefaultAsync() != network.Version;
+
+    /// <summary>RFC 9110 If-None-Match: a list, weak comparison, and "*".</summary>
+    private bool IfNoneMatchHits(EntityTagHeaderValue etag)
+    {
+        var header = Request.Headers.IfNoneMatch;
+        if (header.Count == 0 || !EntityTagHeaderValue.TryParseList(header, out var tags))
+            return false;
+        return tags.Any(t => t.Equals(EntityTagHeaderValue.Any) || t.Compare(etag, useStrongComparison: false));
+    }
+
+    /// <summary>
+    /// Match rows of routes the caller owns and has actually travelled (an instance in the
+    /// optional day range). Instance dates are calendar days, so the range is compared as days:
+    /// <paramref name="to"/> includes the whole of that day.
+    /// </summary>
+    private IQueryable<RouteNetworkEdge> OwnedMatchRows(int userId, DateOnly? from, DateOnly? to)
+    {
+        var fromTime = from?.ToDateTime(TimeOnly.MinValue);
+        var toExclusive = to?.AddDays(1).ToDateTime(TimeOnly.MinValue);
+        return dbContext.RouteNetworkEdges
             .Where(m => m.Route.RouteMaps.Any(rm => rm.Map.UserId == userId))
             .Where(m => m.Route.RouteInstances.Any(ri =>
-                (from == null || ri.Date >= from) && (to == null || ri.Date <= to)));
+                (fromTime == null || ri.Date >= fromTime) && (toExclusive == null || ri.Date < toExclusive)));
+    }
 }

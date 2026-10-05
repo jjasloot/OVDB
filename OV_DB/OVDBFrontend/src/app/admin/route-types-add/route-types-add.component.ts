@@ -44,6 +44,7 @@ export class RouteTypesAddComponent implements OnInit {
   id!: number;
   isTrain = false;
   trainlogType!: string;
+  matchesRailNetworks = false;
   constructor() {
     const data = inject(MAT_DIALOG_DATA);
 
@@ -54,6 +55,7 @@ export class RouteTypesAddComponent implements OnInit {
       this.routeTypeNameNL = data.routeType.nameNL;
       this.isTrain = data.routeType.isTrain;
       this.trainlogType = data.routeType.trainlogType;
+      this.matchesRailNetworks = data.routeType.matchesRailNetworks ?? false;
     }
   }
 
@@ -76,6 +78,7 @@ export class RouteTypesAddComponent implements OnInit {
           nameNL: this.routeTypeNameNL,
           isTrain: this.isTrain,
           trainlogType: this.trainlogType,
+          matchesRailNetworks: this.matchesRailNetworks,
         } as RouteType)
         .subscribe(
           () => {
@@ -95,6 +98,7 @@ export class RouteTypesAddComponent implements OnInit {
           nameNL: this.routeTypeNameNL,
           isTrain: this.isTrain,
           trainlogType: this.trainlogType,
+          matchesRailNetworks: this.matchesRailNetworks,
         } as RouteType)
         .subscribe(
           () => {

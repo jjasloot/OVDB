@@ -39,16 +39,24 @@ public class NetworkMatchQueueService(IServiceProvider serviceProvider, IHubCont
                 {
                     using var scope = serviceProvider.CreateScope();
                     var service = scope.ServiceProvider.GetRequiredService<INetworkMatchService>();
-                    switch (item)
+                    await NetworkWriteLock.Instance.WaitAsync(cancellationToken);
+                    try
                     {
-                        case RouteChanged route:
-                            await service.MatchRouteAsync(route.RouteId, cancellationToken);
-                            break;
-                        case NetworkChanged network:
-                            await service.RematchNetworkAsync(network.RegionNetworkId,
-                                p => hubContext.Clients.All.SendAsync(MapGenerationHub.NetworkMatchMethod, network.RegionNetworkId, p, cancellationToken),
-                                cancellationToken);
-                            break;
+                        switch (item)
+                        {
+                            case RouteChanged route:
+                                await service.MatchRouteAsync(route.RouteId, cancellationToken);
+                                break;
+                            case NetworkChanged network:
+                                await service.RematchNetworkAsync(network.RegionNetworkId,
+                                    p => NotifyAsync(network.RegionNetworkId, p, cancellationToken),
+                                    cancellationToken);
+                                break;
+                        }
+                    }
+                    finally
+                    {
+                        NetworkWriteLock.Instance.Release();
                     }
                 }
                 catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
@@ -71,6 +79,19 @@ public class NetworkMatchQueueService(IServiceProvider serviceProvider, IHubCont
                     break;
                 }
             }
+        }
+    }
+
+    /// <summary>Progress is best effort: a SignalR hiccup must never roll back a rematch.</summary>
+    private async Task NotifyAsync(int networkId, int progress, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await hubContext.Clients.All.SendAsync(MapGenerationHub.NetworkMatchMethod, networkId, progress, cancellationToken);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            logger.LogWarning(ex, "Could not report rematch progress of network {NetworkId}", networkId);
         }
     }
 

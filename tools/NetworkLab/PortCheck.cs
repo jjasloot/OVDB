@@ -37,7 +37,10 @@ public static class PortCheck
         services.AddLogging(b => b.AddSimpleConsole(o => o.SingleLine = true)
             .SetMinimumLevel(LogLevel.Information)
             .AddFilter("Microsoft.EntityFrameworkCore", LogLevel.Warning));
-        services.AddDbContext<OVDBDatabaseContext>(o => o.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString), m => m.UseNetTopologySuite()));
+        // Exactly the app's options (Startup.ConfigureServices): the retrying execution strategy
+        // changes what transaction code is legal, and a harness without it passed for the wrong reason.
+        services.AddDbContext<OVDBDatabaseContext>(o => o.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString),
+            m => m.UseNetTopologySuite().EnableRetryOnFailure()));
         services.AddSingleton<IConfiguration>(new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string> { ["Networks:CachePath"] = cacheRoot })
             .Build());
@@ -56,13 +59,15 @@ public static class PortCheck
             await db.Database.MigrateAsync();
         }
 
+        // Assembly publishes edges and match rows together, as in the app.
         var watch = Stopwatch.StartNew();
         var service = provider.GetRequiredService<RegionNetworkAssemblyService>();
         await service.AssembleAsync(new NetworkAssemblyRequest(regionId, RefreshFromOsm: false));
-        Console.WriteLine($"App assembly finished in {watch.Elapsed.TotalSeconds:F1}s");
+        Console.WriteLine($"\rApp assembly + matching finished in {watch.Elapsed.TotalSeconds:F1}s");
+        Console.WriteLine("--- after assembly:");
+        await PrintAsync(provider, regionId);
 
-        // The assembly service enqueued NetworkChanged items for the (absent) queue service; run
-        // the matcher directly instead, exactly as the queue would.
+        // The admin rematch path must land on the same numbers.
         using (var scope = provider.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<OVDBDatabaseContext>();
@@ -70,10 +75,16 @@ public static class PortCheck
             var networkIds = await db.RegionNetworks.Where(n => n.RegionId == regionId).Select(n => n.Id).ToListAsync();
             watch.Restart();
             foreach (var id in networkIds)
-                await matcher.RematchNetworkAsync(id, p => { Console.Write($"\r  matching network {id}: {p}%   "); return Task.CompletedTask; });
-            Console.WriteLine($"\rApp matching finished in {watch.Elapsed.TotalSeconds:F1}s");
+                await matcher.RematchNetworkAsync(id, p => { Console.Write($"\r  rematching network {id}: {p}%   "); return Task.CompletedTask; });
+            Console.WriteLine($"\rApp rematch finished in {watch.Elapsed.TotalSeconds:F1}s");
         }
+        Console.WriteLine("--- after standalone rematch:");
+        await PrintAsync(provider, regionId);
+        Console.WriteLine("Compare with the lab's run-<regionId>.log (15 m rows): km and percentages must match.");
+    }
 
+    private static async Task PrintAsync(ServiceProvider provider, int regionId)
+    {
         using (var scope = provider.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<OVDBDatabaseContext>();
@@ -112,7 +123,6 @@ public static class PortCheck
                 Console.WriteLine($"  coverage @15m (all instanced routes): {covered,8:N1} / {n.TotalKm:N1} km = {(n.TotalKm > 0 ? covered / n.TotalKm * 100 : 0):F1}% | bonus {bonus:N1} km | {rows.Count:N0} match rows | {partial:N0} partially covered edges");
             }
         }
-        Console.WriteLine("Compare with the lab's run-<regionId>.log (15 m rows): km and percentages must match.");
     }
 
     private sealed class NoOverpass : IOverpassService

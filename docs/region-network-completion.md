@@ -293,10 +293,38 @@ gone).
 
 ### 4.9 Persistence and rematch
 
-Per `(region, mode)` in one transaction: delete old edges (cascade removes stale matches),
-insert new ones in batches of ~1000 with a cleared change tracker, update the network row with
-`Version++`, `Status = Ready`. Then enqueue `NetworkChanged`. Progress: fetch 0→20, topology
-20→45, clip+dedup+split 45→80, persist 80→100.
+**Publish** per `(region, mode)` as one transaction: delete old edges (cascade removes their
+matches), insert new ones in batches of 500 with a cleared change tracker, update the network
+row (`Version++`, `Status = Ready`), build the match index from the uncommitted edges, match
+every eligible route of the region and insert the rows (§5.3), commit. Readers therefore switch
+from the old version to the new one with its coverage complete; there is no window with new
+edges and no coverage. The index is put in the index cache only after the commit.
+
+The app's DbContext uses `EnableRetryOnFailure`, which rejects bare user transactions; the whole
+publish runs through `Database.CreateExecutionStrategy().ExecuteAsync`, each attempt starting
+from a cleared change tracker with fresh entities. (The acceptance harness uses the app's exact
+options for this reason: without the retrying strategy it passed while the app failed.)
+
+A publish holds `NetworkWriteLock`, which the match queue also takes per work item, so a route
+rematch can never interleave with a publish (it would either reference deleted edges or commit
+just before the publish read the route and be lost).
+
+**Status vs readability.** `Status` describes the latest run (`Queued` when enqueued, `Assembling`,
+`Ready`, `Failed` with `Error`). Readers never look at it: a network is readable once published
+(`Version > 0`) and keeps serving its last published version while a run is going and after a run
+failed. A failure marks only the modes this run had not yet published. The queue is in memory, so
+at startup any `Queued`/`Assembling` row is marked `Failed` ("interrupted by a restart") instead
+of showing as running forever.
+
+Progress over SignalR: fetch 0→20, topology+dedup+split 20→80, publish 80→99 per mode, and
+**100 only after the last commit** — 100 means "reload now". The same holds for the rematch
+progress (`RefreshNetworkMatches`).
+
+**Overpass answers.** A response counts only when it is complete JSON with `elements` and no
+`remark` containing "error": Overpass reports a query timeout or out-of-memory with HTTP 200 and
+a cut-off element list, which would otherwise be cached and republished on every curation. The
+track query allows Overpass 900 s; `OverpassService` routes queries whose `[timeout:N]` exceeds
+180 s through a separate `OSM-LongQuery` HttpClient (1020 s) instead of the shared 240 s one.
 
 ## 5. Matching
 
@@ -309,7 +337,7 @@ Service `NetworkMatchService` plus a hosted queue `NetworkMatchQueueService` wit
 |---|---|---|
 | `ToleranceM` | **15 m** | Routes are wizard-drawn on OSM rail geometry, so they are track-accurate; twin probes make coverage tolerance-flat, so legitimate rides no longer need width, while freight-parallel false positives still grow with it (NRW bonus 207 km @10 m → 261 km @30 m). |
 | `SampleSpacingM` | 25 m | The lattice. Shared by assembly (`SampleCount`) and matching. |
-| `MinStoredSamples` | 4 | Rows exist from ~100 m of coverage; crossings store nothing. |
+| `MinStoredSamples` | 4 | Rows exist from ~100 m of coverage; crossings store nothing. An edge with fewer samples (a sub-50 m connector) stores a row when every sample is covered, or completion could never reach 100%. |
 
 No coverage threshold.
 
@@ -328,7 +356,9 @@ for each candidate edge e:
     for each sample s of e (and its twin probes: nearest point on each hidden twin within 80 m):
         d = min distance from s / its probes to R
         bits[s] = d <= ToleranceM
-    if popcount(bits) >= MinStoredSamples: upsert RouteNetworkEdge(route, e, bits)
+    if popcount(bits) >= MinStoredSamples
+       or (e.SampleCount < MinStoredSamples and popcount(bits) == e.SampleCount):
+        upsert RouteNetworkEdge(route, e, bits)
 ```
 
 Per-network projected edges, STRtree, samples and probes are built once per `NetworkChanged`
@@ -336,18 +366,26 @@ job and reused across routes.
 
 ### 5.3 Work items
 
-`RouteChanged`: delete the route's rows; for each Ready network whose region is in
-`route.Regions` (maintained by `RouteRegionsService`), match and insert. Enqueued after region
-assignment at every route creation (`RoutesController` KML/GPX imports, `ImporterController`
-wizard), on type changes (route update, edit-multiple, type deletion), and from
-`AdminController`'s batch region reassignment — a route newly placed in a region with an
-assembled network must get matched. Route geometry is immutable after creation in OVDB (no
-controller assigns `LineString` on an existing route; a redrawn route is a new route), so there
-is no geometry-edit hook to add; if that ever changes, that path must enqueue too.
+`RouteChanged`: match the route against every published network of its regions (CPU only, on
+cached indexes), then delete its rows and insert the new ones in one transaction. Enqueued:
 
-`NetworkChanged`: rows are already gone (cascade); load the network once; iterate routes in
-`route.Regions ∋ region` with `MatchesRailNetworks`, in pages of a few hundred (13k routes ≈
-380 MB of geometry if materialized at once); insert in batches; report progress.
+- after region assignment at every route creation (`RoutesController` KML/GPX imports,
+  `ImporterController` wizard);
+- when the type changes (route update — only when `RouteTypeId` actually changed; renames and
+  map edits don't touch match rows, which are per route — edit-multiple, type deletion);
+- when a type's `MatchesRailNetworks` flag is flipped (every route of that type);
+- whenever regions are reassigned and the assignment changed: the per-route assign-regions
+  endpoint, `AdminController`'s batch, and both background refreshes (`RefreshRoutesService`,
+  `RefreshRoutesWithoutRegionsService`). A route newly placed in a region with a published
+  network must get matched; an unchanged one is not requeued.
+
+Route deletion needs no hook: the match rows cascade. Route geometry is immutable after creation
+in OVDB (a redrawn route is a new route); if that ever changes, that path must enqueue too.
+
+`NetworkChanged` (admin rematch): one transaction that deletes the network's rows and rewrites
+them. The shared body (`WriteMatchesAsync`, also used inside a publish) iterates routes in
+`route.Regions ∋ region` with `MatchesRailNetworks`, in pages of 200 (13k routes ≈ 380 MB of
+geometry if materialized at once), inserts per page, and reports progress.
 
 ## 6. Read path
 
@@ -359,15 +397,18 @@ is no geometry-edit hook to add; if that ever changes, that path must enqueue to
   selected network, not from scanning every match row to fill a dropdown).
 - **`GET /api/networks/{networkId}/geometry`** — static: `{ version, totalKm, edges:
   [{ id, name, fromStation, toStation, lengthKm, isPassenger, geometry }] }` with simplified
-  GeoJSON; `ETag: "{Version}"`, `Cache-Control: private`. NL rail ≈ 1–2 MB raw, ~300 KB gzipped.
-- **`GET /api/networks/{networkId}/completion?from=&to=`** — the per-user part:
+  GeoJSON; `ETag: "{Version}"`, `Cache-Control: private, no-cache`. A 304 repeats the ETag, and
+  `If-None-Match` is parsed per RFC 9110 (lists, weak tags, `*`). NL rail ≈ 1–2 MB raw, ~300 KB gzipped.
+- **`GET /api/networks/{networkId}/completion?from=&to=`** — the per-user part. `from`/`to` are
+  calendar days (`yyyy-MM-dd`, both inclusive), compared as `Date >= from && Date < to + 1 day`:
+  trip dates are days, and a timestamp sent from a UTC+ browser would drop the last day.
 
   ```csharp
   var rows = await db.RouteNetworkEdges
       .Where(m => m.Edge.RegionNetworkId == networkId)
       .Where(m => m.Route.RouteMaps.Any(rm => rm.Map.UserId == userId))
       .Where(m => m.Route.RouteInstances.Any(ri =>
-          (from == null || ri.Date >= from) && (to == null || ri.Date <= to)))
+          (from == null || ri.Date >= from) && (to == null || ri.Date < toExclusive)))
       .Select(m => new { m.NetworkEdgeId, m.CoveredSamples, m.Edge.SampleCount, m.Edge.LengthKm, m.Edge.IsPassenger })
       .ToListAsync();
   // per edge: union = OR of bitmaps; coveredKm += LengthKm * popcount(union) / SampleCount
@@ -375,9 +416,14 @@ is no geometry-edit hook to add; if that ever changes, that path must enqueue to
   //             length (a run a..b spans fraction (a − ½)/(n − 1) .. (b + ½)/(n − 1), so a
   //             fully covered edge is exactly [0, 1]), then re-expressed as fractions of the
   //             SIMPLIFIED geometry's length via the kept vertices (SimplifiedChainage), 3 decimals
-  // → { percent, coveredKm, totalKm, bonusKm,
+  // → { version, percent, coveredKm, totalKm, bonusKm,
   //     edges: [{ id, intervals: [[0.000, 0.412], [0.655, 1.000]] }] }   // only edges with coverage
   ```
+
+  **Consistent reads.** The read endpoints run two or three queries; a publish landing between
+  them replaces every edge. Each endpoint re-reads the network's version afterwards and starts
+  over (at most three times) when it changed, and the completion carries its `version` so the
+  client can tell when the geometry it holds is from another version and refetch both.
 
   Indexed joins plus ORing a few thousand ≤ 51-byte bitmaps: tens of milliseconds. No cache
   table unless proven necessary. Nothing bit-shaped reaches the browser: the client cuts the
@@ -386,15 +432,23 @@ is no geometry-edit hook to add; if that ever changes, that path must enqueue to
   simplified length differs from the full one by several percent (measured worst case 94 %).
 
 - **`GET /api/networks/{networkId}/missing`** — uncovered runs ≥ 500 m, grouped by edge
-  name and station span, summed km, descending: the "what should I ride next" list.
+  name and station span and, within that, by connectivity (only edges sharing an endpoint
+  join), summed km, descending: the "what should I ride next" list. The connectivity step
+  matters because track numbers ("Spoor 6") and unnamed track repeat across a region; without
+  it they pool into one entry of scattered slivers.
 - **Curation (admin):** `GET /api/networks/region/{regionId}/overrides`;
   `POST …/overrides` with `{ osmWayIds, kind }` upserts one override per way (Excluded /
-  ForceRail / ForceUrbanRail); `DELETE …/overrides/{osmWayId}` removes one. Both mutations
-  enqueue a reassembly of the region from the cached fetch, so the map changes without an
-  Overpass call. `GET /api/networks/edges/{edgeId}/ways` returns the OSM way ids an edge was
-  built from — what the map's override action sends.
-- **Admin:** `POST /api/networks/region/{regionId}/assemble` (`refresh=true` refetches OSM);
-  `GET …/status`.
+  ForceRail / ForceUrbanRail), all with one shared timestamp so the UI shows one curated stretch
+  as one entry; `POST …/overrides/remove` with `{ osmWayIds }` undoes such a group, and
+  `DELETE …/overrides/{osmWayId}` removes one way. Every mutation enqueues a reassembly of the
+  region from the cached fetch, so the map changes without an Overpass call. Requests for a
+  region that is still waiting in the queue merge into that run (a refetch wins), so a burst of
+  curation costs one reassembly. The POST rejects an unknown kind, non-positive way ids and more
+  than 2,000 ways.
+  `GET /api/networks/edges/{edgeId}/ways` (admin) returns the OSM way ids an edge was built
+  from — what the map's override action sends.
+- **Admin:** `POST /api/networks/region/{regionId}/assemble` (`refresh=true` refetches OSM),
+  `POST …/rematch`; `GET …/status` (any user, but the failure text only for admins).
 
 **Percent semantics:** `coveredKm / totalKm` over passenger edges only, exact to the sample,
 one decimal, never rounded to 100.0 unless every passenger sample is covered. Bonus km shown
@@ -404,8 +458,8 @@ beside it ("+ 152 km outside the passenger network").
 
 New stats page `stats/network-completion` beside `region-stats` and `station-completion`:
 
-- **Pickers:** region (Ready networks, grouped by country), mode tabs, the existing date/year
-  filter pattern.
+- **Pickers:** region (published networks, grouped by country), mode tabs. (A date/year filter
+  is supported by the API but not yet in the UI.)
 - **Map:** Leaflet with the existing base layers. From the geometry payload draw every edge thin
   (passenger: red; non-passenger: faint dashed). From the completion payload, cut each listed
   edge's simplified polyline at its interval fractions (walk cumulative length) and draw the
@@ -414,11 +468,20 @@ New stats page `stats/network-completion` beside `region-stats` and `station-com
   change refetches only the small completion payload.
 - **Header:** percent (one decimal), covered / total km, bonus km, "classified by route
   relations" or "by tags" as a small caveat badge.
-- **Missing list** under the map from the `missing` endpoint, each entry zooming the map to it.
-- **Curation (admin):** clicking an edge opens its ways with the current classification; three
-  actions — Exclude, Force Rail, Force UrbanRail — plus Reset; applying enqueues reassembly with
-  live progress. A per-region overrides list to review and undo.
-- **Admin:** "assemble network" / "refresh from OSM" per region, progress via `RefreshNetwork`.
+- **Missing list** under the map from the `missing` endpoint, each entry zooming the map to it
+  (for admins it also selects the run's longest edge for curation: the keyboard path).
+- **Curation (admin):** clicking an edge selects it; three actions — Exclude, Force Rail, Force
+  UrbanRail; applying enqueues reassembly. A per-region overrides list to review and undo.
+- **Live updates:** the page opens the SignalR connection itself, and reloads on
+  `RefreshNetwork` 100 (a publish of the selected region; the region list is reloaded and the
+  selection kept valid) and on `RefreshNetworkMatches` 100 for the selected network (an admin
+  rematch). The map is fitted only when a different network is shown, so a reload after
+  curation keeps the view.
+- **Admin:** "assemble network" / "refresh from OSM" per region, progress via `RefreshNetwork`;
+  when a run ends failed, the region card shows the error (the old version stays online).
+- **Route types:** a "runs on rails" checkbox sets `MatchesRailNetworks`. The PUT takes it as
+  optional, so a client that omits it leaves the stored value alone; flipping it rematches every
+  route of that type.
 - i18n keys in `en.json` and `nl.json`.
 
 ## 8. Testing (OV_DB.Tests)
@@ -461,9 +524,9 @@ payload a few KB.
    **Done (branch `network-completion`, 2026-10-05).** Acceptance harness:
    `tools/NetworkLab> dotnet run -- port-check <regionId>` runs the app's real
    `RegionNetworkAssemblyService` against the dev database from the lab's cached fetches and
-   prints the persisted rows; passenger/bonus km must equal the lab's to 0.1 km. The route-types
-   PUT copies fields explicitly, so the current UI cannot reset `MatchesRailNetworks`; it must
-   not be added to that PUT until the checkbox exists, or the old frontend would post it false.
+   prints the persisted rows; passenger/bonus km must equal the lab's to 0.1 km. The harness
+   uses the app's exact DbContext options (including the retrying execution strategy), runs
+   the publish, then a standalone rematch, and prints coverage after each: both must agree.
 2. Matching service and queue hooks; rematch NL; compare numbers with the lab (99.6 % rail,
    93.7 % urban at 20 m — expect ~equal at 15 m). **Done** — identical to the lab (§11.1).
 3. Read API, stats page with partial rendering, missing list. **Done**: `Network` tab in
