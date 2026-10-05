@@ -79,6 +79,52 @@
       <span><i class="swatch bonus"></i>{{ 'STATS.NETWORK.LEGEND_BONUS' | translate }}</span>
     </div>
 
+    @if (isAdmin) {
+      <mat-card appearance="outlined" class="curation">
+        <mat-card-title>{{ 'STATS.NETWORK.CURATION' | translate }}</mat-card-title>
+        <mat-card-content>
+          @if (selectedEdge(); as edge) {
+            <p class="selected-edge">
+              <b>{{ edge.name || ('STATS.NETWORK.UNNAMED' | translate) }}</b>
+              @if (edge.fromStation || edge.toStation) {
+                · {{ edge.fromStation ?? '…' }} – {{ edge.toStation ?? '…' }}
+              }
+              · {{ edge.lengthKm | number: '1.1-1' }} km
+              @if (!edge.isPassenger) {
+                · <i>{{ 'STATS.NETWORK.NON_PASSENGER' | translate }}</i>
+              }
+            </p>
+            <div class="actions">
+              <button mat-stroked-button [disabled]="overriding()" (click)="applyOverride(NetworkOverrideKind.Excluded)">
+                {{ 'STATS.NETWORK.EXCLUDE' | translate }}
+              </button>
+              <button mat-stroked-button [disabled]="overriding()" (click)="applyOverride(NetworkOverrideKind.ForceRail)">
+                {{ 'STATS.NETWORK.FORCE_RAIL' | translate }}
+              </button>
+              <button mat-stroked-button [disabled]="overriding()" (click)="applyOverride(NetworkOverrideKind.ForceUrbanRail)">
+                {{ 'STATS.NETWORK.FORCE_URBAN' | translate }}
+              </button>
+              <button mat-button (click)="selectedEdge.set(null)">{{ 'STATS.NETWORK.DESELECT' | translate }}</button>
+            </div>
+          } @else {
+            <p class="hint">{{ 'STATS.NETWORK.SELECT_EDGE_HINT' | translate }}</p>
+          }
+          @if (overrides().length > 0) {
+            <ul class="overrides">
+              @for (override of overrides(); track override.id) {
+                <li>
+                  <span>{{ overrideKindLabel(override.kind) | translate }} · way {{ override.osmWayId }}</span>
+                  <button mat-icon-button (click)="removeOverride(override)" [attr.aria-label]="'STATS.NETWORK.REMOVE' | translate">
+                    <mat-icon fontIcon="undo" />
+                  </button>
+                </li>
+              }
+            </ul>
+          }
+        </mat-card-content>
+      </mat-card>
+    }
+
     <mat-card appearance="outlined">
       <mat-card-title>{{ 'STATS.NETWORK.MISSING' | translate }}</mat-card-title>
       <mat-card-content>

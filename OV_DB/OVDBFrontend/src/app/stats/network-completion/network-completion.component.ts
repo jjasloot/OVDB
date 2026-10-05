@@ -1,7 +1,12 @@
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
+import { MatButton, MatIconButton } from '@angular/material/button';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatCard, MatCardContent, MatCardTitle } from '@angular/material/card';
+import { MatIcon } from '@angular/material/icon';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { AuthenticationService } from 'src/app/services/authentication.service';
+import { SignalRService } from 'src/app/services/signal-r.service';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatProgressSpinner } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
@@ -22,6 +27,8 @@ import {
   NetworkGeometry,
   NetworkGeometryEdge,
   NetworkMode,
+  NetworkOverrideKind,
+  NetworkWayOverride,
   RegionNetworks,
 } from 'src/app/models/network-completion.model';
 
@@ -39,11 +46,14 @@ import {
   imports: [
     DecimalPipe,
     LeafletModule,
+    MatButton,
     MatButtonToggleModule,
     MatCard,
     MatCardContent,
     MatCardTitle,
     MatFormFieldModule,
+    MatIcon,
+    MatIconButton,
     MatProgressSpinner,
     MatSelectModule,
     TranslateModule,
@@ -54,8 +64,19 @@ export class NetworkCompletionComponent implements OnInit {
   private translationService = inject(TranslationService);
   private translateService = inject(TranslateService);
   private mapTileLayersService = inject(MapTileLayersService);
+  private authService = inject(AuthenticationService);
+  private signalRService = inject(SignalRService);
+  private snackBar = inject(MatSnackBar);
 
   readonly NetworkMode = NetworkMode;
+  readonly NetworkOverrideKind = NetworkOverrideKind;
+
+  /** Curation is admin-only; the endpoints enforce the same rule. */
+  readonly isAdmin = this.authService.admin;
+  /** The edge last clicked on the map, the subject of the curation actions. */
+  selectedEdge = signal<NetworkGeometryEdge | null>(null);
+  overrides = signal<NetworkWayOverride[]>([]);
+  overriding = signal(false);
 
   loading = signal(true);
   loadingNetwork = signal(false);
@@ -118,6 +139,69 @@ export class NetworkCompletionComponent implements OnInit {
         this.missing.set(result.missing);
         this.buildLayers(result.geometry, result.completion);
       });
+
+    // A reassembly (after an override, or an admin refresh) reports 100 % over SignalR: reload
+    // the selected network and the region list so the map shows the new state without a refresh.
+    this.signalRService.networkUpdates$.pipe(takeUntilDestroyed()).subscribe((update) => {
+      if (update.percentage >= 100 && update.regionId === this.selectedRegionId()) {
+        this.service.regions().subscribe((regions) => {
+          this.regions.set(regions);
+          this.loadNetwork();
+          this.loadOverrides();
+        });
+      }
+    });
+  }
+
+  // ---- curation (admin) ----------------------------------------------------------------------
+
+  overrideKindLabel(kind: NetworkOverrideKind): string {
+    switch (kind) {
+      case NetworkOverrideKind.ForceRail:
+        return 'STATS.NETWORK.KIND_RAIL';
+      case NetworkOverrideKind.ForceUrbanRail:
+        return 'STATS.NETWORK.KIND_URBAN';
+      default:
+        return 'STATS.NETWORK.KIND_EXCLUDED';
+    }
+  }
+
+  /** Apply an override to every OSM way of the selected edge; the region reassembles in the background. */
+  applyOverride(kind: NetworkOverrideKind): void {
+    const edge = this.selectedEdge();
+    const regionId = this.selectedRegionId();
+    if (!edge || regionId == null) return;
+    this.overriding.set(true);
+    this.service
+      .edgeWays(edge.id)
+      .pipe(switchMap((ways) => this.service.addOverrides(regionId, ways, kind)))
+      .subscribe({
+        next: (overrides) => {
+          this.overrides.set(overrides);
+          this.overriding.set(false);
+          this.selectedEdge.set(null);
+          this.snackBar.open(this.translateService.instant('STATS.NETWORK.OVERRIDE_QUEUED'), undefined, { duration: 4000 });
+        },
+        error: () => this.overriding.set(false),
+      });
+  }
+
+  removeOverride(override: NetworkWayOverride): void {
+    const regionId = this.selectedRegionId();
+    if (regionId == null) return;
+    this.service.removeOverride(regionId, override.osmWayId).subscribe(() => {
+      this.overrides.update((list) => list.filter((o) => o.id !== override.id));
+      this.snackBar.open(this.translateService.instant('STATS.NETWORK.OVERRIDE_QUEUED'), undefined, { duration: 4000 });
+    });
+  }
+
+  private loadOverrides(): void {
+    const regionId = this.selectedRegionId();
+    if (!this.isAdmin || regionId == null) {
+      this.overrides.set([]);
+      return;
+    }
+    this.service.overrides(regionId).subscribe((overrides) => this.overrides.set(overrides));
   }
 
   ngOnInit(): void {
@@ -143,7 +227,9 @@ export class NetworkCompletionComponent implements OnInit {
     if (!modes.includes(this.selectedMode()) && modes.length > 0) {
       this.selectedMode.set(modes[0]);
     }
+    this.selectedEdge.set(null);
     this.loadNetwork();
+    this.loadOverrides();
   }
 
   selectMode(mode: NetworkMode): void {
@@ -197,6 +283,7 @@ export class NetworkCompletionComponent implements OnInit {
       onEachFeature: (feature, layer) => {
         const edge = feature.properties as NetworkGeometryEdge;
         layer.bindTooltip(this.tooltip(edge), { sticky: true });
+        layer.on('click', () => this.selectedEdge.set(edge));
         this.edgeLayers.set(edge.id, [layer]);
       },
     });
@@ -211,6 +298,7 @@ export class NetworkCompletionComponent implements OnInit {
         const piece = this.cutByFraction(latlngs, start, end);
         if (piece.length < 2) continue;
         const line = polyline(piece, this.coveredStyle(edge)).bindTooltip(this.tooltip(edge), { sticky: true });
+        line.on('click', () => this.selectedEdge.set(edge));
         overlays.push(line);
         this.edgeLayers.get(edge.id)?.push(line);
       }

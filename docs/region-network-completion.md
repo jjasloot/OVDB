@@ -468,8 +468,9 @@ payload a few KB.
    93.7 % urban at 20 m — expect ~equal at 15 m). **Done** — identical to the lab (§11.1).
 3. Read API, stats page with partial rendering, missing list. **Done**: `Network` tab in
    Stats, `NetworkCompletionController` read endpoints, admin assemble/refresh buttons.
-4. Curation UI and overrides: the override *table and assembly logic* exist; the map-side
-   toggle UI and the override endpoints are still to do.
+4. Curation UI and overrides. **Done**: override endpoints, and an admin-only Curation card
+   on the Network tab — click a stretch, then Exclude / Force rail / Force urban rail; the region
+   reassembles from the cached fetch and the tab reloads itself when SignalR reports 100 %.
 5. Provinces and neighbouring countries on demand; per-sub-region fetch when a large country is
    wanted; a Swiss region to confirm rack railways.
 

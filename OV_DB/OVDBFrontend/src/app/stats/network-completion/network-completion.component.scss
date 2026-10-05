@@ -105,6 +105,38 @@ mat-card-title {
 .swatch.missing { border-color: #c62828; border-top-width: 2px; }
 .swatch.bonus { border-color: #00838f; border-top-style: dashed; }
 
+.curation .selected-edge {
+  margin: 0 0 8px;
+}
+
+.curation .hint {
+  margin: 0;
+  opacity: 0.7;
+  font-size: 0.9rem;
+}
+
+.curation .actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.overrides {
+  margin: 12px 0 0;
+  padding-left: 0;
+  list-style: none;
+  columns: 320px;
+}
+
+.overrides li {
+  break-inside: avoid;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 0.9rem;
+}
+
 .missing {
   margin: 0;
   padding-left: 0;
