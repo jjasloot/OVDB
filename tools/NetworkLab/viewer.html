@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>NetworkLab viewer</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.6.2/dist/maplibre-gl.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/maplibre-gl@5.6.2/dist/maplibre-gl.js"></script>
+<script src="https://unpkg.com/@maplibre/maplibre-gl-leaflet@0.1.4/leaflet-maplibre-gl.js"></script>
+<style>
+  html, body { margin: 0; height: 100%; font-family: system-ui, sans-serif; }
+  #map { height: 100%; }
+  #panel {
+    position: absolute; top: 10px; right: 10px; z-index: 1000;
+    background: #fff; padding: 10px 14px; border-radius: 6px;
+    box-shadow: 0 1px 6px rgba(0,0,0,.35); font-size: 13px; max-width: 280px;
+  }
+  #panel button { margin: 2px; }
+  #panel button.active { background: #2e7d32; color: #fff; }
+  #stats { margin-top: 6px; white-space: pre-line; }
+  .legend span { display: inline-block; width: 22px; height: 4px; margin-right: 4px; vertical-align: middle; }
+</style>
+</head>
+<body>
+<div id="map"></div>
+<div id="panel">
+  <b>NetworkLab viewer</b><br>
+  Drop one or more <code>network-*.geojson</code> files on the map.<br>
+  Click an edge to exclude/include it (persisted locally).<br>
+  Tolerance:
+  <span id="tols"></span>
+  <div class="legend">
+    <div><span style="background:#2e7d32;height:5px"></span>ridden (partial runs drawn exactly)</div>
+    <div><span style="background:#c62828"></span>not ridden (passenger network)</div>
+    <div><span style="background:#00838f;height:5px"></span>ridden, outside the passenger network</div>
+    <div><span style="background:#e8a3a3"></span>not ridden, outside the passenger network</div>
+    <div><span style="background:#555;height:3px"></span>excluded (click to restore)</div>
+  </div>
+  <div id="stats"></div>
+  <button id="clearExcluded">Clear exclusions</button>
+</div>
+<script>
+const map = L.map('map').setView([52.2, 5.3], 8);
+// OpenFreeMap vector tiles via maplibre, same stack as the app itself: OSM's raster servers
+// refuse requests without a Referer (file:// sends none) and CARTO watermarks keyless tiles;
+// OpenFreeMap needs no key and has no cap.
+L.maplibreGL({ style: 'https://tiles.openfreemap.org/styles/positron' }).addTo(map);
+
+const TOLS = [10, 15, 20, 30];
+let tol = 15;
+const layers = [];                       // base layers: every edge, thin
+const overlay = L.layerGroup().addTo(map); // covered runs, rebuilt on every restyle
+
+const tolsDiv = document.getElementById('tols');
+for (const t of TOLS) {
+  const b = document.createElement('button');
+  b.textContent = t + 'm';
+  b.className = t === tol ? 'active' : '';
+  b.onclick = () => { tol = t; document.querySelectorAll('#tols button').forEach(x => x.className = ''); b.className = 'active'; restyle(); };
+  tolsDiv.appendChild(b);
+}
+
+// Manual curation: excluded edges leave the totals entirely. Keyed by geometry so exclusions
+// survive re-exports as long as the edge's shape is unchanged.
+const excluded = new Set(JSON.parse(localStorage.getItem('networklab-excluded') || '[]'));
+function edgeKey(f) {
+  const c = f.geometry.coordinates;
+  return `${c[0][0]},${c[0][1]}|${c[c.length - 1][0]},${c[c.length - 1][1]}|${c.length}|${f.properties.km}`;
+}
+function saveExcluded() {
+  localStorage.setItem('networklab-excluded', JSON.stringify([...excluded]));
+}
+document.getElementById('clearExcluded').onclick = () => { excluded.clear(); saveExcluded(); restyle(); };
+function toggleExcluded(f) {
+  const key = edgeKey(f);
+  if (excluded.has(key)) excluded.delete(key); else excluded.add(key);
+  saveExcluded();
+  restyle();
+}
+
+// Base style: the whole edge, thin, in its "not ridden" colour. Coverage is drawn on top.
+function baseStyle(f) {
+  if (excluded.has(edgeKey(f)))
+    return { color: '#555555', weight: 1.2, opacity: 0.55, dashArray: '2 6' };
+  return f.properties.passenger
+    ? { color: '#c62828', weight: 1.8, opacity: 0.9 }
+    : { color: '#e8a3a3', weight: 1.2, opacity: 0.7, dashArray: '4 4' };
+}
+function coveredStyle(f) {
+  return f.properties.passenger
+    ? { color: '#2e7d32', weight: 3.8, opacity: 0.95 }
+    : { color: '#00838f', weight: 3, opacity: 0.95, dashArray: '6 4' };
+}
+
+// Partial rendering (design 6/7): cut the simplified polyline by LENGTH FRACTION. This is
+// exactly what the app's frontend will do with the completion payload's intervals.
+function cutByFraction(latlngs, s, e) {
+  const cum = [0];
+  for (let i = 1; i < latlngs.length; i++) cum.push(cum[i - 1] + latlngs[i - 1].distanceTo(latlngs[i]));
+  const total = cum[cum.length - 1];
+  if (total <= 0) return [];
+  const sM = s * total, eM = e * total;
+  const pointAt = m => {
+    let k = 1;
+    while (k < cum.length - 1 && cum[k] < m) k++;
+    const segLen = cum[k] - cum[k - 1];
+    const t = segLen <= 0 ? 0 : (m - cum[k - 1]) / segLen;
+    return L.latLng(latlngs[k - 1].lat + (latlngs[k].lat - latlngs[k - 1].lat) * t,
+                    latlngs[k - 1].lng + (latlngs[k].lng - latlngs[k - 1].lng) * t);
+  };
+  const piece = [pointAt(sM)];
+  for (let i = 0; i < latlngs.length; i++) if (cum[i] > sM && cum[i] < eM) piece.push(latlngs[i]);
+  piece.push(pointAt(eM));
+  return piece;
+}
+
+function tooltipFor(f) {
+  const p = f.properties;
+  return `${p.name || '(unnamed)'} — ${p.km} km${p.passenger ? '' : ' — non-passenger'}` +
+    `<br>f10=${p.f10} f15=${p.f15} f20=${p.f20} f30=${p.f30}<br><i>click to exclude/include</i>`;
+}
+
+function restyle() {
+  overlay.clearLayers();
+  let totalKm = 0, fracKm = 0, bonusKm = 0, excludedKm = 0, excludedCount = 0, partialEdges = 0;
+  for (const layer of layers) {
+    layer.eachLayer(l => {
+      const f = l.feature, p = f.properties;
+      l.setStyle(baseStyle(f));
+      if (excluded.has(edgeKey(f))) { excludedKm += p.km; excludedCount++; return; }
+      const frac = p['f' + tol] || 0;
+      if (p.passenger) { totalKm += p.km; fracKm += p.km * frac; }
+      else bonusKm += p.km * frac;
+      const intervals = p['i' + tol] || [];
+      if (intervals.length && !(intervals.length === 1 && intervals[0][0] === 0 && intervals[0][1] === 1)) partialEdges++;
+      for (const [s, e] of intervals) {
+        const piece = cutByFraction(l.getLatLngs(), s, e);
+        if (piece.length < 2) continue;
+        L.polyline(piece, coveredStyle(f)).bindTooltip(tooltipFor(f), { sticky: true })
+          .on('click', () => toggleExcluded(f)).addTo(overlay);
+      }
+    });
+  }
+  document.getElementById('stats').textContent =
+    `@${tol}m: ${fracKm.toFixed(0)} / ${totalKm.toFixed(0)} km = ${(totalKm ? fracKm / totalKm * 100 : 0).toFixed(1)}%` +
+    `\n${partialEdges} edges partially ridden (drawn exactly)` +
+    (bonusKm > 0.05 ? `\n+ ${bonusKm.toFixed(1)} km outside the passenger network` : '') +
+    (excludedCount ? `\nexcluded: ${excludedCount} edges, ${excludedKm.toFixed(1)} km` : '');
+}
+
+// URL-driven loading for automation/screenshots (serve over http, e.g. `npx http-server -p 8123`):
+//   viewer.html?load=network-1-rail.geojson,network-1-urbanrail.geojson&center=52.2,5.3&zoom=8&tol=15
+const params = new URLSearchParams(location.search);
+const hasView = params.has('center') || params.has('zoom');
+if (params.has('center')) {
+  const [lat, lng] = params.get('center').split(',').map(Number);
+  map.setView([lat, lng], Number(params.get('zoom') || 8));
+} else if (params.has('zoom')) {
+  map.setZoom(Number(params.get('zoom')));
+}
+if (params.has('tol') && TOLS.includes(Number(params.get('tol')))) {
+  tol = Number(params.get('tol'));
+  document.querySelectorAll('#tols button').forEach(x => x.className = x.textContent === tol + 'm' ? 'active' : '');
+}
+if (params.has('load')) {
+  for (const name of params.get('load').split(',')) {
+    fetch('data/' + name).then(r => r.text()).then(t => addGeoJson(t, !hasView));
+  }
+}
+
+function addGeoJson(text, fit) {
+  const layer = L.geoJSON(JSON.parse(text), {
+    style: f => baseStyle(f),
+    onEachFeature: (f, l) => {
+      l.bindTooltip(tooltipFor(f), { sticky: true });
+      l.on('click', () => toggleExcluded(f));
+    },
+  }).addTo(map);
+  layers.push(layer);
+  if (fit) map.fitBounds(layer.getBounds());
+  restyle();
+}
+
+document.body.addEventListener('dragover', e => e.preventDefault());
+document.body.addEventListener('drop', e => {
+  e.preventDefault();
+  for (const file of e.dataTransfer.files) file.text().then(text => addGeoJson(text, true));
+});
+</script>
+</body>
+</html>
