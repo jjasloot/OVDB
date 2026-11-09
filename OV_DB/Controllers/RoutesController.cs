@@ -213,23 +213,6 @@ namespace OV_DB.Controllers
                 .ToListAsync();
         }
 
-        [HttpGet("years")]
-        public async Task<ActionResult<IEnumerable<int?>>> GetRoutesYears()
-        {
-            var userIdClaim = User.GetUserId();
-            if (userIdClaim < 0)
-            {
-                return Forbid();
-            }
-            var years = await _context.Routes
-                .AsNoTracking()
-                .Where(r => r.RouteTypeId != null)
-                .Where(r => r.RouteMaps.Any(rm => rm.Map.UserId == userIdClaim))
-                .Select(r => r.FirstDateTime.HasValue ? (int?)r.FirstDateTime.Value.Year : null)
-                .Distinct()
-                .ToListAsync();
-            return years;
-        }
         // GET: api/RoutesAPI/5
         [HttpGet("{id}")]
         public async Task<ActionResult<RouteDTO>> GetRoute(int id)
@@ -772,6 +755,7 @@ namespace OV_DB.Controllers
             var query = _context.Routes
                             .AsNoTracking()
                             .Include(r => r.RouteType)
+                            .Include(r => r.RouteInstances)
                             .Include(r => r.RouteMaps)
                             .ThenInclude(rm => rm.Map)
                             .Where(r => r.RouteMaps.Any(rm => rm.Map.UserId == userIdClaim));
@@ -838,9 +822,11 @@ namespace OV_DB.Controllers
                 };
             }
             placemark.ExtendedData = new ExtendedData();
-            if (route.FirstDateTime.HasValue)
+            // The first trip, not the legacy Route.FirstDateTime column, which is no longer kept up to date.
+            var firstDate = route.RouteInstances?.Count > 0 ? route.RouteInstances.Min(ri => ri.Date) : route.FirstDateTime;
+            if (firstDate.HasValue)
             {
-                placemark.ExtendedData.AddData(new Data { Name = "firstDateTime", Value = route.FirstDateTime.Value.ToString("yyyy-MM-dd") });
+                placemark.ExtendedData.AddData(new Data { Name = "firstDateTime", Value = firstDate.Value.ToString("yyyy-MM-dd") });
             }
             if (route.RouteType != null)
             {
@@ -897,12 +883,25 @@ namespace OV_DB.Controllers
 
             var selectedRoutes = await _context.Routes
                 .Include(r => r.RouteMaps)
+                .Include(r => r.RouteInstances)
                 .Where(r => editMultiple.RouteIds.Contains(r.RouteId) && r.RouteMaps.Any(rm => rm.Map.UserId == userIdClaim))
                 .ToListAsync();
 
-            if (editMultiple.UpdateDate)
+            if (editMultiple.UpdateDate && editMultiple.Date.HasValue)
             {
-                selectedRoutes.ForEach(r => r.FirstDateTime = editMultiple.Date);
+                // Dates live on the trips. Same rule as PutRoute: a route without trips gets one, a
+                // route with exactly one has it moved, and a route with several is left alone.
+                selectedRoutes.ForEach(r =>
+                {
+                    if (r.RouteInstances.Count == 0)
+                    {
+                        r.RouteInstances.Add(new RouteInstance { Date = editMultiple.Date.Value });
+                    }
+                    else if (r.RouteInstances.Count == 1)
+                    {
+                        r.RouteInstances.First().Date = editMultiple.Date.Value;
+                    }
+                });
             }
             if (editMultiple.UpdateType)
             {
