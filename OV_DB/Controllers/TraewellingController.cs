@@ -166,6 +166,18 @@ namespace OV_DB.Controllers
             }
         }
 
+        /// <summary>Spatie's DefaultSigner: lowercase hex HMAC-SHA256 of the raw JSON body.</summary>
+        internal static bool IsValidSignature(string secret, string body, string signatureHeader)
+        {
+            var computed = Convert.ToHexString(
+                    HMACSHA256.HashData(Encoding.UTF8.GetBytes(secret), Encoding.UTF8.GetBytes(body)))
+                .ToLowerInvariant();
+            var provided = (signatureHeader ?? string.Empty).Trim().ToLowerInvariant();
+            return CryptographicOperations.FixedTimeEquals(
+                Encoding.UTF8.GetBytes(computed),
+                Encoding.UTF8.GetBytes(provided));
+        }
+
         /// <summary>
         /// Receiver for Träwelling webhook deliveries (live sync). Anonymous: authenticated
         /// by the per-webhook HMAC secret issued during the OAuth token exchange.
@@ -200,16 +212,7 @@ namespace OV_DB.Controllers
             if (user == null || string.IsNullOrEmpty(user.TraewellingWebhookSecret))
                 return Unauthorized();
 
-            // Spatie's DefaultSigner: lowercase hex HMAC-SHA256 of the raw JSON body
-            var computed = Convert.ToHexString(
-                    HMACSHA256.HashData(
-                        Encoding.UTF8.GetBytes(user.TraewellingWebhookSecret),
-                        Encoding.UTF8.GetBytes(body)))
-                .ToLowerInvariant();
-            var provided = signatureHeader.ToString().Trim().ToLowerInvariant();
-            if (!CryptographicOperations.FixedTimeEquals(
-                    Encoding.UTF8.GetBytes(computed),
-                    Encoding.UTF8.GetBytes(provided)))
+            if (!IsValidSignature(user.TraewellingWebhookSecret, body, signatureHeader.ToString()))
             {
                 _logger.LogWarning("Träwelling webhook delivery with invalid signature for webhook {WebhookId}", webhookId);
                 return Unauthorized();
