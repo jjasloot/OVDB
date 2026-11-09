@@ -85,9 +85,23 @@ namespace OV_DB.Services
             var dbContext = scope.ServiceProvider.GetService<OVDBDatabaseContext>();
             var routeRegionsService = scope.ServiceProvider.GetService<IRouteRegionsService>();
 
-            var query = regionId == RoutesWithoutRegions
-                ? dbContext.Routes.Where(r => !r.Regions.Any())
-                : dbContext.Routes.Where(r => r.Regions.Any(r => r.Id == regionId));
+            IQueryable<OVDB_database.Models.Route> query;
+            if (regionId == RoutesWithoutRegions)
+            {
+                query = dbContext.Routes.Where(r => !r.Regions.Any());
+            }
+            else
+            {
+                // Not just the routes already in the region: a region that was just added has
+                // none yet, so routes crossing it count too; AssignRegionsToRouteAsync decides per
+                // route. (Taking the parent region's routes instead loads a whole country's
+                // geometry and times out.)
+                var geometry = await dbContext.Regions.AsNoTracking()
+                    .Where(r => r.Id == regionId)
+                    .Select(r => r.Geometry)
+                    .SingleAsync(cancellationToken);
+                query = dbContext.Routes.Where(r => r.Regions.Any(x => x.Id == regionId) || (r.LineString != null && r.LineString.Intersects(geometry)));
+            }
             var routes = await query.Include(r => r.Regions).ToListAsync(cancellationToken);
             var totalRoutes = routes.Count;
             if (totalRoutes == 0)
