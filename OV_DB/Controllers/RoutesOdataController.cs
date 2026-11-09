@@ -352,6 +352,7 @@ namespace OV_DB.Controllers
         {
             var route = await _context.Routes.Include(r => r.RouteType).SingleOrDefaultAsync(r =>
                     r.RouteId == id &&
+                    guid != Guid.Empty &&
                     r.Share == guid);
             if (route == null)
             {

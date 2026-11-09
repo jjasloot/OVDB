@@ -260,13 +260,6 @@ export class ApiService {
     );
   }
 
-  postRoute(inputString: string) {
-    return this.httpClient.post(
-      environment.backend + "api/routes/kml",
-      inputString
-    );
-  }
-
   postFiles(fileToUpload: FileList): Observable<any> {
     const formData: FormData = new FormData();
     for (let i = 0; i < fileToUpload.length; i++) {

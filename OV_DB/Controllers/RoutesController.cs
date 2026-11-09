@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OData.Query;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using OV_DB.Helpers;
 using OV_DB.Mappings;
 using OV_DB.Models;
@@ -54,7 +55,7 @@ namespace OV_DB.Controllers
                 .Include(r => r.RouteType)
                 .Where(r => r.RouteMaps.Any(rm => rm.Map.UserId == userIdClaim));
 
-            var words = filter?.Split(' ', StringSplitOptions.RemoveEmptyEntries & StringSplitOptions.TrimEntries) ?? [];
+            var words = filter?.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries) ?? [];
 
             foreach (var word in words)
             {
@@ -138,7 +139,7 @@ namespace OV_DB.Controllers
                 .ThenInclude(r => r.RouteType)
                 .Where(r => r.Route.RouteMaps.Any(rm => rm.Map.UserId == userIdClaim));
 
-            var words = filter?.Split(' ', StringSplitOptions.RemoveEmptyEntries & StringSplitOptions.TrimEntries) ?? [];
+            var words = filter?.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries) ?? [];
 
             foreach (var word in words)
             {
@@ -226,7 +227,7 @@ namespace OV_DB.Controllers
                 .Include(r => r.RouteInstances)
                 .Include(r => r.RouteMaps)
                 .SelectToRouteDTO()
-                .SingleAsync(r => r.RouteId == id);
+                .SingleOrDefaultAsync(r => r.RouteId == id);
             if (route == null)
             {
                 return NotFound();
@@ -340,27 +341,11 @@ namespace OV_DB.Controllers
         }
 
 
-        [HttpPost("kml")]
-        public async Task<ActionResult<Route>> PostKML()
-        {
-            var userIdClaim = User.GetUserId();
-            if (userIdClaim < 0)
-            {
-                return Forbid();
-            }
-
-            using var stream = new StreamReader(HttpContext.Request.Body);
-
-            var route = (await PostKmlToDatabase(stream, "Nieuwe route", userIdClaim)).Single();
-
-            return CreatedAtAction("GetRoute", new { id = route.RouteId }, route);
-        }
-
         [HttpPost("kmlfile")]
         // A full-account GeoJSON export is ~40 KB per route, far past the 30 MB default.
         [RequestSizeLimit(500_000_000)]
         [RequestFormLimits(MultipartBodyLengthLimit = 500_000_000)]
-        public async Task<ActionResult<Route>> PostKMLFiles()
+        public async Task<ActionResult<Route>> PostKMLFiles([FromServices] ILogger<RoutesController> logger)
         {
             var userIdClaim = User.GetUserId();
             if (userIdClaim < 0)
@@ -404,6 +389,7 @@ namespace OV_DB.Controllers
                     }
                     catch (Exception ex)
                     {
+                        logger.LogWarning(ex, "Import of {FileName} failed", formFile.FileName);
                         filesUploaded.Add(new FileUpload
                         {
                             Filename = formFile.FileName,
@@ -425,6 +411,8 @@ namespace OV_DB.Controllers
             var kml = parser.Root as Kml;
             var placeMarks = kml.Flatten().Where(e => e.GetType() == typeof(Placemark)).Select(p => (Placemark)p).ToList();
             var routes = new List<Route>();
+            var types = await _context.RouteTypes.AsNoTracking().Where(r => r.UserId == userId).ToListAsync();
+            var dbMaps = await _context.Maps.AsNoTracking().Where(m => m.UserId == userId).ToListAsync();
             foreach (Placemark placeMark in placeMarks.Where(pl => pl.Geometry is LineString))
             {
                 var child = (LineString)placeMark.Flatten().Single(e => e.GetType() == typeof(LineString));
@@ -460,8 +448,6 @@ namespace OV_DB.Controllers
                 }
                 if (string.IsNullOrWhiteSpace(route.Name)) route.Name = "Route";
 
-                var types = await _context.RouteTypes.AsNoTracking().Where(r => r.UserId == userId).ToListAsync();
-
                 if (placeMark.ExtendedData != null)
                 {
                     var extendedData = placeMark.ExtendedData.Data;
@@ -476,7 +462,8 @@ namespace OV_DB.Controllers
                         var type = types.SingleOrDefault(t => string.Compare(t.Name, typeString.Trim(), true) == 0 || string.Compare(t.NameNL, typeString.Trim(), true) == 0);
                         if (type != null)
                         {
-                            route.RouteTypeId = type.TypeId;
+                            // A type created earlier in this file has no id until the save.
+                            if (type.TypeId != 0) route.RouteTypeId = type.TypeId; else route.RouteType = type;
                         }
                         else
                         {
@@ -486,6 +473,7 @@ namespace OV_DB.Controllers
                                 UserId = userId,
                                 Name = typeString.Trim()
                             };
+                            types.Add(newRouteType);
                             route.RouteType = newRouteType;
                         }
                     }
@@ -521,14 +509,13 @@ namespace OV_DB.Controllers
                     if (extendedData.Any(d => d.Name == "maps"))
                     {
                         route.RouteMaps = new List<RouteMap>();
-                        var dbMaps = await _context.Maps.AsNoTracking().Where(r => r.UserId == userId).ToListAsync();
                         var inputMaps = extendedData.Single(d => d.Name == "maps").Value.Split(',').ToList();
                         inputMaps.ForEach(inputMap =>
                         {
                             var map = dbMaps.SingleOrDefault(c => string.Compare(c.Name, inputMap.Trim(), true) == 0);
                             if (map != null)
                             {
-                                route.RouteMaps.Add(new RouteMap { MapId = map.MapId });
+                                route.RouteMaps.Add(map.MapId != 0 ? new RouteMap { MapId = map.MapId } : new RouteMap { Map = map });
                             }
                             else
                             {
@@ -539,6 +526,7 @@ namespace OV_DB.Controllers
                                     UserId = userId,
                                     Default = false
                                 };
+                                dbMaps.Add(newMap);
                                 route.RouteMaps.Add(new RouteMap { Map = newMap });
                             }
                         });
@@ -546,14 +534,8 @@ namespace OV_DB.Controllers
                 }
                 if (!route.RouteMaps.Any())
                 {
-                    var maps = await _context.Maps.AsNoTracking().Where(m => m.UserId == userId).ToListAsync();
-
-                    var defaultMap = maps.Where(m => m.Default == true).FirstOrDefault();
-                    if (defaultMap == null)
-                    {
-                        defaultMap = maps.First();
-                    }
-
+                    var existingMaps = dbMaps.Where(m => m.MapId != 0).ToList();
+                    var defaultMap = existingMaps.FirstOrDefault(m => m.Default) ?? existingMaps.First();
                     route.RouteMaps.Add(new RouteMap { MapId = defaultMap.MapId });
                 }
 
@@ -563,8 +545,8 @@ namespace OV_DB.Controllers
 
                 routes.Add(route);
                 _context.Routes.Add(route);
-                await _context.SaveChangesAsync();
             }
+            await _context.SaveChangesAsync();
             return routes;
         }
 
@@ -743,7 +725,7 @@ namespace OV_DB.Controllers
 
             var maps = await _context.Maps.AsNoTracking().Where(m => m.UserId == userId).ToListAsync();
 
-            var defaultMap = maps.Where(m => m.Default == true).SingleOrDefault();
+            var defaultMap = maps.FirstOrDefault(m => m.Default);
             if (defaultMap == null)
             {
                 defaultMap = maps.First();
