@@ -287,7 +287,11 @@ namespace OV_DB.Controllers
             dbRoute.To = route.To;
             dbRoute.OverrideColour = route.OverrideColour;
             dbRoute.OperatingCompany = route.OperatingCompany;
-            dbRoute.RouteTypeId = route.RouteTypeId;
+            // Route types belong to a user; someone else's type id is ignored, as in editmultiple.
+            if (route.RouteTypeId == null || await _context.RouteTypes.AnyAsync(t => t.TypeId == route.RouteTypeId && t.UserId == userIdClaim))
+            {
+                dbRoute.RouteTypeId = route.RouteTypeId;
+            }
             dbRoute.OverrideDistance = route.OverrideDistance;
             dbRoute.Operators = [];
             if (route.OperatorIds != null)
@@ -907,31 +911,34 @@ namespace OV_DB.Controllers
                     selectedRoutes.ForEach(r => r.RouteTypeId = editMultiple.TypeId);
             }
 
-            if (editMultiple.UpdateMaps)
+            if (editMultiple.UpdateMaps && editMultiple.Maps != null)
             {
                 var validSelectedMapIds = await _context.Maps.AsNoTracking().Where(m => editMultiple.Maps.Contains(m.MapId) && m.UserId == userIdClaim).Select(m => m.MapId).ToListAsync();
 
                 selectedRoutes.ForEach(route =>
                 {
+                    // A route on none of the caller's maps can never be found again, so an empty
+                    // selection leaves the maps as they are.
+                    if (validSelectedMapIds.Count == 0)
+                    {
+                        return;
+                    }
                     var toDelete = new List<RouteMap>();
                     var toAdd = new List<int>();
                     route.RouteMaps.ForEach(r =>
                     {
-                        if (!editMultiple.Maps.Contains(r.MapId))
+                        if (!validSelectedMapIds.Contains(r.MapId))
                         {
                             toDelete.Add(r);
                         }
                     });
-                    if (editMultiple.Maps != null)
+                    validSelectedMapIds.ForEach(rm1 =>
                     {
-                        validSelectedMapIds.ForEach(rm1 =>
+                        if (!route.RouteMaps.Select(rm => rm.MapId).Contains(rm1))
                         {
-                            if (!route.RouteMaps.Select(rm => rm.MapId).Contains(rm1))
-                            {
-                                toAdd.Add(rm1);
-                            }
-                        });
-                    }
+                            toAdd.Add(rm1);
+                        }
+                    });
                     if (toDelete.Any())
                     {
                         _context.RoutesMaps.RemoveRange(toDelete);
