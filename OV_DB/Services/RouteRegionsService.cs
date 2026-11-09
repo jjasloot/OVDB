@@ -40,7 +40,6 @@ public class RouteRegionsService(OVDBDatabaseContext dbContext, ILogger<RouteReg
 
     public async Task<bool> AssignRegionsToRouteAsync(Route route)
     {
-        NetTopologySuite.NtsGeometryServices.Instance = new NetTopologySuite.NtsGeometryServices(NetTopologySuite.Geometries.GeometryOverlay.NG);
         route.Regions ??= [];
         var existingRegions = route.Regions.Select(r => r.Id).ToHashSet();
         route.Regions.Clear();

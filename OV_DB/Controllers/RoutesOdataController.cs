@@ -58,17 +58,9 @@ namespace OV_DB.Controllers
                 return NotFound();
             }
             var isAdmin = User.IsAdmin();
-            if (string.IsNullOrWhiteSpace(map.SharingLinkName))
+            if (!User.CanView(map))
             {
-                if (!User.Claims.Any())
-                {
-                    return Forbid();
-                }
-
-                if ((userIdClaim < 0 || map.UserId != userIdClaim) && !isAdmin)
-                {
-                    return Forbid();
-                }
+                return Forbid();
             }
 
             // Cache the built GeoJSON for viewers who cannot edit this map (shared/anonymous),

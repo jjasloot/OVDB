@@ -26,7 +26,6 @@ public class StationRegionsService(OVDBDatabaseContext dbContext) : IStationRegi
     {
         await EnsureRegionIndexAsync();
 
-        NetTopologySuite.NtsGeometryServices.Instance = new NetTopologySuite.NtsGeometryServices(GeometryOverlay.NG);
         station.Regions.Clear();
         var location = new Point(station.Longitude, station.Lattitude);
 

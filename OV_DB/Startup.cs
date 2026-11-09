@@ -306,7 +306,10 @@ namespace OV_DB
                 r.MapHub<TraewellingHub>("/traewellingHub");
                 r.MapHub<StationsHub>("/stationsHub");
                 r.MapControllers();
-                r.MapSwagger();
+                if (env.IsDevelopment())
+                {
+                    r.MapSwagger();
+                }
             });
             // No try/catch: a failed migration must stop startup. Swallowing it served new code
             // against the old schema, which fails confusingly or, worse, half-succeeds.

@@ -274,6 +274,12 @@ namespace OV_DB.Controllers
                 return Forbid();
             }
 
+            var map = await _context.Maps.AsNoTracking().SingleOrDefaultAsync(m => m.MapGuid == mapGuid);
+            if (map == null || !User.CanView(map))
+            {
+                return NotFound();
+            }
+
             if (_cache.TryGetValue("regions" + mapGuid, out IEnumerable<RegionDTO> cachedRegions))
             {
                 return Ok(cachedRegions);
@@ -374,8 +380,11 @@ namespace OV_DB.Controllers
                 }
 
 
-                await CreateNew(new NewRegion { OsmRelationId = region.OsmRelationId, ParentRegionId = region.ParentRegionId });
-                _logger.LogInformation("Updated region {RegionName}", region.Name);
+                var result = await CreateNew(new NewRegion { OsmRelationId = region.OsmRelationId, ParentRegionId = region.ParentRegionId });
+                if (result is Microsoft.AspNetCore.Mvc.Infrastructure.IStatusCodeActionResult { StatusCode: >= 200 and < 300 })
+                    _logger.LogInformation("Updated region {RegionName}", region.Name);
+                else
+                    _logger.LogWarning("Refreshing region {RegionName} failed: {Result}", region.Name, result.GetType().Name);
                 await Task.Delay(1000, cancellationToken);
             }
             return Ok();

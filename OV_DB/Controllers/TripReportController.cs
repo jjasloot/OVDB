@@ -143,7 +143,7 @@ namespace OV_DB.Controllers
                 ws.Cell(row, 12).Value = route.EndTime.HasValue && route.ScheduledEndTime.HasValue
                     ? (ClosedXML.Excel.XLCellValue)Math.Round((route.EndTime.Value - route.ScheduledEndTime.Value).TotalMinutes, 1)
                     : (ClosedXML.Excel.XLCellValue)"";
-                ws.Cell(row, 13).Value = route.Duration.HasValue ? Math.Floor(route.Duration.Value) + ":" + (route.Duration.Value * 60) % 60 : "";
+                ws.Cell(row, 13).Value = route.Duration.HasValue ? FormatHours(route.Duration.Value) : "";
                 ws.Cell(row, 14).Value = Math.Round(route.Distance, 2);
                 ws.Cell(row, 15).Value = (!english && !string.IsNullOrWhiteSpace(route.NameNL)) ? route.NameNL : route.Name;
                 ws.Cell(row, 16).Value = (!english && !string.IsNullOrWhiteSpace(route.DescriptionNL)) ? route.DescriptionNL : route.Description;
@@ -177,6 +177,13 @@ namespace OV_DB.Controllers
                     FileDownloadName = "tripreport.xlsx"
                 };
             }
+        }
+
+        /// <summary>Hours as h:mm, rounded to the minute.</summary>
+        internal static string FormatHours(double hours)
+        {
+            var duration = TimeSpan.FromMinutes(Math.Round(hours * 60));
+            return $"{(int)duration.TotalHours}:{duration.Minutes:00}";
         }
     }
 }

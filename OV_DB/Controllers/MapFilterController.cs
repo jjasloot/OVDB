@@ -26,7 +26,7 @@ namespace OV_DB.Controllers
         {
             var guid = Guid.Parse(id);
             var map = await DatabaseContext.Maps.AsNoTracking().SingleOrDefaultAsync(u => u.MapGuid == guid);
-            if (map == null)
+            if (map == null || !User.CanView(map))
             {
                 return NotFound();
             }
@@ -44,7 +44,7 @@ namespace OV_DB.Controllers
         {
             var guid = Guid.Parse(id);
             var map = await DatabaseContext.Maps.AsNoTracking().SingleOrDefaultAsync(u => u.MapGuid == guid);
-            if (map == null)
+            if (map == null || !User.CanView(map))
             {
                 return NotFound();
             }

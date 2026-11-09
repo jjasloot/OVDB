@@ -24,4 +24,13 @@ public static class ClaimsPrincipalExtensions
         var claim = user?.Claims.FirstOrDefault(c => c.Type == "admin");
         return string.Equals(claim?.Value, "true", StringComparison.OrdinalIgnoreCase);
     }
+
+    /// <summary>
+    /// Whether this caller may see the map's contents: anyone for a shared map (one with a sharing
+    /// link name), otherwise only its owner or an admin. A map GUID alone is not an invitation.
+    /// </summary>
+    public static bool CanView(this ClaimsPrincipal user, OVDB_database.Models.Map map) =>
+        !string.IsNullOrWhiteSpace(map.SharingLinkName)
+        || user.IsAdmin()
+        || (user.GetUserId() >= 0 && map.UserId == user.GetUserId());
 }
