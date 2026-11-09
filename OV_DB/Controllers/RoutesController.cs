@@ -594,8 +594,9 @@ namespace OV_DB.Controllers
                 .Where(r => shares.Contains(r.Share) && r.RouteMaps.Any(rm => rm.Map.UserId == userId))
                 .Include(r => r.RouteInstances)
                 .ToDictionaryAsync(r => r.Share);
-            // shortcut: every imported route stays tracked until the end, so a full-account restore
-            // (~4,600 routes) peaks near 3 GB; use a fresh DbContext per batch if restores must run on the NAS.
+            // shortcut: a full-account restore (~4,600 routes) peaks near 3 GB, fine on the 16 GB NAS.
+            // A fresh DbContext per batch was measured (Nov 2026): no lower peak, 6-10x slower,
+            // because the cost is the parsed file and region work, not EF tracking.
             // Share ids are global; one taken by another user's route gets a fresh id instead.
             // shortcut: so importing another account's export twice duplicates its routes; fine for
             // restoring into the same account or a fresh install, where the ids are kept.
