@@ -23,43 +23,6 @@ namespace OVDB_database.Migrations
 
             MySqlModelBuilderExtensions.AutoIncrementColumns(modelBuilder);
 
-            modelBuilder.Entity("OVDB_database.Models.InviteCode", b =>
-                {
-                    b.Property<int>("InviteCodeId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("InviteCodeId"));
-
-                    b.Property<string>("Code")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("varchar(50)");
-
-                    b.Property<int?>("CreatedByUserId")
-                        .HasColumnType("int");
-
-                    b.Property<bool>("DoesNotExpire")
-                        .HasColumnType("tinyint(1)");
-
-                    b.Property<bool>("IsUsed")
-                        .HasColumnType("tinyint(1)");
-
-                    b.Property<int?>("UserId")
-                        .HasColumnType("int");
-
-                    b.HasKey("InviteCodeId");
-
-                    b.HasIndex("Code")
-                        .IsUnique();
-
-                    b.HasIndex("CreatedByUserId");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("InviteCodes");
-                });
-
             modelBuilder.Entity("OVDB_database.Models.Map", b =>
                 {
                     b.Property<int>("MapId")
@@ -277,9 +240,6 @@ namespace OVDB_database.Migrations
 
                     b.Property<string>("DescriptionNL")
                         .HasColumnType("longtext");
-
-                    b.Property<DateTime?>("FirstDateTime")
-                        .HasColumnType("datetime(6)");
 
                     b.Property<string>("From")
                         .HasColumnType("longtext");
@@ -859,9 +819,6 @@ namespace OVDB_database.Migrations
                     b.Property<int?>("PreferredLanguage")
                         .HasColumnType("int");
 
-                    b.Property<string>("RefreshToken")
-                        .HasColumnType("longtext");
-
                     b.Property<long?>("TelegramUserId")
                         .HasColumnType("bigint");
 
@@ -1010,23 +967,6 @@ namespace OVDB_database.Migrations
                     b.HasIndex("StationGroupingsId");
 
                     b.ToTable("RegionStationGrouping");
-                });
-
-            modelBuilder.Entity("OVDB_database.Models.InviteCode", b =>
-                {
-                    b.HasOne("OVDB_database.Models.User", "CreatedByUser")
-                        .WithMany()
-                        .HasForeignKey("CreatedByUserId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.HasOne("OVDB_database.Models.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.Navigation("CreatedByUser");
-
-                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("OVDB_database.Models.Map", b =>

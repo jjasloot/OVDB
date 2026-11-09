@@ -432,22 +432,8 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
 
     if (this.selectedYears && this.selectedYears.length > 0) {
       filter += "(";
-      this.selectedYears.forEach((option) => {
-        if (!option) {
-          filter += "Route/FirstDateTime eq null or ";
-        } else {
-          const start = moment().year(option).startOf("year");
-          const end = moment()
-            .year(option + 1)
-            .startOf("year");
-
-          filter +=
-            "(Date ge " +
-            start.format("YYYY-MM-DD") +
-            " and Date lt " +
-            end.format("YYYY-MM-DD") +
-            ") or ";
-        }
+      this.selectedYears.filter((year) => !!year).forEach((year) => {
+        filter += `(Date ge ${year}-01-01 and Date lt ${year + 1}-01-01) or `;
       });
       if (filter.endsWith(" or ")) {
         filter = filter.slice(0, filter.length - 4);

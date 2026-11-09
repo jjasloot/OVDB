@@ -23,12 +23,6 @@ namespace OVDB_database.Models
         public bool IsAdmin { get; set; }
         public DateTime LastLogin { get; set; }
 
-        /// <summary>
-        /// DEPRECATED: Legacy refresh token field. Use RefreshTokens collection instead.
-        /// Kept for backwards compatibility and database schema stability.
-        /// </summary>
-        public string RefreshToken { get; set; }
-
         public Guid Guid { get; set; }
         public List<Map> Maps { get; set; }
         public List<RouteType> RouteTypes { get; set; }

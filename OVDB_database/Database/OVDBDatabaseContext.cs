@@ -21,7 +21,6 @@ namespace OVDB_database.Database
         public DbSet<RouteMap> RoutesMaps { get; set; }
         public DbSet<RouteType> RouteTypes { get; set; }
         public DbSet<User> Users { get; set; }
-        public DbSet<InviteCode> InviteCodes { get; set; }
         public DbSet<RouteInstance> RouteInstances { get; set; }
         public DbSet<RouteInstanceProperty> RouteInstanceProperties { get; set; }
         public DbSet<StationCountry> StationCountries { get; set; }
@@ -113,20 +112,6 @@ namespace OVDB_database.Database
                 entity.HasIndex(e => e.Guid).IsUnique();
                 entity.HasIndex(e => e.TelegramUserId).IsUnique()
                     .HasFilter("[TelegramUserId] IS NOT NULL");
-            });
-
-            // InviteCode entity configuration
-            modelBuilder.Entity<InviteCode>(entity =>
-            {
-                entity.HasIndex(e => e.Code).IsUnique();
-                entity.HasOne(e => e.CreatedByUser)
-                    .WithMany()
-                    .HasForeignKey(e => e.CreatedByUserId)
-                    .OnDelete(DeleteBehavior.SetNull);
-                entity.HasOne(e => e.User)
-                    .WithMany()
-                    .HasForeignKey(e => e.UserId)
-                    .OnDelete(DeleteBehavior.SetNull);
             });
 
             // StationMap entity configuration

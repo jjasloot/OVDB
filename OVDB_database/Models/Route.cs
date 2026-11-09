@@ -35,8 +35,6 @@ namespace OVDB_database.Models
         [JsonProperty]
         public string OperatingCompany { get; set; }
         [JsonProperty]
-        public DateTime? FirstDateTime { get; set; }
-        [JsonProperty]
         public int? RouteTypeId { get; set; }
         [JsonProperty]
         public RouteType? RouteType { get; set; }

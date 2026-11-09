@@ -24,33 +24,13 @@ namespace OV_DB.Controllers
     [Authorize]
     public class AdminController : ControllerBase
     {
-        private readonly IConfiguration _configuration;
         private readonly OVDBDatabaseContext _dbContext;
-        private readonly IOverpassService _overpassService;
         private readonly ILogger<AdminController> _logger;
 
-        public AdminController(OVDBDatabaseContext dbContext, IConfiguration configuration, IOverpassService overpassService, ILogger<AdminController> logger)
+        public AdminController(OVDBDatabaseContext dbContext, ILogger<AdminController> logger)
         {
-            _configuration = configuration;
             _dbContext = dbContext;
-            _overpassService = overpassService;
             _logger = logger;
-        }
-
-        [HttpPost("AddMissingGuidsForRoute")]
-        public async Task<ActionResult> AddMissingGuidsForRoutes()
-        {
-            if (!User.IsAdmin())
-            {
-                return Forbid();
-            }
-
-            var routesMissingGuids = await _dbContext.Routes.Where(r => r.Share == Guid.Empty).ToListAsync();
-
-            routesMissingGuids.ForEach(r => r.Share = Guid.NewGuid());
-
-            await _dbContext.SaveChangesAsync();
-            return Ok();
         }
 
         [HttpGet("users")]
@@ -180,134 +160,5 @@ namespace OV_DB.Controllers
             return Ok();
         }
 
-        [HttpGet("convertToInstances")]
-        public async Task<ActionResult> ConvertToInstances()
-        {
-            if (!User.IsAdmin())
-            {
-                return Forbid();
-            }
-
-            var routes = await _dbContext.Routes.Include(r => r.RouteInstances).ToListAsync();
-
-            routes.ForEach(r =>
-            {
-                if (r.FirstDateTime.HasValue)
-                {
-                    if (!r.RouteInstances.Any(ri => ri.Date == r.FirstDateTime))
-                    {
-                        r.RouteInstances.Add(new OVDB_database.Models.RouteInstance { Date = r.FirstDateTime.Value });
-                    }
-                }
-            });
-
-            await _dbContext.SaveChangesAsync();
-            return Ok();
-        }
-
-        [HttpGet("addRegions")]
-        public async Task<ActionResult> AddRegionsToAllRoutes([FromServices] IRouteRegionsService routeRegionsService, CancellationToken cancellationToken)
-        {
-            if (!User.IsAdmin())
-            {
-                return Forbid();
-            }
-            _dbContext.Database.SetCommandTimeout(TimeSpan.FromMinutes(3));
-            var batchSize = 50;
-            var count = 0;
-            var routes = new List<OVDB_database.Models.Route>();
-            do
-            {
-                routes = await _dbContext.Routes.OrderBy(r => r.Name).Where(r => r.LineString != null).Include(r => r.Regions).Skip(count).Take(batchSize).ToListAsync(cancellationToken);
-
-                foreach (var route in routes)
-                {
-                    cancellationToken.ThrowIfCancellationRequested();
-                    var regionsBefore = string.Join(", ", route.Regions.Select(r => r.Name));
-                    await routeRegionsService.AssignRegionsToRouteAsync(route);
-                    _logger.LogDebug("Route {RouteName} regions {Before} => {After}", route.Name, regionsBefore, string.Join(", ", route.Regions.Select(r => r.Name)));
-                }
-                await _dbContext.SaveChangesAsync(cancellationToken);
-                count += batchSize;
-                _logger.LogInformation("Added regions to {Count} routes", count);
-            } while (routes.Count > 0);
-
-            return Ok();
-        }
-
-        [HttpGet("fixOriginalnames")]
-        public async Task<ActionResult> FixOriginalNames(CancellationToken cancellationToken)
-        {
-            if (!User.IsAdmin())
-            {
-                return Forbid();
-            }
-            _dbContext.Database.SetCommandTimeout(TimeSpan.FromMinutes(3));
-            var regions = await _dbContext.Regions.Where(r => string.IsNullOrWhiteSpace(r.OriginalName)).ToListAsync(cancellationToken);
-            foreach (var region in regions)
-            {
-                cancellationToken.ThrowIfCancellationRequested();
-                var tags = await GetTagsAsync(region.OsmRelationId);
-                if (tags != null && tags.ContainsKey("name"))
-                {
-                    region.OriginalName = tags["name"];
-                }
-                await _dbContext.SaveChangesAsync(cancellationToken);
-                _logger.LogInformation("Region {RegionName} updated with original name {OriginalName}", region.Name, region.OriginalName);
-                await Task.Delay(250, cancellationToken);
-            }
-
-            return Ok();
-        }
-
-        [HttpGet("assignRegionsToStations")]
-        public async Task<ActionResult> AssignRegionsToStations([FromServices] IStationRegionsService stationRegionsService, [FromQuery] int? regionId, CancellationToken cancellationToken)
-        {
-            if (!User.IsAdmin())
-            {
-                return Forbid();
-            }
-            _dbContext.Database.SetCommandTimeout(TimeSpan.FromMinutes(3));
-            var batchSize = 50;
-            var count = 0;
-            var query = _dbContext.Stations.OrderBy(s => s.Name).Where(s => s.Lattitude != 0 && s.Longitude != 0).Include(s => s.Regions).AsQueryable();
-            if (regionId.HasValue)
-            {
-                query = query.Where(s => s.Regions.Any(r => r.Id == regionId.Value));
-            }
-            var stations = new List<OVDB_database.Models.Station>();
-            do
-            {
-                stations = await query.Skip(count).Take(batchSize).ToListAsync(cancellationToken);
-
-                foreach (var station in stations)
-                {
-                    cancellationToken.ThrowIfCancellationRequested();
-                    var regionsBefore = string.Join(", ", station.Regions.Select(r => r.Name));
-                    await stationRegionsService.AssignRegionsToStationCacheRegionsAsync(station);
-                    _logger.LogDebug("Station {StationName} regions {Before} => {After}", station.Name, regionsBefore, string.Join(", ", station.Regions.Select(r => r.Name)));
-                }
-                await _dbContext.SaveChangesAsync(cancellationToken);
-                count += batchSize;
-                _logger.LogInformation("Added regions to {Count} stations", count);
-            } while (stations.Count > 0);
-
-            return Ok();
-        }
-
-        private async Task<Dictionary<string, string>> GetTagsAsync(long id)
-        {
-            var query = $"[out:json][timeout:30]";
-            query += $";relation({id});";
-            query += "out tags;";
-            var text = await _overpassService.QueryAsync(query);
-            if (text == null)
-            {
-                return null;
-            }
-
-            var parsed = JsonConvert.DeserializeObject<OSM>(text);
-            return parsed.Elements.Single().Tags;
-        }
     }
 }

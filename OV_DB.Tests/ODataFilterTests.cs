@@ -13,7 +13,7 @@ namespace OV_DB.Tests
         [Theory]
         [InlineData("(Date ge 2024-01-01 and Date lt 2025-01-01)")]
         [InlineData("(Route/Regions/any(region: region/Id eq 3) or Route/Regions/any(region: region/Id eq 12)) and (Route/RouteTypeId eq 5)")]
-        [InlineData("((Date ge 2023-01-01 and Date lt 2024-01-01) or Route/FirstDateTime eq null)")]
+        [InlineData("((Date ge 2023-01-01 and Date lt 2024-01-01) or (Date ge 2025-01-01 and Date lt 2026-01-01))")]
         [InlineData("(Date ge 2024-01-01 and Date lt 2024-06-01)  and (Route/RouteTypeId eq 1 or Route/RouteTypeId eq 2)")]
         public void FiltersTheMapPageBuildsAreAllowed(string filter)
         {

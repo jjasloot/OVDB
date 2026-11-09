@@ -268,8 +268,7 @@ namespace OV_DB.Controllers
         private static readonly Regex AllowedFilterTerm = new(
             @"Date (?:ge|gt|le|lt) \d{4}-\d{2}-\d{2}" +
             @"|Route/Regions/any\(region: region/Id eq \d+\)" +
-            @"|Route/RouteTypeId eq \d+" +
-            @"|Route/FirstDateTime eq null",
+            @"|Route/RouteTypeId eq \d+",
             RegexOptions.CultureInvariant);
         private static readonly Regex OnlyConnectives = new(@"^(?:[\s()]|\band\b|\bor\b)*$", RegexOptions.CultureInvariant);
 
