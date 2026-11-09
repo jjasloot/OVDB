@@ -50,10 +50,10 @@
         </button>
         <mat-menu #menu="matMenu">
           @if(currentLanguage!=='nl'){
-          <button mat-menu-item (click)="setLanguage('nl')"><span class="flag">🇳🇱</span> Nederlands</button>
+          <button mat-menu-item (click)="setLanguage('nl')"><img class="flag" src="assets/flags/nl.svg" alt=""> Nederlands</button>
           }
           @if(currentLanguage!=='en'){
-          <button mat-menu-item (click)="setLanguage('en')"><span class="flag">🇬🇧</span> English</button>
+          <button mat-menu-item (click)="setLanguage('en')"><img class="flag" src="assets/flags/gb.svg" alt=""> English</button>
           }
           <button mat-menu-item (click)="toggleTheme()">
             <mat-icon>{{themeService.isDarkMode ? 'light_mode' : 'dark_mode'}}</mat-icon>
@@ -95,12 +95,10 @@
           <mat-icon>help_outline</mat-icon>
         </button>
         @if(currentLanguage!=='nl'){
-        <button mat-icon-button (click)="setLanguage('nl')" matTooltip="Nederlands" aria-label="Nederlands"><span
-            class="flag">🇳🇱</span></button>
+        <button mat-icon-button (click)="setLanguage('nl')" matTooltip="Nederlands" aria-label="Nederlands"><img class="flag" src="assets/flags/nl.svg" alt=""></button>
         }
         @if(currentLanguage!=='en'){
-        <button mat-icon-button (click)="setLanguage('en')" matTooltip="English" aria-label="English"><span
-            class="flag">🇬🇧</span></button>
+        <button mat-icon-button (click)="setLanguage('en')" matTooltip="English" aria-label="English"><img class="flag" src="assets/flags/gb.svg" alt=""></button>
         }
         <button mat-icon-button (click)="signIn()" [matTooltip]="'HOME.LOGIN'|translate"
           [attr.aria-label]="'HOME.LOGIN'|translate">

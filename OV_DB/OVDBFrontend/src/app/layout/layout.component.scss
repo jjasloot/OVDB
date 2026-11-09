@@ -64,7 +64,12 @@ mat-select {
 }
 
 .flag {
-  font-family: "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
+  // An image, not an emoji: Windows emoji fonts have no country flags.
+  width: 24px;
+  height: 16px;
+  border-radius: 2px;
+  vertical-align: middle;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.15);
 }
 
 .marker::after {
