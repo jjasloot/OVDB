@@ -135,6 +135,8 @@ namespace OV_DB
             services.AddResponseCompression(options =>
             {
                 options.EnableForHttps = true; // Required — default is false, so HTTPS responses are not compressed
+                // Route exports are tens of MB of coordinates and compress ~10x.
+                options.MimeTypes = [.. Microsoft.AspNetCore.ResponseCompression.ResponseCompressionDefaults.MimeTypes, "application/geo+json"];
                 options.Providers.Add<Microsoft.AspNetCore.ResponseCompression.BrotliCompressionProvider>();
                 options.Providers.Add<Microsoft.AspNetCore.ResponseCompression.GzipCompressionProvider>();
             });

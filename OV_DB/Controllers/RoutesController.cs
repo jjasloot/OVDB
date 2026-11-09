@@ -594,7 +594,11 @@ namespace OV_DB.Controllers
                 .Where(r => shares.Contains(r.Share) && r.RouteMaps.Any(rm => rm.Map.UserId == userId))
                 .Include(r => r.RouteInstances)
                 .ToDictionaryAsync(r => r.Share);
+            // shortcut: every imported route stays tracked until the end, so a full-account restore
+            // (~4,600 routes) peaks near 3 GB; use a fresh DbContext per batch if restores must run on the NAS.
             // Share ids are global; one taken by another user's route gets a fresh id instead.
+            // shortcut: so importing another account's export twice duplicates its routes; fine for
+            // restoring into the same account or a fresh install, where the ids are kept.
             var takenShares = (await _context.Routes.Where(r => shares.Contains(r.Share)).Select(r => r.Share).ToListAsync()).ToHashSet();
             var operatorIds = features.SelectMany(f => f.Properties.OperatorIds ?? []).Distinct().ToList();
             var operators = await _context.Operators.Where(o => operatorIds.Contains(o.Id)).ToListAsync();
@@ -627,11 +631,16 @@ namespace OV_DB.Controllers
 
             void AddMissingTrips(Route route, List<RouteGeoJson.TripProperties> trips)
             {
-                var known = route.RouteInstances.Select(ri => RouteGeoJson.TripKey(ri.TrawellingStatusId, ri.Date, ri.StartTime, ri.EndTime)).ToHashSet();
+                // Counted, not a set: two untimed trips on the same day are two trips.
+                var known = route.RouteInstances
+                    .GroupBy(ri => RouteGeoJson.TripKey(ri.TrawellingStatusId, ri.Date, ri.StartTime, ri.EndTime))
+                    .ToDictionary(g => g.Key, g => g.Count());
                 foreach (var trip in trips ?? [])
                 {
-                    if (!known.Add(RouteGeoJson.TripKey(trip.TraewellingStatusId, trip.Date, trip.StartTime, trip.EndTime)))
+                    var key = RouteGeoJson.TripKey(trip.TraewellingStatusId, trip.Date, trip.StartTime, trip.EndTime);
+                    if (known.GetValueOrDefault(key) > 0)
                     {
+                        known[key]--;
                         continue;
                     }
                     route.RouteInstances.Add(new RouteInstance
@@ -836,7 +845,10 @@ namespace OV_DB.Controllers
             }
 
             var collection = new RouteGeoJson.FeatureCollection { Features = routes.Select(RouteGeoJson.ToFeature).ToList() };
-            return File(System.Text.Json.JsonSerializer.SerializeToUtf8Bytes(collection, RouteGeoJson.Options), "application/geo+json");
+            // Straight to the response: a full export is ~90 MB, not worth holding a second copy of.
+            Response.ContentType = "application/geo+json";
+            await System.Text.Json.JsonSerializer.SerializeAsync(Response.Body, collection, RouteGeoJson.Options);
+            return new EmptyResult();
         }
 
         private bool RouteExists(int id)

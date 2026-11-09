@@ -72,13 +72,19 @@ public class RouteGeoJsonRoundTripTests
                     RouteInstanceMaps = [new RouteInstanceMap { MapId = 2 }],
                     RouteInstanceProperties = [new RouteInstanceProperty { Key = "seat", Value = "42" }],
                 },
+                // Two untimed trips on one day are two trips, not a duplicate.
+                new RouteInstance { Date = new DateTime(2025, 3, 2) },
                 new RouteInstance { Date = new DateTime(2025, 3, 2) },
             ],
         });
         await context.SaveChangesAsync();
 
-        var result = await ControllerFor(context, 1).ExportRoute(1);
-        return Assert.IsType<FileContentResult>(result).FileContents;
+        var controller = ControllerFor(context, 1);
+        var body = new MemoryStream();
+        controller.HttpContext.Response.Body = body;
+        await controller.ExportRoute(1);
+        Assert.Equal("application/geo+json", controller.HttpContext.Response.ContentType);
+        return body.ToArray();
     }
 
     [Fact]
@@ -106,7 +112,7 @@ public class RouteGeoJsonRoundTripTests
         Assert.Equal(2, route.LineString.NumPoints);
         Assert.Equal(("Train", "Trein", "#123456", true), (route.RouteType.Name, route.RouteType.NameNL, route.RouteType.Colour, route.RouteType.IsTrain));
         Assert.Equal("Trains", Assert.Single(route.RouteMaps).Map.Name);
-        Assert.Equal(2, route.RouteInstances.Count);
+        Assert.Equal(3, route.RouteInstances.Count);
         var trip = route.RouteInstances.Single(ri => ri.TrawellingStatusId == 777);
         Assert.Equal(new DateTime(2026, 8, 1, 10, 5, 0), trip.StartTime);
         Assert.Equal(new DateTime(2026, 8, 1, 10, 0, 0), trip.ScheduledStartTime);
@@ -122,7 +128,7 @@ public class RouteGeoJsonRoundTripTests
         using var context = NewContext();
         var file = await ExportAsync(context);
         // One trip deleted since the export; the re-import must bring back just that one.
-        context.RouteInstances.Remove(await context.RouteInstances.SingleAsync(ri => ri.TrawellingStatusId == null));
+        context.RouteInstances.Remove(await context.RouteInstances.FirstAsync(ri => ri.TrawellingStatusId == null));
         await context.SaveChangesAsync();
 
         var controller = ControllerFor(context, 1);
@@ -130,7 +136,7 @@ public class RouteGeoJsonRoundTripTests
         await controller.PostGeoJsonToDatabase(new MemoryStream(file), "export.geojson", 1);
 
         Assert.Equal(1, await context.Routes.CountAsync());
-        Assert.Equal(2, await context.RouteInstances.CountAsync());
+        Assert.Equal(3, await context.RouteInstances.CountAsync());
     }
 
     [Fact]
