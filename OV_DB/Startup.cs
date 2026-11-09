@@ -288,16 +288,11 @@ namespace OV_DB
                 r.MapControllers();
                 r.MapSwagger();
             });
+            // No try/catch: a failed migration must stop startup. Swallowing it served new code
+            // against the old schema, which fails confusingly or, worse, half-succeeds.
             using (var serviceScope = app.ApplicationServices.GetRequiredService<IServiceScopeFactory>().CreateScope())
             {
-                try
-                {
-                    serviceScope.ServiceProvider.GetService<OVDBDatabaseContext>().Database.Migrate();
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine(ex.Message);
-                }
+                serviceScope.ServiceProvider.GetRequiredService<OVDBDatabaseContext>().Database.Migrate();
             }
             app.UseSpa(spa =>
             {
