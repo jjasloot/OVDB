@@ -108,8 +108,8 @@ namespace OV_DB.Services
                 if (transport?.Origin?.Station == null || transport?.Destination?.Station == null)
                     return null;
 
-                var origin = await MapStopoverToDto(transport.Origin, transport.ManualDeparture?.UtcDateTime, isArrival: false);
-                var destination = await MapStopoverToDto(transport.Destination, transport.ManualArrival?.UtcDateTime, isArrival: true);
+                var origin = await MapStopoverToDto(transport.Origin, transport.ManualDeparture, isArrival: false);
+                var destination = await MapStopoverToDto(transport.Destination, transport.ManualArrival, isArrival: true);
 
                 return new TrawellingTripDto
                 {
@@ -155,24 +155,16 @@ namespace OV_DB.Services
             }
         }
 
-        private async Task<TrawellingStopoverDto> MapStopoverToDto(TrawellingStopover stopover, DateTime? manualTime, bool isArrival)
+        private async Task<TrawellingStopoverDto> MapStopoverToDto(TrawellingStopover stopover, DateTimeOffset? manualTime, bool isArrival)
         {
             var station = stopover.Station;
             try
             {
                 // Determine the best real times (manual times take precedence)
-                DateTime? realArrival = null;
-                DateTime? realDeparture = null;
-
-                if (isArrival)
-                {
-                    realArrival = manualTime ?? (stopover.ArrivalReal ?? stopover.ArrivalPlanned)?.UtcDateTime;
-                }
-
-                else
-                {
-                    realDeparture = manualTime ?? (stopover.DepartureReal ?? stopover.DeparturePlanned)?.UtcDateTime;
-                }
+                var realArrivalAt = isArrival ? manualTime ?? stopover.ArrivalReal ?? stopover.ArrivalPlanned : null;
+                var realDepartureAt = isArrival ? null : manualTime ?? stopover.DepartureReal ?? stopover.DeparturePlanned;
+                DateTime? realArrival = realArrivalAt?.UtcDateTime;
+                DateTime? realDeparture = realDepartureAt?.UtcDateTime;
 
                 // Convert UTC times to local timezone if we have coordinates
                 DateTime? localArrivalScheduled = null;
@@ -196,13 +188,14 @@ namespace OV_DB.Services
                 }
                 else
                 {
-                    // Fallback to UTC times if no coordinates available
-                    localArrivalScheduled = stopover.ArrivalPlanned?.UtcDateTime;
-                    localDepartureScheduled = stopover.DeparturePlanned?.UtcDateTime;
-                    localArrivalReal = realArrival;
-                    localDepartureReal = realDeparture;
+                    // No coordinates to look the zone up with: Träwelling's own offset gives the
+                    // station's clock time, which is what every other stopover stores.
+                    localArrivalScheduled = stopover.ArrivalPlanned?.DateTime;
+                    localDepartureScheduled = stopover.DeparturePlanned?.DateTime;
+                    localArrivalReal = realArrivalAt?.DateTime;
+                    localDepartureReal = realDepartureAt?.DateTime;
 
-                    _logger.LogWarning("No coordinates available for station {StationName}, using UTC times", station.Name);
+                    _logger.LogWarning("No coordinates available for station {StationName}, using Träwelling's offsets", station.Name);
                 }
 
                 return new TrawellingStopoverDto

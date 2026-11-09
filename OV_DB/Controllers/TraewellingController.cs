@@ -380,6 +380,12 @@ namespace OV_DB.Controllers
                 user.TrawellingAccessToken = null;
                 user.TrawellingRefreshToken = null;
                 user.TrawellingTokenExpiresAt = null;
+                // The account behind the next connect may be another one: forget whose check-ins
+                // the pending list held. Conflict rows stay; they belong to trips already imported.
+                user.TrawellingUsername = null;
+                user.TrawellingLastSweepAt = null;
+                _dbContext.TrawellingInboxStatuses.RemoveRange(_dbContext.TrawellingInboxStatuses
+                    .Where(s => s.UserId == user.Id && s.State == TrawellingInboxState.Pending));
 
                 await _dbContext.SaveChangesAsync();
 
@@ -532,7 +538,7 @@ namespace OV_DB.Controllers
         /// Search for existing RouteInstances by date and optional search query
         /// </summary>
         [HttpGet("route-instances")]
-        public async Task<IActionResult> SearchRouteInstances([FromQuery] string date, [FromQuery] string query = null)
+        public async Task<IActionResult> SearchRouteInstances([FromQuery] string date)
         {
             try
             {
@@ -547,7 +553,7 @@ namespace OV_DB.Controllers
                 if (!DateTime.TryParse(date, out var searchDate))
                     return BadRequest("Invalid date format");
 
-                var routeInstances = await _trawellingService.GetRouteInstancesByDateAsync(user, searchDate, query);
+                var routeInstances = await _trawellingService.GetRouteInstancesByDateAsync(user, searchDate);
 
                 var result = routeInstances.Select(ri => new
                 {

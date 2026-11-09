@@ -111,13 +111,9 @@ namespace OV_DB.Services
         Task<bool> IgnoreStatusAsync(User user, int statusId);
 
         /// <summary>
-        /// Get existing RouteInstances for a specific date and optionally filter by route name
+        /// Existing RouteInstances on a date that are not linked to Träwelling yet
         /// </summary>
-        /// <param name="user">User to search RouteInstances for</param>
-        /// <param name="date">Date to search for</param>
-        /// <param name="searchQuery">Optional search query to filter by route name</param>
-        /// <returns>List of matching RouteInstances</returns>
-        Task<List<RouteInstance>> GetRouteInstancesByDateAsync(User user, DateTime date, string searchQuery = null);
+        Task<List<RouteInstance>> GetRouteInstancesByDateAsync(User user, DateTime date);
 
         /// <summary>
         /// Link a Träwelling status to an existing RouteInstance

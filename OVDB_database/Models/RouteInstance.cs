@@ -40,6 +40,12 @@ namespace OVDB_database.Models
         public int? TrawellingStatusId { get; set; }
 
         /// <summary>
+        /// Träwelling has no planned times for this check-in (a manual trip, say), so the
+        /// scheduled-times backfill should stop asking for them.
+        /// </summary>
+        public bool ScheduledTimesUnavailable { get; set; }
+
+        /// <summary>
         /// Departure delay in minutes (positive = late, negative = early). Null if scheduled or actual departure time is missing.
         /// </summary>
         public double? DepartureDelayMinutes =>

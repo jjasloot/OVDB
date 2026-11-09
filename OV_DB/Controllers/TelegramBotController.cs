@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
+using System;
 using Microsoft.Extensions.Configuration;
 using OV_DB.Services;
 using System.Security.Cryptography;
@@ -19,10 +21,12 @@ namespace OV_DB.Controllers
 
         private readonly TelegramBotService _telegramBotService;
         private readonly IConfiguration _configuration;
+        private readonly ILogger<TelegramBotController> _logger;
 
-        public TelegramBotController(TelegramBotService telegramBotService, IConfiguration configuration)
+        public TelegramBotController(TelegramBotService telegramBotService, IConfiguration configuration, ILogger<TelegramBotController> logger)
         {
             _telegramBotService = telegramBotService;
+            _logger = logger;
             _configuration = configuration;
         }
 
@@ -46,7 +50,16 @@ namespace OV_DB.Controllers
                 return Unauthorized();
             }
 
-            await _telegramBotService.HandleUpdateAsync(update);
+            try
+            {
+                await _telegramBotService.HandleUpdateAsync(update);
+            }
+            catch (Exception ex)
+            {
+                // Telegram resends any update answered with an error; replaying a station toggle
+                // would undo it. Log and acknowledge instead.
+                _logger.LogError(ex, "Telegram update {UpdateId} failed", update?.Id);
+            }
             return Ok();
         }
     }

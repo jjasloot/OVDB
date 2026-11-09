@@ -95,8 +95,7 @@ export class TrawellingService {
   // Route Instance linking (existing functionality)
   async searchRouteInstances(trip: TrawellingTrip): Promise<RouteInstanceSearchResult[]> {
     const params = new HttpParams()
-      .set('date', trip.transport.origin.departureScheduled!.split('T')[0])
-      .set('query', trip.transport.origin.name);
+      .set('date', trip.transport.origin.departureScheduled!.split('T')[0]);
     
     return firstValueFrom(this.http.get<RouteInstanceSearchResult[]>(`${this.baseUrl}/route-instances`, { params })
       .pipe(first())

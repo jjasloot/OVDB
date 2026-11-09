@@ -122,7 +122,9 @@ namespace OV_DB.Services
         /// The full status, both as the raw <c>data</c> JSON (kept as the inbox payload) and
         /// parsed. (null, null) when there is no valid token or the call fails.
         /// </summary>
-        Task<(string Json, TrawellingStatus Status)> FetchStatusRawAsync(User user, int statusId);
+        /// <param name="waitIfLimited">False for callers that must answer quickly (webhook deliveries):
+        /// gives up instead of waiting out the rate limit or retrying.</param>
+        Task<(string Json, TrawellingStatus Status)> FetchStatusRawAsync(User user, int statusId, bool waitIfLimited = true);
 
         /// <summary>
         /// GET an API path (relative to Traewelling:BaseUrl) as this user, through the shared
@@ -494,15 +496,17 @@ namespace OV_DB.Services
         /// webhook delivery payload, this endpoint returns the complete resource including
         /// the stopovers' station objects.
         /// </summary>
-        public async Task<(string Json, TrawellingStatus Status)> FetchStatusRawAsync(User user, int statusId)
+        public async Task<(string Json, TrawellingStatus Status)> FetchStatusRawAsync(User user, int statusId, bool waitIfLimited = true)
         {
             try
             {
+                if (!waitIfLimited && _rateLimiter.IsLimited)
+                    return (null, null);
                 if (!await EnsureValidTokenAsync(user))
                     return (null, null);
 
                 var response = await SendAsync(() =>
-                    CreateApiRequest(HttpMethod.Get, $"{_baseUrl}/status/{statusId}", user));
+                    CreateApiRequest(HttpMethod.Get, $"{_baseUrl}/status/{statusId}", user), maxRetries: waitIfLimited ? 5 : 0);
                 if (!response.IsSuccessStatusCode)
                     return (null, null);
 

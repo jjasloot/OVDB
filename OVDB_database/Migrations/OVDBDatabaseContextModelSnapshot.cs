@@ -315,6 +315,9 @@ namespace OVDB_database.Migrations
                     b.Property<DateTime?>("ScheduledStartTime")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<bool>("ScheduledTimesUnavailable")
+                        .HasColumnType("tinyint(1)");
+
                     b.Property<DateTime?>("StartTime")
                         .HasColumnType("datetime(6)");
 

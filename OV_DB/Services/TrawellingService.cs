@@ -35,6 +35,9 @@ namespace OV_DB.Services
             ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
         };
 
+        // Per user: a status can be private, and two OVDB accounts may read the same one.
+        private static string TripCacheKey(int userId, int statusId) => $"TrawellingTrip|{userId}|{statusId}";
+
         public TrawellingService(ITraewellingApiClient api, TraewellingTripMapper mapper, ITimezoneService timezoneService,
             OVDBDatabaseContext dbContext, ILogger<TrawellingService> logger, IMemoryCache memoryCache,
             IHubContext<TraewellingHub> traewellingHubContext)
@@ -236,7 +239,7 @@ namespace OV_DB.Services
                 foreach (var row in rows)
                 {
                     // Check if we have timezone-corrected trip cached
-                    var cacheKey = $"TrawellingTrip|{row.TrawellingStatusId}";
+                    var cacheKey = TripCacheKey(user.Id, row.TrawellingStatusId);
                     if (_memoryCache.TryGetValue(cacheKey, out TrawellingTripDto cachedTrip))
                     {
                         optimizedTrips.Add(cachedTrip);
@@ -520,7 +523,8 @@ namespace OV_DB.Services
             // payload only as a fallback when the fetch fails.
             if (eventType is "checkin_create" or "checkin_update")
             {
-                var (fullJson, fullStatus) = await _api.FetchStatusRawAsync(user, statusId);
+                // Not waiting on the rate limit: the stored payload is repaired when the list loads.
+                var (fullJson, fullStatus) = await _api.FetchStatusRawAsync(user, statusId, waitIfLimited: false);
                 if (fullJson != null)
                 {
                     statusJson = fullJson;
@@ -616,7 +620,7 @@ namespace OV_DB.Services
 
             await _dbContext.SaveChangesAsync();
             // The 30-minute trip DTO cache would otherwise serve the pre-update payload
-            _memoryCache.Remove($"TrawellingTrip|{statusId}");
+            _memoryCache.Remove(TripCacheKey(user.Id, statusId));
             _logger.LogInformation("Processed Träwelling webhook {Event} for status {StatusId}, user {UserId}", eventType, statusId, user.Id);
 
             await PublishPendingTripChangeAsync(user, statusId, status, pendingUpserted, pendingRemoved);
@@ -680,7 +684,7 @@ namespace OV_DB.Services
                     var trip = await _mapper.MapStatusToTripDtoAsync(status);
                     if (trip == null)
                         return;
-                    _memoryCache.Set($"TrawellingTrip|{statusId}", trip, TimeSpan.FromMinutes(30));
+                    _memoryCache.Set(TripCacheKey(user.Id, statusId), trip, TimeSpan.FromMinutes(30));
                     await _traewellingHubContext.Clients.User(user.Id.ToString())
                         .SendAsync(TraewellingHub.PendingTripUpsertedMethod, JsonConvert.SerializeObject(trip, ApiJsonSettings));
                 }
@@ -778,7 +782,7 @@ namespace OV_DB.Services
             }
         }
 
-        public async Task<List<RouteInstance>> GetRouteInstancesByDateAsync(User user, DateTime date, string searchQuery = null)
+        public async Task<List<RouteInstance>> GetRouteInstancesByDateAsync(User user, DateTime date)
         {
             try
             {
@@ -788,27 +792,18 @@ namespace OV_DB.Services
                     .Where(ri => ri.Route.RouteMaps.Any(rm => rm.Map.UserId == user.Id))
                     .Where(ri => ri.Date.Date == date.Date);
 
-                //if (!string.IsNullOrWhiteSpace(searchQuery))
-                //{
-                //    query = query.Where(ri => ri.Route.Name.Contains(searchQuery) ||
-                //                            ri.Route.From.Contains(searchQuery) ||
-                //                            ri.Route.To.Contains(searchQuery));
-                //}
-
                 var routeInstances = await query
-                    .OrderBy(ri => ri.TrawellingStatusId.HasValue)
-                    .ThenByDescending(ri => ri.StartTime ?? ri.Date)
+                    .OrderByDescending(ri => ri.StartTime ?? ri.Date)
                     .ThenByDescending(ri => ri.RouteInstanceId)
                     .ToListAsync();
 
-                _logger.LogInformation("Found {Count} RouteInstances for date {Date} with query '{Query}'",
-                    routeInstances.Count, date.Date, searchQuery ?? "none");
+                _logger.LogInformation("Found {Count} RouteInstances for date {Date}", routeInstances.Count, date.Date);
 
                 return routeInstances;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error searching RouteInstances for date {Date} with query '{Query}'", date, searchQuery);
+                _logger.LogError(ex, "Error searching RouteInstances for date {Date}", date);
                 return new List<RouteInstance>();
             }
         }
@@ -886,7 +881,7 @@ namespace OV_DB.Services
             try
             {
 
-                if (_memoryCache.TryGetValue($"TrawellingTrip|{statusId}", out TrawellingTripDto cachedStatus))
+                if (_memoryCache.TryGetValue(TripCacheKey(user.Id, statusId), out TrawellingTripDto cachedStatus))
                 {
                     return cachedStatus;
                 }
@@ -897,7 +892,7 @@ namespace OV_DB.Services
                     return null;
 
                 var mapped = await _mapper.MapStatusToTripDtoAsync(status);
-                _memoryCache.Set($"TrawellingTrip|{statusId}", mapped, TimeSpan.FromMinutes(30));
+                _memoryCache.Set(TripCacheKey(user.Id, statusId), mapped, TimeSpan.FromMinutes(30));
                 return mapped;
             }
             catch (Exception ex)
@@ -907,6 +902,8 @@ namespace OV_DB.Services
             }
         }
 
+        private const int BackfillBatchSize = 100;
+
         public async Task<(int found, int updated, int failed)> BackfillScheduledTimesAsync(User user)
         {
             var found = 0;
@@ -915,15 +912,16 @@ namespace OV_DB.Services
 
             try
             {
-                var instances = await _dbContext.RouteInstances
-                    .Include(ri => ri.Route)
+                var candidates = _dbContext.RouteInstances
                     .Where(ri => ri.TrawellingStatusId.HasValue &&
                                  ri.StartTime.HasValue &&
-                                 !ri.ScheduledStartTime.HasValue)
-                    .Where(ri => ri.RouteInstanceMaps.Any(rim => rim.Map.UserId == user.Id) || ri.Route.RouteMaps.Any(rm => rm.Map.UserId == user.Id))
-                    .ToListAsync();
-
-                found = instances.Count;
+                                 !ri.ScheduledStartTime.HasValue &&
+                                 !ri.ScheduledTimesUnavailable)
+                    .Where(ri => ri.RouteInstanceMaps.Any(rim => rim.Map.UserId == user.Id) || ri.Route.RouteMaps.Any(rm => rm.Map.UserId == user.Id));
+                found = await candidates.CountAsync();
+                // One API call per trip: a click does one batch rather than an unbounded request,
+                // and the page shows "updated N of found" so the user can click again.
+                var instances = await candidates.OrderByDescending(ri => ri.Date).Take(BackfillBatchSize).ToListAsync();
                 _logger.LogInformation("Backfilling scheduled times for {Count} RouteInstances", found);
 
                 foreach (var instance in instances)
@@ -937,6 +935,13 @@ namespace OV_DB.Services
                             continue;
                         }
 
+                        if (statusData.Transport.Origin.DepartureScheduled == null && statusData.Transport.Destination.ArrivalScheduled == null)
+                        {
+                            // Nothing to fill in, now or later: don't fetch this one again.
+                            instance.ScheduledTimesUnavailable = true;
+                            failed++;
+                            continue;
+                        }
                         instance.ScheduledStartTime = statusData.Transport.Origin.DepartureScheduled;
                         instance.ScheduledEndTime = statusData.Transport.Destination.ArrivalScheduled;
                         updated++;
@@ -946,7 +951,6 @@ namespace OV_DB.Services
                         _logger.LogError(ex, "Error backfilling scheduled times for RouteInstance {Id}", instance.RouteInstanceId);
                         failed++;
                     }
-                    await _dbContext.SaveChangesAsync();
                 }
 
                 await _dbContext.SaveChangesAsync();
