@@ -1042,6 +1042,14 @@ namespace OV_DB.Controllers
                 return NotFound();
             }
 
+            // Only the caller's own maps: the ids come from the request, and an unchecked id would
+            // put this trip on someone else's (possibly public) map.
+            var requestedMapIds = (update.RouteInstanceMaps ?? new List<RouteInstanceMap>()).Select(m => m.MapId).Distinct().ToList();
+            var mapIds = await _context.Maps
+                .Where(m => m.UserId == userIdClaim && requestedMapIds.Contains(m.MapId))
+                .Select(m => m.MapId)
+                .ToListAsync();
+
             // Read at most once, and only if a duration is actually computed: the timezone lookup
             // wants the first and last coordinate, and the geometry is expensive to fetch for
             // nothing.
@@ -1118,11 +1126,9 @@ namespace OV_DB.Controllers
                         }
                     });
 
-                    var mapsToDelete = current.RouteInstanceMaps.Where(ri => !update.RouteInstanceMaps.Any(uri => uri.MapId == ri.MapId)).ToList();
-                    current.RouteInstanceMaps = current.RouteInstanceMaps.Where(ri => !mapsToDelete.Any(dri => dri.MapId == ri.MapId)).ToList();
-
-                    var toAdd = update.RouteInstanceMaps.Where(ri => !current.RouteInstanceMaps.Any(uri => uri.MapId == ri.MapId)).ToList();
-                    toAdd.ForEach(mapToAdd => current.RouteInstanceMaps.Add(new RouteInstanceMap { MapId = mapToAdd.MapId }));
+                    current.RouteInstanceMaps = current.RouteInstanceMaps.Where(ri => mapIds.Contains(ri.MapId)).ToList();
+                    mapIds.Where(id => !current.RouteInstanceMaps.Any(ri => ri.MapId == id)).ToList()
+                        .ForEach(id => current.RouteInstanceMaps.Add(new RouteInstanceMap { MapId = id }));
 
                     if (update.TraewellingStatusId.HasValue)
                     {
@@ -1133,6 +1139,15 @@ namespace OV_DB.Controllers
             }
             else
             {
+                // A double-click or a second tab must not import the same check-in twice: later
+                // updates and deletes from Träwelling would only ever reach one of the copies.
+                if (update.TraewellingStatusId.HasValue && await _context.RouteInstances.AnyAsync(ri =>
+                        ri.TrawellingStatusId == update.TraewellingStatusId.Value
+                        && (ri.RouteInstanceMaps.Any(rim => rim.Map.UserId == userIdClaim) || ri.Route.RouteMaps.Any(rm => rm.Map.UserId == userIdClaim))))
+                {
+                    return Conflict("This check-in has already been imported");
+                }
+
                 var newInstance = new RouteInstance
                 {
                     RouteId = update.RouteId,
@@ -1164,6 +1179,7 @@ namespace OV_DB.Controllers
                             Value = rip.Value
                         });
                 });
+                newInstance.RouteInstanceMaps = mapIds.Select(id => new RouteInstanceMap { MapId = id }).ToList();
                 _context.RouteInstances.Add(newInstance);
                 savedInstance = newInstance;
             }
