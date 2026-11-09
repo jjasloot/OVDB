@@ -98,23 +98,9 @@ namespace OV_DB.Controllers
         }
 
         [NonAction]
-        public async Task<string> GetStationListAsync(string osmId)
-        {
-            var query = $"[out:json][timeout:180];area({osmId})->.searchArea;(node[\"railway\"=\"station\"][!\"subway\"][!\"funicular\"][!\"tram\"][\"station\"!=\"monorail\"][\"station\"!=\"subway\"][\"station\"!=\"tram\"](area.searchArea);node[\"railway\"=\"station\"][\"train\"=\"yes\"](area.searchArea);node[\"railway\"=\"halt\"][!\"subway\"][!\"funicular\"][!\"tram\"][\"station\"!=\"monorail\"][\"station\"!=\"subway\"][\"station\"!=\"tram\"](area.searchArea);node[\"railway\"=\"halt\"][\"train\"=\"yes\"](area.searchArea););out body;";
-            return await _overpassService.QueryAsync(query);
-        }
-
-        [NonAction]
         public async Task<string> GetStationAsync(long osmId)
         {
             var query = $"[out:json][timeout:30];\r\nnode({osmId});out body;";
-            return await _overpassService.QueryAsync(query);
-        }
-
-        [NonAction]
-        public async Task<string> GetStationWayList(string osmId)
-        {
-            var query = $"[out:json][timeout:180];area({osmId})->.searchArea;(way[\"railway\"=\"station\"][!\"subway\"][!\"funicular\"][!\"tram\"][\"station\"!=\"monorail\"][\"station\"!=\"subway\"][\"station\"!=\"tram\"](area.searchArea);node[\"railway\"=\"station\"][\"train\"=\"yes\"](area.searchArea);node[\"railway\"=\"halt\"][!\"subway\"][!\"funicular\"][!\"tram\"][\"station\"!=\"monorail\"][\"station\"!=\"subway\"][\"station\"!=\"tram\"](area.searchArea);way[\"railway\"=\"halt\"][\"train\"=\"yes\"](area.searchArea););out center;";
             return await _overpassService.QueryAsync(query);
         }
     }

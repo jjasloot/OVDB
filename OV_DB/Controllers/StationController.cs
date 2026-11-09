@@ -28,58 +28,6 @@ namespace OV_DB.Controllers
             DbContext = dbContext;
         }
 
-        [HttpGet]
-        public async Task<IActionResult> GetVisitedStations([FromQuery] string countryIds = "")
-        {
-            var userIdClaim = User.GetUserId();
-            if (userIdClaim < 0)
-            {
-                return Forbid();
-            }
-            var stationsQuery = DbContext.Stations.AsNoTracking().AsQueryable();
-            if (!string.IsNullOrWhiteSpace(countryIds))
-            {
-                var countries = countryIds.Split(',').Select(s => int.Parse(s)).ToList();
-                stationsQuery = stationsQuery.Where(s => s.StationCountryId.HasValue).Where(s => countries.Contains(s.StationCountryId.Value));
-            }
-
-            var stations = await stationsQuery.Select(s => new StationDTO
-            {
-                Elevation = s.Elevation,
-                Id = s.Id,
-                Lattitude = s.Lattitude,
-                Longitude = s.Longitude,
-                Name = s.Name,
-                Network = s.Network,
-                Operator = s.Operator,
-                Visited = s.StationVisits.Any(sv => sv.UserId == userIdClaim)
-            }).ToListAsync();
-
-            var collection = new FeatureCollection();
-            stations.ForEach(s =>
-            {
-                var properties = new StationPropertiesDTO();
-                if (!string.IsNullOrWhiteSpace(s.Name))
-                    properties.name = s.Name;
-                if (!string.IsNullOrWhiteSpace(s.Network))
-                    properties.network = s.Network;
-                if (!string.IsNullOrWhiteSpace(s.Operator))
-                    properties.operatingCompany = s.Operator;
-                if (s.Elevation.HasValue)
-                    properties.elevation = s.Elevation.Value;
-                properties.visited = s.Visited;
-                properties.id = s.Id;
-                Position coordinates = new Position(s.Lattitude, s.Longitude, s.Elevation);
-                Point geometry = new Point(coordinates);
-                var item = new Feature(geometry, properties, null);
-
-                collection.Features.Add(item);
-            });
-
-
-            return Ok(collection);
-        }
-
         [HttpPut("{id:int}")]
         public async Task<IActionResult> UpdateVisitedStations(int id, [FromBody] StationVisitUpdate value, [FromServices] IStationVisitService stationVisitService)
         {

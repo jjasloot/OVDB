@@ -294,17 +294,5 @@ namespace OV_DB.Controllers
             }
             return Ok(map.MapGuid);
         }
-
-        //[HttpGet("overwriteGUIDs")]
-        //[AllowAnonymous]
-        //public async Task<ActionResult> ResetAllGuids()
-        //{
-        //    var maps = await DatabaseContext.Maps.ToListAsync();
-        //    Guid.NewGuid();
-        //    maps.ForEach(m => m.MapGuid = Guid.NewGuid());
-        //    DatabaseContext.UpdateRange(maps);
-        //    await DatabaseContext.SaveChangesAsync();
-        //    return Ok();
-        //}
     }
 }

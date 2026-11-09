@@ -12,7 +12,6 @@ namespace OV_DB.Services;
 
 public interface IStationRegionsService
 {
-    Task AssignRegionsToStationAsync(Station station);
     Task AssignRegionsToStationCacheRegionsAsync(Station station);
 }
 
@@ -22,19 +21,6 @@ public class StationRegionsService(OVDBDatabaseContext dbContext) : IStationRegi
     // batch of stations narrows to a few candidate regions and runs a cheap point-in-polygon test
     // instead of a full topological overlay against every region.
     private STRtree<(Region Region, IPreparedGeometry Prepared)> _regionIndex;
-
-    public async Task AssignRegionsToStationAsync(Station station)
-    {
-        NetTopologySuite.NtsGeometryServices.Instance = new NetTopologySuite.NtsGeometryServices(GeometryOverlay.NG);
-        station.Regions.Clear();
-        var location = new Point(station.Longitude, station.Lattitude);
-        var applicableRegions = await dbContext.Regions.Where(r => r.Geometry.Intersects(location)).ToListAsync();
-
-        foreach (var region in applicableRegions)
-        {
-            station.Regions.Add(region);
-        }
-    }
 
     public async Task AssignRegionsToStationCacheRegionsAsync(Station station)
     {

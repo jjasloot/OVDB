@@ -1,6 +1,5 @@
 import { Injectable, inject } from "@angular/core";
 import { Observable } from "rxjs";
-import { Country } from "../models/country.model";
 import { HttpClient, HttpParams } from "@angular/common/http";
 import { environment } from "src/environments/environment";
 import { Route, RouteList } from "../models/route.model";
@@ -62,17 +61,6 @@ export class ApiService {
   getRoutesWithMissingSettings(): Observable<Route[]> {
     return this.httpClient.get<Route[]>(
       environment.backend + "api/routes/missingInfo"
-    );
-  }
-
-  getCountries(guid?: string): Observable<Country[]> {
-    if (!guid) {
-      return this.httpClient.get<Country[]>(
-        environment.backend + "api/countries"
-      );
-    }
-    return this.httpClient.get<Country[]>(
-      environment.backend + "api/mapfilter/countries/" + guid
     );
   }
 

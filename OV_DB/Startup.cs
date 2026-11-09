@@ -277,7 +277,6 @@ namespace OV_DB
             app.UseXfo(o => o.SameOrigin());
             app.UseXContentTypeOptions();
             app.UseXXssProtection(options => options.EnabledWithBlockMode());
-            app.UseCors();
             app.UseAuthentication();
             app.UseAuthorization();
             app.UseEndpoints(r =>
