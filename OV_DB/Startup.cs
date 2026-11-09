@@ -37,6 +37,12 @@ namespace OV_DB
 
         public IConfiguration Configuration { get; }
 
+        // Secrets come from the environment (or the gitignored appsettings.Development.json), never
+        // from the public appsettings.json; a missing one stops startup instead of running without it.
+        private string Required(string key) => Configuration[key] is { Length: > 0 } value
+            ? value
+            : throw new InvalidOperationException($"Configuration value {key} is not set");
+
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
@@ -68,7 +74,7 @@ namespace OV_DB
             });
             services.AddDbContext<OVDBDatabaseContext>(options =>
             {
-                var connectionString = Configuration["DBCONNECTIONSTRING"];
+                var connectionString = Required("DBCONNECTIONSTRING");
                 options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString),
                     options => options
                     .UseNetTopologySuite()
@@ -94,7 +100,7 @@ namespace OV_DB
                     ValidateIssuer = true,
                     ValidIssuer = Configuration["Tokens:Issuer"],
                     ValidateIssuerSigningKey = true,
-                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Configuration["JWTSigningKey"])),
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Required("JWTSigningKey"))),
                     ValidateLifetime = true
                 };
                 options.Events = new JwtBearerEvents

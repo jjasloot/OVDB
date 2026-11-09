@@ -51,12 +51,13 @@ Do not use `spa.UseAngularCliServer` in `Startup.cs`: `SpaServices.Extensions` w
 
 ### Running locally without touching production
 
-**`OV_DB/appsettings.json` points `DBCONNECTIONSTRING` at the live NAS database, and migrations are applied automatically on startup.** Starting the app with no local override therefore migrates production as a side effect of pressing F5. `OV_DB/appsettings.Development.json` is **gitignored**, so a fresh clone has to add it back:
+The repository is public, so `OV_DB/appsettings.json` holds **no secrets**: `DBCONNECTIONSTRING`, `JWTSigningKey` and `Traewelling:ClientSecret` are empty there. Production sets them as container environment variables (`Traewelling__ClientSecret` for the nested one); startup refuses to run without the connection string or signing key. Locally they come from `OV_DB/appsettings.Development.json`, which is **gitignored**, so a fresh clone has to add it back (migrations run on startup, so point it at the dev database, never production):
 
 ```json
 {
   "DBCONNECTIONSTRING": "Server=127.0.0.1;Port=3307;Database=ovdb;Uid=ovdb;Pwd=ovdb-dev;",
-  "Traewelling": { "EnableBackgroundServices": false, "WebhookUrl": "" }
+  "JWTSigningKey": "<any random string of 64+ characters>",
+  "Traewelling": { "EnableBackgroundServices": false, "WebhookUrl": "", "ClientSecret": "<only needed to test connecting>" }
 }
 ```
 
