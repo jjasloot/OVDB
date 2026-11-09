@@ -16,7 +16,6 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
-using System.IO.Compression;
 using System.Linq;
 using System.Security.Claims;
 using System.Text;
@@ -358,6 +357,9 @@ namespace OV_DB.Controllers
         }
 
         [HttpPost("kmlfile")]
+        // A full-account GeoJSON export is ~40 KB per route, far past the 30 MB default.
+        [RequestSizeLimit(500_000_000)]
+        [RequestFormLimits(MultipartBodyLengthLimit = 500_000_000)]
         public async Task<ActionResult<Route>> PostKMLFiles()
         {
             var userIdClaim = User.GetUserId();
@@ -386,6 +388,10 @@ namespace OV_DB.Controllers
                         if (formFile.FileName.EndsWith(".gpx"))
                         {
                             routes.AddRange(await PostGpxToDatabase(stream, formFile.FileName, userIdClaim));
+                        }
+                        if (formFile.FileName.EndsWith(".geojson") || formFile.FileName.EndsWith(".json"))
+                        {
+                            routes.AddRange(await PostGeoJsonToDatabase(stream.BaseStream, formFile.FileName, userIdClaim));
                         }
                         routes.ForEach(route =>
                         {
@@ -564,6 +570,140 @@ namespace OV_DB.Controllers
 
 
 
+        /// <summary>
+        /// Imports an OVDB GeoJSON export (or any GeoJSON with LineString features). A route whose
+        /// share id the user already has is not recreated; only its missing trips are added, so
+        /// importing the same file twice changes nothing. Returns the created and matched routes.
+        /// </summary>
+        internal async Task<List<Route>> PostGeoJsonToDatabase(Stream stream, string fileName, int userId)
+        {
+            var file = await System.Text.Json.JsonSerializer.DeserializeAsync<RouteGeoJson.FeatureCollection>(stream, RouteGeoJson.Options);
+            var features = (file?.Features ?? [])
+                .Select(f => (Line: RouteGeoJson.ToLine(f.Geometry), Properties: f.Properties ?? new RouteGeoJson.RouteProperties()))
+                .Where(f => f.Line != null)
+                .ToList();
+            if (features.Count == 0)
+            {
+                throw new InvalidDataException("No line features in " + fileName);
+            }
+
+            var maps = await _context.Maps.Where(m => m.UserId == userId).ToListAsync();
+            var types = await _context.RouteTypes.Where(t => t.UserId == userId).ToListAsync();
+            var shares = features.Where(f => f.Properties.Share.HasValue).Select(f => f.Properties.Share.Value).ToList();
+            var existing = await _context.Routes
+                .Where(r => shares.Contains(r.Share) && r.RouteMaps.Any(rm => rm.Map.UserId == userId))
+                .Include(r => r.RouteInstances)
+                .ToDictionaryAsync(r => r.Share);
+            // Share ids are global; one taken by another user's route gets a fresh id instead.
+            var takenShares = (await _context.Routes.Where(r => shares.Contains(r.Share)).Select(r => r.Share).ToListAsync()).ToHashSet();
+            var operatorIds = features.SelectMany(f => f.Properties.OperatorIds ?? []).Distinct().ToList();
+            var operators = await _context.Operators.Where(o => operatorIds.Contains(o.Id)).ToListAsync();
+
+            Map MapNamed(string name)
+            {
+                var map = maps.FirstOrDefault(m => string.Equals(m.Name, name.Trim(), StringComparison.OrdinalIgnoreCase));
+                if (map == null)
+                {
+                    map = new Map { Name = name.Trim(), MapGuid = Guid.NewGuid(), UserId = userId };
+                    _context.Maps.Add(map);
+                    maps.Add(map);
+                }
+                return map;
+            }
+
+            RouteType TypeFor(RouteGeoJson.RouteTypeProperties props)
+            {
+                var name = props.Name.Trim();
+                var type = types.FirstOrDefault(t => string.Equals(t.Name, name, StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(t.NameNL, name, StringComparison.OrdinalIgnoreCase));
+                if (type == null)
+                {
+                    type = new RouteType { UserId = userId, Name = name, NameNL = props.NameNL, Colour = props.Colour ?? "#ff0000", IsTrain = props.IsTrain, TrainlogType = props.TrainlogType };
+                    _context.RouteTypes.Add(type);
+                    types.Add(type);
+                }
+                return type;
+            }
+
+            void AddMissingTrips(Route route, List<RouteGeoJson.TripProperties> trips)
+            {
+                var known = route.RouteInstances.Select(ri => RouteGeoJson.TripKey(ri.TrawellingStatusId, ri.Date, ri.StartTime, ri.EndTime)).ToHashSet();
+                foreach (var trip in trips ?? [])
+                {
+                    if (!known.Add(RouteGeoJson.TripKey(trip.TraewellingStatusId, trip.Date, trip.StartTime, trip.EndTime)))
+                    {
+                        continue;
+                    }
+                    route.RouteInstances.Add(new RouteInstance
+                    {
+                        Date = trip.Date,
+                        StartTime = trip.StartTime,
+                        EndTime = trip.EndTime,
+                        ScheduledStartTime = trip.ScheduledStartTime,
+                        ScheduledEndTime = trip.ScheduledEndTime,
+                        DurationHours = trip.DurationHours,
+                        TrawellingStatusId = trip.TraewellingStatusId,
+                        RouteInstanceMaps = (trip.Maps ?? []).Select(n => new RouteInstanceMap { Map = MapNamed(n) }).ToList(),
+                        RouteInstanceProperties = (trip.Tags ?? []).Select(t => new RouteInstanceProperty { Key = t.Key, Value = t.Value, Bool = t.Bool }).ToList(),
+                    });
+                }
+            }
+
+            var routes = new List<Route>();
+            foreach (var (line, props) in features)
+            {
+                if (props.Share.HasValue && existing.TryGetValue(props.Share.Value, out var known))
+                {
+                    AddMissingTrips(known, props.Trips);
+                    routes.Add(known);
+                    continue;
+                }
+
+                var name = string.IsNullOrWhiteSpace(props.Name) ? Path.GetFileNameWithoutExtension(fileName) : props.Name;
+                var route = new Route
+                {
+                    LineString = line,
+                    Name = string.IsNullOrWhiteSpace(name) ? "Route" : name,
+                    NameNL = props.NameNL,
+                    Description = props.Description,
+                    DescriptionNL = props.DescriptionNL,
+                    From = props.From,
+                    To = props.To,
+                    LineNumber = props.LineNumber,
+                    OperatingCompany = props.OperatingCompany,
+                    OverrideColour = props.OverrideColour,
+                    OverrideDistance = props.OverrideDistance,
+                    TrainlogType = props.TrainlogType,
+                    Share = props.Share is Guid share && !takenShares.Contains(share) ? share : Guid.NewGuid(),
+                    RouteType = string.IsNullOrWhiteSpace(props.RouteType?.Name) ? null : TypeFor(props.RouteType),
+                    Operators = operators.Where(o => props.OperatorIds?.Contains(o.Id) == true).ToList(),
+                    RouteInstances = [],
+                };
+                var routeMaps = (props.Maps ?? []).Select(MapNamed).Distinct().ToList();
+                if (routeMaps.Count == 0)
+                {
+                    routeMaps.Add(maps.FirstOrDefault(m => m.Default) ?? maps.First());
+                }
+                route.RouteMaps = routeMaps.Select(m => new RouteMap { Map = m }).ToList();
+                AddMissingTrips(route, props.Trips);
+                takenShares.Add(route.Share);
+
+                DistanceCalculationHelper.ComputeDistance(route);
+                await _routeRegionsService.AssignRegionsToRouteAsync(route);
+                _context.Routes.Add(route);
+                routes.Add(route);
+
+                // Saved in batches: a full-account restore can outlast the proxy timeout, and since
+                // matched routes are skipped, re-running the same file picks up where it stopped.
+                if (routes.Count % 100 == 0)
+                {
+                    await _context.SaveChangesAsync();
+                }
+            }
+            await _context.SaveChangesAsync();
+            return routes;
+        }
+
         private async Task<List<Route>> PostGpxToDatabase(StreamReader stream, string fileName, int userId)
         {
 
@@ -655,96 +795,24 @@ namespace OV_DB.Controllers
         }
 
         [HttpGet("{id}/export")]
-        public async Task<ActionResult<string>> ExportRoute(int id)
-        {
-            var userIdClaim = User.GetUserId();
-            if (userIdClaim < 0)
-            {
-                return Forbid();
-            }
-            var route = await _context.Routes
-                .AsNoTracking()
-                .Include(r => r.RouteType)
-                .Include(r => r.RouteMaps)
-                .ThenInclude(rm => rm.Map)
-                .Where(r => r.RouteMaps.Any(rm => rm.Map.UserId == userIdClaim))
-                .SingleOrDefaultAsync(r => r.RouteId == id);
-            if (route == null)
-            {
-                return NotFound();
-            }
-
-            using var memoryStream = new MemoryStream();
-            WriteRouteToStreamAsGPX(route.Name, route.LineString, memoryStream);
-
-            return File(memoryStream.ToArray(), "application/xml");
-        }
-
-        private static void WriteRouteToStreamAsGPX(string routeName, NetTopologySuite.Geometries.LineString routeLineString, Stream stream)
-        {
-            var writer = new GpxWriter(stream);
-            writer.WriteMetadata(new GpxMetadata
-            {
-                Name = routeName,
-            });
-            var gpxRoute = new GpxRoute();
-
-            foreach (var coordinate in routeLineString.Coordinates)
-            {
-                gpxRoute.RoutePoints.Add(new GpxRoutePoint() { Latitude = coordinate.Y, Longitude = coordinate.X });
-
-            }
-
-
-            writer.WriteRoute(gpxRoute);
-            writer.Dispose();
-        }
+        public Task<ActionResult> ExportRoute(int id) =>
+            ExportAsGeoJson(routes => routes.Where(r => r.RouteId == id));
 
         [HttpGet("exportSet")]
-        public async Task<ActionResult<string>> ExportSetOfRoutes([FromQuery] string routeIds)
+        public Task<ActionResult> ExportSetOfRoutes([FromQuery] string routeIds)
         {
-            var splitRouteIds = routeIds.Split(',').Select(int.Parse).ToList();
-            var userIdClaim = User.GetUserId();
-            if (userIdClaim < 0)
-            {
-                return Forbid();
-            }
-            if (!routeIds.Any())
-            {
-                return BadRequest("Select at least one route");
-            }
-
-            var routes = await _context.Routes
-                            .AsNoTracking()
-                            .Where(r => r.RouteMaps.Any(rm => rm.Map.UserId == userIdClaim))
-                            .Where(r => splitRouteIds.Contains(r.RouteId))
-                            .Select(r => new { r.Name, r.LineString })
-                            .ToListAsync();
-
-            using var archiveStream = new MemoryStream();
-            using (var archive = new ZipArchive(archiveStream, ZipArchiveMode.Create, true))
-            {
-                foreach (var route in routes)
-                {
-
-                    var zipArchiveEntry = archive.CreateEntry(route.Name + ".gpx", CompressionLevel.Fastest);
-                    using (var zipStream = zipArchiveEntry.Open())
-                    {
-                        WriteRouteToStreamAsGPX(route.Name, route.LineString, zipStream);
-                    }
-
-                }
-            }
-            // stream needs to be seeked back to the beginning
-            archiveStream.Seek(0, SeekOrigin.Begin);
-            // writing the whole zip to a new file
-
-            return File(archiveStream.ToArray(), "application/zip");
-
+            var ids = (routeIds ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries).Select(int.Parse).ToList();
+            return ExportAsGeoJson(routes => routes.Where(r => ids.Contains(r.RouteId)));
         }
 
         [HttpGet("export")]
-        public async Task<ActionResult<string>> ExportAllRoutes(int id, [FromQuery] Guid? map, [FromQuery] int? year)
+        public Task<ActionResult> ExportAllRoutes([FromQuery] Guid? map, [FromQuery] int? year) =>
+            ExportAsGeoJson(routes => routes
+                .Where(r => !map.HasValue || r.RouteMaps.Any(rm => rm.Map.MapGuid == map) || r.RouteInstances.Any(ri => ri.RouteInstanceMaps.Any(rim => rim.Map.MapGuid == map)))
+                .Where(r => !year.HasValue || r.RouteInstances.Any(ri => ri.Date.Year == year)));
+
+        /// <summary>The caller's routes matching the filter, in the format PostGeoJsonToDatabase reads back.</summary>
+        private async Task<ActionResult> ExportAsGeoJson(Func<IQueryable<Route>, IQueryable<Route>> filter)
         {
             var userIdClaim = User.GetUserId();
             if (userIdClaim < 0)
@@ -752,119 +820,23 @@ namespace OV_DB.Controllers
                 return Forbid();
             }
 
-            var query = _context.Routes
-                            .AsNoTracking()
-                            .Include(r => r.RouteType)
-                            .Include(r => r.RouteInstances)
-                            .Include(r => r.RouteMaps)
-                            .ThenInclude(rm => rm.Map)
-                            .Where(r => r.RouteMaps.Any(rm => rm.Map.UserId == userIdClaim));
-            if (map.HasValue)
-            {
-                query = query.Where(r => r.RouteInstances.Any(ri => ri.RouteInstanceMaps.Any(rim => rim.Map.MapGuid == map)) || r.RouteMaps.Any(rm => rm.Map.MapGuid == map));
-            }
-            if (year.HasValue)
-            {
-                query = query.Where(r => r.RouteInstances.Any(ri => ri.Date.Year == year));
-            }
-            var routes = await query
+            // shortcut: builds the whole export in memory (a full account is a few hundred MB on the
+            // NAS); stream it feature by feature if that ever becomes a problem.
+            var routes = await filter(_context.Routes.AsNoTracking().Where(r => r.RouteMaps.Any(rm => rm.Map.UserId == userIdClaim)))
+                .Include(r => r.RouteType)
+                .Include(r => r.RouteMaps).ThenInclude(rm => rm.Map)
+                .Include(r => r.Operators)
+                .Include(r => r.RouteInstances).ThenInclude(ri => ri.RouteInstanceProperties)
+                .Include(r => r.RouteInstances).ThenInclude(ri => ri.RouteInstanceMaps).ThenInclude(rim => rim.Map)
+                .AsSplitQuery()
                 .ToListAsync();
-            if (routes == null)
+            if (routes.Count == 0)
             {
                 return NotFound();
             }
-            var folder = new Folder
-            {
-                Name = "Export van OVDB",
-                Description = new Description { Text = DateTime.UtcNow.ToString("o") }
-            };
-            foreach (var route in routes)
-            {
-                AddRouteToKmlFolder(folder, route);
-            }
 
-
-            var document = new Document();
-            document.AddFeature(folder);
-            var kml = new Kml
-            {
-                Feature = document
-            };
-
-            Serializer serializer = new Serializer(SerializerOptions.ReadableFloatingPoints);
-            serializer.Serialize(kml);
-
-            return File(Encoding.UTF8.GetBytes(serializer.Xml), "application/xml");
-        }
-
-        private static void AddRouteToKmlFolder(Folder folder, Route route)
-        {
-            var lineString = new LineString
-            {
-                Tessellate = true,
-                Coordinates = new CoordinateCollection(route.LineString.Coordinates
-                .Select(loc => new Vector
-                {
-                    Longitude = loc.X,
-                    Latitude = loc.Y
-                }))
-            };
-            var placemark = new Placemark
-            {
-                Geometry = lineString,
-                Name = route.Name
-            };
-            if (!string.IsNullOrWhiteSpace(route.Description))
-            {
-                placemark.Description = new Description
-                {
-                    Text = route.Description
-                };
-            }
-            placemark.ExtendedData = new ExtendedData();
-            // The first trip, not the legacy Route.FirstDateTime column, which is no longer kept up to date.
-            var firstDate = route.RouteInstances?.Count > 0 ? route.RouteInstances.Min(ri => ri.Date) : route.FirstDateTime;
-            if (firstDate.HasValue)
-            {
-                placemark.ExtendedData.AddData(new Data { Name = "firstDateTime", Value = firstDate.Value.ToString("yyyy-MM-dd") });
-            }
-            if (route.RouteType != null)
-            {
-                placemark.ExtendedData.AddData(new Data { Name = "type", Value = route.RouteType.Name });
-            }
-            if (!string.IsNullOrWhiteSpace(route.LineNumber))
-            {
-                placemark.ExtendedData.AddData(new Data { Name = "line", Value = route.LineNumber });
-            }
-            if (!string.IsNullOrWhiteSpace(route.NameNL))
-            {
-                placemark.ExtendedData.AddData(new Data { Name = "nameNL", Value = route.NameNL });
-            }
-            if (!string.IsNullOrWhiteSpace(route.DescriptionNL))
-            {
-                placemark.ExtendedData.AddData(new Data { Name = "descriptionNL", Value = route.DescriptionNL });
-            }
-            if (!string.IsNullOrWhiteSpace(route.OperatingCompany))
-            {
-                placemark.ExtendedData.AddData(new Data { Name = "company", Value = route.OperatingCompany });
-            }
-            if (!string.IsNullOrWhiteSpace(route.OverrideColour))
-            {
-                placemark.ExtendedData.AddData(new Data { Name = "color", Value = route.OverrideColour });
-            }
-            if (!string.IsNullOrWhiteSpace(route.From))
-            {
-                placemark.ExtendedData.AddData(new Data { Name = "from", Value = route.From });
-            }
-            if (!string.IsNullOrWhiteSpace(route.To))
-            {
-                placemark.ExtendedData.AddData(new Data { Name = "to", Value = route.To });
-            }
-            if (route.RouteMaps.Any())
-            {
-                placemark.ExtendedData.AddData(new Data { Name = "maps", Value = string.Join(',', route.RouteMaps.Select(rm => rm.Map.Name)) });
-            }
-            folder.AddFeature(placemark);
+            var collection = new RouteGeoJson.FeatureCollection { Features = routes.Select(RouteGeoJson.ToFeature).ToList() };
+            return File(System.Text.Json.JsonSerializer.SerializeToUtf8Bytes(collection, RouteGeoJson.Options), "application/geo+json");
         }
 
         private bool RouteExists(int id)

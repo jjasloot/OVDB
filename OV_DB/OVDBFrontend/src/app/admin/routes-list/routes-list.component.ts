@@ -161,7 +161,7 @@ export class RoutesListComponent implements OnInit, AfterViewInit {
 
   exportAll() {
     this.apiService.getCompleteExport().subscribe((data) => {
-      saveAs(data, "Export.kml");
+      saveAs(data, "Export.geojson");
     });
   }
   get filterValue() {
@@ -379,7 +379,7 @@ export class RoutesListComponent implements OnInit, AfterViewInit {
 
   exportSet() {
     this.apiService.getExportForSet(this.selectedRoutes).subscribe((data) => {
-      saveAs(data, "Export.zip");
+      saveAs(data, "Export.geojson");
     });
   }
 

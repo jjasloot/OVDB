@@ -341,7 +341,7 @@ export class RouteDetailComponent implements OnInit {
 
   export() {
     this.apiService.getExport(this.route()!.routeId).subscribe((data) => {
-      saveAs(data, this.route()!.name.trim().replace(" ", "_") + ".gpx");
+      saveAs(data, this.route()!.name.trim().replace(" ", "_") + ".geojson");
     });
   }
 

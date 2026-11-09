@@ -204,7 +204,7 @@ export class TimeStatsComponent implements OnInit {
 
   export() {
     this.apiService.getCompleteExport(this.selectedMap!, this.selectedYear!).subscribe(data => {
-      saveAs(data as Blob, 'export.kml');
+      saveAs(data as Blob, 'export.geojson');
     });
   }
 }
