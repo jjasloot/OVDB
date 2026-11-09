@@ -71,11 +71,16 @@ namespace OV_DB.Controllers
                 return Forbid();
             }
             var dbMap = await _context.Maps.Where(m => m.UserId == userIdClaim).SingleOrDefaultAsync(m => m.MapId == map.MapId);
+            if (dbMap == null)
+            {
+                return NotFound();
+            }
 
+            // OrderNr is not copied: Map is opt-in for JSON and OrderNr has no [JsonProperty], so it
+            // always arrives as 0 and every save moved the map to the top. Order has its own endpoint.
             dbMap.SharingLinkName = map.SharingLinkName;
             dbMap.Name = map.Name;
             dbMap.NameNL = map.NameNL;
-            dbMap.OrderNr = map.OrderNr;
             dbMap.Default = map.Default;
             dbMap.ShowRouteInfo = map.ShowRouteInfo;
             dbMap.ShowRouteOutline = map.ShowRouteOutline;
@@ -145,6 +150,27 @@ namespace OV_DB.Controllers
                 return NotFound();
             }
             var routeMaps = await _context.RoutesMaps.Where(rm => rm.MapId == map.MapId).ToListAsync();
+
+            // A route on none of the user's maps can never be seen, edited or deleted again, so
+            // routes that only live on this map move to the default map (or another one).
+            var routeIds = routeMaps.Select(rm => rm.RouteId).ToList();
+            var orphanedRouteIds = await _context.Routes
+                .Where(r => routeIds.Contains(r.RouteId) && !r.RouteMaps.Any(rm => rm.MapId != map.MapId && rm.Map.UserId == userIdClaim))
+                .Select(r => r.RouteId)
+                .ToListAsync();
+            if (orphanedRouteIds.Count > 0)
+            {
+                var target = await _context.Maps
+                    .Where(m => m.UserId == userIdClaim && m.MapId != map.MapId)
+                    .OrderByDescending(m => m.Default)
+                    .ThenBy(m => m.OrderNr)
+                    .FirstOrDefaultAsync();
+                if (target == null)
+                {
+                    return Conflict("This is your only map and it still has routes");
+                }
+                _context.RoutesMaps.AddRange(orphanedRouteIds.Select(id => new RouteMap { RouteId = id, MapId = target.MapId }));
+            }
             _context.RoutesMaps.RemoveRange(routeMaps);
             _context.Maps.Remove(map);
             await _context.SaveChangesAsync();
