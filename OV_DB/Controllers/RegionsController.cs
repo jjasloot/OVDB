@@ -406,7 +406,7 @@ namespace OV_DB.Controllers
             }
 
             // Call the background service to refresh routes without regions
-            RefreshRoutesWithoutRegionsService.RouteQueue.Enqueue(true);
+            RefreshRoutesService.RouteQueue.Enqueue(RefreshRoutesService.RoutesWithoutRegions);
 
             return Ok();
         }

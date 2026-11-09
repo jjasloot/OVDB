@@ -13,8 +13,16 @@ using Microsoft.Extensions.Logging;
 
 namespace OV_DB.Services
 {
+    /// <summary>
+    /// Recalculates the regions of a batch of routes in the background, reporting progress over
+    /// the map-generation hub.
+    /// </summary>
     public class RefreshRoutesService(IServiceProvider serviceProvider, IHubContext<MapGenerationHub> hubContext, ILogger<RefreshRoutesService> logger) : IHostedService, IDisposable
     {
+        /// <summary>Queue item for "every route that has no region yet" (region ids start at 1).</summary>
+        public const int RoutesWithoutRegions = 0;
+
+        /// <summary>Region ids whose routes to refresh, or <see cref="RoutesWithoutRegions"/>.</summary>
         public static readonly ConcurrentQueue<int> RouteQueue = new ConcurrentQueue<int>();
         private Task _backgroundTask;
         private CancellationTokenSource _cancellationTokenSource;
@@ -30,11 +38,11 @@ namespace OV_DB.Services
         {
             while (!cancellationToken.IsCancellationRequested)
             {
-                if (RouteQueue.TryDequeue(out var routeId))
+                if (RouteQueue.TryDequeue(out var regionId))
                 {
                     try
                     {
-                        await RefreshRoutesAsync(routeId, cancellationToken);
+                        await RefreshRoutesAsync(regionId, cancellationToken);
                     }
                     catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
                     {
@@ -42,8 +50,17 @@ namespace OV_DB.Services
                     }
                     catch (Exception ex)
                     {
-                        // Never let one region's failure kill the queue loop for good.
-                        logger.LogError(ex, "Error refreshing routes for region {RegionId}; continuing with the queue", routeId);
+                        // Never let one failure kill the queue loop for good, and release the UI,
+                        // which waits for 100%. The hub call is guarded for the same reason.
+                        logger.LogError(ex, "Error refreshing routes for region {RegionId}; continuing with the queue", regionId);
+                        try
+                        {
+                            await hubContext.Clients.All.SendAsync(MapGenerationHub.RegionUpdateMethod, regionId, 100, 0, cancellationToken);
+                        }
+                        catch (Exception hubEx)
+                        {
+                            logger.LogWarning(hubEx, "Failed to notify clients after a route refresh failure");
+                        }
                     }
                 }
                 else
@@ -68,7 +85,10 @@ namespace OV_DB.Services
             var dbContext = scope.ServiceProvider.GetService<OVDBDatabaseContext>();
             var routeRegionsService = scope.ServiceProvider.GetService<IRouteRegionsService>();
 
-            var routes = await dbContext.Routes.Where(r => r.Regions.Any(r => r.Id == regionId)).Include(r => r.Regions).ToListAsync(cancellationToken);
+            var query = regionId == RoutesWithoutRegions
+                ? dbContext.Routes.Where(r => !r.Regions.Any())
+                : dbContext.Routes.Where(r => r.Regions.Any(r => r.Id == regionId));
+            var routes = await query.Include(r => r.Regions).ToListAsync(cancellationToken);
             var totalRoutes = routes.Count;
             if (totalRoutes == 0)
             {
