@@ -21,6 +21,7 @@ using System.Threading.Tasks;
 using OV_DB.Services;
 using OV_DB.Hubs;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.RateLimiting;
 using System.Threading.RateLimiting;
 using Telegram.Bot.AspNetCore;
@@ -238,6 +239,14 @@ namespace OV_DB
                         }));
             });
 
+            // Production sits behind the Synology reverse proxy, which reaches the container over
+            // Docker's network, so every request arrived from the proxy's address and all users
+            // shared one rate-limit budget (token refresh included). Take the client IP from
+            // X-Forwarded-For, but only when the hop is loopback or Docker's private range:
+            // trusting the header from anywhere would let a client pick its own IP and skip the
+            // limit.
+            services.Configure<ForwardedHeadersOptions>(ConfigureForwardedHeaders);
+
             services.AddHostedService<UpdateRegionService>();
             services.AddHostedService<RefreshRoutesService>();
             services.AddHostedService<RefreshRoutesWithoutRegionsService>();
@@ -249,6 +258,8 @@ namespace OV_DB
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
+            // First, so everything after it (the rate limiter in particular) sees the real client IP.
+            app.UseForwardedHeaders();
             // Add response compression early in the pipeline
             app.UseResponseCompression();
 
@@ -306,6 +317,12 @@ namespace OV_DB
                 // times out. Development launches `ng serve` via Microsoft.AspNetCore.SpaProxy
                 // (see SpaProxyServerUrl/SpaProxyLaunchCommand in OV_DB.csproj) instead.
             });
+        }
+
+        internal static void ConfigureForwardedHeaders(ForwardedHeadersOptions options)
+        {
+            options.ForwardedHeaders = ForwardedHeaders.XForwardedFor;
+            options.KnownIPNetworks.Add(System.Net.IPNetwork.Parse("172.16.0.0/12"));
         }
 
         public static IEdmModel GetEdmModel()
