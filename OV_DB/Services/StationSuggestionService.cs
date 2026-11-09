@@ -46,7 +46,7 @@ public interface IStationSuggestionService
 public class StationSuggestionService(
     OVDBDatabaseContext dbContext,
     IStationTripMatcher matcher,
-    ITrawellingService trawellingService,
+    ITraewellingApiClient traewellingApi,
     ITraewellingRateLimiter rateLimiter) : IStationSuggestionService
 {
     /// <summary>
@@ -96,7 +96,7 @@ public class StationSuggestionService(
         timeout.CancelAfter(StopoverFetchTimeout);
         try
         {
-            stopovers = await trawellingService.GetTripStopoversAsync(user, tripId, timeout.Token);
+            stopovers = await traewellingApi.GetTripStopoversAsync(user, tripId, timeout.Token);
         }
         catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
         {

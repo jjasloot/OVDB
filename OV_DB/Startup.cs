@@ -178,10 +178,12 @@ namespace OV_DB
             // again once nobody has asked for a match in a while.
             services.AddSingleton<IMatcherIndexCache, MatcherIndexCache>();
             services.AddSingleton<IFeatureService, FeatureService>();
-            services.AddHttpClient(TrawellingService.HTTP_CLIENT_NAME,client =>
+            services.AddHttpClient(TraewellingApiClient.HTTP_CLIENT_NAME,client =>
             {
                 client.DefaultRequestHeaders.Add("User-Agent", "OVDB/1.0 (https://github.com/jjasloot/OVDB; contact-me jaapslootbeek@gmail.com)");
             });
+            services.AddScoped<ITraewellingApiClient, TraewellingApiClient>();
+            services.AddScoped<TraewellingTripMapper>();
             services.AddScoped<ITrawellingService, TrawellingService>();
             // Singleton so the Träwelling rate-limit budget is shared across request scopes.
             services.AddSingleton<ITraewellingRateLimiter, TraewellingRateLimiter>();

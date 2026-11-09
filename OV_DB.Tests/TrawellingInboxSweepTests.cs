@@ -77,14 +77,14 @@ public class TrawellingInboxSweepTests
             .Options;
         var context = new OVDBDatabaseContext(options);
 
+        var api = new TraewellingApiClient(factory.Object, configuration, context, NullLogger<TraewellingApiClient>.Instance, Mock.Of<ITraewellingRateLimiter>());
         var service = new TrawellingService(
-            factory.Object,
-            configuration,
+            api,
+            new TraewellingTripMapper(new Mock<ITimezoneService>().Object, NullLogger<TraewellingTripMapper>.Instance),
             new Mock<ITimezoneService>().Object,
             context,
             NullLogger<TrawellingService>.Instance,
             new MemoryCache(new MemoryCacheOptions()),
-            Mock.Of<ITraewellingRateLimiter>(),
             new Mock<IHubContext<TraewellingHub>>().Object);
 
         var user = new User

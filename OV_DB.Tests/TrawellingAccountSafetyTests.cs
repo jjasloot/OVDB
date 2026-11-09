@@ -35,7 +35,7 @@ public class TrawellingAccountSafetyTests
         }
     }
 
-    private static (TrawellingService Service, OVDBDatabaseContext Context, CannedHandler Handler) NewService(
+    private static (TrawellingService Service, TraewellingApiClient Api, OVDBDatabaseContext Context, CannedHandler Handler) NewService(
         HttpStatusCode status = HttpStatusCode.OK, string body = "{}")
     {
         var handler = new CannedHandler(status, body);
@@ -57,17 +57,17 @@ public class TrawellingAccountSafetyTests
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
             .Options);
 
+        var api = new TraewellingApiClient(factory.Object, configuration, context, NullLogger<TraewellingApiClient>.Instance, Mock.Of<ITraewellingRateLimiter>());
         var service = new TrawellingService(
-            factory.Object,
-            configuration,
+            api,
+            new TraewellingTripMapper(new Mock<ITimezoneService>().Object, NullLogger<TraewellingTripMapper>.Instance),
             new Mock<ITimezoneService>().Object,
             context,
             NullLogger<TrawellingService>.Instance,
             new MemoryCache(new MemoryCacheOptions()),
-            Mock.Of<ITraewellingRateLimiter>(),
             new Mock<IHubContext<TraewellingHub>>().Object);
 
-        return (service, context, handler);
+        return (service, api, context, handler);
     }
 
     private static User NewUser(int id) => new()
@@ -83,7 +83,7 @@ public class TrawellingAccountSafetyTests
     [Fact]
     public async Task CannotLinkACheckInToAnotherUsersTrip()
     {
-        var (service, context, handler) = NewService();
+        var (service, _, context, handler) = NewService();
         var attacker = NewUser(1);
         var victim = NewUser(2);
         context.Users.AddRange(attacker, victim);
@@ -107,12 +107,12 @@ public class TrawellingAccountSafetyTests
     [InlineData(HttpStatusCode.InternalServerError, "")]
     public async Task KeepsTokensWhenTheRefreshTokenIsNotTheProblem(HttpStatusCode status, string body)
     {
-        var (service, context, handler) = NewService(status, body);
+        var (_, api, context, handler) = NewService(status, body);
         var user = NewUser(1);
         context.Users.Add(user);
         await context.SaveChangesAsync();
 
-        Assert.False(await service.RefreshTokensAsync(user));
+        Assert.False(await api.RefreshTokensAsync(user));
 
         Assert.True(handler.Calls > 0);
         Assert.Equal("refresh", user.TrawellingRefreshToken);
@@ -121,13 +121,13 @@ public class TrawellingAccountSafetyTests
     [Fact]
     public async Task ClearsTokensWhenTheRefreshTokenIsRejected()
     {
-        var (service, context, _) = NewService(HttpStatusCode.BadRequest,
+        var (_, api, context, _) = NewService(HttpStatusCode.BadRequest,
             "{\"error\":\"invalid_grant\",\"error_description\":\"The refresh token is invalid.\"}");
         var user = NewUser(1);
         context.Users.Add(user);
         await context.SaveChangesAsync();
 
-        Assert.False(await service.RefreshTokensAsync(user));
+        Assert.False(await api.RefreshTokensAsync(user));
 
         Assert.Null(user.TrawellingRefreshToken);
         Assert.Null(user.TrawellingAccessToken);

@@ -55,7 +55,7 @@ namespace OV_DB.Tests
         [Fact]
         public void UnchangedJourney_IsNotAConflict()
         {
-            Assert.False(TrawellingService.UpstreamDiffers(Instance(), Trip()));
+            Assert.False(TraewellingTripMapper.UpstreamDiffers(Instance(), Trip()));
         }
 
         [Fact]
@@ -65,7 +65,7 @@ namespace OV_DB.Tests
             var instance = Instance(start: "2026-08-01T10:05:00");
             var trip = Trip(departure: "2026-08-01T10:05:41");
 
-            Assert.False(TrawellingService.UpstreamDiffers(instance, trip));
+            Assert.False(TraewellingTripMapper.UpstreamDiffers(instance, trip));
         }
 
         [Fact]
@@ -73,38 +73,38 @@ namespace OV_DB.Tests
         {
             // OVDB route endpoints are the user's own text: "Karlsruhe" against "Karlsruhe Hbf" is
             // the user's edit, not Träwelling's — but a blank side says nothing either way
-            Assert.False(TrawellingService.UpstreamDiffers(Instance(from: null), Trip()));
-            Assert.False(TrawellingService.UpstreamDiffers(Instance(), Trip(originName: null)));
+            Assert.False(TraewellingTripMapper.UpstreamDiffers(Instance(from: null), Trip()));
+            Assert.False(TraewellingTripMapper.UpstreamDiffers(Instance(), Trip(originName: null)));
         }
 
         [Fact]
         public void CasingAndWhitespaceOnly_IsNotAConflict()
         {
-            Assert.False(TrawellingService.UpstreamDiffers(Instance(from: "karlsruhe  hbf"), Trip()));
+            Assert.False(TraewellingTripMapper.UpstreamDiffers(Instance(from: "karlsruhe  hbf"), Trip()));
         }
 
         [Fact]
         public void ChangedDeparture_IsAConflict()
         {
-            Assert.True(TrawellingService.UpstreamDiffers(Instance(), Trip(departure: "2026-08-01T10:35:00")));
+            Assert.True(TraewellingTripMapper.UpstreamDiffers(Instance(), Trip(departure: "2026-08-01T10:35:00")));
         }
 
         [Fact]
         public void ChangedArrival_IsAConflict()
         {
-            Assert.True(TrawellingService.UpstreamDiffers(Instance(), Trip(arrival: "2026-08-01T11:20:00")));
+            Assert.True(TraewellingTripMapper.UpstreamDiffers(Instance(), Trip(arrival: "2026-08-01T11:20:00")));
         }
 
         [Fact]
         public void ChangedEndpoint_IsAConflict()
         {
-            Assert.True(TrawellingService.UpstreamDiffers(Instance(), Trip(destinationName: "Ulm Hbf")));
+            Assert.True(TraewellingTripMapper.UpstreamDiffers(Instance(), Trip(destinationName: "Ulm Hbf")));
         }
 
         [Fact]
         public void TimeDisappearingUpstream_IsAConflict()
         {
-            Assert.True(TrawellingService.UpstreamDiffers(Instance(), Trip(departure: null)));
+            Assert.True(TraewellingTripMapper.UpstreamDiffers(Instance(), Trip(departure: null)));
         }
 
         [Fact]
@@ -113,15 +113,15 @@ namespace OV_DB.Tests
             // Same fallback the import and apply-times use: real wins, scheduled fills in
             var trip = Trip(departure: null, departureScheduled: "2026-08-01T10:05:00");
 
-            Assert.False(TrawellingService.UpstreamDiffers(Instance(), trip));
+            Assert.False(TraewellingTripMapper.UpstreamDiffers(Instance(), trip));
         }
 
         [Fact]
         public void UnmappableStatus_IsAConflict()
         {
             // Better a notice to look at than a silently swallowed upstream edit
-            Assert.True(TrawellingService.UpstreamDiffers(Instance(), null));
-            Assert.True(TrawellingService.UpstreamDiffers(Instance(), new TrawellingTripDto()));
+            Assert.True(TraewellingTripMapper.UpstreamDiffers(Instance(), null));
+            Assert.True(TraewellingTripMapper.UpstreamDiffers(Instance(), new TrawellingTripDto()));
         }
     }
 }

@@ -62,7 +62,7 @@ public class TrawellingStopoverFetchTests
         }
     }
 
-    private static (TrawellingService Service, User User, CannedHandler Handler) NewService(
+    private static (TraewellingApiClient Service, User User, CannedHandler Handler) NewService(
         HttpStatusCode status, string body)
     {
         var handler = new CannedHandler(status, body);
@@ -82,16 +82,7 @@ public class TrawellingStopoverFetchTests
             .Options;
         var context = new OVDBDatabaseContext(options);
 
-        var hub = new Mock<IHubContext<TraewellingHub>>();
-        var service = new TrawellingService(
-            factory.Object,
-            configuration,
-            new Mock<ITimezoneService>().Object,
-            context,
-            NullLogger<TrawellingService>.Instance,
-            new MemoryCache(new MemoryCacheOptions()),
-            Mock.Of<ITraewellingRateLimiter>(),
-            hub.Object);
+        var service = new TraewellingApiClient(factory.Object, configuration, context, NullLogger<TraewellingApiClient>.Instance, Mock.Of<ITraewellingRateLimiter>());
 
         var user = new User
         {

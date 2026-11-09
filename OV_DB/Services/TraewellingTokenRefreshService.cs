@@ -37,7 +37,7 @@ namespace OV_DB.Services
         {
             using var scope = serviceProvider.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<OVDBDatabaseContext>();
-            var trawellingService = scope.ServiceProvider.GetRequiredService<ITrawellingService>();
+            var traewellingApi = scope.ServiceProvider.GetRequiredService<ITraewellingApiClient>();
 
             // Users with an expired access token haven't used the integration recently;
             // refreshing rotates their refresh token, which resets its 30-day expiry
@@ -53,7 +53,7 @@ namespace OV_DB.Services
             foreach (var user in idleUsers)
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                if (await trawellingService.EnsureValidTokenAsync(user))
+                if (await traewellingApi.EnsureValidTokenAsync(user))
                     refreshed++;
                 // Daily job, so latency is free — don't burst through the shared rate limit
                 await Task.Delay(TimeSpan.FromSeconds(2), cancellationToken);

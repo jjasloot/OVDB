@@ -99,7 +99,7 @@ public class StationSuggestionServiceTests
         var service = new StationSuggestionService(
             context,
             MatcherFor(Candidate(1, "Karlsruhe Hbf", 12), Candidate(2, "Pforzheim Hbf", 30)).Object,
-            new Mock<ITrawellingService>().Object, NotLimited());
+            new Mock<ITraewellingApiClient>().Object, NotLimited());
 
         var suggestions = await service.FromStopsAsync(7, [Stop("Karlsruhe Hbf"), Stop("Pforzheim Hbf")]);
 
@@ -113,7 +113,7 @@ public class StationSuggestionServiceTests
         context.Stations.Add(StationRow(1, "Origin"));
         await context.SaveChangesAsync();
 
-        var trawelling = new Mock<ITrawellingService>();
+        var trawelling = new Mock<ITraewellingApiClient>();
         trawelling.Setup(t => t.GetTripStopoversAsync(It.IsAny<User>(), TripId, It.IsAny<CancellationToken>()))
             .ReturnsAsync([Stopover(1, "Origin"), Stopover(3, "Destination")]);
 
@@ -137,7 +137,7 @@ public class StationSuggestionServiceTests
         var service = new StationSuggestionService(
             context,
             MatcherFor(Candidate(1, "A"), Candidate(2, "B"), Candidate(3, "C")).Object,
-            new Mock<ITrawellingService>().Object, NotLimited());
+            new Mock<ITraewellingApiClient>().Object, NotLimited());
 
         var suggestions = await service.FromStopsAsync(7, [Stop("A"), Stop("B"), Stop("C")]);
 
@@ -160,7 +160,7 @@ public class StationSuggestionServiceTests
         var service = new StationSuggestionService(
             context,
             MatcherFor(Candidate(1, "A"), Candidate(2, "B"), Candidate(3, "C")).Object,
-            new Mock<ITrawellingService>().Object, NotLimited());
+            new Mock<ITraewellingApiClient>().Object, NotLimited());
 
         var suggestions = await service.FromStopsAsync(7, [Stop("A"), Stop("B"), Stop("C")]);
 
@@ -177,7 +177,7 @@ public class StationSuggestionServiceTests
         await context.SaveChangesAsync();
 
         var service = new StationSuggestionService(
-            context, MatcherFor(Candidate(1, "A")).Object, new Mock<ITrawellingService>().Object, NotLimited());
+            context, MatcherFor(Candidate(1, "A")).Object, new Mock<ITraewellingApiClient>().Object, NotLimited());
 
         var suggestions = await service.FromStopsAsync(7, [Stop("A")]);
 
@@ -193,7 +193,7 @@ public class StationSuggestionServiceTests
             StationRow(4, "Destination"), StationRow(5, "Beyond"));
         await context.SaveChangesAsync();
 
-        var trawelling = new Mock<ITrawellingService>();
+        var trawelling = new Mock<ITraewellingApiClient>();
         trawelling.Setup(t => t.GetTripStopoversAsync(It.IsAny<User>(), TripId, It.IsAny<CancellationToken>()))
             .ReturnsAsync([
                 Stopover(10, "Before"), Stopover(20, "Origin"), Stopover(30, "Middle"),
@@ -222,7 +222,7 @@ public class StationSuggestionServiceTests
         context.Stations.AddRange(StationRow(1, "Loop"), StationRow(2, "Origin"), StationRow(3, "Far"));
         await context.SaveChangesAsync();
 
-        var trawelling = new Mock<ITrawellingService>();
+        var trawelling = new Mock<ITraewellingApiClient>();
         // The service calls at the destination before the user boards, and again afterwards.
         trawelling.Setup(t => t.GetTripStopoversAsync(It.IsAny<User>(), TripId, It.IsAny<CancellationToken>()))
             .ReturnsAsync([
@@ -248,7 +248,7 @@ public class StationSuggestionServiceTests
         context.Stations.AddRange(StationRow(1, "A"), StationRow(2, "B"));
         await context.SaveChangesAsync();
 
-        var trawelling = new Mock<ITrawellingService>();
+        var trawelling = new Mock<ITraewellingApiClient>();
         trawelling.Setup(t => t.GetTripStopoversAsync(It.IsAny<User>(), TripId, It.IsAny<CancellationToken>()))
             .ReturnsAsync([Stopover(10, "A"), Stopover(20, "B")]);
 
@@ -273,7 +273,7 @@ public class StationSuggestionServiceTests
         var noPosition = Stopover(3, "Destination");
         noPosition.Station.Latitude = null;
         noPosition.Station.Longitude = null;
-        var trawelling = new Mock<ITrawellingService>();
+        var trawelling = new Mock<ITraewellingApiClient>();
         trawelling.Setup(t => t.GetTripStopoversAsync(It.IsAny<User>(), TripId, It.IsAny<CancellationToken>()))
             .ReturnsAsync([Stopover(1, "Origin"), noPosition]);
 
@@ -305,7 +305,7 @@ public class StationSuggestionServiceTests
         var service = new StationSuggestionService(
             context,
             MatcherFor(Candidate(1, "Karlsruhe Hbf"), Candidate(2, "Pforzheim Hbf")).Object,
-            new Mock<ITrawellingService>().Object, NotLimited());
+            new Mock<ITraewellingApiClient>().Object, NotLimited());
 
         var suggestions = await service.FromStopsAsync(7, [Stop("Karlsruhe Hbf"), Stop("Pforzheim Hbf")]);
 
@@ -328,7 +328,7 @@ public class StationSuggestionServiceTests
         var service = new StationSuggestionService(
             context,
             MatcherFor(Candidate(1, "Karlsruhe Hbf"), Candidate(2, "Pforzheim Hbf")).Object,
-            new Mock<ITrawellingService>().Object, NotLimited());
+            new Mock<ITraewellingApiClient>().Object, NotLimited());
 
         var suggestions = await service.FromStopsAsync(7, [Stop("Karlsruhe Hbf"), Stop("Pforzheim Hbf")]);
 
@@ -349,7 +349,7 @@ public class StationSuggestionServiceTests
         var service = new StationSuggestionService(
             context,
             MatcherFor(Candidate(1, "Depot"), Candidate(2, "Marker"), Candidate(3, "Pforzheim Hbf")).Object,
-            new Mock<ITrawellingService>().Object, NotLimited());
+            new Mock<ITraewellingApiClient>().Object, NotLimited());
 
         var suggestions = await service.FromStopsAsync(
             7, [Stop("Depot"), Stop("Marker"), Stop("Pforzheim Hbf")]);
@@ -367,7 +367,7 @@ public class StationSuggestionServiceTests
     {
         // Check-ins with no trip behind them happen: manual entries, older payloads. Suggestions sit
         // on top of an import that has already succeeded, so this has to be quiet, not an error.
-        var trawelling = new Mock<ITrawellingService>();
+        var trawelling = new Mock<ITraewellingApiClient>();
         var service = new StationSuggestionService(NewContext(), MatcherFor().Object, trawelling.Object, NotLimited());
 
         Assert.Empty((await service.FromTrawellingStatusAsync(TestUser(), payload)).Stations);
@@ -381,7 +381,7 @@ public class StationSuggestionServiceTests
     {
         // No falling back to geometry here: a line passing a platform is not the operator saying the
         // train called there, and this is the only signal allowed to propose a station.
-        var trawelling = new Mock<ITrawellingService>();
+        var trawelling = new Mock<ITraewellingApiClient>();
         trawelling.Setup(t => t.GetTripStopoversAsync(It.IsAny<User>(), TripId, It.IsAny<CancellationToken>()))
             .ReturnsAsync([]);
 
@@ -395,7 +395,7 @@ public class StationSuggestionServiceTests
     {
         // The trip is already saved by the time this runs, and the limiter sleeps out its whole
         // window. Waiting a minute to find out what we already know is the worst of both.
-        var trawelling = new Mock<ITrawellingService>();
+        var trawelling = new Mock<ITraewellingApiClient>();
         var service = new StationSuggestionService(
             NewContext(), MatcherFor().Object, trawelling.Object, Limited());
 
@@ -413,7 +413,7 @@ public class StationSuggestionServiceTests
     {
         // Cancelled from inside, which is what the timeout does. The caller's own token is still
         // live, so this is the service giving up rather than the request going away.
-        var trawelling = new Mock<ITrawellingService>();
+        var trawelling = new Mock<ITraewellingApiClient>();
         trawelling.Setup(t => t.GetTripStopoversAsync(It.IsAny<User>(), TripId, It.IsAny<CancellationToken>()))
             .ThrowsAsync(new OperationCanceledException());
 
@@ -431,7 +431,7 @@ public class StationSuggestionServiceTests
     {
         // The request itself was aborted, so there is nobody to tell and nothing to report. That
         // cancellation belongs to the caller and is passed back rather than swallowed as a result.
-        var trawelling = new Mock<ITrawellingService>();
+        var trawelling = new Mock<ITraewellingApiClient>();
         trawelling.Setup(t => t.GetTripStopoversAsync(It.IsAny<User>(), TripId, It.IsAny<CancellationToken>()))
             .ThrowsAsync(new OperationCanceledException());
 

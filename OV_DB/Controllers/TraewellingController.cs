@@ -25,16 +25,18 @@ namespace OV_DB.Controllers
     public class TraewellingController : ControllerBase
     {
         private readonly ITrawellingService _trawellingService;
+        private readonly ITraewellingApiClient _api;
         private readonly OVDBDatabaseContext _dbContext;
         private readonly ILogger<TraewellingController> _logger;
         private readonly ITraewellingRateLimiter _rateLimiter;
         private readonly ITraewellingResyncQueue _resyncQueue;
 
-        public TraewellingController(ITrawellingService trawellingService,
+        public TraewellingController(ITrawellingService trawellingService, ITraewellingApiClient api,
             OVDBDatabaseContext dbContext, ILogger<TraewellingController> logger, ITraewellingRateLimiter rateLimiter,
             ITraewellingResyncQueue resyncQueue)
         {
             _trawellingService = trawellingService;
+            _api = api;
             _dbContext = dbContext;
             _logger = logger;
             _rateLimiter = rateLimiter;
@@ -53,8 +55,8 @@ namespace OV_DB.Controllers
                 if (!userId.HasValue)
                     return Unauthorized();
 
-                var state = _trawellingService.GenerateAndStoreState(userId.Value);
-                var authUrl = _trawellingService.GetAuthorizationUrl(userId.Value, state, liveSync);
+                var state = _api.GenerateAndStoreState(userId.Value);
+                var authUrl = _api.GetAuthorizationUrl(userId.Value, state, liveSync);
 
                 return Ok(new { authorizationUrl = authUrl });
             }
@@ -93,7 +95,7 @@ namespace OV_DB.Controllers
                 }
 
                 // Validate state parameter
-                if (!_trawellingService.ValidateAndConsumeState(state,out var userId))
+                if (!_api.ValidateAndConsumeState(state,out var userId))
                 {
                     return Content(@"
 <!DOCTYPE html>
@@ -111,7 +113,7 @@ namespace OV_DB.Controllers
 </html>", "text/html");
                 }
 
-                var success = await _trawellingService.ExchangeCodeForTokensAsync(code, state, userId.Value);
+                var success = await _api.ExchangeCodeForTokensAsync(code, state, userId.Value);
                 
                 if (success)
                 {
@@ -186,7 +188,7 @@ namespace OV_DB.Controllers
         [AllowAnonymous]
         public async Task<IActionResult> ReceiveWebhook()
         {
-            if (!_trawellingService.IsLiveSyncAvailable)
+            if (!_api.IsLiveSyncAvailable)
                 return NotFound();
 
             // StatusResource payloads are small; anything bigger is not a genuine delivery
@@ -248,31 +250,31 @@ namespace OV_DB.Controllers
                 if (user == null)
                     return NotFound("User not found");
 
-                if (!_trawellingService.IsConnected(user))
+                if (!_api.IsConnected(user))
                 {
-                    return Ok(new { connected = false, liveSyncAvailable = _trawellingService.IsLiveSyncAvailable });
+                    return Ok(new { connected = false, liveSyncAvailable = _api.IsLiveSyncAvailable });
                 }
 
                 // This refreshes the access token when it has expired; a definitive refresh
                 // failure clears the stored tokens, so re-check afterwards
-                var userInfo = await _trawellingService.GetUserInfoAsync(user);
+                var userInfo = await _api.GetUserInfoAsync(user);
 
-                if (userInfo == null && !_trawellingService.IsConnected(user))
+                if (userInfo == null && !_api.IsConnected(user))
                 {
-                    return Ok(new { connected = false, liveSyncAvailable = _trawellingService.IsLiveSyncAvailable });
+                    return Ok(new { connected = false, liveSyncAvailable = _api.IsLiveSyncAvailable });
                 }
 
                 var webhookHealth = TrawellingWebhookHealth.NotEnabled;
-                if (_trawellingService.IsLiveSyncAvailable && user.TraewellingWebhookId.HasValue)
+                if (_api.IsLiveSyncAvailable && user.TraewellingWebhookId.HasValue)
                 {
-                    webhookHealth = await _trawellingService.GetWebhookHealthAsync(user);
+                    webhookHealth = await _api.GetWebhookHealthAsync(user);
                 }
 
                 return Ok(new
                 {
                     connected = true,
                     user = userInfo,
-                    liveSyncAvailable = _trawellingService.IsLiveSyncAvailable,
+                    liveSyncAvailable = _api.IsLiveSyncAvailable,
                     liveSyncEnabled = user.TraewellingWebhookId.HasValue,
                     liveSyncHealth = webhookHealth.ToString(),
                     resyncRunning = _resyncQueue.IsRunning(user.Id)
@@ -301,7 +303,7 @@ namespace OV_DB.Controllers
                 if (user == null)
                     return NotFound("User not found");
 
-                if (!_trawellingService.IsConnected(user))
+                if (!_api.IsConnected(user))
                     return BadRequest("Träwelling account not connected or tokens expired");
 
                 var tripsResponse = await _trawellingService.GetOptimizedTripsAsync(user, page, refresh, cancellationToken);
@@ -340,7 +342,7 @@ namespace OV_DB.Controllers
                 if (user == null)
                     return NotFound("User not found");
 
-                if (!_trawellingService.IsConnected(user))
+                if (!_api.IsConnected(user))
                     return BadRequest("Träwelling account not connected or tokens expired");
 
                 return Accepted(new { queued = _resyncQueue.TryEnqueue(userId.Value) });
@@ -368,7 +370,7 @@ namespace OV_DB.Controllers
                 if (user == null)
                     return NotFound("User not found");
 
-                if (!_trawellingService.IsConnected(user))
+                if (!_api.IsConnected(user))
                     return BadRequest("Träwelling account not connected or tokens expired");
 
                 var success = await _trawellingService.IgnoreStatusAsync(user, request.StatusId);
@@ -406,7 +408,7 @@ namespace OV_DB.Controllers
                     return NotFound("User not found");
 
                 // Remove the webhook first — deleting it upstream needs the tokens
-                await _trawellingService.RemoveWebhookAsync(user);
+                await _api.RemoveWebhookAsync(user);
 
                 user.TrawellingAccessToken = null;
                 user.TrawellingRefreshToken = null;
@@ -517,7 +519,7 @@ namespace OV_DB.Controllers
                 if (user == null)
                     return NotFound("User not found");
 
-                if (!_trawellingService.IsConnected(user))
+                if (!_api.IsConnected(user))
                     return Ok(new { connected = false });
 
                 // All counts are scoped to the current user's routes/maps.
@@ -678,10 +680,10 @@ namespace OV_DB.Controllers
                 if (user == null)
                     return NotFound("User not found");
 
-                if (!_trawellingService.IsConnected(user))
+                if (!_api.IsConnected(user))
                     return Ok(Array.Empty<object>());
 
-                var alerts = await _trawellingService.GetAlertsAsync(user);
+                var alerts = await _api.GetAlertsAsync(user);
                 return Ok(alerts);
             }
             catch (Exception ex)

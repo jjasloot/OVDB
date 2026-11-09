@@ -61,9 +61,10 @@ namespace OV_DB.Services
             using var scope = serviceProvider.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<OVDBDatabaseContext>();
             var trawellingService = scope.ServiceProvider.GetRequiredService<ITrawellingService>();
+            var traewellingApi = scope.ServiceProvider.GetRequiredService<ITraewellingApiClient>();
 
             var user = await dbContext.Users.FirstOrDefaultAsync(u => u.Id == userId, cancellationToken);
-            if (user == null || !trawellingService.IsConnected(user))
+            if (user == null || !traewellingApi.IsConnected(user))
             {
                 await PublishAsync(userId, TraewellingHub.ResyncFinishedMethod,
                     new { added = 0, pagesRead = 0, complete = false });

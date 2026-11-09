@@ -42,8 +42,8 @@ namespace OV_DB.Tests
         [Fact]
         public void IdenticalJourneyFacts_ProduceEqualFingerprints()
         {
-            var a = TrawellingService.ConflictFingerprint(Parse(Payload()));
-            var b = TrawellingService.ConflictFingerprint(Parse(Payload()));
+            var a = TraewellingTripMapper.ConflictFingerprint(Parse(Payload()));
+            var b = TraewellingTripMapper.ConflictFingerprint(Parse(Payload()));
 
             Assert.Equal(a, b);
         }
@@ -51,8 +51,8 @@ namespace OV_DB.Tests
         [Fact]
         public void SocialFieldChange_DoesNotChangeFingerprint()
         {
-            var original = TrawellingService.ConflictFingerprint(Parse(Payload(body: "Nice trip")));
-            var edited = TrawellingService.ConflictFingerprint(Parse(Payload(body: "Edited body with #hashtag")));
+            var original = TraewellingTripMapper.ConflictFingerprint(Parse(Payload(body: "Nice trip")));
+            var edited = TraewellingTripMapper.ConflictFingerprint(Parse(Payload(body: "Edited body with #hashtag")));
 
             Assert.Equal(original, edited);
         }
@@ -64,8 +64,8 @@ namespace OV_DB.Tests
         [InlineData("RE 5", "Karlsruhe Hbf", "Stuttgart Hbf", "2026-08-01T10:15:00+02:00")]
         public void JourneyFactChange_ChangesFingerprint(string line, string origin, string destination, string departure)
         {
-            var baseline = TrawellingService.ConflictFingerprint(Parse(Payload()));
-            var changed = TrawellingService.ConflictFingerprint(
+            var baseline = TraewellingTripMapper.ConflictFingerprint(Parse(Payload()));
+            var changed = TraewellingTripMapper.ConflictFingerprint(
                 Parse(Payload(lineName: line, originStation: origin, destinationStation: destination, departurePlanned: departure)));
 
             Assert.NotEqual(baseline, changed);
@@ -76,8 +76,8 @@ namespace OV_DB.Tests
         {
             // Same instant expressed in two offsets must fingerprint identically (the method
             // normalises to UTC via .UtcDateTime.ToString("o")).
-            var cet = TrawellingService.ConflictFingerprint(Parse(Payload(departurePlanned: "2026-08-01T10:05:00+02:00")));
-            var utc = TrawellingService.ConflictFingerprint(Parse(Payload(departurePlanned: "2026-08-01T08:05:00Z")));
+            var cet = TraewellingTripMapper.ConflictFingerprint(Parse(Payload(departurePlanned: "2026-08-01T10:05:00+02:00")));
+            var utc = TraewellingTripMapper.ConflictFingerprint(Parse(Payload(departurePlanned: "2026-08-01T08:05:00Z")));
 
             Assert.Equal(cet, utc);
         }
@@ -85,8 +85,8 @@ namespace OV_DB.Tests
         [Fact]
         public void NullStatusAndNullCheckin_DoNotThrow()
         {
-            var nullStatus = TrawellingService.ConflictFingerprint(null);
-            var noCheckin = TrawellingService.ConflictFingerprint(new TrawellingStatus());
+            var nullStatus = TraewellingTripMapper.ConflictFingerprint(null);
+            var noCheckin = TraewellingTripMapper.ConflictFingerprint(new TrawellingStatus());
 
             Assert.NotNull(nullStatus);
             Assert.Equal(nullStatus, noCheckin);

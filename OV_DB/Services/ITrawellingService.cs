@@ -36,59 +36,6 @@ namespace OV_DB.Services
 
     public interface ITrawellingService
     {
-        /// <summary>
-        /// Generate OAuth2 authorization URL for user to connect their Träwelling account
-        /// </summary>
-        /// <param name="userId">OVDB User ID</param>
-        /// <param name="state">OAuth state parameter for security</param>
-        /// <param name="withLiveSync">Request webhook creation (live sync) during authorization; only honoured when live sync is configured</param>
-        /// <returns>Authorization URL</returns>
-        string GetAuthorizationUrl(int userId, string state, bool withLiveSync = false);
-
-        /// <summary>
-        /// True when a webhook URL is configured (Traewelling:WebhookUrl), i.e. this
-        /// environment can offer live sync
-        /// </summary>
-        bool IsLiveSyncAvailable { get; }
-
-        /// <summary>
-        /// Generate and store OAuth2 state for validation
-        /// </summary>
-        /// <param name="userId">OVDB User ID</param>
-        /// <returns>Generated state parameter</returns>
-        string GenerateAndStoreState(int userId);
-
-        /// <summary>
-        /// Validate OAuth2 state parameter
-        /// </summary>
-        /// <param name="state">State parameter from callback</param>
-        /// <param name="userId">OVDB User ID</param>
-        /// <returns>True if state is valid</returns>
-        bool ValidateAndConsumeState(string state,out int? userId);
-
-        /// <summary>
-        /// Exchange OAuth2 authorization code for access tokens and store with user
-        /// </summary>
-        /// <param name="code">Authorization code from OAuth callback</param>
-        /// <param name="state">State parameter for validation</param>
-        /// <param name="userId">OVDB User ID</param>
-        /// <returns>Success status</returns>
-        Task<bool> ExchangeCodeForTokensAsync(string code, string state, int userId);
-
-        /// <summary>
-        /// Refresh expired OAuth tokens
-        /// </summary>
-        /// <param name="user">User with refresh token</param>
-        /// <returns>Success status</returns>
-        Task<bool> RefreshTokensAsync(User user);
-
-        /// <summary>
-        /// Get authenticated user information from Träwelling
-        /// </summary>
-        /// <param name="user">User with valid tokens</param>
-        /// <returns>Träwelling user data</returns>
-        Task<TrawellingUserAuthData> GetUserInfoAsync(User user);
-
 
         /// <summary>
         /// Get optimized trip data for frontend with local timezone conversion, served from
@@ -147,19 +94,6 @@ namespace OV_DB.Services
         Task<bool> DeleteInstanceForConflictAsync(User user, int statusId);
 
         /// <summary>
-        /// Check whether the user's stored webhook still exists and is enabled upstream
-        /// </summary>
-        /// <param name="user">User to check</param>
-        /// <returns>Health of the webhook subscription</returns>
-        Task<TrawellingWebhookHealth> GetWebhookHealthAsync(User user);
-
-        /// <summary>
-        /// Delete the user's webhook upstream (best effort) and clear the stored webhook data
-        /// </summary>
-        /// <param name="user">User to remove the webhook for</param>
-        Task RemoveWebhookAsync(User user);
-
-        /// <summary>
         /// Apply a verified webhook delivery to the inbox: creates/updates pending statuses,
         /// flags upstream edits/deletes of imported trips, respects ignores. The caller has
         /// already verified the signature.
@@ -175,29 +109,6 @@ namespace OV_DB.Services
         /// <param name="statusId">Träwelling status ID to ignore</param>
         /// <returns>Success status</returns>
         Task<bool> IgnoreStatusAsync(User user, int statusId);
-
-        /// <summary>
-        /// Check if user has valid Träwelling tokens
-        /// </summary>
-        /// <param name="user">User to check</param>
-        /// <returns>True if user has valid tokens</returns>
-        bool HasValidTokens(User user);
-
-        /// <summary>
-        /// Check if user has a usable Träwelling connection: either a currently valid
-        /// access token or a refresh token that can be used to obtain one
-        /// </summary>
-        /// <param name="user">User to check</param>
-        /// <returns>True if the connection can still be used</returns>
-        bool IsConnected(User user);
-
-        /// <summary>
-        /// Ensure the user has a valid access token, refreshing it if necessary.
-        /// Refreshes are serialized per user to avoid revoking a concurrently rotated refresh token.
-        /// </summary>
-        /// <param name="user">User to ensure tokens for</param>
-        /// <returns>True if a valid access token is available</returns>
-        Task<bool> EnsureValidTokenAsync(User user);
 
         /// <summary>
         /// Get existing RouteInstances for a specific date and optionally filter by route name
@@ -224,24 +135,5 @@ namespace OV_DB.Services
         /// <returns>Counts of (found, updated, failed) trips</returns>
         Task<(int found, int updated, int failed)> BackfillScheduledTimesAsync(User user);
 
-        /// <summary>
-        /// Fetch active warning/danger alerts from the Träwelling platform
-        /// </summary>
-        /// <param name="user">User with valid tokens</param>
-        /// <returns>List of active warning or danger alerts</returns>
-        Task<List<TrawellingAlert>> GetAlertsAsync(User user);
-
-        /// <summary>
-        /// The full calling pattern of a trip — every station the train stops at, not just the two
-        /// the check-in covers.
-        /// </summary>
-        /// <remarks>
-        /// Costs one API call, so it is made <b>only when a trip is actually being imported</b>,
-        /// never while listing or browsing check-ins. This is the one signal that can tell stopping
-        /// apart from passing through, which route geometry cannot.
-        /// </remarks>
-        /// <param name="user">User with valid tokens</param>
-        /// <param name="tripId">Träwelling trip id, from <c>status.Checkin.Trip</c></param>
-        Task<List<TrawellingStopover>> GetTripStopoversAsync(User user, int tripId, CancellationToken cancellationToken = default);
     }
 }

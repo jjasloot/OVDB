@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -11,39 +10,22 @@ using OV_DB.Models;
 using OVDB_database.Database;
 using OVDB_database.Models;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net.Http;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Web;
 
 namespace OV_DB.Services
 {
     public class TrawellingService : ITrawellingService
     {
-        public static string HTTP_CLIENT_NAME = "TrawellingServiceClient";
-        private readonly HttpClient _httpClient;
-        private readonly IConfiguration _configuration;
+        private readonly ITraewellingApiClient _api;
+        private readonly TraewellingTripMapper _mapper;
         private readonly ITimezoneService _timezoneService;
         private readonly OVDBDatabaseContext _dbContext;
         private readonly ILogger<TrawellingService> _logger;
-        private readonly string _baseUrl;
-        private readonly string _clientId;
-        private readonly string _clientSecret;
-        private readonly string _redirectUri;
-        private readonly string _authorizeUrl;
-        private readonly string _tokenUrl;
-        private readonly string _webhookUrl;
         private readonly IMemoryCache _memoryCache;
-        private readonly ITraewellingRateLimiter _rateLimiter;
         private readonly IHubContext<TraewellingHub> _traewellingHubContext;
-
-        // Simple in-memory cache for OAuth states - in production, use Redis or database
-        private static readonly Dictionary<string, (int UserId, DateTime Expiry)> _oauthStates = new();
-        private static readonly object _statelock = new object();
 
         // Matches the REST API's Newtonsoft configuration so hub payloads have the exact
         // same shape (camelCase, string enums via the DTO attributes) as the list endpoint
@@ -53,288 +35,17 @@ namespace OV_DB.Services
             ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
         };
 
-        public TrawellingService(IHttpClientFactory httpClientFactory, IConfiguration configuration, ITimezoneService timezoneService,
-            OVDBDatabaseContext dbContext, ILogger<TrawellingService> logger, IMemoryCache memoryCache, ITraewellingRateLimiter rateLimiter,
+        public TrawellingService(ITraewellingApiClient api, TraewellingTripMapper mapper, ITimezoneService timezoneService,
+            OVDBDatabaseContext dbContext, ILogger<TrawellingService> logger, IMemoryCache memoryCache,
             IHubContext<TraewellingHub> traewellingHubContext)
         {
-            _httpClient = httpClientFactory.CreateClient(HTTP_CLIENT_NAME);
-            _configuration = configuration;
+            _api = api;
+            _mapper = mapper;
             _timezoneService = timezoneService;
             _dbContext = dbContext;
             _logger = logger;
             _memoryCache = memoryCache;
-            _rateLimiter = rateLimiter;
             _traewellingHubContext = traewellingHubContext;
-            _baseUrl = _configuration["Traewelling:BaseUrl"];
-            _clientId = _configuration["Traewelling:ClientId"];
-            _clientSecret = _configuration["Traewelling:ClientSecret"];
-            _redirectUri = _configuration["Traewelling:RedirectUri"];
-            _authorizeUrl = _configuration["Traewelling:AuthorizeUrl"];
-            _tokenUrl = _configuration["Traewelling:TokenUrl"];
-            // Live sync (webhooks) is only available when this exactly matches the
-            // authorized_webhook_url registered on the OAuth client — production only
-            _webhookUrl = _configuration["Traewelling:WebhookUrl"];
-        }
-
-        public bool IsLiveSyncAvailable => !string.IsNullOrEmpty(_webhookUrl);
-
-        public string GetAuthorizationUrl(int userId, string state, bool withLiveSync = false)
-        {
-            var queryParams = HttpUtility.ParseQueryString(string.Empty);
-            queryParams["response_type"] = "code";
-            queryParams["client_id"] = _clientId;
-            queryParams["redirect_uri"] = _redirectUri;
-            queryParams["scope"] = "read-statuses";
-            queryParams["state"] = state;
-
-            if (withLiveSync && IsLiveSyncAvailable)
-            {
-                // Asks Träwelling to create a webhook during authorization; the URL must
-                // exactly equal the authorized_webhook_url stored on the OAuth client
-                queryParams["trwl_webhook_url"] = _webhookUrl;
-                queryParams["trwl_webhook_events"] = "checkin_create,checkin_update,checkin_delete";
-            }
-
-            return $"{_authorizeUrl}?{queryParams}";
-        }
-
-        public string GenerateAndStoreState(int userId)
-        {
-            var state = Guid.NewGuid().ToString();
-            var expiry = DateTime.UtcNow.AddMinutes(10); // States expire in 10 minutes
-
-            lock (_statelock)
-            {
-                // Clean up expired states
-                var expiredStates = _oauthStates.Where(kvp => kvp.Value.Expiry < DateTime.UtcNow).ToList();
-                foreach (var expired in expiredStates)
-                {
-                    _oauthStates.Remove(expired.Key);
-                }
-
-                // Store new state
-                _oauthStates[state] = (userId, expiry);
-                _logger.LogDebug("Generated OAuth state {State} for user {UserId}", state, userId);
-            }
-
-            return state;
-        }
-
-        public bool ValidateAndConsumeState(string state, out int? userId)
-        {
-            userId = null;
-            if (string.IsNullOrEmpty(state))
-                return false;
-
-            lock (_statelock)
-            {
-                if (_oauthStates.TryGetValue(state, out var stateInfo))
-                {
-                    // Remove the state (one-time use)
-                    _oauthStates.Remove(state);
-
-                    // Check if expired
-                    if (stateInfo.Expiry < DateTime.UtcNow)
-                    {
-                        _logger.LogWarning("OAuth state {State} has expired", state);
-                        return false;
-                    }
-
-                    userId = stateInfo.UserId;
-
-                    _logger.LogDebug("OAuth state {State} validated for user {UserId}", state, userId);
-                    return true;
-                }
-
-                _logger.LogWarning("OAuth state {State} not found", state);
-                return false;
-            }
-        }
-
-        public async Task<bool> ExchangeCodeForTokensAsync(string code, string state, int userId)
-        {
-            try
-            {
-                var response = await SendAsync(() => new HttpRequestMessage(HttpMethod.Post, _tokenUrl)
-                {
-                    Content = new FormUrlEncodedContent(new[]
-                    {
-                        new KeyValuePair<string, string>("grant_type", "authorization_code"),
-                        new KeyValuePair<string, string>("client_id", _clientId),
-                        new KeyValuePair<string, string>("client_secret", _clientSecret),
-                        new KeyValuePair<string, string>("redirect_uri", _redirectUri),
-                        new KeyValuePair<string, string>("code", code)
-                    })
-                });
-
-                if (!response.IsSuccessStatusCode)
-                {
-                    _logger.LogError("Failed to exchange code for tokens. Status: {StatusCode}, Content: {Content}",
-                        response.StatusCode, await response.Content.ReadAsStringAsync());
-                    return false;
-                }
-
-                var responseContent = await response.Content.ReadAsStringAsync();
-                var tokenResponse = JsonConvert.DeserializeObject<TrawellingTokenResponse>(responseContent);
-
-                var user = await _dbContext.Users.FindAsync(userId);
-                if (user == null)
-                {
-                    _logger.LogError("User with ID {UserId} not found", userId);
-                    return false;
-                }
-
-                user.TrawellingAccessToken = tokenResponse.AccessToken;
-                user.TrawellingRefreshToken = tokenResponse.RefreshToken;
-                user.TrawellingTokenExpiresAt = DateTime.UtcNow.AddSeconds(tokenResponse.ExpiresIn);
-
-                if (tokenResponse.Webhook != null)
-                {
-                    // The exchange response is the only moment the webhook secret is issued
-                    user.TraewellingWebhookId = tokenResponse.Webhook.Id;
-                    user.TraewellingWebhookSecret = tokenResponse.Webhook.Secret;
-                    user.TraewellingWebhookCreatedAt = DateTime.UtcNow;
-                    _logger.LogInformation("Stored Träwelling webhook {WebhookId} for user {UserId}", tokenResponse.Webhook.Id, userId);
-                }
-
-                // Fetch and store user information including username
-                var userInfo = await GetUserInfoAsync(user);
-                if (userInfo != null)
-                {
-                    user.TrawellingUsername = userInfo.Username;
-                    _logger.LogInformation("Stored Träwelling username {Username} for user {UserId}", userInfo.Username, userId);
-                }
-                else
-                {
-                    _logger.LogWarning("Failed to fetch Träwelling user info for user {UserId}", userId);
-                }
-
-                await _dbContext.SaveChangesAsync();
-                _logger.LogInformation("Successfully stored Träwelling tokens for user {UserId}", userId);
-                return true;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error exchanging code for tokens for user {UserId}", userId);
-                return false;
-            }
-        }
-
-        internal static bool IsInvalidGrant(System.Net.HttpStatusCode status, string body)
-        {
-            if (status != System.Net.HttpStatusCode.BadRequest || string.IsNullOrWhiteSpace(body))
-                return false;
-            try
-            {
-                return Newtonsoft.Json.Linq.JObject.Parse(body).Value<string>("error") == "invalid_grant";
-            }
-            catch (JsonException)
-            {
-                return false;
-            }
-        }
-
-        public async Task<bool> RefreshTokensAsync(User user)
-        {
-            try
-            {
-                if (string.IsNullOrEmpty(user.TrawellingRefreshToken))
-                {
-                    _logger.LogWarning("No refresh token available for user {UserId}", user.Id);
-                    return false;
-                }
-
-                var response = await SendAsync(() => new HttpRequestMessage(HttpMethod.Post, _tokenUrl)
-                {
-                    Content = new FormUrlEncodedContent(new[]
-                    {
-                        new KeyValuePair<string, string>("grant_type", "refresh_token"),
-                        new KeyValuePair<string, string>("client_id", _clientId),
-                        new KeyValuePair<string, string>("client_secret", _clientSecret),
-                        new KeyValuePair<string, string>("refresh_token", user.TrawellingRefreshToken)
-                    })
-                });
-
-                if (!response.IsSuccessStatusCode)
-                {
-                    var errorBody = await response.Content.ReadAsStringAsync();
-                    _logger.LogError("Failed to refresh tokens for user {UserId}. Status: {StatusCode}, Content: {Content}",
-                        user.Id, response.StatusCode, errorBody);
-
-                    // Only invalid_grant means this user's refresh token was rejected (expired or
-                    // revoked); clear it so the connection status honestly reports disconnected.
-                    // Anything else (invalid_client after a mistyped or rotated client secret, an
-                    // outage) is not the token's fault, and clearing would disconnect every user.
-                    if (IsInvalidGrant(response.StatusCode, errorBody))
-                    {
-                        user.TrawellingAccessToken = null;
-                        user.TrawellingRefreshToken = null;
-                        user.TrawellingTokenExpiresAt = null;
-                        await _dbContext.SaveChangesAsync();
-                    }
-                    return false;
-                }
-
-                var responseContent = await response.Content.ReadAsStringAsync();
-                var tokenResponse = JsonConvert.DeserializeObject<TrawellingTokenResponse>(responseContent);
-
-                user.TrawellingAccessToken = tokenResponse.AccessToken;
-                user.TrawellingRefreshToken = tokenResponse.RefreshToken;
-                user.TrawellingTokenExpiresAt = DateTime.UtcNow.AddSeconds(tokenResponse.ExpiresIn);
-
-                // Persist the rotated tokens IMMEDIATELY, before any further network call. Träwelling
-                // invalidates the old refresh token the moment this response is issued; if we threw or
-                // crashed before saving, the DB would keep the dead token and the connection would break.
-                await _dbContext.SaveChangesAsync();
-
-                // Fetch and store user information including username if not already stored
-                if (string.IsNullOrEmpty(user.TrawellingUsername))
-                {
-                    var userInfo = await GetUserInfoAsync(user);
-                    if (userInfo != null)
-                    {
-                        user.TrawellingUsername = userInfo.Username;
-                        _logger.LogInformation("Stored Träwelling username {Username} for user {UserId}", userInfo.Username, user.Id);
-                        await _dbContext.SaveChangesAsync();
-                    }
-                }
-
-                _logger.LogInformation("Successfully refreshed tokens for user {UserId}", user.Id);
-                return true;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error refreshing tokens for user {UserId}", user.Id);
-                return false;
-            }
-        }
-
-        public async Task<TrawellingUserAuthData> GetUserInfoAsync(User user)
-        {
-            try
-            {
-                if (!await EnsureValidTokenAsync(user))
-                    return null;
-
-                var response = await SendAsync(() => CreateApiRequest(HttpMethod.Get, $"{_baseUrl}/auth/user", user));
-
-                if (!response.IsSuccessStatusCode)
-                {
-                    _logger.LogError("Failed to get user info for user {UserId}. Status: {StatusCode}",
-                        user.Id, response.StatusCode);
-                    return null;
-                }
-
-                var responseContent = await response.Content.ReadAsStringAsync();
-                var userResponse = JsonConvert.DeserializeObject<TrawellingUserAuthResponse>(responseContent);
-
-                return userResponse?.Data;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting user info for user {UserId}", user.Id);
-                return null;
-            }
         }
 
         private const int SweepMaxPages = 10;
@@ -357,13 +68,13 @@ namespace OV_DB.Services
                     return new TrawellingSweepResult(true, 0, 0, false);
                 }
 
-                if (!await EnsureValidTokenAsync(user))
+                if (!await _api.EnsureValidTokenAsync(user))
                     return new TrawellingSweepResult(false, 0, 0, false);
 
                 // Ensure we have the username for this user
                 if (string.IsNullOrEmpty(user.TrawellingUsername))
                 {
-                    var userInfo = await GetUserInfoAsync(user);
+                    var userInfo = await _api.GetUserInfoAsync(user);
                     if (userInfo == null)
                     {
                         _logger.LogError("Could not fetch Träwelling username for user {UserId}", user.Id);
@@ -398,9 +109,7 @@ namespace OV_DB.Services
 
                 for (var page = 1; page <= maxPages; page++)
                 {
-                    var response = await SendAsync(() =>
-                        CreateApiRequest(HttpMethod.Get, $"{_baseUrl}/user/{user.TrawellingUsername}/statuses?page={page}", user),
-                        cancellationToken: cancellationToken);
+                    var response = await _api.GetAsync(user, $"user/{user.TrawellingUsername}/statuses?page={page}", cancellationToken);
 
                     if (!response.IsSuccessStatusCode)
                     {
@@ -421,7 +130,7 @@ namespace OV_DB.Services
                     foreach (var status in statusesResponse.Data)
                     {
                         seenIds.Add(status.Id);
-                        var departure = GetStatusDeparture(status);
+                        var departure = TraewellingTripMapper.GetStatusDeparture(status);
                         if (departure.HasValue && (!oldestSweptDeparture.HasValue || departure < oldestSweptDeparture))
                             oldestSweptDeparture = departure;
 
@@ -502,14 +211,6 @@ namespace OV_DB.Services
             }
         }
 
-        private static DateTime? GetStatusDeparture(TrawellingStatus status)
-        {
-            var departure = status.Checkin?.ManualDeparture
-                ?? status.Checkin?.Origin?.DepartureReal
-                ?? status.Checkin?.Origin?.DeparturePlanned;
-            return departure?.UtcDateTime;
-        }
-
         public async Task<TrawellingTripsResponse> GetOptimizedTripsAsync(User user, int page = 1, bool refresh = false, CancellationToken cancellationToken = default)
         {
             try
@@ -552,20 +253,20 @@ namespace OV_DB.Services
                         _logger.LogError(ex, "Could not parse inbox payload for status {StatusId}, user {UserId}", row.TrawellingStatusId, user.Id);
                     }
 
-                    var trip = status != null ? await MapStatusToTripDtoAsync(user, status) : null;
+                    var trip = status != null ? await _mapper.MapStatusToTripDtoAsync(status) : null;
                     if (trip == null)
                     {
                         // Early webhook deliveries were stored without the stopovers' station
                         // objects, which the mapping requires; refetch the complete status once
                         // and repair the stored payload.
-                        var (fullJson, fullStatus) = await FetchStatusRawAsync(user, row.TrawellingStatusId);
+                        var (fullJson, fullStatus) = await _api.FetchStatusRawAsync(user, row.TrawellingStatusId);
                         if (fullJson != null)
                         {
                             row.PayloadJson = fullJson;
-                            row.DepartureAt = GetStatusDeparture(fullStatus);
+                            row.DepartureAt = TraewellingTripMapper.GetStatusDeparture(fullStatus);
                             row.LastEventAt = DateTime.UtcNow;
                             await _dbContext.SaveChangesAsync();
-                            trip = await MapStatusToTripDtoAsync(user, fullStatus);
+                            trip = await _mapper.MapStatusToTripDtoAsync(fullStatus);
                         }
                     }
 
@@ -632,7 +333,7 @@ namespace OV_DB.Services
                     _dbContext.TrawellingInboxStatuses.Remove(row);
                     continue;
                 }
-                if (row.State == TrawellingInboxState.ChangedAfterImport && !UpstreamDiffers(conflict))
+                if (row.State == TrawellingInboxState.ChangedAfterImport && !TraewellingTripMapper.UpstreamDiffers(conflict))
                 {
                     // Nothing the card can show has actually moved. Rows flagged before the
                     // webhook learned to tell a journey edit from a like are cleared here.
@@ -656,7 +357,7 @@ namespace OV_DB.Services
             try
             {
                 var status = JsonConvert.DeserializeObject<TrawellingStatus>(row.PayloadJson);
-                newTrip = await MapStatusToTripDtoAsync(user, status);
+                newTrip = await _mapper.MapStatusToTripDtoAsync(status);
             }
             catch (Exception ex)
             {
@@ -691,7 +392,7 @@ namespace OV_DB.Services
                 return false;
 
             var status = JsonConvert.DeserializeObject<TrawellingStatus>(row.PayloadJson);
-            var trip = await MapStatusToTripDtoAsync(user, status);
+            var trip = await _mapper.MapStatusToTripDtoAsync(status);
             if (trip?.Transport == null)
                 return false;
 
@@ -796,65 +497,6 @@ namespace OV_DB.Services
                     || ri.Route.RouteMaps.Any(rm => rm.Map.UserId == user.Id))
                 .FirstOrDefaultAsync();
 
-        public async Task<TrawellingWebhookHealth> GetWebhookHealthAsync(User user)
-        {
-            if (!user.TraewellingWebhookId.HasValue)
-                return TrawellingWebhookHealth.NotEnabled;
-
-            try
-            {
-                if (!await EnsureValidTokenAsync(user))
-                    return TrawellingWebhookHealth.Unknown;
-
-                var response = await SendAsync(() => CreateApiRequest(HttpMethod.Get, $"{_baseUrl}/webhooks", user));
-                if (!response.IsSuccessStatusCode)
-                    return TrawellingWebhookHealth.Unknown;
-
-                var content = await response.Content.ReadAsStringAsync();
-                var webhooks = JsonConvert.DeserializeObject<TrawellingWebhooksResponse>(content);
-                var webhook = webhooks?.Data?.FirstOrDefault(w => w.Id == user.TraewellingWebhookId.Value);
-
-                if (webhook == null)
-                    return TrawellingWebhookHealth.Missing;
-                return webhook.DisabledAt.HasValue
-                    ? TrawellingWebhookHealth.DisabledUpstream
-                    : TrawellingWebhookHealth.Active;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error checking Träwelling webhook health for user {UserId}", user.Id);
-                return TrawellingWebhookHealth.Unknown;
-            }
-        }
-
-        public async Task RemoveWebhookAsync(User user)
-        {
-            if (user.TraewellingWebhookId.HasValue)
-            {
-                // Best effort: deleting the upstream webhook needs a valid token, which may
-                // already be gone; the local columns are cleared regardless.
-                try
-                {
-                    if (await EnsureValidTokenAsync(user))
-                    {
-                        var response = await SendAsync(() =>
-                            CreateApiRequest(HttpMethod.Delete, $"{_baseUrl}/webhooks/{user.TraewellingWebhookId.Value}", user));
-                        _logger.LogInformation("Deleted Träwelling webhook {WebhookId} for user {UserId}: {StatusCode}",
-                            user.TraewellingWebhookId.Value, user.Id, (int)response.StatusCode);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogWarning(ex, "Could not delete Träwelling webhook {WebhookId} for user {UserId}", user.TraewellingWebhookId, user.Id);
-                }
-            }
-
-            user.TraewellingWebhookId = null;
-            user.TraewellingWebhookSecret = null;
-            user.TraewellingWebhookCreatedAt = null;
-            await _dbContext.SaveChangesAsync();
-        }
-
         public async Task ProcessWebhookEventAsync(User user, string payloadJson)
         {
             var envelope = JObject.Parse(payloadJson);
@@ -878,7 +520,7 @@ namespace OV_DB.Services
             // payload only as a fallback when the fetch fails.
             if (eventType is "checkin_create" or "checkin_update")
             {
-                var (fullJson, fullStatus) = await FetchStatusRawAsync(user, statusId);
+                var (fullJson, fullStatus) = await _api.FetchStatusRawAsync(user, statusId);
                 if (fullJson != null)
                 {
                     statusJson = fullJson;
@@ -1035,7 +677,7 @@ namespace OV_DB.Services
             {
                 if (pendingUpserted)
                 {
-                    var trip = await MapStatusToTripDtoAsync(user, status);
+                    var trip = await _mapper.MapStatusToTripDtoAsync(status);
                     if (trip == null)
                         return;
                     _memoryCache.Set($"TrawellingTrip|{statusId}", trip, TimeSpan.FromMinutes(30));
@@ -1054,125 +696,17 @@ namespace OV_DB.Services
             }
         }
 
-        /// <summary>
-        /// Fetch a single status from the API as raw JSON plus its parsed form. Unlike the
-        /// webhook delivery payload, this endpoint returns the complete resource including
-        /// the stopovers' station objects.
-        /// </summary>
-        private async Task<(string Json, TrawellingStatus Status)> FetchStatusRawAsync(User user, int statusId)
-        {
-            try
-            {
-                if (!await EnsureValidTokenAsync(user))
-                    return (null, null);
-
-                var response = await SendAsync(() =>
-                    CreateApiRequest(HttpMethod.Get, $"{_baseUrl}/status/{statusId}", user));
-                if (!response.IsSuccessStatusCode)
-                    return (null, null);
-
-                var content = await response.Content.ReadAsStringAsync();
-                if (JObject.Parse(content)["data"] is not JObject data)
-                    return (null, null);
-
-                return (data.ToString(Formatting.None), data.ToObject<TrawellingStatus>());
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error fetching full status {StatusId} for user {UserId}", statusId, user.Id);
-                return (null, null);
-            }
-        }
-
         private bool DismissedFingerprintMatches(TrawellingInboxStatus dismissedRow, TrawellingStatus incoming)
         {
             try
             {
                 var dismissed = JsonConvert.DeserializeObject<TrawellingStatus>(dismissedRow.PayloadJson);
-                return dismissed != null && ConflictFingerprint(dismissed) == ConflictFingerprint(incoming);
+                return dismissed != null && TraewellingTripMapper.ConflictFingerprint(dismissed) == TraewellingTripMapper.ConflictFingerprint(incoming);
             }
             catch
             {
                 return false;
             }
-        }
-
-        /// <summary>
-        /// The journey facts a conflict flag is about: line and the stations/times of both
-        /// ends. Social fields (likes, tags, body) deliberately don't count — a change there
-        /// must not re-flag a dismissed conflict.
-        /// </summary>
-        internal static string ConflictFingerprint(TrawellingStatus status)
-        {
-            var checkin = status?.Checkin;
-            return string.Join("|",
-                checkin?.LineName,
-                checkin?.Origin?.Station?.Name,
-                checkin?.Destination?.Station?.Name,
-                checkin?.ManualDeparture?.UtcDateTime.ToString("o"),
-                checkin?.Origin?.DeparturePlanned?.UtcDateTime.ToString("o"),
-                checkin?.Origin?.DepartureReal?.UtcDateTime.ToString("o"),
-                checkin?.ManualArrival?.UtcDateTime.ToString("o"),
-                checkin?.Destination?.ArrivalPlanned?.UtcDateTime.ToString("o"),
-                checkin?.Destination?.ArrivalReal?.UtcDateTime.ToString("o"));
-        }
-
-        /// <summary>
-        /// Whether the upstream status still says something different from the RouteInstance that
-        /// was imported from it. Träwelling fires <c>checkin_update</c> for likes, tags, body edits
-        /// and visibility changes as well as for journey edits, and a notice about a trip whose
-        /// four comparable values all match asks the user to spot a difference that isn't there.
-        /// </summary>
-        /// <remarks>
-        /// Deliberately the same four comparisons, with the same tolerances, that the conflict card
-        /// renders: if the card cannot show a difference, there is no conflict to raise. A status
-        /// that cannot be mapped counts as different — losing a real upstream edit is the worse
-        /// failure of the two.
-        /// </remarks>
-        internal static bool UpstreamDiffers(RouteInstance instance, TrawellingTripDto newTrip)
-            => UpstreamDiffers(instance.Route?.From, instance.Route?.To, instance.StartTime, instance.EndTime, newTrip);
-
-        /// <summary>The same check against a conflict already built for the UI.</summary>
-        internal static bool UpstreamDiffers(TrawellingConflictDto conflict)
-            => UpstreamDiffers(conflict.RouteFrom, conflict.RouteTo, conflict.InstanceStartTime, conflict.InstanceEndTime, conflict.NewTrip);
-
-        private static bool UpstreamDiffers(string currentFrom, string currentTo, DateTime? currentStart, DateTime? currentEnd, TrawellingTripDto newTrip)
-        {
-            var transport = newTrip?.Transport;
-            if (transport == null)
-            {
-                return true;
-            }
-
-            return StationsDiffer(currentFrom, transport.Origin?.Name)
-                || StationsDiffer(currentTo, transport.Destination?.Name)
-                || TimesDiffer(currentStart, transport.Origin?.DepartureReal ?? transport.Origin?.DepartureScheduled)
-                || TimesDiffer(currentEnd, transport.Destination?.ArrivalReal ?? transport.Destination?.ArrivalScheduled);
-        }
-
-        /// <summary>Minute precision: sub-minute serialisation noise is not a change.</summary>
-        private static bool TimesDiffer(DateTime? current, DateTime? upstream)
-        {
-            if (!current.HasValue || !upstream.HasValue)
-            {
-                return current.HasValue != upstream.HasValue;
-            }
-            return current.Value.Ticks / TimeSpan.TicksPerMinute != upstream.Value.Ticks / TimeSpan.TicksPerMinute;
-        }
-
-        /// <summary>
-        /// OVDB route endpoints are user-editable text, so only a clear difference between two
-        /// known names counts — an endpoint the user renamed is not an upstream edit.
-        /// </summary>
-        private static bool StationsDiffer(string current, string upstream)
-        {
-            if (string.IsNullOrWhiteSpace(current) || string.IsNullOrWhiteSpace(upstream))
-            {
-                return false;
-            }
-            static string Normalise(string value) => string.Join(' ',
-                value.Split((char[])null, StringSplitOptions.RemoveEmptyEntries)).ToLowerInvariant();
-            return Normalise(current) != Normalise(upstream);
         }
 
         /// <summary>
@@ -1185,7 +719,7 @@ namespace OV_DB.Services
             {
                 return false; // nothing imported to conflict with
             }
-            return UpstreamDiffers(instance, await MapStatusToTripDtoAsync(user, status));
+            return TraewellingTripMapper.UpstreamDiffers(instance, await _mapper.MapStatusToTripDtoAsync(status));
         }
 
         private TrawellingInboxStatus UpsertInboxRow(TrawellingInboxStatus row, int userId, int statusId, string payloadJson, TrawellingStatus status, TrawellingInboxState state)
@@ -1203,7 +737,7 @@ namespace OV_DB.Services
             row.PayloadJson = payloadJson;
             row.State = state;
             row.Source = TrawellingInboxSource.Webhook;
-            row.DepartureAt = GetStatusDeparture(status);
+            row.DepartureAt = TraewellingTripMapper.GetStatusDeparture(status);
             row.LastEventAt = DateTime.UtcNow;
             return row;
         }
@@ -1244,55 +778,6 @@ namespace OV_DB.Services
             }
         }
 
-        public bool HasValidTokens(User user)
-        {
-            return !string.IsNullOrEmpty(user.TrawellingAccessToken) &&
-                   user.TrawellingTokenExpiresAt.HasValue &&
-                   user.TrawellingTokenExpiresAt.Value > DateTime.UtcNow.AddMinutes(5);
-        }
-
-        public bool IsConnected(User user)
-        {
-            // The connection is alive as long as we hold a refresh token, even when the
-            // short-lived access token has expired — it can be refreshed on demand
-            return HasValidTokens(user) || !string.IsNullOrEmpty(user.TrawellingRefreshToken);
-        }
-
-        // Träwelling rotates refresh tokens on every use; a concurrent double-refresh would
-        // revoke the token the other request just received, so refreshes are serialized per user
-        private static readonly ConcurrentDictionary<int, SemaphoreSlim> _refreshLocks = new();
-
-        public async Task<bool> EnsureValidTokenAsync(User user)
-        {
-            if (HasValidTokens(user))
-                return true;
-
-            if (string.IsNullOrEmpty(user.TrawellingRefreshToken))
-            {
-                _logger.LogWarning("User {UserId} has no valid Träwelling tokens", user.Id);
-                return false;
-            }
-
-            var refreshLock = _refreshLocks.GetOrAdd(user.Id, _ => new SemaphoreSlim(1, 1));
-            await refreshLock.WaitAsync();
-            try
-            {
-                // A parallel request may have refreshed while we waited; pick up its tokens
-                await _dbContext.Entry(user).ReloadAsync();
-                if (HasValidTokens(user))
-                    return true;
-
-                if (string.IsNullOrEmpty(user.TrawellingRefreshToken))
-                    return false;
-
-                return await RefreshTokensAsync(user);
-            }
-            finally
-            {
-                refreshLock.Release();
-            }
-        }
-
         public async Task<List<RouteInstance>> GetRouteInstancesByDateAsync(User user, DateTime date, string searchQuery = null)
         {
             try
@@ -1302,8 +787,6 @@ namespace OV_DB.Services
                     .Where(ri => !ri.TrawellingStatusId.HasValue)
                     .Where(ri => ri.Route.RouteMaps.Any(rm => rm.Map.UserId == user.Id))
                     .Where(ri => ri.Date.Date == date.Date);
-
-
 
                 //if (!string.IsNullOrWhiteSpace(searchQuery))
                 //{
@@ -1408,201 +891,19 @@ namespace OV_DB.Services
                     return cachedStatus;
                 }
 
-
                 // Cache miss or expired - fetch from API
-                if (!await EnsureValidTokenAsync(user))
+                var (_, status) = await _api.FetchStatusRawAsync(user, statusId);
+                if (status == null)
                     return null;
 
-                var response = await SendAsync(() =>
-                    CreateApiRequest(HttpMethod.Get, $"{_baseUrl}/status/{statusId}", user));
-
-                response.EnsureSuccessStatusCode();
-
-                var content = await response.Content.ReadAsStringAsync();
-                var statusResponse = JsonConvert.DeserializeObject<TrawellingStatusResponse>(content);
-
-                var status = statusResponse?.Data;
-                var mapped = await MapStatusToTripDtoAsync(user, status);
-                if (status != null)
-                {
-                    _memoryCache.Set($"TrawellingTrip|{statusId}", mapped, TimeSpan.FromMinutes(30));
-                }
-
+                var mapped = await _mapper.MapStatusToTripDtoAsync(status);
+                _memoryCache.Set($"TrawellingTrip|{statusId}", mapped, TimeSpan.FromMinutes(30));
                 return mapped;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting Träwelling status {StatusId}", statusId);
                 return null;
-            }
-        }
-
-        private async Task<TrawellingTripDto> MapStatusToTripDtoAsync(User user, TrawellingStatus status)
-        {
-            try
-            {
-                var transport = status.Checkin;
-                if (transport?.Origin?.Station == null || transport?.Destination?.Station == null)
-                    return null;
-
-                var origin = await MapStopoverToDto(transport.Origin, transport.ManualDeparture?.UtcDateTime, isArrival: false);
-                var destination = await MapStopoverToDto(transport.Destination, transport.ManualArrival?.UtcDateTime, isArrival: true);
-
-                return new TrawellingTripDto
-                {
-                    Id = status.Id,
-                    Body = status.Body,
-                    Business = status.Business,
-                    Visibility = status.Visibility,
-                    CreatedAt = status.CreatedAt,
-                    Transport = new TrawellingTransportDto
-                    {
-                        Category = transport.Category,
-                        Number = transport.Number,
-                        LineName = transport.LineName,
-                        JourneyNumber = !string.IsNullOrWhiteSpace(transport.ManualJourneyNumber) ? transport.ManualJourneyNumber : transport.JourneyNumber.ToString(),
-                        Distance = transport.Distance,
-                        Duration = transport.Duration,
-                        Origin = origin,
-                        Destination = destination,
-                        Operator = transport.Operator != null ? new TrawellingOperatorDto
-                        {
-                            Name = transport.Operator.Name
-                        } : null
-                    },
-                    UserDetails = status.User != null ? new TrawellingLightUserDto
-                    {
-                        Id = status.User.Id,
-                        DisplayName = status.User.DisplayName,
-                        Username = status.User.Username,
-                        ProfilePicture = status.User.ProfilePicture
-                    } : null,
-                    Tags = status.Tags?.Select(t => new TrawellingStatusTagDto
-                    {
-                        Key = t.Key,
-                        Value = t.Value,
-                        Visibility = t.Visibility
-                    }).ToList() ?? new List<TrawellingStatusTagDto>()
-                };
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error mapping status {StatusId} to trip DTO", status.Id);
-                return null;
-            }
-        }
-
-        private async Task<TrawellingStopoverDto> MapStopoverToDto(TrawellingStopover stopover, DateTime? manualTime, bool isArrival)
-        {
-            var station = stopover.Station;
-            try
-            {
-                // Determine the best real times (manual times take precedence)
-                DateTime? realArrival = null;
-                DateTime? realDeparture = null;
-
-                if (isArrival)
-                {
-                    realArrival = manualTime ?? (stopover.ArrivalReal ?? stopover.ArrivalPlanned)?.UtcDateTime;
-                }
-
-                else
-                {
-                    realDeparture = manualTime ?? (stopover.DepartureReal ?? stopover.DeparturePlanned)?.UtcDateTime;
-                }
-
-                // Convert UTC times to local timezone if we have coordinates
-                DateTime? localArrivalScheduled = null;
-                DateTime? localDepartureScheduled = null;
-                DateTime? localArrivalReal = null;
-                DateTime? localDepartureReal = null;
-
-                if (station.Latitude.HasValue && station.Longitude.HasValue)
-                {
-                    if (stopover.ArrivalPlanned.HasValue)
-                        localArrivalScheduled = await _timezoneService.ConvertUtcToLocalTimeAsync(stopover.ArrivalPlanned.Value.UtcDateTime, station.Latitude.Value, station.Longitude.Value);
-
-                    if (stopover.DeparturePlanned.HasValue)
-                        localDepartureScheduled = await _timezoneService.ConvertUtcToLocalTimeAsync(stopover.DeparturePlanned.Value.UtcDateTime, station.Latitude.Value, station.Longitude.Value);
-
-                    if (realArrival.HasValue)
-                        localArrivalReal = await _timezoneService.ConvertUtcToLocalTimeAsync(realArrival.Value, station.Latitude.Value, station.Longitude.Value);
-
-                    if (realDeparture.HasValue)
-                        localDepartureReal = await _timezoneService.ConvertUtcToLocalTimeAsync(realDeparture.Value, station.Latitude.Value, station.Longitude.Value);
-                }
-                else
-                {
-                    // Fallback to UTC times if no coordinates available
-                    localArrivalScheduled = stopover.ArrivalPlanned?.UtcDateTime;
-                    localDepartureScheduled = stopover.DeparturePlanned?.UtcDateTime;
-                    localArrivalReal = realArrival;
-                    localDepartureReal = realDeparture;
-
-                    _logger.LogWarning("No coordinates available for station {StationName}, using UTC times", station.Name);
-                }
-
-                return new TrawellingStopoverDto
-                {
-                    Name = station.Name,
-                    ArrivalScheduled = localArrivalScheduled,
-                    DepartureScheduled = localDepartureScheduled,
-                    ArrivalPlatformPlanned = stopover.ArrivalPlatformPlanned,
-                    DeparturePlatformPlanned = stopover.DeparturePlatformPlanned,
-                    ArrivalReal = localArrivalReal,
-                    DepartureReal = localDepartureReal,
-                    ArrivalPlatformReal = stopover.ArrivalPlatformReal,
-                    DeparturePlatformReal = stopover.DeparturePlatformReal,
-                    IsArrivalDelayed = stopover.IsArrivalDelayed,
-                    IsDepartureDelayed = stopover.IsDepartureDelayed,
-                    Cancelled = stopover.Cancelled,
-                    Platform = stopover.Platform
-                };
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error mapping stopover at {StationName} to DTO", station?.Name);
-                // Return basic DTO without timezone conversion on error
-                return new TrawellingStopoverDto
-                {
-                    Name = station?.Name,
-                    ArrivalScheduled = stopover.ArrivalPlanned?.DateTime,
-                    DepartureScheduled = stopover.DeparturePlanned?.DateTime,
-                    ArrivalReal = (stopover.ArrivalReal ?? stopover.ArrivalPlanned)?.DateTime,
-                    DepartureReal = (stopover.DepartureReal ?? stopover.DeparturePlanned)?.DateTime,
-                    IsArrivalDelayed = stopover.IsArrivalDelayed,
-                    IsDepartureDelayed = stopover.IsDepartureDelayed,
-                    Cancelled = stopover.Cancelled
-                };
-            }
-        }
-
-        public async Task<List<TrawellingAlert>> GetAlertsAsync(User user)
-        {
-            try
-            {
-                if (!await EnsureValidTokenAsync(user))
-                    return new List<TrawellingAlert>();
-
-                var response = await SendAsync(() => CreateApiRequest(HttpMethod.Get, $"{_baseUrl}/alerts", user));
-
-                if (!response.IsSuccessStatusCode)
-                {
-                    _logger.LogWarning("Failed to get Träwelling alerts. Status: {StatusCode}", response.StatusCode);
-                    return new List<TrawellingAlert>();
-                }
-
-                var content = await response.Content.ReadAsStringAsync();
-                var alertsResponse = JsonConvert.DeserializeObject<TrawellingApiAlertsResponse>(content);
-
-                return alertsResponse?.Data
-                    ?.Where(a => a.Type == "warning" || a.Type == "danger")
-                    .ToList() ?? new List<TrawellingAlert>();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error fetching Träwelling alerts");
-                return new List<TrawellingAlert>();
             }
         }
 
@@ -1658,94 +959,5 @@ namespace OV_DB.Services
             return (found, updated, failed);
         }
 
-        /// <summary>
-        /// Central pipeline for every Träwelling HTTP call: waits for the shared rate-limit
-        /// window when exhausted, builds a fresh request per attempt (auth header included,
-        /// no shared-client header mutation), records rate-limit headers from every response
-        /// and retries on 429/503.
-        /// </summary>
-        private static HttpRequestMessage CreateApiRequest(HttpMethod method, string url, User user)
-        {
-            var request = new HttpRequestMessage(method, url);
-            request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", user.TrawellingAccessToken);
-            return request;
-        }
-
-        /// <summary>
-        /// Every station this trip calls at. See <see cref="ITrawellingService.GetTripStopoversAsync"/>
-        /// for why this is only ever called at import.
-        /// </summary>
-        public async Task<List<TrawellingStopover>> GetTripStopoversAsync(User user, int tripId, CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                if (!await EnsureValidTokenAsync(user))
-                    return [];
-
-                var response = await SendAsync(
-                    () => CreateApiRequest(HttpMethod.Get, $"{_baseUrl}/stopovers/{tripId}", user),
-                    cancellationToken: cancellationToken);
-                if (!response.IsSuccessStatusCode)
-                {
-                    _logger.LogWarning("Träwelling returned {StatusCode} fetching stopovers for trip {TripId}",
-                        (int)response.StatusCode, tripId);
-                    return [];
-                }
-
-                var content = await response.Content.ReadAsStringAsync(cancellationToken);
-                if (JObject.Parse(content)["data"] is not JObject data)
-                    return [];
-
-                // Keyed by trip id, because the endpoint accepts a comma-separated list. We only
-                // ever ask for one, so take whichever key came back rather than assuming its shape.
-                var stopovers = data[tripId.ToString()] ?? data.Properties().FirstOrDefault()?.Value;
-                return stopovers?.ToObject<List<TrawellingStopover>>() ?? [];
-            }
-            catch (OperationCanceledException)
-            {
-                // The caller gave up waiting, which is a decision rather than a fault. Passed on
-                // so it can say the pattern went unread instead of being told there was none.
-                throw;
-            }
-            catch (Exception ex)
-            {
-                // A missing calling pattern costs suggestions, not the import. Never fail the one
-                // for the other.
-                _logger.LogError(ex, "Error fetching stopovers for trip {TripId} for user {UserId}", tripId, user.Id);
-                return [];
-            }
-        }
-
-        private async Task<HttpResponseMessage> SendAsync(Func<HttpRequestMessage> requestFactory, int maxRetries = 5, CancellationToken cancellationToken = default)
-        {
-            int attempt = 0;
-            while (true)
-            {
-                await _rateLimiter.WaitIfLimitedAsync(cancellationToken);
-                using var request = requestFactory();
-                var response = await _httpClient.SendAsync(request, cancellationToken);
-                _rateLimiter.RecordResponse(response);
-
-                if (response.StatusCode != System.Net.HttpStatusCode.TooManyRequests &&
-                    response.StatusCode != System.Net.HttpStatusCode.ServiceUnavailable)
-                    return response;
-
-                if (attempt >= maxRetries)
-                {
-                    _logger.LogWarning("Träwelling API rate limited after {MaxRetries} retries, giving up.", maxRetries);
-                    return response;
-                }
-
-                attempt++;
-                _logger.LogWarning("Träwelling API returned {StatusCode}. Retrying (attempt {Attempt}/{MaxRetries}).",
-                    (int)response.StatusCode, attempt, maxRetries);
-                response.Dispose();
-
-                // The limiter recorded the Retry-After, so WaitIfLimitedAsync at the top of the
-                // loop does the waiting; fall back to exponential backoff if there was none.
-                if (!_rateLimiter.IsLimited)
-                    await Task.Delay(TimeSpan.FromSeconds(Math.Pow(2, attempt)), cancellationToken);
-            }
-        }
     }
 }
