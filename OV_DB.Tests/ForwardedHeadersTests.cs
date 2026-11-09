@@ -14,10 +14,10 @@ namespace OV_DB.Tests;
 /// </summary>
 public class ForwardedHeadersTests
 {
-    private static async Task<IPAddress> ClientIpSeenAsync(string from, string forwardedFor)
+    private static async Task<IPAddress> ClientIpSeenAsync(string from, string forwardedFor, string[] knownProxies = null)
     {
         var options = new ForwardedHeadersOptions();
-        Startup.ConfigureForwardedHeaders(options);
+        Startup.ConfigureForwardedHeaders(options, knownProxies);
         IPAddress seen = null;
         var middleware = new ForwardedHeadersMiddleware(
             context => { seen = context.Connection.RemoteIpAddress; return Task.CompletedTask; },
@@ -38,6 +38,14 @@ public class ForwardedHeadersTests
     public async Task TakesTheClientIpFromTheProxy(string proxy)
     {
         Assert.Equal(IPAddress.Parse("203.0.113.7"), await ClientIpSeenAsync(proxy, "203.0.113.7"));
+    }
+
+    [Fact]
+    public async Task TrustsAConfiguredLanProxy()
+    {
+        // The NAS proxying to its own LAN address, as seen with host networking.
+        Assert.Equal(IPAddress.Parse("203.0.113.7"), await ClientIpSeenAsync("192.168.178.30", "203.0.113.7", ["192.168.178.30"]));
+        Assert.Equal(IPAddress.Parse("192.168.178.30"), await ClientIpSeenAsync("192.168.178.30", "203.0.113.7"));
     }
 
     [Fact]

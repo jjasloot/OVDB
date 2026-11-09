@@ -247,7 +247,8 @@ namespace OV_DB
             // X-Forwarded-For, but only when the hop is loopback or Docker's private range:
             // trusting the header from anywhere would let a client pick its own IP and skip the
             // limit.
-            services.Configure<ForwardedHeadersOptions>(ConfigureForwardedHeaders);
+            services.Configure<ForwardedHeadersOptions>(options => ConfigureForwardedHeaders(
+                options, Configuration.GetSection("ForwardedHeaders:KnownProxies").Get<string[]>()));
 
             services.AddHostedService<UpdateRegionService>();
             services.AddHostedService<RefreshRoutesService>();
@@ -320,10 +321,18 @@ namespace OV_DB
             });
         }
 
-        internal static void ConfigureForwardedHeaders(ForwardedHeadersOptions options)
+        /// <param name="knownProxies">
+        /// Extra proxy addresses to trust (config ForwardedHeaders:KnownProxies), for when the
+        /// container sees the proxy as a LAN address, e.g. host networking or no Docker userland proxy.
+        /// </param>
+        internal static void ConfigureForwardedHeaders(ForwardedHeadersOptions options, string[] knownProxies = null)
         {
             options.ForwardedHeaders = ForwardedHeaders.XForwardedFor;
             options.KnownIPNetworks.Add(System.Net.IPNetwork.Parse("172.16.0.0/12"));
+            foreach (var proxy in knownProxies ?? [])
+            {
+                options.KnownProxies.Add(System.Net.IPAddress.Parse(proxy));
+            }
         }
 
         public static IEdmModel GetEdmModel()
