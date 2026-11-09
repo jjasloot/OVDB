@@ -43,9 +43,11 @@ namespace OV_DB.Controllers
             _memoryCache = memoryCache;
         }
 
+        private const double DefaultSimplificationTolerance = 0.00001;
+
         [HttpGet("{id}")]
         [Produces("application/json")]
-        public async Task<ActionResult<MapDataDTO>> GetGeoJsonAsync(string id, ODataQueryOptions<RouteInstance> q, [FromQuery] string language, [FromQuery] bool includeLineColours, [FromQuery] bool limitToSelectedArea = false, [FromQuery] Guid? requestIdentifier = null, [FromQuery] double simplificationTolerance = 0.00001, CancellationToken cancellationToken = default)
+        public async Task<ActionResult<MapDataDTO>> GetGeoJsonAsync(string id, ODataQueryOptions<RouteInstance> q, [FromQuery] string language, [FromQuery] bool includeLineColours, [FromQuery] bool limitToSelectedArea = false, [FromQuery] Guid? requestIdentifier = null, [FromQuery] double simplificationTolerance = DefaultSimplificationTolerance, CancellationToken cancellationToken = default)
         {
             var userIdClaim = User.GetUserId();
 
@@ -73,11 +75,15 @@ namespace OV_DB.Controllers
             // where a brief staleness window is fine. The owner and admins always get a live
             // build so their edits show immediately. The "owner" feature flag is false for all
             // non-privileged viewers, so their responses are identical and safe to share.
+            // Only the plain "open the map" request is cached: filters (any date range) and the
+            // tolerance are free values, and keying on them let an anonymous caller add a full
+            // GeoJSON entry per request without bound.
             var isPrivileged = isAdmin || (userIdClaim >= 0 && map.UserId == userIdClaim);
             string cacheKey = null;
-            if (!isPrivileged)
+            if (!isPrivileged && q.Filter == null && simplificationTolerance == DefaultSimplificationTolerance)
             {
-                cacheKey = $"mapgeojson|{guid}|{q.Filter?.RawValue}|{language}|{includeLineColours}|{limitToSelectedArea}|{simplificationTolerance}";
+                var languageKey = language == "nl" ? "nl" : "en";
+                cacheKey = $"mapgeojson|{guid}|{languageKey}|{includeLineColours}|{limitToSelectedArea}";
                 if (_memoryCache.TryGetValue(cacheKey, out MapDataDTO cached))
                 {
                     return cached;

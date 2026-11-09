@@ -64,6 +64,10 @@ public class ImagesController(OVDBDatabaseContext context, IMemoryCache memoryCa
         // allocation, and cap the title length so it can't blow up the cache key.
         width = Math.Clamp(width, 20, 2000);
         height = Math.Clamp(height, 20, 2000);
+        if (guid.Count is 0 or > 10)
+        {
+            return BadRequest();
+        }
         if (title is { Length: > 100 })
         {
             title = title[..100];
@@ -80,35 +84,40 @@ public class ImagesController(OVDBDatabaseContext context, IMemoryCache memoryCa
             return NotFound();
         }
 
-        var id = "image|" + string.Join(',', sharedGuids.Select(g => g.ToString())) + "|" + width + "|" + height + "|" + includeTotal + "|" + title + "|" + language + "|" + hideAttribution + "|" + theme;
-
-        var fileContents = await memoryCache.GetOrCreateAsync(id, async entry =>
+        // Only the trips are cached, keyed by the set of shared maps. Caching the rendered PNG
+        // keyed by title/size/theme let an anonymous caller add an entry per request, without
+        // bound, just by varying the title.
+        var now = DateTime.Now;
+        var key = "badge-trips|" + now.Year + "|" + string.Join(',', sharedGuids.OrderBy(g => g));
+        var trips = await memoryCache.GetOrCreateAsync(key, async entry =>
         {
             entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(15);
-            return await GenerateImageAsync(width, height, title, sharedGuids, includeTotal, language, hideAttribution, theme);
+            return await LoadTripsAsync(sharedGuids, now.Year);
         });
-        return File(fileContents, "image/png");
+
+        Response.Headers.CacheControl = "public, max-age=900";
+        return File(GenerateImage(trips, width, height, title, includeTotal, language, hideAttribution, theme, now), "image/png");
     }
 
-    internal sealed record TypeRow(string Name, Color Colour, double YearDistance, double MonthDistance);
+    internal sealed record BadgeTrip(DateTime Date, string Name, string NameNL, string Colour, double Distance);
 
-    private async Task<byte[]> GenerateImageAsync(int width, int height, string title, List<Guid> guids, bool includeTotal, string language, bool hideAttribution, string theme)
-    {
-        var now = DateTime.Now;
-        var raw = await context.RouteInstances
+    private Task<List<BadgeTrip>> LoadTripsAsync(List<Guid> guids, int year) =>
+        context.RouteInstances
             .AsNoTracking()
             .Where(ri => ri.Route.RouteMaps.Any(rm => guids.Contains(rm.Map.MapGuid)) || ri.RouteInstanceMaps.Any(rim => guids.Contains(rim.Map.MapGuid)))
-            .Where(ri => ri.Date.Year == now.Year)
-            .Select(ri => new
-            {
+            .Where(ri => ri.Date.Year == year)
+            .Select(ri => new BadgeTrip(
                 ri.Date,
                 ri.Route.RouteType.Name,
                 ri.Route.RouteType.NameNL,
                 ri.Route.RouteType.Colour,
-                Distance = (double)((ri.Route.OverrideDistance.HasValue && ri.Route.OverrideDistance > 0) ? ri.Route.OverrideDistance : ri.Route.CalculatedDistance)
-            })
+                (double)((ri.Route.OverrideDistance.HasValue && ri.Route.OverrideDistance > 0) ? ri.Route.OverrideDistance : ri.Route.CalculatedDistance)))
             .ToListAsync();
 
+    internal sealed record TypeRow(string Name, Color Colour, double YearDistance, double MonthDistance);
+
+    private byte[] GenerateImage(List<BadgeTrip> raw, int width, int height, string title, bool includeTotal, string language, bool hideAttribution, string theme, DateTime now)
+    {
         var dutch = string.Equals(language, "NL", StringComparison.OrdinalIgnoreCase);
         var palette = GetPalette(theme);
 
