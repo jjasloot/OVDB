@@ -81,9 +81,9 @@ Migrations are applied automatically on application startup (`Startup.Configure`
 - **Auth**: JWT bearer tokens (issuer/key from config keys `Tokens:Issuer` and `JWTSigningKey`) plus refresh tokens. Expired tokens get a `Token-Expired: true` response header the frontend interceptor reacts to.
 - **API surface**: regular controllers under `/api/...`, plus OData endpoints under `/odata` (entity sets: RouteInstances, Routes, Regions, Types — see `Startup.GetEdmModel`).
 - **SignalR**: `MapGenerationHub` at `/mapGenerationHub` reports progress for long-running map/region calculations.
-- **Background hosted services**: `UpdateRegionService`, `RefreshRoutesService`, `RefreshRoutesWithoutRegionsService` (region/route recalculation queues), and `TraewellingTokenRefreshService` (proactively refreshes Träwelling OAuth tokens — upstream tokens are short-lived and refresh tokens rotate on use).
+- **Background hosted services**: `UpdateRegionService`, `RefreshRoutesService` (region/route recalculation queues; region id 0 means "routes without a region"), and `TraewellingTokenRefreshService` (proactively refreshes Träwelling OAuth tokens — upstream tokens are short-lived and refresh tokens rotate on use).
 - **External integrations**:
-  - **Träwelling** (check-in import via OAuth2): `TrawellingService`, `TraewellingController`, config in the `Traewelling` section (see `appsettings.traewelling.example.json` and `docs/traewelling-integration.md`).
+  - **Träwelling** (check-in import via OAuth2): `TraewellingApiClient` (OAuth, tokens, the rate-limited HTTP pipeline — every API call goes through its `SendAsync`), `TraewellingTripMapper` (status → trip DTO), `TrawellingService` (inbox, conflicts, webhook events), `TraewellingController`, config in the `Traewelling` section (see `appsettings.traewelling.example.json` and `docs/traewelling-integration.md`).
   - **Telegram bot**: `TelegramBotService`/`TelegramBotController`.
   - **OpenStreetMap/Overpass** import: `ImporterController`, `StationImporterController`. Outbound HTTP uses named `HttpClient`s ("OSM", Träwelling) that must send a User-Agent header — reuse them instead of creating new clients.
 
