@@ -19,6 +19,7 @@ import { Map } from 'src/app/models/map.model';
 import { BaseChartDirective } from 'ng2-charts';
 import 'chartjs-adapter-luxon';
 import { MatTabsModule } from '@angular/material/tabs';
+import { safePopupContent } from 'src/app/utils/safe-leaflet-content';
 @Component({
   selector: 'app-time-stats',
   imports: [MatCard, MatCardTitle, MatFormField, MatLabel, MatSelect, MatOption, FormsModule, MatButton, LeafletModule, NgClass, MatProgressSpinner, TranslateModule, BaseChartDirective, MatTabsModule, MatCardContent],
@@ -141,11 +142,7 @@ export class TimeStatsComponent implements OnInit {
           shadowUrl: 'assets/marker-shadow.png'
         })
       });
-      let popup = `<h2>${this.translateService.instant('EXTREMES.SOUTH')}</h2>`;
-      popup += '<p>Latitude: ' + data.latMin.lat + '<br>';
-      popup += 'Longitude: ' + data.latMin.long + '<br>';
-      popup += 'Route: ' + data.latMin.route.name + '</p>';
-      latMin.bindPopup(popup);
+      latMin.bindPopup(this.extremePopup('EXTREMES.SOUTH', data.latMin));
       this.layers.push(latMin);
       const latMax = marker([data.latMax.lat, data.latMax.long], {
         title: 'latMax', icon: icon({
@@ -155,11 +152,7 @@ export class TimeStatsComponent implements OnInit {
           shadowUrl: 'assets/marker-shadow.png'
         })
       });
-      popup = `<h2>${this.translateService.instant('EXTREMES.NORTH')}</h2>`;
-      popup += '<p>Latitude: ' + data.latMax.lat + '<br>';
-      popup += 'Longitude: ' + data.latMax.long + '<br>';
-      popup += 'Route: ' + data.latMax.route.name + '</p>';
-      latMax.bindPopup(popup);
+      latMax.bindPopup(this.extremePopup('EXTREMES.NORTH', data.latMax));
       this.layers.push(latMax);
       const longMin = marker([data.longMin.lat, data.longMin.long], {
         title: 'longMin', icon: icon({
@@ -169,11 +162,7 @@ export class TimeStatsComponent implements OnInit {
           shadowUrl: 'assets/marker-shadow.png'
         })
       });
-      popup = `<h2>${this.translateService.instant('EXTREMES.WEST')}</h2>`;
-      popup += '<p>Latitude: ' + data.longMin.lat + '<br>';
-      popup += 'Longitude: ' + data.longMin.long + '<br>';
-      popup += 'Route: ' + data.longMin.route.name + '</p>';
-      longMin.bindPopup(popup);
+      longMin.bindPopup(this.extremePopup('EXTREMES.WEST', data.longMin));
       this.layers.push(longMin);
       const longMax = marker([data.longMax.lat, data.longMax.long], {
         title: 'longMax', icon: icon({
@@ -183,11 +172,7 @@ export class TimeStatsComponent implements OnInit {
           shadowUrl: 'assets/marker-shadow.png'
         })
       });
-      popup = `<h2>${this.translateService.instant('EXTREMES.EAST')}</h2>`;
-      popup += '<p>Latitude: ' + data.longMax.lat + '<br>';
-      popup += 'Longitude: ' + data.longMax.long + '<br>';
-      popup += 'Route: ' + data.longMax.route.name + '</p>';
-      longMax.bindPopup(popup);
+      longMax.bindPopup(this.extremePopup('EXTREMES.EAST', data.longMax));
       this.layers.push(longMax);
       this.bounds = new LatLngBounds([data.latMin.lat, data.longMin.long], [data.latMax.lat, data.longMax.long]);
       const rectangle = new Rectangle(this.bounds, {
@@ -207,6 +192,14 @@ export class TimeStatsComponent implements OnInit {
     this.apiService.getTripReport(this.selectedMap!, this.selectedYear!).subscribe(data => {
       saveAs(data as Blob, 'tripreport.xlsx');
     });
+  }
+
+  private extremePopup(titleKey: string, point: { lat: number; long: number; route: { name: string } }): HTMLElement {
+    return safePopupContent(this.translateService.instant(titleKey), [
+      'Latitude: ' + point.lat,
+      'Longitude: ' + point.long,
+      'Route: ' + point.route.name,
+    ]);
   }
 
   export() {

@@ -40,6 +40,7 @@ import { MapTileLayersService } from 'src/app/services/map-tile-layers.service';
 import { StationReplayStation } from 'src/app/models/replay.model';
 import { REPLAY_SPEEDS } from 'src/app/stats/map-replay/map-replay.component';
 import { CoverageSteps, ReplayStation, buildCoverage, radiusAt } from './station-coverage';
+import { safeTooltipContent } from "src/app/utils/safe-leaflet-content";
 
 const STEP_INTERVAL_MS = 90;
 
@@ -272,7 +273,7 @@ export class StationReplayComponent implements OnInit {
           weight: isUndated ? 2 : 1,
           opacity: 1,
           fillOpacity: 0.9,
-        }).bindTooltip(station.name)
+        }).bindTooltip(safeTooltipContent(station.name))
       );
       this.circles.set(
         station.id,

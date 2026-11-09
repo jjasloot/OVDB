@@ -10,6 +10,7 @@ import { ActivatedRoute } from '@angular/router';
 import { LeafletModule } from '@bluehalo/ngx-leaflet';
 import { NgClass } from '@angular/common';
 import { MatProgressSpinner } from '@angular/material/progress-spinner';
+import { safePopupContent } from '../utils/safe-leaflet-content';
 
 @Component({
     selector: 'app-single-route-map',
@@ -92,19 +93,18 @@ export class SingleRouteMapComponent implements OnInit {
           };
         },
         onEachFeature(feature, layer) {
-          let popup = '<h2>' + feature.properties.name + '</h2><p>'
-            + parent.translateService.instant('MAP.POPUP.TYPE')
-            + ': ' + feature.properties.type;
-          if (feature.properties.description) {
-            popup += '<br>' + parent.translateService.instant('MAP.POPUP.REMARK') + ': ' + feature.properties.description;
+          const props = feature.properties;
+          const lines = [parent.translateService.instant('MAP.POPUP.TYPE') + ': ' + props.type];
+          if (props.description) {
+            lines.push(parent.translateService.instant('MAP.POPUP.REMARK') + ': ' + props.description);
           }
-          if (feature.properties.lineNumber) {
-            popup += '<br>' + parent.translateService.instant('MAP.POPUP.LINENUMBER') + ': ' + feature.properties.lineNumber;
+          if (props.lineNumber) {
+            lines.push(parent.translateService.instant('MAP.POPUP.LINENUMBER') + ': ' + props.lineNumber);
           }
-          if (feature.properties.operatingCompany) {
-            popup += '<br>' + parent.translateService.instant('MAP.POPUP.OPERATINGCOMPANY') + ': ' + feature.properties.operatingCompany;
+          if (props.operatingCompany) {
+            lines.push(parent.translateService.instant('MAP.POPUP.OPERATINGCOMPANY') + ': ' + props.operatingCompany);
           }
-          popup += '</p>';
+          const popup = safePopupContent(props.name, lines);
           layer.on('click', f => {
             f.target.setStyle({ weight: 8, });
             f.target.bringToFront();

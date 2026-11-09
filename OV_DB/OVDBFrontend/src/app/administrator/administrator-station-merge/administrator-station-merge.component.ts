@@ -23,13 +23,7 @@ import { divIcon, LatLng, LatLngBounds, Layer, marker } from "leaflet";
 import { StationMergeRegion, StationNearbyPair } from "src/app/models/stationMerge.model";
 import { ApiService } from "src/app/services/api.service";
 import { MapTileLayersService } from "src/app/services/map-tile-layers.service";
-
-/** Returns an HTMLElement whose textContent is set, so Leaflet treats it as safe plain text. */
-function safeTooltipContent(text: string): HTMLElement {
-  const el = document.createElement("span");
-  el.textContent = text;
-  return el;
-}
+import { safeTooltipContent } from "src/app/utils/safe-leaflet-content";
 
 @Component({
   selector: "app-administrator-station-merge",
