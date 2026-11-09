@@ -95,14 +95,15 @@ namespace OV_DB.Controllers
 
             x.ForEach(value =>
             {
-                var name = value.Name;
+                // Untyped routes (a deleted type, a GPX/OSM import) project a null type.
+                var name = value.Name ?? "-";
                 if (language == "nl" && !string.IsNullOrWhiteSpace(value.NameNL))
                 {
                     name = value.NameNL;
                 }
                 if (!typesAndColours.ContainsKey(name))
                 {
-                    typesAndColours.Add(name, value.Colour);
+                    typesAndColours.Add(name, value.Colour ?? "#000000");
                 }
                 if (!typesAndValuesCumulative.ContainsKey(name))
                 {

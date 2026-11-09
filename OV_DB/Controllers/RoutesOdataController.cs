@@ -314,7 +314,8 @@ namespace OV_DB.Controllers
                 if (!string.IsNullOrWhiteSpace(name))
                     feature.Properties.Add("name", name);
 
-                var type = language == "nl" && !string.IsNullOrWhiteSpace(r.RouteType.NameNL) ? r.RouteType.NameNL : r.RouteType.Name;
+                // RouteType is optional: deleting a type and GPX/OSM imports both leave routes without one.
+                var type = language == "nl" && !string.IsNullOrWhiteSpace(r.RouteType?.NameNL) ? r.RouteType.NameNL : r.RouteType?.Name;
                 if (!string.IsNullOrWhiteSpace(type))
                     feature.Properties.Add("type", type);
 
@@ -337,7 +338,7 @@ namespace OV_DB.Controllers
             if (!string.IsNullOrWhiteSpace(r.OverrideColour) && includeLineColours)
                 feature.Properties.Add("stroke", r.OverrideColour);
             else
-                feature.Properties.Add("stroke", r.RouteType.Colour);
+                feature.Properties.Add("stroke", r.RouteType?.Colour ?? "#000");
         }
 
         [HttpGet("single/{id:int}/{guid:Guid}")]
