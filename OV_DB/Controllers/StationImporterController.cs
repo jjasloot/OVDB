@@ -59,37 +59,10 @@ namespace OV_DB.Controllers
             {
                 var parsedList = JsonConvert.DeserializeObject<OSMStationList>(list);
 
-                var osmIds = parsedList.Elements.Select(e => e.Id).ToList();
-                var existingStations = await dbContext.Stations
-                    .Where(s => osmIds.Contains(s.OsmId))
-                    .ToDictionaryAsync(s => s.OsmId);
-
+                var existingStations = await OsmStationImport.LoadExistingAsync(dbContext, parsedList);
                 foreach (var station in parsedList.Elements)
                 {
-                    if (station.Tags.ContainsKey("name") && !string.IsNullOrWhiteSpace(station.Tags["name"]) && !(station.Lat == 0 && station.Lon == 0))
-                    {
-                        if (!existingStations.TryGetValue(station.Id, out var stationToUpdate))
-                        {
-                            stationToUpdate = new Station { OsmId = station.Id };
-                            dbContext.Add(stationToUpdate);
-                            existingStations[station.Id] = stationToUpdate;
-                        }
-                        stationToUpdate.Lattitude = station.Lat;
-                        stationToUpdate.Longitude = station.Lon;
-                        if (station.Tags.ContainsKey("name"))
-                            stationToUpdate.Name = station.Tags["name"];
-                        if (station.Tags.ContainsKey("ele") && double.TryParse(station.Tags["ele"], NumberStyles.Float, CultureInfo.InvariantCulture, out var elevation))
-                            stationToUpdate.Elevation = elevation;
-                        if (station.Tags.ContainsKey("network"))
-                            stationToUpdate.Network = station.Tags["network"];
-                        if (station.Tags.ContainsKey("operator"))
-                            stationToUpdate.Operator = station.Tags["operator"];
-                        if (station.Tags.ContainsKey("usage") && station.Tags["usage"] == "tourism")
-                        {
-                            stationToUpdate.Special = true;
-                        }
-                        await stationRegionsService.AssignRegionsToStationCacheRegionsAsync(stationToUpdate);
-                    }
+                    await OsmStationImport.UpsertAsync(dbContext, existingStations, station, stationRegionsService);
                 }
             }
             await dbContext.SaveChangesAsync();

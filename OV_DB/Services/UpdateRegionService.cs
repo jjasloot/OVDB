@@ -91,40 +91,14 @@ namespace OV_DB.Services
                 var parsedList = JsonConvert.DeserializeObject<OSMStationList>(list);
 
                 // One roundtrip for all existing stations instead of two queries per station.
-                var osmIds = parsedList.Elements.Select(e => e.Id).ToList();
-                var existingStations = await dbContext.Stations.Include(s => s.Regions)
-                    .Where(s => osmIds.Contains(s.OsmId))
-                    .ToDictionaryAsync(s => s.OsmId, cancellationToken);
+                var existingStations = await OsmStationImport.LoadExistingAsync(dbContext, parsedList, cancellationToken);
 
                 var processedStations = 0;
                 var progress = 0;
                 var totalCount = parsedList.Elements.Count;
                 foreach (var station in parsedList.Elements)
                 {
-                    if (station.Tags.ContainsKey("name") && !string.IsNullOrWhiteSpace(station.Tags["name"]) && !(station.Lat == 0 && station.Lon == 0))
-                    {
-                        if (!existingStations.TryGetValue(station.Id, out var stationToUpdate))
-                        {
-                            stationToUpdate = new Station { OsmId = station.Id };
-                            dbContext.Add(stationToUpdate);
-                            existingStations[station.Id] = stationToUpdate;
-                        }
-                        stationToUpdate.Lattitude = station.Lat;
-                        stationToUpdate.Longitude = station.Lon;
-                        if (station.Tags.ContainsKey("name"))
-                            stationToUpdate.Name = station.Tags["name"];
-                        if (station.Tags.ContainsKey("ele") && double.TryParse(station.Tags["ele"], NumberStyles.Float, CultureInfo.InvariantCulture, out var elevation))
-                            stationToUpdate.Elevation = elevation;
-                        if (station.Tags.ContainsKey("network"))
-                            stationToUpdate.Network = station.Tags["network"];
-                        if (station.Tags.ContainsKey("operator"))
-                            stationToUpdate.Operator = station.Tags["operator"];
-                        if (station.Tags.ContainsKey("usage") && station.Tags["usage"] == "tourism")
-                        {
-                            stationToUpdate.Special = true;
-                        }
-                        await stationRegionsService.AssignRegionsToStationCacheRegionsAsync(stationToUpdate);
-                    }
+                    await OsmStationImport.UpsertAsync(dbContext, existingStations, station, stationRegionsService);
 
                     processedStations++;
                     var newProgress = ((processedStations * 78) / totalCount) + 20;
