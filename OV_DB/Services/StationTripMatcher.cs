@@ -408,29 +408,35 @@ public class StationTripMatcher(OVDBDatabaseContext dbContext, IMatcherIndexCach
         // 1.16 s against 10 ms for a plain count — MariaDB reads the geometry blobs to evaluate it —
         // and it ran on every station in the backfill. The fingerprint only has to notice change, so
         // rows are as good a signal as rows-with-geometry.
-        var routeCount = await dbContext.Routes.CountAsync(cancellationToken);
+        var fingerprint = await RouteFingerprintAsync(cancellationToken);
         return await indexCache.GetRoutesAsync(
-            routeCount, token => BuildRouteIndexAsync(routeCount, null, token), cancellationToken);
+            fingerprint, token => BuildRouteIndexAsync(fingerprint.Count, null, token), cancellationToken);
     }
+
+    private async Task<IndexFingerprint> RouteFingerprintAsync(CancellationToken cancellationToken) =>
+        new(await dbContext.Routes.CountAsync(cancellationToken),
+            await dbContext.Routes.MaxAsync(r => (int?)r.RouteId, cancellationToken) ?? 0);
 
     public async Task<bool> IsRouteIndexWarmAsync(CancellationToken cancellationToken = default)
     {
-        var routeCount = await dbContext.Routes.CountAsync(cancellationToken);
-        return indexCache.HasRoutes(routeCount);
+        return indexCache.HasRoutes(await RouteFingerprintAsync(cancellationToken));
     }
 
     public async Task WarmRouteIndexAsync(IProgress<MatcherWarmupProgress> progress = null, CancellationToken cancellationToken = default)
     {
-        var routeCount = await dbContext.Routes.CountAsync(cancellationToken);
+        var fingerprint = await RouteFingerprintAsync(cancellationToken);
         await indexCache.GetRoutesAsync(
-            routeCount, token => BuildRouteIndexAsync(routeCount, progress, token), cancellationToken);
+            fingerprint, token => BuildRouteIndexAsync(fingerprint.Count, progress, token), cancellationToken);
     }
 
     /// <summary>The same, for stations — counted and cached apart from the routes.</summary>
     private async Task<StationIndex> GetStationIndexAsync(CancellationToken cancellationToken)
     {
-        var stationCount = await dbContext.Stations.CountAsync(s => !s.Hidden && !s.Special, cancellationToken);
-        return await indexCache.GetStationsAsync(stationCount, BuildStationIndexAsync, cancellationToken);
+        var active = dbContext.Stations.Where(s => !s.Hidden && !s.Special);
+        var fingerprint = new IndexFingerprint(
+            await active.CountAsync(cancellationToken),
+            await active.MaxAsync(s => (int?)s.Id, cancellationToken) ?? 0);
+        return await indexCache.GetStationsAsync(fingerprint, BuildStationIndexAsync, cancellationToken);
     }
 
     /// <param name="total">
@@ -455,10 +461,12 @@ public class StationTripMatcher(OVDBDatabaseContext dbContext, IMatcherIndexCach
         // Counted as rows seen, not as usable routes: this has to match the count the cache checks
         // against, or a single degenerate geometry would make every read think the index is stale.
         var routeRowCount = 0;
+        var maxRouteId = 0;
 
         await foreach (var route in routes.WithCancellation(cancellationToken))
         {
             routeRowCount++;
+            maxRouteId = Math.Max(maxRouteId, route.RouteId);
             // Reported before the skip below, so a run of routes without geometry still moves the
             // bar rather than looking like a stall.
             progress?.Report(new MatcherWarmupProgress(routeRowCount, total));
@@ -491,7 +499,7 @@ public class StationTripMatcher(OVDBDatabaseContext dbContext, IMatcherIndexCach
         {
             Segments = segments,
             Endpoints = endpoints,
-            RouteCount = routeRowCount
+            Fingerprint = new IndexFingerprint(routeRowCount, maxRouteId)
         };
     }
 
@@ -504,9 +512,11 @@ public class StationTripMatcher(OVDBDatabaseContext dbContext, IMatcherIndexCach
             .AsAsyncEnumerable();
 
         var stationRowCount = 0;
+        var maxStationId = 0;
         await foreach (var station in stationRows.WithCancellation(cancellationToken))
         {
             stationRowCount++;
+            maxStationId = Math.Max(maxStationId, station.Id);
             stations.Insert(
                 new Envelope(station.Longitude, station.Longitude, station.Lattitude, station.Lattitude),
                 new StationPoint(station.Id, station.Longitude, station.Lattitude));
@@ -516,7 +526,7 @@ public class StationTripMatcher(OVDBDatabaseContext dbContext, IMatcherIndexCach
         return new StationIndex
         {
             Stations = stations,
-            StationCount = stationRowCount
+            Fingerprint = new IndexFingerprint(stationRowCount, maxStationId)
         };
     }
 

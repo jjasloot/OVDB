@@ -37,8 +37,14 @@ public sealed class RouteIndex
     /// be invisible until the cache happens to expire — which it was, because nothing remembered to
     /// invalidate. A counted fingerprint needs nobody to remember anything.
     /// </summary>
-    public required int RouteCount { get; init; }
+    public required IndexFingerprint Fingerprint { get; init; }
 }
+
+/// <summary>
+/// Row count plus highest id. The count alone missed "delete a bad route, import the corrected one":
+/// same count, stale index. Ids only grow, so any insert moves the highest id.
+/// </summary>
+public readonly record struct IndexFingerprint(int Count, int MaxId);
 
 /// <summary>
 /// Every active station as a point. Kept apart from <see cref="RouteIndex"/> deliberately: reading
@@ -50,23 +56,23 @@ public sealed class RouteIndex
 public sealed class StationIndex
 {
     public required STRtree<StationPoint> Stations { get; init; }
-    /// <summary>See <see cref="RouteIndex.RouteCount"/>: the same trick, counted separately.</summary>
-    public required int StationCount { get; init; }
+    /// <summary>See <see cref="RouteIndex.Fingerprint"/>: the same trick, counted separately.</summary>
+    public required IndexFingerprint Fingerprint { get; init; }
 }
 
 public interface IMatcherIndexCache
 {
     /// <summary>
-    /// The cached route index if it was built from this same count, otherwise a freshly built one.
+    /// The cached route index if it was built from this same fingerprint, otherwise a freshly built one.
     /// </summary>
-    Task<RouteIndex> GetRoutesAsync(int routeCount, Func<CancellationToken, Task<RouteIndex>> build, CancellationToken cancellationToken = default);
+    Task<RouteIndex> GetRoutesAsync(IndexFingerprint routeFingerprint, Func<CancellationToken, Task<RouteIndex>> build, CancellationToken cancellationToken = default);
     /// <summary>The same, for stations.</summary>
-    Task<StationIndex> GetStationsAsync(int stationCount, Func<CancellationToken, Task<StationIndex>> build, CancellationToken cancellationToken = default);
+    Task<StationIndex> GetStationsAsync(IndexFingerprint stationFingerprint, Func<CancellationToken, Task<StationIndex>> build, CancellationToken cancellationToken = default);
     /// <summary>
     /// Whether a route index built from this count is already in hand — asked, unlike
     /// <see cref="GetRoutesAsync"/>, without building one if it is not.
     /// </summary>
-    bool HasRoutes(int routeCount);
+    bool HasRoutes(IndexFingerprint routeFingerprint);
     void Invalidate();
 }
 
@@ -82,8 +88,8 @@ public sealed class MatcherIndexCache : IMatcherIndexCache, IDisposable
 {
     private static readonly TimeSpan IdleTimeout = TimeSpan.FromMinutes(30);
 
-    private readonly Slot<RouteIndex> _routes = new(index => index.RouteCount);
-    private readonly Slot<StationIndex> _stations = new(index => index.StationCount);
+    private readonly Slot<RouteIndex> _routes = new(index => index.Fingerprint);
+    private readonly Slot<StationIndex> _stations = new(index => index.Fingerprint);
     private readonly Timer _sweep;
 
     public MatcherIndexCache()
@@ -91,13 +97,13 @@ public sealed class MatcherIndexCache : IMatcherIndexCache, IDisposable
         _sweep = new Timer(_ => DropIfIdle(), null, IdleTimeout, IdleTimeout);
     }
 
-    public Task<RouteIndex> GetRoutesAsync(int routeCount, Func<CancellationToken, Task<RouteIndex>> build, CancellationToken cancellationToken = default) =>
-        _routes.GetAsync(routeCount, build, cancellationToken);
+    public Task<RouteIndex> GetRoutesAsync(IndexFingerprint routeFingerprint, Func<CancellationToken, Task<RouteIndex>> build, CancellationToken cancellationToken = default) =>
+        _routes.GetAsync(routeFingerprint, build, cancellationToken);
 
-    public Task<StationIndex> GetStationsAsync(int stationCount, Func<CancellationToken, Task<StationIndex>> build, CancellationToken cancellationToken = default) =>
-        _stations.GetAsync(stationCount, build, cancellationToken);
+    public Task<StationIndex> GetStationsAsync(IndexFingerprint stationFingerprint, Func<CancellationToken, Task<StationIndex>> build, CancellationToken cancellationToken = default) =>
+        _stations.GetAsync(stationFingerprint, build, cancellationToken);
 
-    public bool HasRoutes(int routeCount) => _routes.Holds(routeCount);
+    public bool HasRoutes(IndexFingerprint routeFingerprint) => _routes.Holds(routeFingerprint);
 
     public void Invalidate()
     {
@@ -119,19 +125,19 @@ public sealed class MatcherIndexCache : IMatcherIndexCache, IDisposable
     }
 
     /// <summary>One cached index and the gate that keeps a burst of callers from all building it.</summary>
-    private sealed class Slot<T>(Func<T, int> fingerprint) : IDisposable where T : class
+    private sealed class Slot<T>(Func<T, IndexFingerprint> fingerprint) : IDisposable where T : class
     {
         private readonly SemaphoreSlim _gate = new(1, 1);
         private T _index;
         private DateTime _lastUsedUtc;
 
-        public async Task<T> GetAsync(int count, Func<CancellationToken, Task<T>> build, CancellationToken cancellationToken)
+        public async Task<T> GetAsync(IndexFingerprint fingerprintNow, Func<CancellationToken, Task<T>> build, CancellationToken cancellationToken)
         {
             // Under the gate so a burst of concurrent callers pays the build cost once, not once each.
             await _gate.WaitAsync(cancellationToken);
             try
             {
-                if (_index != null && fingerprint(_index) != count)
+                if (_index != null && fingerprint(_index) != fingerprintNow)
                 {
                     // Something was imported or removed since this was built, so it is answering
                     // about a world that no longer exists.
@@ -153,10 +159,10 @@ public sealed class MatcherIndexCache : IMatcherIndexCache, IDisposable
         /// is asking whether it needs to wait for. A build finishing under the read only costs
         /// a stale "no", which asks for a warm-up that finds the work already done.
         /// </summary>
-        public bool Holds(int count)
+        public bool Holds(IndexFingerprint fingerprintNow)
         {
             var index = _index;
-            return index != null && fingerprint(index) == count;
+            return index != null && fingerprint(index) == fingerprintNow;
         }
 
         public void Invalidate()

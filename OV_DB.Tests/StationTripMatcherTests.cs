@@ -659,6 +659,27 @@ public class StationTripMatcherTests
     }
 
     [Fact]
+    public async Task AReplacedStationIsSeenEvenThoughTheCountIsUnchanged()
+    {
+        // Delete one, add another: the count is the same, so a count-only fingerprint kept
+        // answering with the deleted station.
+        using var context = await SeedAsync();
+        await AddStationAsync(context, 10, "Halt", BaseLat, BaseLon);
+        var cache = new CountingCache();
+        var matcher = new StationTripMatcher(context, cache);
+        Assert.Equal(10, Assert.Single(await matcher.MatchStopsAsync([new StopPoint("Halt", BaseLat, BaseLon)])).StationId);
+
+        context.Stations.Remove(await context.Stations.SingleAsync(s => s.Id == 10));
+        await context.SaveChangesAsync();
+        await AddStationAsync(context, 11, "Halt", BaseLat, BaseLon);
+
+        var matched = await matcher.MatchStopsAsync([new StopPoint("Halt", BaseLat, BaseLon)]);
+
+        Assert.Equal(11, Assert.Single(matched).StationId);
+        Assert.Equal(2, cache.StationBuilds);
+    }
+
+    [Fact]
     public async Task InvalidatingForcesTheIndexToBeRebuilt()
     {
         using var context = await SeedAsync();
@@ -680,21 +701,21 @@ public class StationTripMatcherTests
         public int StationBuilds { get; private set; }
         public int Builds => RouteBuilds + StationBuilds;
 
-        public Task<RouteIndex> GetRoutesAsync(int routeCount, Func<CancellationToken, Task<RouteIndex>> build, CancellationToken cancellationToken = default) =>
+        public Task<RouteIndex> GetRoutesAsync(IndexFingerprint routeCount, Func<CancellationToken, Task<RouteIndex>> build, CancellationToken cancellationToken = default) =>
             _inner.GetRoutesAsync(routeCount, ct =>
             {
                 RouteBuilds++;
                 return build(ct);
             }, cancellationToken);
 
-        public Task<StationIndex> GetStationsAsync(int stationCount, Func<CancellationToken, Task<StationIndex>> build, CancellationToken cancellationToken = default) =>
+        public Task<StationIndex> GetStationsAsync(IndexFingerprint stationCount, Func<CancellationToken, Task<StationIndex>> build, CancellationToken cancellationToken = default) =>
             _inner.GetStationsAsync(stationCount, ct =>
             {
                 StationBuilds++;
                 return build(ct);
             }, cancellationToken);
 
-        public bool HasRoutes(int routeCount) => _inner.HasRoutes(routeCount);
+        public bool HasRoutes(IndexFingerprint routeCount) => _inner.HasRoutes(routeCount);
 
         public void Invalidate() => _inner.Invalidate();
     }
