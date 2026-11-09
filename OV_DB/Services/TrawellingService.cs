@@ -220,6 +220,20 @@ namespace OV_DB.Services
             }
         }
 
+        internal static bool IsInvalidGrant(System.Net.HttpStatusCode status, string body)
+        {
+            if (status != System.Net.HttpStatusCode.BadRequest || string.IsNullOrWhiteSpace(body))
+                return false;
+            try
+            {
+                return Newtonsoft.Json.Linq.JObject.Parse(body).Value<string>("error") == "invalid_grant";
+            }
+            catch (JsonException)
+            {
+                return false;
+            }
+        }
+
         public async Task<bool> RefreshTokensAsync(User user)
         {
             try
@@ -243,13 +257,15 @@ namespace OV_DB.Services
 
                 if (!response.IsSuccessStatusCode)
                 {
+                    var errorBody = await response.Content.ReadAsStringAsync();
                     _logger.LogError("Failed to refresh tokens for user {UserId}. Status: {StatusCode}, Content: {Content}",
-                        user.Id, response.StatusCode, await response.Content.ReadAsStringAsync());
+                        user.Id, response.StatusCode, errorBody);
 
-                    // 400/401 means the refresh token itself was rejected (expired or revoked);
-                    // clear the tokens so the connection status honestly reports disconnected
-                    if (response.StatusCode == System.Net.HttpStatusCode.BadRequest ||
-                        response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+                    // Only invalid_grant means this user's refresh token was rejected (expired or
+                    // revoked); clear it so the connection status honestly reports disconnected.
+                    // Anything else (invalid_client after a mistyped or rotated client secret, an
+                    // outage) is not the token's fault, and clearing would disconnect every user.
+                    if (IsInvalidGrant(response.StatusCode, errorBody))
                     {
                         user.TrawellingAccessToken = null;
                         user.TrawellingRefreshToken = null;
@@ -1516,8 +1532,10 @@ namespace OV_DB.Services
         {
             try
             {
-                // Check if the Träwelling status is already linked to another RouteInstance
+                // Check if the Träwelling status is already linked to another of this user's
+                // RouteInstances (two OVDB accounts may share one Träwelling account)
                 var existingLink = await _dbContext.RouteInstances
+                    .Where(ri => ri.RouteInstanceMaps.Any(rim => rim.Map.UserId == user.Id) || ri.Route.RouteMaps.Any(rm => rm.Map.UserId == user.Id))
                     .FirstOrDefaultAsync(ri => ri.TrawellingStatusId == statusId);
 
                 if (existingLink != null)
@@ -1530,6 +1548,7 @@ namespace OV_DB.Services
                 // Get the target RouteInstance
                 var routeInstance = await _dbContext.RouteInstances
                     .Include(ri => ri.Route)
+                    .Where(ri => ri.RouteInstanceMaps.Any(rim => rim.Map.UserId == user.Id) || ri.Route.RouteMaps.Any(rm => rm.Map.UserId == user.Id))
                     .FirstOrDefaultAsync(ri => ri.RouteInstanceId == routeInstanceId);
 
                 if (routeInstance == null)
