@@ -2,7 +2,6 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpContext } from '@angular/common/http';
 import { environment } from 'src/environments/environment';
 import { Router } from '@angular/router';
-import { JwtHelperService } from '@auth0/angular-jwt';
 import { RegistrationRequest } from '../models/registrationRequest.model';
 import { tap } from 'rxjs/operators';
 import { BehaviorSubject } from 'rxjs';
@@ -20,7 +19,6 @@ export class AuthenticationService {
 
   public token: string | null;
   public refreshToken: string | null;
-  helper = new JwtHelperService();
   refreshTrigger: any;
   returnUrl!: string;
 
@@ -98,11 +96,26 @@ export class AuthenticationService {
     this.refreshToken = localStorage.getItem('OVDBRefreshToken');
   }
 
+  /** The JWT payload. Only read for expiry and the admin flag; the server verifies the token. */
+  private static decodeToken(token: string): { exp?: unknown; admin?: unknown } | null {
+    try {
+      const payload = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+      return JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(payload), c => c.charCodeAt(0))));
+    } catch {
+      return null;
+    }
+  }
+
+  private static expirationDate(token: string): Date | null {
+    const exp = AuthenticationService.decodeToken(token)?.exp;
+    return typeof exp === 'number' ? new Date(exp * 1000) : null;
+  }
+
   private tokenValidForMs(): number {
     if (!this.token) {
       return -1;
     }
-    const expirationDate = this.helper.getTokenExpirationDate(this.token);
+    const expirationDate = AuthenticationService.expirationDate(this.token);
     if (!expirationDate) {
       return -1;
     }
@@ -200,7 +213,7 @@ export class AuthenticationService {
     if (!this.token) {
       return false;
     }
-    const expirationDate = this.helper.getTokenExpirationDate(this.token);
+    const expirationDate = AuthenticationService.expirationDate(this.token);
     if (!expirationDate) {
       return false;
     }
@@ -215,15 +228,11 @@ export class AuthenticationService {
     return !!this.refreshTrigger;
   }
 
-  get email() {
-    return this.helper.decodeToken(this.token!)['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress'];
-  }
-
   get admin() {
     if (!this.token) {
       return false;
     }
-    return this.helper.decodeToken(this.token)?.admin === 'true';
+    return AuthenticationService.decodeToken(this.token)?.admin === 'true';
   }
 
   getActiveSessions() {

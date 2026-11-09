@@ -82,12 +82,6 @@ export class LayoutComponent implements OnInit {
   get isLoggedIn() {
     return this.authService.isLoggedIn;
   }
-  get email() {
-    if (!this.isLoggedIn) {
-      return "";
-    }
-    return this.authService.email;
-  }
 
   get isAdmin() {
     if (!this.isLoggedIn) {

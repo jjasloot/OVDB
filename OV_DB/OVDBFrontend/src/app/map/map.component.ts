@@ -13,7 +13,6 @@ import { MapInstanceDialogComponent } from "../map-instance-dialog/map-instance-
 import { switchMap } from "rxjs/operators";
 import { Observable, Subscription, from } from "rxjs";
 import { MapDataDTO } from "../models/map-data.model";
-import { v4 as uuidv4 } from "uuid";
 import { SignalRService } from "../services/signal-r.service";
 import { MapTileLayersService } from "../services/map-tile-layers.service";
 import {
@@ -254,7 +253,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private getRoutes(filter: string): Observable<MapDataDTO> {
     //Generate a GUID
-    this.requestIdentifier = uuidv4();
+    this.requestIdentifier = crypto.randomUUID();
 
     // Join the SignalR group for this request before issuing it, so progress events for this
     // generation reach only us and we don't miss the early ones.
