@@ -752,7 +752,8 @@ export class ApiService {
     }
     return this.httpClient.get<TrawellingConnectResponse>(
       environment.backend + "api/traewelling/connect",
-      { params }
+      // The response sets the cookie that ties the OAuth callback to this browser.
+      { params, withCredentials: true }
     );
   }
 

@@ -43,6 +43,19 @@ namespace OV_DB.Controllers
             _resyncQueue = resyncQueue;
         }
 
+        // Binds the OAuth flow to the browser that started it. The state alone only names the OVDB
+        // user, so a connect link sent to someone already signed in to Träwelling would attach their
+        // account to the sender's OVDB user; without this cookie, the callback refuses.
+        internal const string OAuthStateCookie = "trwl_oauth_state";
+        private static readonly CookieOptions OAuthStateCookieOptions = new()
+        {
+            HttpOnly = true,
+            Secure = true,
+            SameSite = SameSiteMode.Lax, // sent on Träwelling's top-level redirect back, not on cross-site subrequests
+            Path = "/api/traewelling/callback",
+            MaxAge = TimeSpan.FromMinutes(10), // as long as the state itself lives
+        };
+
         /// <summary>
         /// Get OAuth2 authorization URL for connecting Träwelling account
         /// </summary>
@@ -57,6 +70,7 @@ namespace OV_DB.Controllers
 
                 var state = _api.GenerateAndStoreState(userId.Value);
                 var authUrl = _api.GetAuthorizationUrl(userId.Value, state, liveSync);
+                Response.Cookies.Append(OAuthStateCookie, state, OAuthStateCookieOptions);
 
                 return Ok(new { authorizationUrl = authUrl });
             }
@@ -78,95 +92,48 @@ namespace OV_DB.Controllers
             {
                 if (string.IsNullOrEmpty(code) || string.IsNullOrEmpty(state))
                 {
-                    return Content(@"
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Träwelling Connection</title>
-</head>
-<body>
-    <script>
-        window.opener?.postMessage({type: 'oauth-error', message: 'Missing parameters'}, '*');
-        window.close();
-    </script>
-    <p>Invalid request. This window should close automatically.</p>
-</body>
-</html>", "text/html");
+                    return OAuthPopupResult("oauth-error", "Missing parameters", "Invalid request.");
                 }
 
-                // Validate state parameter
-                if (!_api.ValidateAndConsumeState(state,out var userId))
+                var browserState = Request.Cookies[OAuthStateCookie];
+                Response.Cookies.Delete(OAuthStateCookie, new CookieOptions { Path = OAuthStateCookieOptions.Path, Secure = true, SameSite = SameSiteMode.Lax });
+                if (browserState == null || !CryptographicOperations.FixedTimeEquals(Encoding.UTF8.GetBytes(browserState), Encoding.UTF8.GetBytes(state)))
                 {
-                    return Content(@"
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Träwelling Connection</title>
-</head>
-<body>
-    <script>
-        window.opener?.postMessage({type: 'oauth-error', message: 'Invalid or expired state'}, '*');
-        window.close();
-    </script>
-    <p>Invalid or expired request. This window should close automatically.</p>
-</body>
-</html>", "text/html");
+                    _logger.LogWarning("Träwelling OAuth callback without the matching state cookie");
+                    return OAuthPopupResult("oauth-error", "This connect link was started in another browser", "This connection was not started in this browser.");
                 }
 
-                var success = await _api.ExchangeCodeForTokensAsync(code, state, userId.Value);
-                
-                if (success)
+                if (!_api.ValidateAndConsumeState(state, out var userId))
                 {
-                    return Content(@"
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Träwelling Connection Successful</title>
-</head>
-<body>
-    <script>
-        window.opener?.postMessage({type: 'oauth-success', message: 'Träwelling account connected successfully'}, '*');
-        window.close();
-    </script>
-    <p>Träwelling account connected successfully! This window should close automatically.</p>
-</body>
-</html>", "text/html");
+                    return OAuthPopupResult("oauth-error", "Invalid or expired state", "Invalid or expired request.");
                 }
 
-                return Content(@"
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Träwelling Connection</title>
-</head>
-<body>
-    <script>
-        window.opener?.postMessage({type: 'oauth-error', message: 'Failed to connect account'}, '*');
-        window.close();
-    </script>
-    <p>Failed to connect Träwelling account. This window should close automatically.</p>
-</body>
-</html>", "text/html");
+                return await _api.ExchangeCodeForTokensAsync(code, state, userId.Value)
+                    ? OAuthPopupResult("oauth-success", "Träwelling account connected successfully", "Träwelling account connected successfully!")
+                    : OAuthPopupResult("oauth-error", "Failed to connect account", "Failed to connect Träwelling account.");
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error handling Träwelling OAuth callback");
-                return Content(@"
+                return OAuthPopupResult("oauth-error", "Server error occurred", "An error occurred.");
+            }
+        }
+
+        /// <summary>The callback runs in a popup: tell the opener how it went, then close.</summary>
+        private ContentResult OAuthPopupResult(string type, string message, string text) => Content($@"
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Träwelling Connection Error</title>
+    <title>Träwelling Connection</title>
 </head>
 <body>
     <script>
-        window.opener?.postMessage({type: 'oauth-error', message: 'Server error occurred'}, '*');
+        window.opener?.postMessage({{type: '{type}', message: '{message}'}}, '*');
         window.close();
     </script>
-    <p>An error occurred. This window should close automatically.</p>
+    <p>{text} This window should close automatically.</p>
 </body>
 </html>", "text/html");
-            }
-        }
 
         /// <summary>Spatie's DefaultSigner: lowercase hex HMAC-SHA256 of the raw JSON body.</summary>
         internal static bool IsValidSignature(string secret, string body, string signatureHeader)
