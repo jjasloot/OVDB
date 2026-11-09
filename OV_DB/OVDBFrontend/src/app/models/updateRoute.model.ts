@@ -1,4 +1,4 @@
-import { Moment } from "moment";
+import { DateTime } from "luxon";
 
 export interface UpdateRoute {
   overrideColour: string;
@@ -9,7 +9,7 @@ export interface UpdateRoute {
   from?: string;
   lineNumber?: string;
   operatingCompany?: string;
-  firstDateTime: Moment;
+  firstDateTime: DateTime;
   countries: number[];
   maps: number[];
   routeTypeId: number;

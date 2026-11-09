@@ -1,3 +1,4 @@
+import { DateTime } from 'luxon';
 import { Component, OnInit, viewChild, inject, ChangeDetectionStrategy, DestroyRef } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatDialogRef, MAT_DIALOG_DATA, MatDialogTitle, MatDialogContent, MatDialogActions } from '@angular/material/dialog';
@@ -43,7 +44,7 @@ export class EditMultipleComponent implements OnInit {
   maps!: Map[];
   readonly countriesSelection = viewChild<MatSelectionList>('countriesSelection');
   readonly mapsSelection = viewChild<MatSelectionList>('mapsSelection');
-  firstDateTime!: Date;
+  firstDateTime: DateTime | null = null;
   routeTypeId!: number;
   updateDate = false;
   updateType = false;
@@ -107,7 +108,7 @@ export class EditMultipleComponent implements OnInit {
 
   return() {
     const model = {
-      date: this.firstDateTime,
+      date: this.firstDateTime?.toFormat('yyyy-MM-dd'),
       routeIds: this.selectedRoutes,
       typeId: this.routeTypeId,
       updateDate: this.updateDate,

@@ -7,7 +7,7 @@ import { RouteType } from "../models/routeType.model";
 import { Map } from "src/app/models/map.model";
 import { OSMDataLine } from "../models/osmDataLine.model";
 import { OSMLineStop } from "../models/osmLineStop.model";
-import { Moment } from "moment";
+import { DateTime } from "luxon";
 import { AdminMap } from "../models/adminMap.model";
 import { AdminUser } from "../models/adminUser.model";
 import { MultipleEdit } from "../models/multipleEdit.model";
@@ -356,7 +356,7 @@ export class ApiService {
     reference: string,
     network: string,
     type: string,
-    dateTime: Moment
+    dateTime: DateTime
   ): Observable<OSMDataLine[]> {
     let url = environment.backend + "api/importer/find?reference=" + reference;
     if (network) {
@@ -366,17 +366,17 @@ export class ApiService {
       url += "&routeType=" + type;
     }
     if (dateTime) {
-      url += "&dateTime=" + dateTime.toISOString();
+      url += "&dateTime=" + dateTime.toUTC().toISO();
     }
     return this.httpClient.get<OSMDataLine[]>(url);
   }
   importerGetNetwork(
     network: string,
-    dateTime: Moment
+    dateTime: DateTime
   ): Observable<OSMDataLine[]> {
     let url = environment.backend + "api/importer/network?network=" + network;
     if (dateTime) {
-      url += "&dateTime=" + dateTime.toISOString();
+      url += "&dateTime=" + dateTime.toUTC().toISO();
     }
     return this.httpClient.get<OSMDataLine[]>(url);
   }
@@ -385,7 +385,7 @@ export class ApiService {
     id: any,
     from: number | null = null,
     to: number | null = null,
-    dateTime: Moment | null = null
+    dateTime: DateTime | null = null
   ) {
     let url = environment.backend + "api/importer/" + id;
     if (!!from && !!to) {
@@ -393,20 +393,20 @@ export class ApiService {
     }
     if (dateTime) {
       if (!!from && !!to) {
-        url += "&dateTime=" + dateTime.toISOString();
+        url += "&dateTime=" + dateTime.toUTC().toISO();
       } else {
-        url += "?dateTime=" + dateTime.toISOString();
+        url += "?dateTime=" + dateTime.toUTC().toISO();
       }
     }
     return this.httpClient.get<OSMDataLine>(url);
   }
   importerGetStops(
     id: any,
-    dateTime: Moment | null = null
+    dateTime: DateTime | null = null
   ): Observable<OSMLineStop[]> {
     let url = environment.backend + "api/importer/" + id + "/stops";
     if (dateTime) {
-      url += "?dateTime=" + dateTime.toISOString();
+      url += "?dateTime=" + dateTime.toUTC().toISO();
     }
     return this.httpClient.get<OSMLineStop[]>(url);
   }

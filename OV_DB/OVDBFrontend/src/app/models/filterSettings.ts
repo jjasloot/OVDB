@@ -1,12 +1,12 @@
-import { Moment } from "moment";
+import { DateTime } from "luxon";
 
 export class FilterSettings {
   constructor(
     name: string,
     includeLineColours: boolean,
     limitToSelectedAreas: boolean,
-    from?: Moment | null,
-    to?: Moment | null,
+    from?: DateTime | null,
+    to?: DateTime | null,
     selectedCountries?: number[],
     selectedTypes?: number[],
     selectedYears?: number[]
@@ -21,8 +21,8 @@ export class FilterSettings {
     this.limitToSelectedAreas = limitToSelectedAreas;
   }
   name: string;
-  from: Moment | null;
-  to: Moment | null;
+  from: DateTime | null;
+  to: DateTime | null;
   selectedCountries: number[] = [];
   selectedTypes: number[] = [];
   selectedYears: number[] = [];

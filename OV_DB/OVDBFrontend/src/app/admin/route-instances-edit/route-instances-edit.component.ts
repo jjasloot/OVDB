@@ -22,7 +22,7 @@ import { MatSelectionList, MatListOption } from '@angular/material/list';
 import { TranslateModule } from '@ngx-translate/core';
 import { MatCard, MatCardContent, MatCardHeader, MatCardTitle } from '@angular/material/card';
 import { MatSlideToggle } from '@angular/material/slide-toggle';
-import { Moment } from 'moment';
+import { DateTime } from 'luxon';
 import { TrawellingContextCardComponent } from '../../traewelling/context-card/traewelling-context-card.component';
 import { MatCell, MatCellDef, MatColumnDef, MatFooterCell, MatFooterCellDef, MatFooterRow, MatFooterRowDef, MatHeaderCell, MatHeaderCellDef, MatHeaderRow, MatHeaderRowDef, MatRow, MatRowDef, MatTable } from '@angular/material/table';
 import { TrawellingTripContext } from 'src/app/models/traewelling.model';
@@ -269,8 +269,8 @@ export class RouteInstancesEditComponent implements OnInit {
         this.instance.routeInstanceProperties.slice(0, this.instance.routeInstanceProperties.length - 1);
     }
     this.instance.routeInstanceMaps = this.selectedMaps().map(s => { return { mapId: s } });
-    if ((this.instance.date as any)['_isAMomentObject']) {
-      this.instance.date = (this.instance.date as unknown as Moment).format('YYYY-MM-DD');
+    if ((this.instance.date as unknown) instanceof DateTime) {
+      this.instance.date = (this.instance.date as unknown as DateTime).toFormat('yyyy-MM-dd');
     }
     if(!this.enterScheduledTimes()){
       this.instance.scheduledStartTime = null;

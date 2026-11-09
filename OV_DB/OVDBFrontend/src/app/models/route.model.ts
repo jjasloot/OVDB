@@ -1,4 +1,4 @@
-import { Moment } from "moment";
+import { DateTime } from "luxon";
 import { RouteType } from "./routeType.model";
 import { RouteCountry } from "./routeCountry.model";
 import { Map } from "./map.model";
@@ -15,7 +15,7 @@ export interface Route {
   description?: string;
   lineNumber?: string;
   operatingCompany?: string;
-  firstDateTime: Moment;
+  firstDateTime: DateTime;
   routeCountries: RouteCountry[];
   routeMaps: RoutesMapsFromRoute[];
   routeTypeId: number;

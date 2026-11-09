@@ -4,7 +4,7 @@ import { UntypedFormBuilder, UntypedFormGroup, Validators, FormsModule, Reactive
 import { ApiService } from 'src/app/services/api.service';
 import { OSMDataLine } from 'src/app/models/osmDataLine.model';
 import { Router, ActivatedRoute } from '@angular/router';
-import moment from 'moment';
+import { DateTime } from 'luxon';
 import { DateAdapter, MatOption } from '@angular/material/core';
 import { TranslationService } from 'src/app/services/translation.service';
 import { MatProgressSpinner } from '@angular/material/progress-spinner';
@@ -44,7 +44,7 @@ export class WizzardStep1Component implements OnInit {
   loading = false;
   differentTimeLeft = false;
   differentTimeRight = false;
-  dateTime: moment.Moment | null = null;
+  dateTime: DateTime | null = null;
   error!: boolean;
   // Which search to repeat when the user hits retry.
   private lastSearch: (() => void) | null = null;
@@ -193,7 +193,7 @@ export class WizzardStep1Component implements OnInit {
     const queryParams: any = {};
 
     if (this.dateTime) {
-      queryParams.date = this.dateTime.unix();
+      queryParams.date = this.dateTime.toUnixInteger();
     }
 
     if (this.fromTraewelling) {

@@ -3,7 +3,7 @@ import { ActivatedRoute, Router } from "@angular/router";
 import { Route } from "src/app/models/route.model";
 import { ApiService } from "src/app/services/api.service";
 import { UntypedFormBuilder, Validators, UntypedFormGroup, FormsModule, ReactiveFormsModule } from "@angular/forms";
-import moment from "moment";
+import { DateTime } from "luxon";
 import { PendingStationSuggestionsService } from "src/app/services/pending-station-suggestions.service";
 import {
   StationSuggestionsComponent,
@@ -172,7 +172,7 @@ export class RouteDetailComponent implements OnInit {
     this.apiService.getRoute(this.routeId()).subscribe((data) => {
       this.route.set(data);
       if (!data.firstDateTime) {
-        data.firstDateTime = moment();
+        data.firstDateTime = DateTime.now();
       }
       this.colour.set(data.overrideColour);
       this.selectedMaps = data.routeMaps.map((r) => r.mapId);

@@ -11,8 +11,7 @@ import { saveAs } from "file-saver";
 import { TranslateService, TranslateModule } from "@ngx-translate/core";
 import { MatDialog } from "@angular/material/dialog";
 import { AreYouSureDialogComponent } from "src/app/are-you-sure-dialog/are-you-sure-dialog.component";
-import { Moment } from "moment";
-import moment from "moment";
+import { DateTime } from "luxon";
 import { MatIconButton, MatButton } from "@angular/material/button";
 import { MatIcon } from "@angular/material/icon";
 import { MatCard } from "@angular/material/card";
@@ -78,14 +77,14 @@ export class WizzardStep2Component implements OnInit {
   error = false;
   from!: number;
   to!: number;
-  dateTime: Moment | null = null;
+  dateTime: DateTime | null = null;
   fromTraewelling = false;
   trawellingTripData: TrawellingTripContext | null = null;
   constructor() {
     this.activatedRoute.params.subscribe((p) => (this.id = p.id));
     this.activatedRoute.queryParamMap.subscribe((p) => {
       if (p.has("date")) {
-        this.dateTime = moment.unix(+p.get("date")!);
+        this.dateTime = DateTime.fromSeconds(+p.get("date")!);
       } else {
         this.dateTime = null;
       }

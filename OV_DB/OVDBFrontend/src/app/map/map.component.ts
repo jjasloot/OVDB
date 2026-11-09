@@ -1,5 +1,5 @@
 import { Component, OnInit, AfterViewInit, ChangeDetectorRef, EventEmitter, OnDestroy, input, viewChild, signal, inject, ChangeDetectionStrategy } from "@angular/core";
-import moment from "moment";
+import { DateTime } from "luxon";
 import { ApiService } from "../services/api.service";
 import { LatLngBounds, LatLng, geoJSON, LatLngLiteral, Layer } from "leaflet";
 import { FilterSettings } from "../models/filterSettings";
@@ -67,8 +67,8 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
   readonly mapContainer = viewChild<HTMLElement>("mapContainer");
   loading = signal<boolean | number>(false);
   private subscriptions = new Subscription();
-  from: moment.Moment | null = null;
-  to: moment.Moment | null = null;
+  from: DateTime | null = null;
+  to: DateTime | null = null;
   selectedRegion: number[] = [];
   selectedTypes: number[] = [];
   layers: Layer[] = [];
@@ -102,8 +102,8 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
         "ThisMonth",
         true,
         false,
-        moment().startOf("month"),
-        moment().startOf("month").add(1, "month"),
+        DateTime.now().startOf("month"),
+        DateTime.now().startOf("month").plus({ months: 1 }),
         []
       ),
     ],
@@ -117,7 +117,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
         undefined,
         [],
         [],
-        [moment().year()]
+        [DateTime.now().year]
       ),
     ],
     [
@@ -126,8 +126,8 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
         "LastMonth",
         true,
         false,
-        moment().startOf("month").subtract(1, "month"),
-        moment().startOf("month"),
+        DateTime.now().startOf("month").minus({ months: 1 }),
+        DateTime.now().startOf("month"),
         []
       ),
     ],
@@ -141,7 +141,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
         undefined,
         [],
         [],
-        [moment().year() - 1]
+        [DateTime.now().year - 1]
       ),
     ],
     ["All", new FilterSettings("All", true, false, undefined, undefined, [])],
@@ -221,10 +221,10 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
     if (queryParams.has("from")) {
-      this.from = moment(+queryParams.get("from")!);
+      this.from = DateTime.fromMillis(+queryParams.get("from")!);
     }
     if (queryParams.has("to")) {
-      this.to = moment(+queryParams.get("to")!);
+      this.to = DateTime.fromMillis(+queryParams.get("to")!);
     }
     if (queryParams.has("types")) {
       this.selectedTypes = queryParams
@@ -404,9 +404,9 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     if (!!this.to && !!this.from) {
       filter += filter +=
         "(Date ge " +
-        this.from.format("YYYY-MM-DD") +
+        this.from.toFormat("yyyy-MM-dd") +
         " and Date lt " +
-        this.to.format("YYYY-MM-DD") +
+        this.to.toFormat("yyyy-MM-dd") +
         ")  and ";
     }
     if (this.selectedRegion && this.selectedRegion.length > 0) {
@@ -484,18 +484,16 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   showDialog(id: number) {
-    const limits = this.selectedYears.map((s) => {
+    const limits: { start: DateTime; end: DateTime }[] = this.selectedYears.map((s) => {
       return {
-        start: moment().year(s).startOf("year"),
-        end: moment()
-          .year(s + 1)
-          .startOf("year"),
+        start: DateTime.local(s, 1, 1),
+        end: DateTime.local(s + 1, 1, 1),
       };
     });
     if (!!this.from && !!this.to) {
       limits.push({
-        start: moment(this.from),
-        end: moment(this.to),
+        start: this.from,
+        end: this.to,
       });
     }
     const dialog = this.dialog.open(MapInstanceDialogComponent, {
@@ -526,8 +524,8 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     const years = this.selectedYears;
     this.defaults.forEach((value, key) => {
       if (
-        (value.from?.isSame(from) ?? (value.from == null && from == null)) &&
-        (value.to?.isSame(to) ?? (value.to == null && from == null)) &&
+        (value.from ? !!from && +value.from === +from : from == null) &&
+        (value.to ? !!to && +value.to === +to : to == null) &&
         value.selectedYears.every((y) => (years??[]).includes(y)) &&
         (years??[]).every((y) => value.selectedYears.includes(y))
       ) {

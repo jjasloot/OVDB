@@ -9,7 +9,7 @@ import { RouteType } from "../models/routeType.model";
 import { TranslateService, TranslateModule } from "@ngx-translate/core";
 import { TranslationService } from "../services/translation.service";
 import { DateAdapter } from "@angular/material/core";
-import { Moment } from "moment";
+import { DateTime } from "luxon";
 import { RegionsService } from "../services/regions.service";
 import { Region } from "../models/region.model";
 import { CdkScrollable } from "@angular/cdk/scrolling";
@@ -66,8 +66,8 @@ export class MapFilterComponent implements OnInit {
   selectedCountries = signal<number[]>([]);
   selectedTypes = signal<number[]>([]);
   selectedYears = signal<number[]>([]);
-  to = signal<Moment | null>(null);
-  from = signal<Moment | null>(null);
+  to = signal<DateTime | null>(null);
+  from = signal<DateTime | null>(null);
   routeTypes = signal<RouteType[]>([]);
   years = signal<number[]>([]);
   ownMap = signal(false);
@@ -180,7 +180,7 @@ export class MapFilterComponent implements OnInit {
     if (this.selectedCountries().length === 0) {
       this.limitToSelectedAreas.set(false);
     }
-    if (this.from() !== null && this.from()!.isValid()) {
+    if (this.from() !== null && this.from()!.isValid) {
       const settings = new FilterSettings(
         "filter",
         this.includeLineColours(),

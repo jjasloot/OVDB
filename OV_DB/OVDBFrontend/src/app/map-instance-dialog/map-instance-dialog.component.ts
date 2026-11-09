@@ -77,8 +77,8 @@ export class MapInstanceDialogComponent implements OnInit {
     merge(...this.limits.map(l => this.apiService.getRouteInstancesForMap(
       this.mapGuid,
       this.id,
-      l.start.format('YYYY-MM-DD'),
-      l.end.format('YYYY-MM-DD')
+      l.start.toFormat('yyyy-MM-dd'),
+      l.end.toFormat('yyyy-MM-dd')
     ))).subscribe(data => {
       this.instances = this.instances.concat(...data.routeInstances);
       completed++;

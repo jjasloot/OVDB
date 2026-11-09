@@ -17,7 +17,7 @@ import { FormsModule } from '@angular/forms';
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { TranslateModule } from '@ngx-translate/core';
 import { firstValueFrom } from 'rxjs';
-import moment, { Moment } from 'moment';
+import { DateTime } from 'luxon';
 import { ApiService } from 'src/app/services/api.service';
 import { TranslationService } from 'src/app/services/translation.service';
 import {
@@ -74,8 +74,8 @@ export class StationVisitDateDialogComponent {
 
   readonly levels = StationVisitLevel;
 
-  stoppedDate = signal<Moment | null>(this.data.firstStoppedDate ? moment(this.data.firstStoppedDate) : null);
-  entryExitDate = signal<Moment | null>(this.data.firstEntryExitDate ? moment(this.data.firstEntryExitDate) : null);
+  stoppedDate = signal<DateTime | null>(this.data.firstStoppedDate ? DateTime.fromISO(this.data.firstStoppedDate) : null);
+  entryExitDate = signal<DateTime | null>(this.data.firstEntryExitDate ? DateTime.fromISO(this.data.firstEntryExitDate) : null);
   stoppedTrip = signal<number | null>(this.data.firstStoppedRouteInstanceId);
   entryExitTrip = signal<number | null>(this.data.firstEntryExitRouteInstanceId);
 
@@ -90,7 +90,7 @@ export class StationVisitDateDialogComponent {
   willPullStoppedBack = computed(() => {
     const stopped = this.stoppedDate();
     const entryExit = this.entryExitDate();
-    return !!entryExit && (!stopped || entryExit.isBefore(stopped, 'day'));
+    return !!entryExit && (!stopped || entryExit.startOf('day') < stopped.startOf('day'));
   });
 
   constructor() {
@@ -131,16 +131,16 @@ export class StationVisitDateDialogComponent {
   /** Assigning a trip sets the date too — the server takes it from the trip, so they cannot differ. */
   choose(target: Target, routeInstanceId: number, date: string): void {
     if (target === 'entryExit') {
-      this.entryExitDate.set(moment(date));
+      this.entryExitDate.set(DateTime.fromISO(date));
       this.entryExitTrip.set(routeInstanceId);
       return;
     }
-    this.stoppedDate.set(moment(date));
+    this.stoppedDate.set(DateTime.fromISO(date));
     this.stoppedTrip.set(routeInstanceId);
   }
 
   /** Typing a date by hand means it is no longer that trip's date, so the link goes. */
-  setDate(target: Target, value: Moment | null): void {
+  setDate(target: Target, value: DateTime | null): void {
     if (target === 'entryExit') {
       this.entryExitDate.set(value);
       this.entryExitTrip.set(null);
@@ -166,7 +166,7 @@ export class StationVisitDateDialogComponent {
   }
 }
 
-/** The datepicker deals in moments; the API deals in plain dates with no timezone to misread. */
-function format(value: Moment | null): string | null {
-  return value ? moment(value).format('YYYY-MM-DD') : null;
+/** The datepicker deals in DateTimes; the API deals in plain dates with no timezone to misread. */
+function format(value: DateTime | null): string | null {
+  return value ? value.toFormat('yyyy-MM-dd') : null;
 }

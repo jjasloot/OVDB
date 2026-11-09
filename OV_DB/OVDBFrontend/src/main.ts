@@ -1,13 +1,9 @@
 import { enableProdMode, importProvidersFrom, LOCALE_ID, provideZoneChangeDetection } from "@angular/core";
 import { environment } from "./environments/environment";
-import {
-  MatMomentDateModule,
-  MAT_MOMENT_DATE_FORMATS,
-  MAT_MOMENT_DATE_ADAPTER_OPTIONS
-} from "@angular/material-moment-adapter";
+import { MAT_LUXON_DATE_FORMATS } from "@angular/material-luxon-adapter";
 import { DateAdapter, MAT_DATE_FORMATS } from '@angular/material/core';
 import { TranslationService } from "./app/services/translation.service";
-import { DynamicMomentDateAdapter } from "./app/adapters/dynamic-moment-date-adapter";
+import { DynamicLuxonDateAdapter } from "./app/adapters/dynamic-luxon-date-adapter";
 import {
   HTTP_INTERCEPTORS,
   provideHttpClient,
@@ -111,7 +107,6 @@ bootstrapApplication(AppComponent, {
       MatDialogModule,
       MatCheckboxModule,
       MatDatepickerModule,
-      MatMomentDateModule,
       MatTabsModule,
       MatInputModule,
       MatSelectModule,
@@ -138,8 +133,8 @@ bootstrapApplication(AppComponent, {
       MatBottomSheetModule,
       MatCardModule
     ),
-    { provide: DateAdapter, useClass: DynamicMomentDateAdapter, deps: [MAT_DATE_LOCALE, TranslationService] },
-    { provide: MAT_DATE_FORMATS, useValue: MAT_MOMENT_DATE_FORMATS },
+    { provide: DateAdapter, useClass: DynamicLuxonDateAdapter },
+    { provide: MAT_DATE_FORMATS, useValue: MAT_LUXON_DATE_FORMATS },
     { provide: HTTP_INTERCEPTORS, useClass: AuthInterceptor, multi: true },
     { provide: HTTP_INTERCEPTORS, useClass: HttpErrorInterceptor, multi: true },
     {

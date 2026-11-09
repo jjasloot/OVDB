@@ -3,7 +3,8 @@ export interface MultipleEdit {
     updateDate: boolean;
     updateType: boolean;
     updateMaps: boolean;
-    date: Date;
+    /** yyyy-MM-dd */
+    date?: string;
     typeId: number;
     countries: number[];
     maps: number[];
