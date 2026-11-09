@@ -321,6 +321,15 @@ namespace OV_DB
             builder.EntitySet<Route>("Routes");
             builder.EntitySet<Region>("Regions");
             builder.EntitySet<RouteType>("Types");
+            // Keep account data (password hash, tokens, webhook secrets) out of the queryable
+            // model, so no $filter path can reach it. The convention builder pulls in every type
+            // reachable through navigation properties, so each path to User is cut here;
+            // ODataFilterTests fails if a new one appears.
+            builder.EntityType<Map>().Ignore(m => m.User);
+            builder.EntityType<StationVisit>().Ignore(v => v.User);
+            builder.EntityType<StationGrouping>().Ignore(g => g.User);
+            builder.EntityType<StationMap>().Ignore(m => m.User);
+            builder.EntityType<StationSuggestionDismissal>().Ignore(d => d.User);
             return builder.GetEdmModel();
         }
     }

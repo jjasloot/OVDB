@@ -91,6 +91,10 @@ namespace OV_DB.Controllers
             NetTopologySuite.Geometries.Geometry? limitingArea = null;
             if (q.Filter != null)
             {
+                if (!IsAllowedFilter(q.Filter.RawValue))
+                {
+                    return BadRequest("Unsupported filter");
+                }
                 routes = q.Filter.ApplyTo(routes, new ODataQuerySettings()) as IQueryable<RouteInstance>;
 
                 if (limitToSelectedArea)
@@ -250,6 +254,21 @@ namespace OV_DB.Controllers
                 throw;
             }
         }
+
+        // The only filter terms the map page builds (map.component.ts getFilter). This endpoint is
+        // anonymous for shared maps, and an unchecked $filter can walk navigation properties to
+        // other users' rows and read their secrets one yes/no answer at a time, so anything
+        // beyond these terms joined by and/or/parentheses is refused.
+        private static readonly Regex AllowedFilterTerm = new(
+            @"Date (?:ge|gt|le|lt) \d{4}-\d{2}-\d{2}" +
+            @"|Route/Regions/any\(region: region/Id eq \d+\)" +
+            @"|Route/RouteTypeId eq \d+" +
+            @"|Route/FirstDateTime eq null",
+            RegexOptions.CultureInvariant);
+        private static readonly Regex OnlyConnectives = new(@"^(?:[\s()]|\band\b|\bor\b)*$", RegexOptions.CultureInvariant);
+
+        internal static bool IsAllowedFilter(string rawFilter) =>
+            rawFilter != null && OnlyConnectives.IsMatch(AllowedFilterTerm.Replace(rawFilter, " "));
 
         private async Task<NetTopologySuite.Geometries.Geometry?> ExtractAreaFromQueryAsync(ODataQueryOptions<RouteInstance> q, CancellationToken cancellationToken)
         {
