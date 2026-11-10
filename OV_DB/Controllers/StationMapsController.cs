@@ -223,13 +223,6 @@ namespace OV_DB.Controllers
             return Ok(response);
         }
 
-        [HttpGet("countries")]
-        public async Task<IActionResult> GetCountries()
-        {
-            var countries = await _context.StationCountries.ToListAsync();
-            return Ok(countries);
-        }
-
         private bool MapExists(int id)
         {
             return _context.Maps.Any(e => e.MapId == id);

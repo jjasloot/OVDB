@@ -23,12 +23,10 @@ namespace OVDB_database.Database
         public DbSet<User> Users { get; set; }
         public DbSet<RouteInstance> RouteInstances { get; set; }
         public DbSet<RouteInstanceProperty> RouteInstanceProperties { get; set; }
-        public DbSet<StationCountry> StationCountries { get; set; }
         public DbSet<Station> Stations { get; set; }
         public DbSet<StationVisit> StationVisits { get; set; }
         public DbSet<StationSuggestionDismissal> StationSuggestionDismissals { get; set; }
         public DbSet<StationMap> StationMaps { get; set; }
-        public DbSet<StationMapCountry> StationMapCountries { get; set; }
         public DbSet<Region> Regions { get; set; }
         public DbSet<Request> Requests { get; set; }
         public DbSet<StationGrouping> StationGroupings { get; set; }

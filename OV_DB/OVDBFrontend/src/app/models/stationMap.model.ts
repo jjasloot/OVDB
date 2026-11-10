@@ -9,7 +9,3 @@ export interface StationMap {
   regionIds: number[]
 }
 
-export interface StationMapCountryDTO {
-  stationCountryId: number;
-  includeSpecials: boolean;
-}

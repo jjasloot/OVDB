@@ -314,12 +314,14 @@ public class TrainlogExportService(OVDBDatabaseContext dbContext, ILogger<Trainl
             // Fallback: If no intersection found (or no geometries loaded), use the old logic
             if (countries.Count == 0)
             {
-                var countryCodes = new HashSet<string>();
-                var fromStation = await dbContext.Stations.Include(s => s.StationCountry).FirstOrDefaultAsync(s => s.Name == route.From);
-                var toStation = await dbContext.Stations.Include(s => s.StationCountry).FirstOrDefaultAsync(s => s.Name == route.To);
-
-                if (fromStation?.StationCountry != null) countryCodes.Add(fromStation.StationCountry.NameNL ?? fromStation.StationCountry.Name);
-                if (toStation?.StationCountry != null) countryCodes.Add(toStation.StationCountry.NameNL ?? toStation.StationCountry.Name);
+                // The countries of the end stations, as ISO codes like the main path above.
+                var countryCodes = (await dbContext.Stations
+                    .Where(s => s.Name == route.From || s.Name == route.To)
+                    .SelectMany(s => s.Regions)
+                    .Where(r => r.IsoCode != null && r.IsoCode != "")
+                    .Select(r => r.IsoCode)
+                    .Distinct()
+                    .ToListAsync()).ToHashSet();
 
                 if (countryCodes.Any())
                 {

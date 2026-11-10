@@ -103,8 +103,7 @@ namespace OV_DB.Controllers
                 // A sweep across the map rather than down the alphabet: north to south in bands, and
                 // along each band, reversing direction at every band so the end of one meets the start
                 // of the next. See BandDegrees for what this is worth.
-                .OrderBy(sv => sv.Station.StationCountryId)
-                .ThenByDescending(sv => Math.Floor(sv.Station.Lattitude / BandDegrees))
+                .OrderByDescending(sv => Math.Floor(sv.Station.Lattitude / BandDegrees))
                 .ThenBy(sv =>
                     Math.Floor(sv.Station.Lattitude / BandDegrees) % 2 == 0
                         ? sv.Station.Longitude

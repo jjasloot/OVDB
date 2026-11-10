@@ -22,6 +22,5 @@ namespace OVDB_database.Models
         public string? SharingLinkName { get; set; }
         public int OrderNr { get; set; }
         public User? User { get; set; }
-        public List<StationMapCountry> StationMapCountries { get; set; }
     }
 }

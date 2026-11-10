@@ -489,38 +489,11 @@ namespace OVDB_database.Migrations
                         .HasColumnType("tinyint(1)")
                         .HasDefaultValue(false);
 
-                    b.Property<int?>("StationCountryId")
-                        .HasColumnType("int");
-
                     b.HasKey("Id");
 
                     b.HasIndex("OsmId");
 
-                    b.HasIndex("StationCountryId");
-
                     b.ToTable("Stations");
-                });
-
-            modelBuilder.Entity("OVDB_database.Models.StationCountry", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Name")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("NameNL")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("OsmId")
-                        .HasColumnType("longtext");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("StationCountries");
                 });
 
             modelBuilder.Entity("OVDB_database.Models.StationGrouping", b =>
@@ -593,32 +566,6 @@ namespace OVDB_database.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("StationMaps");
-                });
-
-            modelBuilder.Entity("OVDB_database.Models.StationMapCountry", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<bool>("IncludeSpecials")
-                        .HasColumnType("tinyint(1)");
-
-                    b.Property<int>("StationCountryId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("StationMapId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("StationCountryId");
-
-                    b.HasIndex("StationMapId");
-
-                    b.ToTable("StationMapCountries");
                 });
 
             modelBuilder.Entity("OVDB_database.Models.StationMergeIgnore", b =>
@@ -1092,15 +1039,6 @@ namespace OVDB_database.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("OVDB_database.Models.Station", b =>
-                {
-                    b.HasOne("OVDB_database.Models.StationCountry", "StationCountry")
-                        .WithMany("Stations")
-                        .HasForeignKey("StationCountryId");
-
-                    b.Navigation("StationCountry");
-                });
-
             modelBuilder.Entity("OVDB_database.Models.StationGrouping", b =>
                 {
                     b.HasOne("OVDB_database.Models.User", "User")
@@ -1121,25 +1059,6 @@ namespace OVDB_database.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
-                });
-
-            modelBuilder.Entity("OVDB_database.Models.StationMapCountry", b =>
-                {
-                    b.HasOne("OVDB_database.Models.StationCountry", "StationCountry")
-                        .WithMany("StationMapCountries")
-                        .HasForeignKey("StationCountryId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("OVDB_database.Models.StationMap", "StationMap")
-                        .WithMany("StationMapCountries")
-                        .HasForeignKey("StationMapId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("StationCountry");
-
-                    b.Navigation("StationMap");
                 });
 
             modelBuilder.Entity("OVDB_database.Models.StationMergeIgnore", b =>
@@ -1357,18 +1276,6 @@ namespace OVDB_database.Migrations
             modelBuilder.Entity("OVDB_database.Models.Station", b =>
                 {
                     b.Navigation("StationVisits");
-                });
-
-            modelBuilder.Entity("OVDB_database.Models.StationCountry", b =>
-                {
-                    b.Navigation("StationMapCountries");
-
-                    b.Navigation("Stations");
-                });
-
-            modelBuilder.Entity("OVDB_database.Models.StationMap", b =>
-                {
-                    b.Navigation("StationMapCountries");
                 });
 
             modelBuilder.Entity("OVDB_database.Models.User", b =>

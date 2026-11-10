@@ -20,8 +20,6 @@ namespace OVDB_database.Models
         public double? Elevation { get; set; }
         public String Network { get; set; }
         public String Operator { get; set; }
-        public int? StationCountryId { get; set; }
-        public StationCountry StationCountry { get; set; }
         public List<StationVisit> StationVisits { get; set; }
         public bool Hidden { get; set; }
         public bool Special { get; set; }

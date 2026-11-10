@@ -25,7 +25,6 @@ import {
   StationVisitState,
   TripCandidateGroup,
 } from "../models/stationView.model";
-import { StationCountry } from "../models/stationCountry.model";
 import { StationAdminProperties } from "../models/stationAdminProperties.model";
 import { MapDataDTO } from "../models/map-data.model";
 import { RegionOperators } from "../models/region-operators.model";
@@ -672,11 +671,6 @@ export class ApiService {
   deleteStationMap(stationMapId: number) {
     return this.httpClient.delete(
       environment.backend + "api/stationmaps/" + stationMapId
-    );
-  }
-  getStationCountries(): Observable<StationCountry[]> {
-    return this.httpClient.get<StationCountry[]>(
-      environment.backend + "api/stationmaps/countries"
     );
   }
   getTripReport(selectedMap: string, selectedYear: number) {
