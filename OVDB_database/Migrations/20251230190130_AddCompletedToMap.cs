@@ -10,6 +10,15 @@ namespace OVDB_database.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            // The composite index first: on a fresh database the UserId foreign key needs an index,
+            // so dropping the single-column one before its replacement exists fails. (Production
+            // ran this in the original order without that foreign key; reordering is a no-op there.)
+            migrationBuilder.CreateIndex(
+                name: "IX_TrawellingIgnoredStatuses_UserId_TrawellingStatusId",
+                table: "TrawellingIgnoredStatuses",
+                columns: new[] { "UserId", "TrawellingStatusId" },
+                unique: true);
+
             migrationBuilder.DropIndex(
                 name: "IX_TrawellingIgnoredStatuses_UserId",
                 table: "TrawellingIgnoredStatuses");
@@ -20,12 +29,6 @@ namespace OVDB_database.Migrations
                 type: "tinyint(1)",
                 nullable: false,
                 defaultValue: false);
-
-            migrationBuilder.CreateIndex(
-                name: "IX_TrawellingIgnoredStatuses_UserId_TrawellingStatusId",
-                table: "TrawellingIgnoredStatuses",
-                columns: new[] { "UserId", "TrawellingStatusId" },
-                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_trawelling_stations_traewelling_id",

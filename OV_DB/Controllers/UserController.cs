@@ -123,7 +123,13 @@ namespace OV_DB.Controllers
             user.PreferredLanguage = updateProfile.PreferredLanguage != null
                 ? LanguageHelper.FromLanguageCode(updateProfile.PreferredLanguage)
                 : null;
-            user.TelegramUserId = updateProfile.TelegramUserId;
+            // Unique: the bot finds the account by it. 0 used to mean "not set".
+            var telegramUserId = updateProfile.TelegramUserId is > 0 ? updateProfile.TelegramUserId : null;
+            if (telegramUserId != null && await DatabaseContext.Users.AnyAsync(u => u.Id != user.Id && u.TelegramUserId == telegramUserId))
+            {
+                return BadRequest("This Telegram account is already linked to another OVDB account.");
+            }
+            user.TelegramUserId = telegramUserId;
             user.TrainlogMaterialKey = updateProfile.TrainlogMaterialKey;
             user.TrainlogRegistrationKey = updateProfile.TrainlogRegistrationKey;
             user.TrainlogSeatKey = updateProfile.TrainlogSeatKey;

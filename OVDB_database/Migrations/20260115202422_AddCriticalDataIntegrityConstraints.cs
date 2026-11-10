@@ -18,10 +18,6 @@ namespace OVDB_database.Migrations
                 name: "FK_InviteCodes_Users_UserId",
                 table: "InviteCodes");
 
-            migrationBuilder.DropIndex(
-                name: "IX_RouteInstanceProperties_RouteInstanceId",
-                table: "RouteInstanceProperties");
-
             migrationBuilder.UpdateData(
                 table: "Users",
                 keyColumn: "Password",
@@ -133,6 +129,12 @@ namespace OVDB_database.Migrations
                 name: "IX_RouteInstanceProperties_RouteInstanceId_Key",
                 table: "RouteInstanceProperties",
                 columns: new[] { "RouteInstanceId", "Key" });
+
+            // Dropped only now that the composite index exists: on a fresh database the
+            // RouteInstanceId foreign key needs one of them (production had no such constraint).
+            migrationBuilder.DropIndex(
+                name: "IX_RouteInstanceProperties_RouteInstanceId",
+                table: "RouteInstanceProperties");
 
             migrationBuilder.CreateIndex(
                 name: "IX_RefreshTokens_IsRevoked",
