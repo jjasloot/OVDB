@@ -326,8 +326,6 @@ namespace OVDB_database.Migrations
 
                     b.HasKey("RouteInstanceId");
 
-                    b.HasIndex("Date");
-
                     b.HasIndex("TrawellingStatusId");
 
                     b.HasIndex(new[] { "Date", "RouteId" }, "idx_routeinstances_date_routeid");
@@ -407,7 +405,8 @@ namespace OVDB_database.Migrations
 
                     b.HasIndex("MapId");
 
-                    b.HasIndex("RouteId");
+                    b.HasIndex("RouteId", "MapId")
+                        .IsUnique();
 
                     b.ToTable("RoutesMaps");
                 });

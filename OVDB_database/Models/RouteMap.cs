@@ -5,6 +5,8 @@ using System.Text;
 
 namespace OVDB_database.Models
 {
+    // A route is on a map once; this also serves the RouteId foreign key.
+    [Microsoft.EntityFrameworkCore.Index(nameof(RouteId), nameof(MapId), IsUnique = true)]
     public class RouteMap
     {
         [Key]
