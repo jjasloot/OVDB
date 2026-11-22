@@ -116,7 +116,7 @@ public class StationSuggestionService(
         // Only the section actually ridden. The endpoint answers with the whole trip, and the
         // stations before boarding or beyond where the user got off were never reached — offering
         // those invites marking a visit that did not happen.
-        var ridden = RiddenSection(stopovers, status.Checkin?.Origin?.Station, status.Checkin?.Destination?.Station);
+        var ridden = RiddenSection(stopovers, status.Checkin?.Origin, status.Checkin?.Destination);
 
         var stops = ridden
             .Where(s => s.Station?.Latitude != null && s.Station?.Longitude != null)
@@ -135,17 +135,25 @@ public class StationSuggestionService(
     /// (the user says no), silently dropping the stations they did visit is not.
     /// </remarks>
     private static List<TrawellingStopover> RiddenSection(
-        List<TrawellingStopover> stopovers, TrawellingStation origin, TrawellingStation destination)
+        List<TrawellingStopover> stopovers, TrawellingStopover origin, TrawellingStopover destination)
     {
-        if (origin == null || destination == null)
+        if (origin?.Station == null || destination?.Station == null)
         {
             return stopovers;
         }
 
-        var from = stopovers.FindIndex(s => s.Station?.Id == origin.Id);
+        // The stopover uuid pins the exact call; a station id is not unique within a trip (a loop
+        // calls at one station twice), so it is only the fallback when the uuid is not in the list.
+        int Find(int start, TrawellingStopover target)
+        {
+            var byUuid = string.IsNullOrEmpty(target.Uuid) ? -1 : stopovers.FindIndex(start, s => s.Uuid == target.Uuid);
+            return byUuid >= 0 ? byUuid : stopovers.FindIndex(start, s => s.Station?.Id == target.Station.Id);
+        }
+
+        var from = Find(0, origin);
         // Searched from the boarding point onward, so a trip that calls at one station twice takes
         // the arrival after boarding rather than one before it.
-        var to = from < 0 ? -1 : stopovers.FindIndex(from, s => s.Station?.Id == destination.Id);
+        var to = from < 0 ? -1 : Find(from, destination);
 
         return from < 0 || to < from ? stopovers : stopovers.GetRange(from, to - from + 1);
     }

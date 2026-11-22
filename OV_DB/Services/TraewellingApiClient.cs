@@ -669,6 +669,7 @@ namespace OV_DB.Services
                 using var request = requestFactory();
                 var response = await _httpClient.SendAsync(request, cancellationToken);
                 _rateLimiter.RecordResponse(response);
+                WarnIfSunset(request, response);
 
                 if (response.StatusCode != System.Net.HttpStatusCode.TooManyRequests &&
                     response.StatusCode != System.Net.HttpStatusCode.ServiceUnavailable)
@@ -689,6 +690,17 @@ namespace OV_DB.Services
                 // loop does the waiting; fall back to exponential backoff if there was none.
                 if (!_rateLimiter.IsLimited)
                     await Task.Delay(TimeSpan.FromSeconds(Math.Pow(2, attempt)), cancellationToken);
+            }
+        }
+
+        // Träwelling marks endpoint versions due for switch-off with a Sunset header (RFC 8594) and
+        // answers 410 Gone afterwards; log it so a shutdown is noticed before it breaks the import.
+        private void WarnIfSunset(HttpRequestMessage request, HttpResponseMessage response)
+        {
+            if (response.Headers.TryGetValues("Sunset", out var sunset))
+            {
+                _logger.LogWarning("Träwelling endpoint {Method} {Path} is being switched off on {Sunset}; see API_CHANGELOG.md.",
+                    request.Method, request.RequestUri?.AbsolutePath, string.Join(", ", sunset));
             }
         }
 

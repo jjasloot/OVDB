@@ -242,6 +242,40 @@ public class StationSuggestionServiceTests
     }
 
     [Fact]
+    public async Task BoardingAtTheSecondCallOfALoopIsFoundByTheStopoverUuid()
+    {
+        var context = NewContext();
+        context.Stations.AddRange(StationRow(1, "Loop"), StationRow(2, "Middle"), StationRow(3, "End"));
+        await context.SaveChangesAsync();
+
+        // The train calls at Loop twice; the user boarded at the second call. A station id alone
+        // would pick the first call and offer Middle, which the user never passed.
+        var secondCall = Stopover(10, "Loop");
+        var trawelling = new Mock<ITraewellingApiClient>();
+        trawelling.Setup(t => t.GetTripStopoversAsync(It.IsAny<User>(), TripId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync([Stopover(10, "Loop"), Stopover(20, "Middle"), secondCall, Stopover(30, "End")]);
+
+        var service = new StationSuggestionService(
+            context,
+            MatcherFor(Candidate(1, "Loop"), Candidate(2, "Middle"), Candidate(3, "End")).Object,
+            trawelling.Object, NotLimited());
+
+        var payload = $$"""
+        {
+          "id": 123456,
+          "checkin": {
+            "trip": {{TripId}},
+            "origin": { "uuid": "{{secondCall.Uuid}}", "station": { "id": 10, "name": "Loop", "latitude": 48.9, "longitude": 8.4 } },
+            "destination": { "station": { "id": 30, "name": "End", "latitude": 48.9, "longitude": 8.4 } }
+          }
+        }
+        """;
+        var suggestions = (await service.FromTrawellingStatusAsync(TestUser(), payload)).Stations;
+
+        Assert.Equal([1, 3], suggestions.Select(s => s.StationId));
+    }
+
+    [Fact]
     public async Task TheWholePatternIsKeptWhenTheEndsAreNotInIt()
     {
         var context = NewContext();
