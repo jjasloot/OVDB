@@ -13,7 +13,7 @@ using OVDB_database.Database;
 namespace OVDB_database.Migrations
 {
     [DbContext(typeof(OVDBDatabaseContext))]
-    [Migration("20261122145033_TraewellingStatusUuid")]
+    [Migration("20261122145758_TraewellingStatusUuid")]
     partial class TraewellingStatusUuid
     {
         /// <inheritdoc />
@@ -334,6 +334,8 @@ namespace OVDB_database.Migrations
                     b.HasKey("RouteInstanceId");
 
                     b.HasIndex("TrawellingStatusId");
+
+                    b.HasIndex("TrawellingStatusUuid");
 
                     b.HasIndex(new[] { "Date", "RouteId" }, "idx_routeinstances_date_routeid");
 
@@ -690,6 +692,10 @@ namespace OVDB_database.Migrations
                     b.Property<int>("TrawellingStatusId")
                         .HasColumnType("int");
 
+                    b.Property<string>("TrawellingStatusUuid")
+                        .HasMaxLength(36)
+                        .HasColumnType("varchar(36)");
+
                     b.Property<int>("UserId")
                         .HasColumnType("int");
 
@@ -697,6 +703,8 @@ namespace OVDB_database.Migrations
 
                     b.HasIndex("UserId", "TrawellingStatusId")
                         .IsUnique();
+
+                    b.HasIndex("UserId", "TrawellingStatusUuid");
 
                     b.ToTable("TrawellingIgnoredStatuses");
                 });
@@ -742,6 +750,8 @@ namespace OVDB_database.Migrations
 
                     b.HasIndex("UserId", "TrawellingStatusId")
                         .IsUnique();
+
+                    b.HasIndex("UserId", "TrawellingStatusUuid");
 
                     b.ToTable("TrawellingInboxStatuses");
                 });

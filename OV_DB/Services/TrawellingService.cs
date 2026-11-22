@@ -130,9 +130,14 @@ namespace OV_DB.Services
                     }
 
                     var newOnPage = 0;
+                    var knownUuids = new Dictionary<int, string>();
                     foreach (var status in statusesResponse.Data)
                     {
+                        if (!await ResolveStatusKeyAsync(user, status, cancellationToken))
+                            continue;
                         seenIds.Add(status.Id);
+                        if (knownIds.Contains(status.Id) && !string.IsNullOrEmpty(status.Uuid))
+                            knownUuids[status.Id] = status.Uuid;
                         var departure = TraewellingTripMapper.GetStatusDeparture(status);
                         if (departure.HasValue && (!oldestSweptDeparture.HasValue || departure < oldestSweptDeparture))
                             oldestSweptDeparture = departure;
@@ -157,9 +162,13 @@ namespace OV_DB.Services
                         added++;
                     }
 
+                    // Statuses OVDB already has get their UUID on the way past, so a full resync
+                    // leaves every import with both ids.
+                    var stamped = await StampStatusUuidsAsync(user, knownUuids, cancellationToken);
+
                     // Keep what this page found before asking for the next one, so a walk that is
                     // cut short still leaves the inbox fuller than it was.
-                    if (newOnPage > 0)
+                    if (newOnPage > 0 || stamped)
                         await _dbContext.SaveChangesAsync(cancellationToken);
 
                     progress?.Report(new TrawellingSweepProgress(pagesRead, added));
@@ -263,7 +272,7 @@ namespace OV_DB.Services
                         // Early webhook deliveries were stored without the stopovers' station
                         // objects, which the mapping requires; refetch the complete status once
                         // and repair the stored payload.
-                        var (fullJson, fullStatus) = await _api.FetchStatusRawAsync(user, row.TrawellingStatusId);
+                        var (fullJson, fullStatus) = await _api.FetchStatusRawAsync(user, row.TrawellingStatusId, uuid: row.TrawellingStatusUuid);
                         if (fullJson != null)
                         {
                             row.PayloadJson = fullJson;
@@ -494,6 +503,81 @@ namespace OV_DB.Services
             => _dbContext.TrawellingInboxStatuses
                 .SingleOrDefaultAsync(s => s.UserId == user.Id && s.TrawellingStatusId == statusId && s.State == state);
 
+        /// <summary>
+        /// Makes sure <paramref name="status"/> has OVDB's numeric key. Träwelling sends a numeric id
+        /// today; if it stops (its ids are moving to UUIDs), the key comes from the UUID instead: the
+        /// number this status already has here, or a new negative one. Negative keys are local only:
+        /// calls to Träwelling go by UUID. False when the status carries neither.
+        /// </summary>
+        private async Task<bool> ResolveStatusKeyAsync(User user, TrawellingStatus status, CancellationToken cancellationToken = default)
+        {
+            if (status.Id != 0)
+                return true;
+            if (string.IsNullOrEmpty(status.Uuid))
+                return false;
+            var uuid = status.Uuid;
+
+            var known = await _dbContext.TrawellingInboxStatuses
+                    .Where(s => s.UserId == user.Id && s.TrawellingStatusUuid == uuid)
+                    .Select(s => (int?)s.TrawellingStatusId).FirstOrDefaultAsync(cancellationToken)
+                ?? await _dbContext.TrawellingIgnoredStatuses
+                    .Where(s => s.UserId == user.Id && s.TrawellingStatusUuid == uuid)
+                    .Select(s => (int?)s.TrawellingStatusId).FirstOrDefaultAsync(cancellationToken)
+                ?? await _dbContext.RouteInstances
+                    .Where(ri => ri.TrawellingStatusUuid == uuid)
+                    .Where(ri => ri.RouteInstanceMaps.Any(rim => rim.Map.UserId == user.Id)
+                        || ri.Route.RouteMaps.Any(rm => rm.Map.UserId == user.Id))
+                    .Select(ri => ri.TrawellingStatusId).FirstOrDefaultAsync(cancellationToken);
+            if (known.HasValue)
+            {
+                status.Id = known.Value;
+                return true;
+            }
+
+            // shortcut: the next key is read from the current minimum, so two brand-new UUID-only
+            // statuses stored at the same instant could collide; Träwelling still sends numbers, so this
+            // only runs after they stop. Upgrade to a sequence table if that ever happens at volume.
+            var lowest = Math.Min(Math.Min(
+                await _dbContext.TrawellingInboxStatuses.MinAsync(s => (int?)s.TrawellingStatusId, cancellationToken) ?? 0,
+                await _dbContext.TrawellingIgnoredStatuses.MinAsync(s => (int?)s.TrawellingStatusId, cancellationToken) ?? 0),
+                await _dbContext.RouteInstances.MinAsync(ri => ri.TrawellingStatusId, cancellationToken) ?? 0);
+            status.Id = Math.Min(lowest, 0) - 1;
+            return true;
+        }
+
+        /// <summary>Gives this user's trips, inbox rows and ignored statuses their status UUID where still missing.</summary>
+        private async Task<bool> StampStatusUuidsAsync(User user, Dictionary<int, string> uuids, CancellationToken cancellationToken)
+        {
+            if (uuids.Count == 0)
+                return false;
+            var ids = uuids.Keys.ToList();
+            var changed = false;
+            foreach (var ri in await _dbContext.RouteInstances
+                .Where(ri => ri.TrawellingStatusId.HasValue && ids.Contains(ri.TrawellingStatusId.Value) && ri.TrawellingStatusUuid == null)
+                .Where(ri => ri.RouteInstanceMaps.Any(rim => rim.Map.UserId == user.Id)
+                    || ri.Route.RouteMaps.Any(rm => rm.Map.UserId == user.Id))
+                .ToListAsync(cancellationToken))
+            {
+                ri.TrawellingStatusUuid = uuids[ri.TrawellingStatusId!.Value];
+                changed = true;
+            }
+            foreach (var row in await _dbContext.TrawellingInboxStatuses
+                .Where(s => s.UserId == user.Id && ids.Contains(s.TrawellingStatusId) && s.TrawellingStatusUuid == null)
+                .ToListAsync(cancellationToken))
+            {
+                row.TrawellingStatusUuid = uuids[row.TrawellingStatusId];
+                changed = true;
+            }
+            foreach (var ignored in await _dbContext.TrawellingIgnoredStatuses
+                .Where(s => s.UserId == user.Id && ids.Contains(s.TrawellingStatusId) && s.TrawellingStatusUuid == null)
+                .ToListAsync(cancellationToken))
+            {
+                ignored.TrawellingStatusUuid = uuids[ignored.TrawellingStatusId];
+                changed = true;
+            }
+            return changed;
+        }
+
         private Task<RouteInstance> FindImportedInstanceAsync(User user, int statusId)
             => _dbContext.RouteInstances
                 .Include(ri => ri.Route)
@@ -514,7 +598,7 @@ namespace OV_DB.Services
             }
 
             var status = statusToken.ToObject<TrawellingStatus>();
-            if (status == null || status.Id == 0)
+            if (status == null || !await ResolveStatusKeyAsync(user, status))
                 return;
             var statusJson = statusToken.ToString(Formatting.None);
             var statusId = status.Id;
@@ -526,10 +610,13 @@ namespace OV_DB.Services
             if (eventType is "checkin_create" or "checkin_update")
             {
                 // Not waiting on the rate limit: the stored payload is repaired when the list loads.
-                var (fullJson, fullStatus) = await _api.FetchStatusRawAsync(user, statusId, waitIfLimited: false);
+                var (fullJson, fullStatus) = await _api.FetchStatusRawAsync(user, statusId, waitIfLimited: false, uuid: status.Uuid);
                 if (fullJson != null)
                 {
-                    statusJson = fullJson;
+                    fullStatus.Uuid ??= status.Uuid;
+                    if (fullStatus.Id == 0)
+                        fullStatus.Id = statusId; // resolved locally: the fetched copy carries no number
+                    statusJson = fullStatus.Id == statusId && statusId > 0 ? fullJson : JsonConvert.SerializeObject(fullStatus);
                     status = fullStatus;
                 }
                 else
@@ -775,6 +862,11 @@ namespace OV_DB.Services
                 {
                     UserId = user.Id,
                     TrawellingStatusId = statusId,
+                    // From the inbox row, which is removed below.
+                    TrawellingStatusUuid = await _dbContext.TrawellingInboxStatuses
+                        .Where(s => s.UserId == user.Id && s.TrawellingStatusId == statusId)
+                        .Select(s => s.TrawellingStatusUuid)
+                        .FirstOrDefaultAsync(),
                     IgnoredAt = DateTime.UtcNow
                 };
 
@@ -848,7 +940,11 @@ namespace OV_DB.Services
                 }
 
                 // Get the Träwelling status to potentially update timing data
-                var statusData = await GetStatusAsync(user, statusId);
+                var statusUuid = await _dbContext.TrawellingInboxStatuses
+                    .Where(s => s.UserId == user.Id && s.TrawellingStatusId == statusId)
+                    .Select(s => s.TrawellingStatusUuid)
+                    .FirstOrDefaultAsync();
+                var statusData = await GetStatusAsync(user, statusId, statusUuid);
                 if (statusData != null && routeInstance.StartTime == null && routeInstance.EndTime == null)
                 {
 
@@ -890,7 +986,7 @@ namespace OV_DB.Services
             }
         }
 
-        private async Task<TrawellingTripDto> GetStatusAsync(User user, int statusId)
+        private async Task<TrawellingTripDto> GetStatusAsync(User user, int statusId, string uuid = null)
         {
             try
             {
@@ -901,7 +997,7 @@ namespace OV_DB.Services
                 }
 
                 // Cache miss or expired - fetch from API
-                var (_, status) = await _api.FetchStatusRawAsync(user, statusId);
+                var (_, status) = await _api.FetchStatusRawAsync(user, statusId, uuid: uuid);
                 if (status == null)
                     return null;
 
@@ -942,7 +1038,7 @@ namespace OV_DB.Services
                 {
                     try
                     {
-                        var statusData = await GetStatusAsync(user, instance.TrawellingStatusId.Value);
+                        var statusData = await GetStatusAsync(user, instance.TrawellingStatusId.Value, instance.TrawellingStatusUuid);
                         if (statusData?.Transport?.Origin == null || statusData.Transport.Destination == null)
                         {
                             failed++;

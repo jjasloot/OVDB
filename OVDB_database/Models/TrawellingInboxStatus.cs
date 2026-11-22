@@ -31,6 +31,7 @@ namespace OVDB_database.Models
     /// fixes apply retroactively to everything still in the inbox.
     /// </summary>
     [Index(nameof(UserId), nameof(TrawellingStatusId), IsUnique = true)]
+    [Index(nameof(UserId), nameof(TrawellingStatusUuid))]
     public class TrawellingInboxStatus
     {
         [Key]

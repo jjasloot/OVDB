@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 namespace OVDB_database.Models
 {
     [Index(nameof(UserId), nameof(TrawellingStatusId), IsUnique = true)]
+    [Index(nameof(UserId), nameof(TrawellingStatusUuid))]
     public class TrawellingIgnoredStatus
     {
         [Key]
@@ -15,7 +16,11 @@ namespace OVDB_database.Models
         
         [Required]
         public int TrawellingStatusId { get; set; }
-        
+
+        /// <summary>Träwelling's UUID for the status (see RouteInstance.TrawellingStatusUuid).</summary>
+        [MaxLength(36)]
+        public string? TrawellingStatusUuid { get; set; }
+
         public DateTime IgnoredAt { get; set; }
         
         // Navigation properties

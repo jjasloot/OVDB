@@ -124,7 +124,8 @@ namespace OV_DB.Services
         /// </summary>
         /// <param name="waitIfLimited">False for callers that must answer quickly (webhook deliveries):
         /// gives up instead of waiting out the rate limit or retrying.</param>
-        Task<(string Json, TrawellingStatus Status)> FetchStatusRawAsync(User user, int statusId, bool waitIfLimited = true);
+        /// <param name="uuid">The status's UUID when known: preferred, and required for a negative (local-only) id.</param>
+        Task<(string Json, TrawellingStatus Status)> FetchStatusRawAsync(User user, int statusId, bool waitIfLimited = true, string uuid = null);
 
         /// <summary>
         /// GET an API path (relative to Traewelling:BaseUrl) as this user, through the shared
@@ -496,17 +497,22 @@ namespace OV_DB.Services
         /// webhook delivery payload, this endpoint returns the complete resource including
         /// the stopovers' station objects.
         /// </summary>
-        public async Task<(string Json, TrawellingStatus Status)> FetchStatusRawAsync(User user, int statusId, bool waitIfLimited = true)
+        public async Task<(string Json, TrawellingStatus Status)> FetchStatusRawAsync(User user, int statusId, bool waitIfLimited = true, string uuid = null)
         {
             try
             {
+                // Träwelling accepts either id here and is moving to UUIDs; a negative id is OVDB's own
+                // key for a status that came without a number, so it can only be fetched by UUID.
+                var idForApi = !string.IsNullOrEmpty(uuid) ? uuid : statusId > 0 ? statusId.ToString() : null;
+                if (idForApi == null)
+                    return (null, null);
                 if (!waitIfLimited && _rateLimiter.IsLimited)
                     return (null, null);
                 if (!await EnsureValidTokenAsync(user))
                     return (null, null);
 
                 var response = await SendAsync(() =>
-                    CreateApiRequest(HttpMethod.Get, $"{_baseUrl}/status/{statusId}", user), maxRetries: waitIfLimited ? 5 : 0);
+                    CreateApiRequest(HttpMethod.Get, $"{_baseUrl}/status/{Uri.EscapeDataString(idForApi)}", user), maxRetries: waitIfLimited ? 5 : 0);
                 if (!response.IsSuccessStatusCode)
                     return (null, null);
 

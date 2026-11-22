@@ -332,6 +332,8 @@ namespace OVDB_database.Migrations
 
                     b.HasIndex("TrawellingStatusId");
 
+                    b.HasIndex("TrawellingStatusUuid");
+
                     b.HasIndex(new[] { "Date", "RouteId" }, "idx_routeinstances_date_routeid");
 
                     b.HasIndex(new[] { "RouteId", "Date" }, "idx_routeinstances_routeid_date");
@@ -687,6 +689,10 @@ namespace OVDB_database.Migrations
                     b.Property<int>("TrawellingStatusId")
                         .HasColumnType("int");
 
+                    b.Property<string>("TrawellingStatusUuid")
+                        .HasMaxLength(36)
+                        .HasColumnType("varchar(36)");
+
                     b.Property<int>("UserId")
                         .HasColumnType("int");
 
@@ -694,6 +700,8 @@ namespace OVDB_database.Migrations
 
                     b.HasIndex("UserId", "TrawellingStatusId")
                         .IsUnique();
+
+                    b.HasIndex("UserId", "TrawellingStatusUuid");
 
                     b.ToTable("TrawellingIgnoredStatuses");
                 });
@@ -739,6 +747,8 @@ namespace OVDB_database.Migrations
 
                     b.HasIndex("UserId", "TrawellingStatusId")
                         .IsUnique();
+
+                    b.HasIndex("UserId", "TrawellingStatusUuid");
 
                     b.ToTable("TrawellingInboxStatuses");
                 });

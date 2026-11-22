@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System.ComponentModel;
 using Newtonsoft.Json.Converters;
 
@@ -186,12 +187,49 @@ namespace OV_DB.Models
 
     public class TrawellingStatus
     {
-        [JsonProperty("id")]
+        /// <summary>
+        /// The numeric status id. 0 when Träwelling sent none; TrawellingService then resolves OVDB's
+        /// key from the UUID (an earlier number, or a negative local one) before anything is stored.
+        /// </summary>
+        [JsonIgnore]
         public int Id { get; set; }
 
         // Replaces the numeric id upstream over time (API changelog 2026-11-15).
         [JsonProperty("uuid")]
         public string Uuid { get; set; }
+
+        /// <summary>
+        /// "id" on the wire: a number today, but Träwelling may turn it into the UUID (as it did for v2
+        /// operators). Read either way so parsing never breaks; written back as the number when known.
+        /// </summary>
+        [JsonProperty("id")]
+        public JToken IdJson
+        {
+            get => Id != 0 ? new JValue(Id) : Uuid != null ? new JValue(Uuid) : null;
+            set
+            {
+                if (value == null || value.Type == JTokenType.Null)
+                {
+                    return;
+                }
+                if (value.Type == JTokenType.Integer)
+                {
+                    Id = value.Value<int>();
+                }
+                else if (value.Type == JTokenType.String)
+                {
+                    var text = value.Value<string>();
+                    if (int.TryParse(text, out var number))
+                    {
+                        Id = number;
+                    }
+                    else if (Guid.TryParse(text, out _))
+                    {
+                        Uuid ??= text;
+                    }
+                }
+            }
+        }
 
         [JsonProperty("body")]
         public string Body { get; set; }
