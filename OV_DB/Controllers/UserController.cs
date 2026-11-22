@@ -293,7 +293,8 @@ namespace OV_DB.Controllers
         [EnableRateLimiting("auth")]
         public async Task<ActionResult<string>> GetGuidFromNameForStationsAsync(string name)
         {
-            var map = await DatabaseContext.StationMaps.Where(m => m.SharingLinkName == name).SingleOrDefaultAsync();
+            // StationGroupings, not the legacy StationMaps: the station map page looks the guid up there.
+            var map = await DatabaseContext.StationGroupings.Where(m => m.SharingLinkName == name).SingleOrDefaultAsync();
             if (map == null)
             {
                 return NotFound();

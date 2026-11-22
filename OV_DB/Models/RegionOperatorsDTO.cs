@@ -16,4 +16,7 @@ public class RegionOperatorDTO
     public int OperatorId { get; set; }
     public List<string> OperatorNames { get; set; }
     public bool HasUserRoute { get; set; }
+    /// <summary>The user's trips and km with this operator, over all regions.</summary>
+    public int Trips { get; set; }
+    public double DistanceKm { get; set; }
 }

@@ -260,7 +260,12 @@ namespace OV_DB.Controllers
         private static readonly Regex AllowedFilterTerm = new(
             @"Date (?:ge|gt|le|lt) \d{4}-\d{2}-\d{2}" +
             @"|Route/Regions/any\(region: region/Id eq \d+\)" +
-            @"|Route/RouteTypeId eq \d+",
+            @"|Route/RouteTypeId eq \d+" +
+            @"|Route/Operators/any\(o: o/Id eq \d+\)" +
+            // Trip properties: a quoted key with a quoted text (contains) or a boolean. Quotes inside
+            // the strings are doubled ('') as OData escapes them, so a string cannot end early.
+            @"|RouteInstanceProperties/any\(p: p/Key eq '(?:[^']|'')*' and contains\(p/Value,'(?:[^']|'')*'\)\)" +
+            @"|RouteInstanceProperties/any\(p: p/Key eq '(?:[^']|'')*' and p/Bool eq (?:true|false)\)",
             RegexOptions.CultureInvariant);
         private static readonly Regex OnlyConnectives = new(@"^(?:[\s()]|\band\b|\bor\b)*$", RegexOptions.CultureInvariant);
 

@@ -27,6 +27,9 @@ namespace OV_DB.Models
         /// </summary>
         public DateTime? FirstStoppedDate { get; set; }
         public DateTime? FirstEntryExitDate { get; set; }
+        // The date dialog sends these back unchanged; without them a plain save would unlink the trips.
+        public int? FirstStoppedRouteInstanceId { get; set; }
+        public int? FirstEntryExitRouteInstanceId { get; set; }
         public IEnumerable<StationRegionDTO> Regions { get; set; }
     }
 

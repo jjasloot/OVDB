@@ -46,11 +46,45 @@ namespace OV_DB.Controllers
                 ri.Date.Date,
                 ri.Route.RouteType.Name,
                 ri.Route.RouteType.NameNL,
+                ri.Route.RouteTypeId,
                 Distance = (double)(((ri.Route.OverrideDistance.HasValue && ri.Route.OverrideDistance > 0) ? ri.Route.OverrideDistance : ri.Route.CalculatedDistance))
             }).ToListAsync();
 
-            var x2 = x.GroupBy(x => x.Name).Select(x => new { Name = x.Key, x.First().NameNL, Distance = Math.Round(x.Sum(x => x.Distance), 2) }).OrderByDescending(x => x.Distance);
+            // TypeId lets the stats page link a row to the routes list filtered on that type.
+            var x2 = x.GroupBy(x => x.Name).Select(x => new { Name = x.Key, x.First().NameNL, TypeId = x.First().RouteTypeId, Distance = Math.Round(x.Sum(x => x.Distance), 2) }).OrderByDescending(x => x.Distance);
             return Ok(x2);
+        }
+
+        /// <summary>
+        /// Trips and distance per map for one year (default: this year), for the home page's map list.
+        /// Same membership rule as <see cref="QueryForInstances"/>: on a map through its route or itself.
+        /// </summary>
+        [HttpGet("maps-summary")]
+        public async Task<ActionResult> GetMapsSummary([FromQuery] int? year)
+        {
+            var userIdClaim = User.GetUserId();
+            if (userIdClaim < 0)
+            {
+                return Forbid();
+            }
+            var targetYear = year ?? DateTime.Today.Year;
+            var rows = await _context.RouteInstances
+                .AsNoTracking()
+                .Where(ri => ri.Date.Year == targetYear && ri.Route.RouteMaps.Any(rm => rm.Map.UserId == userIdClaim))
+                .Select(ri => new
+                {
+                    RouteMaps = ri.Route.RouteMaps.Where(rm => rm.Map.UserId == userIdClaim).Select(rm => rm.Map.MapGuid).ToList(),
+                    InstanceMaps = ri.RouteInstanceMaps.Where(rim => rim.Map.UserId == userIdClaim).Select(rim => rim.Map.MapGuid).ToList(),
+                    Distance = (double)((ri.Route.OverrideDistance.HasValue && ri.Route.OverrideDistance > 0) ? ri.Route.OverrideDistance : ri.Route.CalculatedDistance)
+                })
+                .ToListAsync();
+
+            var summary = rows
+                .SelectMany(r => r.RouteMaps.Concat(r.InstanceMaps).Distinct().Select(guid => new { guid, r.Distance }))
+                .GroupBy(x => x.guid)
+                .Select(g => new { MapGuid = g.Key, Trips = g.Count(), DistanceKm = Math.Round(g.Sum(x => x.Distance), 1) })
+                .ToList();
+            return Ok(summary);
         }
 
         private IQueryable<RouteInstance> QueryForInstances(Guid map, int? year, int userIdClaim)
@@ -472,7 +506,11 @@ namespace OV_DB.Controllers
                 DistinctRoutes = trips.Select(t => t.RouteId).Distinct().Count(),
                 MonthlyDistanceKm = Enumerable.Range(1, 12)
                     .Select(month => Math.Round(trips.Where(t => t.Date.Month == month).Sum(t => t.Distance), 1))
-                    .ToList()
+                    .ToList(),
+                // For the travel-day calendar: km per day that had trips, keyed yyyy-MM-dd.
+                DailyDistanceKm = trips
+                    .GroupBy(t => t.Date.Date)
+                    .ToDictionary(g => g.Key.ToString("yyyy-MM-dd"), g => Math.Round(g.Sum(t => t.Distance), 1))
             };
 
             var routeIds = trips.Select(t => t.RouteId).Distinct().ToList();
@@ -594,6 +632,13 @@ namespace OV_DB.Controllers
             }
 
             var previousQuery = QueryForInstances(map, targetYear - 1, userIdClaim);
+            if (targetYear == DateTime.Today.Year)
+            {
+                // The running year against a whole previous year always looks like a collapse.
+                result.PreviousYearUntil = DateTime.Today.AddYears(-1);
+                var until = result.PreviousYearUntil.Value;
+                previousQuery = previousQuery.Where(ri => ri.Date <= until);
+            }
             result.PreviousYearTrips = await previousQuery.CountAsync();
             result.PreviousYearDistanceKm = Math.Round(
                 await previousQuery.SumAsync(ri => (double?)((ri.Route.OverrideDistance.HasValue && ri.Route.OverrideDistance > 0)

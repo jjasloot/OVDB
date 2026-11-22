@@ -27,7 +27,7 @@ namespace OV_DB.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetTripReport([FromQuery] List<Guid> guid, [FromQuery] int year, [FromQuery] bool english = false)
+        public async Task<IActionResult> GetTripReport([FromQuery] List<Guid> guid, [FromQuery] int? year, [FromQuery] bool english = false)
         {
             var userIdClaim = User.GetUserId();
             if (userIdClaim < 0)
@@ -38,7 +38,8 @@ namespace OV_DB.Controllers
             var ws = workbook.AddWorksheet("trips");
             var row = 1;
             var routes = await _databaseContext.RouteInstances
-                .Where(ri => ri.Date.Year == year &&
+                // No year (the stats page's "All") means every year.
+                .Where(ri => (!year.HasValue || ri.Date.Year == year) &&
                 (
                     ri.Route.RouteMaps.Any(rm => rm.Map.UserId == userIdClaim && guid.Contains(rm.Map.MapGuid)) ||
                     ri.RouteInstanceMaps.Any(rm => rm.Map.UserId == userIdClaim && guid.Contains(rm.Map.MapGuid)))

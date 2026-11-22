@@ -43,7 +43,8 @@ namespace OV_DB.Controllers
 
         // GET: api/RoutesAPI
         [HttpGet]
-        public async Task<ActionResult<RouteListDTO>> GetRoutes([FromQuery] int? start, [FromQuery] int? count, [FromQuery] string sortColumn, [FromQuery] bool? descending, [FromQuery] string filter, CancellationToken cancellationToken)
+        public async Task<ActionResult<RouteListDTO>> GetRoutes([FromQuery] int? start, [FromQuery] int? count, [FromQuery] string sortColumn, [FromQuery] bool? descending, [FromQuery] string filter, CancellationToken cancellationToken,
+            [FromQuery] int? typeId = null, [FromQuery] int? mapId = null, [FromQuery] int? operatorId = null, [FromQuery] int? year = null)
         {
             var userIdClaim = User.GetUserId();
             if (userIdClaim < 0)
@@ -66,6 +67,14 @@ namespace OV_DB.Controllers
                     EF.Functions.Like(r.From, "%" + searchWord + "%") ||
                     EF.Functions.Like(r.To, "%" + searchWord + "%"));
             }
+            if (typeId.HasValue)
+                originalQuery = originalQuery.Where(r => r.RouteTypeId == typeId);
+            if (mapId.HasValue)
+                originalQuery = originalQuery.Where(r => r.RouteMaps.Any(rm => rm.MapId == mapId && rm.Map.UserId == userIdClaim));
+            if (operatorId.HasValue)
+                originalQuery = originalQuery.Where(r => r.Operators.Any(o => o.Id == operatorId));
+            if (year.HasValue)
+                originalQuery = originalQuery.Where(r => r.RouteInstances.Any(ri => ri.Date.Year == year));
             var query = originalQuery.SelectToRouteDTO();
             if (!string.IsNullOrWhiteSpace(sortColumn))
             {
@@ -127,7 +136,8 @@ namespace OV_DB.Controllers
         }
 
         [HttpGet("instances/list")]
-        public async Task<ActionResult<RouteInstanceListResponseDTO>> GetRouteInstances([FromQuery] int? start, [FromQuery] int? count, [FromQuery] string sortColumn, [FromQuery] bool? descending, [FromQuery] string filter, CancellationToken cancellationToken)
+        public async Task<ActionResult<RouteInstanceListResponseDTO>> GetRouteInstances([FromQuery] int? start, [FromQuery] int? count, [FromQuery] string sortColumn, [FromQuery] bool? descending, [FromQuery] string filter, CancellationToken cancellationToken,
+            [FromQuery] int? typeId = null, [FromQuery] int? mapId = null, [FromQuery] int? operatorId = null, [FromQuery] int? year = null)
         {
             var userIdClaim = User.GetUserId();
             if (userIdClaim < 0)
@@ -150,6 +160,17 @@ namespace OV_DB.Controllers
                     EF.Functions.Like(r.Route.From, "%" + searchWord + "%") ||
                     EF.Functions.Like(r.Route.To, "%" + searchWord + "%"));
             }
+            // Same structured filters as the routes list; a trip is on a map through its route or itself.
+            if (typeId.HasValue)
+                originalQuery = originalQuery.Where(r => r.Route.RouteTypeId == typeId);
+            if (mapId.HasValue)
+                originalQuery = originalQuery.Where(r =>
+                    r.Route.RouteMaps.Any(rm => rm.MapId == mapId && rm.Map.UserId == userIdClaim) ||
+                    r.RouteInstanceMaps.Any(rim => rim.MapId == mapId && rim.Map.UserId == userIdClaim));
+            if (operatorId.HasValue)
+                originalQuery = originalQuery.Where(r => r.Route.Operators.Any(o => o.Id == operatorId));
+            if (year.HasValue)
+                originalQuery = originalQuery.Where(r => r.Date.Year == year);
 
 
             if (!string.IsNullOrWhiteSpace(sortColumn))
@@ -179,6 +200,9 @@ namespace OV_DB.Controllers
             }
 
             var total = await originalQuery.CountAsync(cancellationToken);
+            // Totals over everything the search and filters match, not just this page.
+            var totalDistance = await originalQuery.SumAsync(r => (double?)((r.Route.OverrideDistance.HasValue && r.Route.OverrideDistance > 0) ? r.Route.OverrideDistance : r.Route.CalculatedDistance), cancellationToken) ?? 0;
+            var totalHours = await originalQuery.SumAsync(r => r.DurationHours, cancellationToken) ?? 0;
 
             IQueryable<RouteInstance> pagedQuery = originalQuery;
             if (start.HasValue)
@@ -192,7 +216,9 @@ namespace OV_DB.Controllers
             return new RouteInstanceListResponseDTO
             {
                 Count = total,
-                Instances = list
+                Instances = list,
+                TotalDistanceKm = Math.Round(totalDistance, 1),
+                TotalHours = Math.Round(totalHours, 1)
             };
         }
 
@@ -849,7 +875,7 @@ namespace OV_DB.Controllers
             }
 
             var selectedRoutes = await _context.Routes
-                .Include(r => r.RouteMaps)
+                .Include(r => r.RouteMaps).ThenInclude(rm => rm.Map)
                 .Include(r => r.RouteInstances)
                 .Where(r => editMultiple.RouteIds.Contains(r.RouteId) && r.RouteMaps.Any(rm => rm.Map.UserId == userIdClaim))
                 .ToListAsync();
@@ -893,7 +919,8 @@ namespace OV_DB.Controllers
                     var toAdd = new List<int>();
                     route.RouteMaps.ForEach(r =>
                     {
-                        if (!validSelectedMapIds.Contains(r.MapId))
+                        // The picker leaves out completed maps, so not selecting one is no request to leave it.
+                        if (!validSelectedMapIds.Contains(r.MapId) && !r.Map.Completed)
                         {
                             toDelete.Add(r);
                         }

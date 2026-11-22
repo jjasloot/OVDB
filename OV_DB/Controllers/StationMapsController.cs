@@ -207,6 +207,14 @@ namespace OV_DB.Controllers
                 FirstEntryExitDate = s.StationVisits
                     .Where(sv => sv.UserId == userIdClaim)
                     .Select(sv => sv.FirstEntryExitDate)
+                    .FirstOrDefault(),
+                FirstStoppedRouteInstanceId = s.StationVisits
+                    .Where(sv => sv.UserId == userIdClaim)
+                    .Select(sv => sv.FirstStoppedRouteInstanceId)
+                    .FirstOrDefault(),
+                FirstEntryExitRouteInstanceId = s.StationVisits
+                    .Where(sv => sv.UserId == userIdClaim)
+                    .Select(sv => sv.FirstEntryExitRouteInstanceId)
                     .FirstOrDefault()
             }).ToListAsync();
 

@@ -24,6 +24,7 @@ namespace OV_DB.Models
         public List<NameCountDTO> TopOperators { get; set; } = [];
         /// <summary>Distance per month, always twelve entries starting at January.</summary>
         public List<double> MonthlyDistanceKm { get; set; } = [];
+        public Dictionary<string, double> DailyDistanceKm { get; set; } = [];
 
         public HighlightTripDTO LongestTrip { get; set; }
         public HighlightTripDTO FastestTrip { get; set; }
@@ -35,6 +36,9 @@ namespace OV_DB.Models
 
         public int PreviousYearTrips { get; set; }
         public double PreviousYearDistanceKm { get; set; }
+        /// <summary>For the running year: the previous year is only counted up to this date, so a
+        /// half-finished year is compared like for like. Null for a finished year.</summary>
+        public DateTime? PreviousYearUntil { get; set; }
     }
 
     public class CountryVisitDTO

@@ -18,6 +18,9 @@ namespace OV_DB.Models
     {
         public int Count { get; set; }
         public List<RouteInstanceListDTO> Instances { get; set; }
+        /// <summary>Over all trips matching the search and filters, not just the page.</summary>
+        public double TotalDistanceKm { get; set; }
+        public double TotalHours { get; set; }
     }
 
     public class RouteTypeDTO

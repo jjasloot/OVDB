@@ -117,12 +117,14 @@ public class OperatorsController : ControllerBase
     public async Task<ActionResult<OperatorDTO>> GetOperatorLogo(int id)
     {
         var logoInfo = await _dbContext.Operators.Where(o => o.Id == id).Select(o => new { o.LogoFilePath, o.LogoContentType }).FirstOrDefaultAsync();
-        if (logoInfo?.LogoFilePath == null)
+        var path = logoInfo?.LogoFilePath == null ? null : Path.Combine(_storagePath, logoInfo.LogoFilePath);
+        // A file gone from disk is treated like no logo, not a 500 (which pops an error toast per operator).
+        if (path == null || !System.IO.File.Exists(path))
         {
             return File(new byte[0], "image/png");
         }
 
-        return File(System.IO.File.OpenRead(Path.Combine(_storagePath, logoInfo.LogoFilePath)), logoInfo.LogoContentType);
+        return File(System.IO.File.OpenRead(path), logoInfo!.LogoContentType);
     }
 
     // Read all
@@ -301,6 +303,21 @@ public class OperatorsController : ControllerBase
             })
             .ToListAsync();
 
+        // Your trips and km per operator (all time), shown in the operator tiles' tooltips.
+        var tripRows = await _dbContext.RouteInstances
+            .AsNoTracking()
+            .Where(ri => ri.Route.RouteMaps.Any(rm => rm.Map.UserId == userIdClaim) && ri.Route.Operators.Any())
+            .Select(ri => new
+            {
+                OperatorIds = ri.Route.Operators.Select(o => o.Id).ToList(),
+                Distance = (double)((ri.Route.OverrideDistance.HasValue && ri.Route.OverrideDistance > 0) ? ri.Route.OverrideDistance : ri.Route.CalculatedDistance)
+            })
+            .ToListAsync();
+        var totals = tripRows
+            .SelectMany(r => r.OperatorIds.Select(id => new { id, r.Distance }))
+            .GroupBy(x => x.id)
+            .ToDictionary(g => g.Key, g => (Trips: g.Count(), DistanceKm: Math.Round(g.Sum(x => x.Distance), 0)));
+
         var groupedRegions = new Dictionary<int, RegionOperatorsDTO>();
 
         foreach (var op in groupedOperators)
@@ -323,7 +340,9 @@ public class OperatorsController : ControllerBase
                 {
                     HasUserRoute = op.OperatorRegions.Any(r => r == region.Id),
                     OperatorId = op.OperatorId,
-                    OperatorNames = op.OperatorNames
+                    OperatorNames = op.OperatorNames,
+                    Trips = totals.TryGetValue(op.OperatorId, out var t) ? t.Trips : 0,
+                    DistanceKm = totals.TryGetValue(op.OperatorId, out var d) ? d.DistanceKm : 0
                 });
 
             }
