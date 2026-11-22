@@ -54,8 +54,11 @@ public class TraewellingStatusUuidTests
         var user = new User
         {
             Id = 1, TrawellingUsername = "gertrud", TrawellingAccessToken = "token", TrawellingRefreshToken = "refresh",
-            TrawellingTokenExpiresAt = DateTime.UtcNow.AddHours(1)
+            TrawellingTokenExpiresAt = DateTime.UtcNow.AddHours(1),
+            Email = "gertrud@example.test",
+            Password = "x"
         };
+        context.Users.Add(user);
 
         // One imported trip (status 101) on one of the user's maps.
         context.Maps.Add(new Map { MapId = 1, UserId = 1, Name = "Map", MapGuid = Guid.NewGuid() });
@@ -118,6 +121,18 @@ public class TraewellingStatusUuidTests
         (await context.RouteInstances.SingleAsync()).TrawellingStatusUuid = KnownUuid;
         await context.SaveChangesAsync();
         Assert.False(await TraewellingInboxSweepService.NeedsUuidBackfillAsync(context, 1, default));
+    }
+
+    [Fact]
+    public async Task OnlyANewStatusFromTraewellingCountsAsReceived()
+    {
+        var (service, user, context) = NewService(Status("101", KnownUuid));
+        await service.SweepInboxAsync(user, TrawellingSweepMode.Full);
+        Assert.Null((await context.Users.SingleAsync()).TraewellingLastReceivedAt); // only a known trip came by
+
+        var (service2, user2, context2) = NewService(Status("202", NewUuid));
+        await service2.SweepInboxAsync(user2, TrawellingSweepMode.Full);
+        Assert.NotNull((await context2.Users.SingleAsync()).TraewellingLastReceivedAt);
     }
 
     [Theory]

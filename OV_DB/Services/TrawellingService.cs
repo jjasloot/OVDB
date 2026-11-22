@@ -168,6 +168,8 @@ namespace OV_DB.Services
 
                     // Keep what this page found before asking for the next one, so a walk that is
                     // cut short still leaves the inbox fuller than it was.
+                    if (newOnPage > 0)
+                        MarkReceived(user);
                     if (newOnPage > 0 || stamped)
                         await _dbContext.SaveChangesAsync(cancellationToken);
 
@@ -578,6 +580,14 @@ namespace OV_DB.Services
             return changed;
         }
 
+        /// <summary>Records that Träwelling delivered something for this user (saved with the caller's changes).</summary>
+        private void MarkReceived(User user)
+        {
+            if (_dbContext.Entry(user).State == EntityState.Detached)
+                _dbContext.Users.Attach(user);
+            user.TraewellingLastReceivedAt = DateTime.UtcNow;
+        }
+
         private Task<RouteInstance> FindImportedInstanceAsync(User user, int statusId)
             => _dbContext.RouteInstances
                 .Include(ri => ri.Route)
@@ -707,6 +717,7 @@ namespace OV_DB.Services
                     return; // not subscribed to anything else; ignore defensively
             }
 
+            MarkReceived(user);
             await _dbContext.SaveChangesAsync();
             // The 30-minute trip DTO cache would otherwise serve the pre-update payload
             _memoryCache.Remove(TripCacheKey(user.Id, statusId));

@@ -36,6 +36,11 @@ namespace OVDB_database.Models
         public string TrawellingUsername { get; set; }
         /// <summary>Last completed reconciliation sweep of the Träwelling inbox.</summary>
         public DateTime? TrawellingLastSweepAt { get; set; }
+        /// <summary>
+        /// When Träwelling last delivered something: a webhook event, or a sweep finding a status OVDB
+        /// did not have. Nothing local moves it, so it tells whether live sync still delivers.
+        /// </summary>
+        public DateTime? TraewellingLastReceivedAt { get; set; }
 
         // Träwelling webhook (live sync): issued once during the authorization-code exchange
         public int? TraewellingWebhookId { get; set; }

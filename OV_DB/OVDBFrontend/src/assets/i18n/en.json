@@ -837,7 +837,7 @@
     "DESCRIPTION": "Description",
     "ALERT_READ_MORE": "Read more",
     "IGNORE_ERROR": "Could not ignore the trip. Please try again.",
-    "LAST_EVENT": "Last trip received from Träwelling: {{when}}"
+    "LAST_EVENT": "Last update from Träwelling: {{when}}"
   },
   "ROUTESLIST.EXPORTTOTRAINLOG": "Export selection for Trainlog",
   "REFRESH": "Refresh",

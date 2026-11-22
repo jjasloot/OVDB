@@ -237,11 +237,9 @@ namespace OV_DB.Controllers
                     webhookHealth = await _api.GetWebhookHealthAsync(user);
                 }
 
-                // When Träwelling last told us about a trip (webhook, sweep or resync), so a quiet
-                // live sync can be told apart from a broken one.
-                var lastEventAt = await _dbContext.TrawellingInboxStatuses
-                    .Where(i => i.UserId == user.Id)
-                    .MaxAsync(i => (DateTime?)i.LastEventAt);
+                // When Träwelling last delivered something for this user (webhook, or a sweep finding a
+                // new status), so a quiet live sync can be told apart from a broken one.
+                var lastEventAt = user.TraewellingLastReceivedAt;
                 // Stored as UTC; the kind is lost on the way out of MySQL.
                 if (lastEventAt.HasValue)
                     lastEventAt = DateTime.SpecifyKind(lastEventAt.Value, DateTimeKind.Utc);

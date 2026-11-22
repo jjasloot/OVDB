@@ -94,8 +94,13 @@ public class TrawellingInboxSweepTests
             TrawellingUsername = "gertrud",
             TrawellingAccessToken = "token",
             TrawellingRefreshToken = "refresh",
-            TrawellingTokenExpiresAt = DateTime.UtcNow.AddHours(1)
+            TrawellingTokenExpiresAt = DateTime.UtcNow.AddHours(1),
+            Email = "gertrud@example.test",
+            Password = "x"
         };
+        // In the database like a real user: the sweep records when Träwelling last delivered.
+        context.Users.Add(user);
+        context.SaveChanges();
 
         return (service, user, context, handler);
     }

@@ -789,6 +789,9 @@ namespace OVDB_database.Migrations
                     b.Property<long?>("TelegramUserId")
                         .HasColumnType("bigint");
 
+                    b.Property<DateTime?>("TraewellingLastReceivedAt")
+                        .HasColumnType("datetime(6)");
+
                     b.Property<string>("TraewellingTagMappings")
                         .HasColumnType("longtext");
 

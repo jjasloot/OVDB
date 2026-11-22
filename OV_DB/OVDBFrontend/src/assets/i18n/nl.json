@@ -835,7 +835,7 @@
     "DESCRIPTION": "Beschrijving",
     "ALERT_READ_MORE": "Meer informatie",
     "IGNORE_ERROR": "Kon de rit niet negeren. Probeer het opnieuw.",
-    "LAST_EVENT": "Laatste rit ontvangen van Träwelling: {{when}}"
+    "LAST_EVENT": "Laatste update van Träwelling: {{when}}"
   },
   "ROUTESLIST.EXPORTTOTRAINLOG": "Exporteer selectie voor Trainlog",
   "ROUTESLIST.SHOWROUTES": "Toon routes",
