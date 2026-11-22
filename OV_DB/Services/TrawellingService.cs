@@ -252,7 +252,8 @@ namespace OV_DB.Services
                 var query = _dbContext.TrawellingInboxStatuses
                     .Where(s => s.UserId == user.Id && s.State == TrawellingInboxState.Pending)
                     .OrderByDescending(s => s.DepartureAt)
-                    .ThenByDescending(s => s.TrawellingStatusId);
+                    .ThenByDescending(s => s.TrawellingStatusId)
+                    .ThenByDescending(s => s.Id); // UUID-only rows have no number to order by
 
                 var totalCount = await query.CountAsync();
                 var rows = await query
@@ -632,6 +633,7 @@ namespace OV_DB.Services
             var inboxRow = await FindInboxRowAsync(user, key);
             // What the open list knows this status by, for the live events below.
             var listKey = inboxRow != null ? TraewellingStatusKey.Of(inboxRow) : key;
+            var previousListKey = listKey;
 
             var pendingUpserted = false;
             var pendingRemoved = false;
@@ -713,6 +715,9 @@ namespace OV_DB.Services
             ForgetTrip(user.Id, listKey);
             _logger.LogInformation("Processed Träwelling webhook {Event} for status {StatusId}, user {UserId}", eventType, key, user.Id);
 
+            // A row that just got its UUID changed key: take the card off under the old one first.
+            if (pendingUpserted && inboxRow != null && previousListKey != listKey)
+                await PublishPendingTripChangeAsync(user, previousListKey, status, false, true);
             await PublishPendingTripChangeAsync(user, listKey, status, pendingUpserted, pendingRemoved);
             await PublishConflictChangeAsync(user, conflictRow);
             if (conflictRemoved)
