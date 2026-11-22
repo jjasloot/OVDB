@@ -670,6 +670,7 @@ namespace OV_DB.Controllers
                         ScheduledEndTime = trip.ScheduledEndTime,
                         DurationHours = trip.DurationHours,
                         TrawellingStatusId = trip.TraewellingStatusId,
+                        TrawellingStatusUuid = trip.TraewellingStatusUuid,
                         RouteInstanceMaps = (trip.Maps ?? []).Select(n => new RouteInstanceMap { Map = MapNamed(n) }).ToList(),
                         RouteInstanceProperties = (trip.Tags ?? []).Select(t => new RouteInstanceProperty { Key = t.Key, Value = t.Value, Bool = t.Bool }).ToList(),
                     });
@@ -1200,10 +1201,17 @@ namespace OV_DB.Controllers
                 // This is the import moment, and the only place the calling pattern is worth
                 // fetching: the inbox row still holds the check-in payload, so the trip id is free.
                 // Read it before the delete below takes it away.
-                var payload = await _context.TrawellingInboxStatuses
+                var inboxRow = await _context.TrawellingInboxStatuses
                     .Where(s => s.UserId == userIdClaim && s.TrawellingStatusId == update.TraewellingStatusId.Value)
-                    .Select(s => s.PayloadJson)
+                    .Select(s => new { s.PayloadJson, s.TrawellingStatusUuid })
                     .FirstOrDefaultAsync();
+                var payload = inboxRow?.PayloadJson;
+                // The UUID only lives on the inbox row, which is deleted below: keep it on the trip.
+                if (savedInstance != null && inboxRow?.TrawellingStatusUuid != null)
+                {
+                    savedInstance.TrawellingStatusUuid = inboxRow.TrawellingStatusUuid;
+                    await _context.SaveChangesAsync();
+                }
 
                 // The status is imported now; its Träwelling inbox row is no longer pending.
                 // Before the suggestions rather than after: the trip is saved either way, and the

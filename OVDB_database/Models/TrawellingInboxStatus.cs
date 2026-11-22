@@ -42,6 +42,13 @@ namespace OVDB_database.Models
         [Required]
         public int TrawellingStatusId { get; set; }
 
+        /// <summary>
+        /// Träwelling's UUID for the same status. It gradually replaces the numeric id upstream; stored
+        /// alongside it so the switch-over needs no lookups. Null for imports from before it existed.
+        /// </summary>
+        [MaxLength(36)]
+        public string? TrawellingStatusUuid { get; set; }
+
         [Required]
         public string PayloadJson { get; set; }
 

@@ -74,6 +74,7 @@ namespace OV_DB.Services
             public DateTime? ScheduledEndTime { get; set; }
             public double? DurationHours { get; set; }
             public int? TraewellingStatusId { get; set; }
+            public string TraewellingStatusUuid { get; set; }
             public List<string> Maps { get; set; }
             public List<TagProperties> Tags { get; set; }
         }
@@ -125,6 +126,7 @@ namespace OV_DB.Services
                     ScheduledEndTime = ri.ScheduledEndTime,
                     DurationHours = ri.DurationHours,
                     TraewellingStatusId = ri.TrawellingStatusId,
+                    TraewellingStatusUuid = ri.TrawellingStatusUuid,
                     Maps = ri.RouteInstanceMaps?.Select(m => m.Map.Name).ToList(),
                     Tags = ri.RouteInstanceProperties?.Select(p => new TagProperties { Key = p.Key, Value = p.Value, Bool = p.Bool }).ToList(),
                 }).ToList(),

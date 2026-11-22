@@ -10,6 +10,7 @@ namespace OV_DB.Tests
         private const string StatusJson = """
         {
             "id": 123456,
+            "uuid": "1671deca-ce69-448d-967e-83911020a66a",
             "body": "Test trip",
             "business": 0,
             "visibility": 0,
@@ -86,6 +87,15 @@ namespace OV_DB.Tests
             Assert.Equal("testuser", status.User.Username);
             Assert.Equal("DB Regio AG Nord", status.Checkin.Operator.Name);
             Assert.Equal("b2e9a1a0-0000-0000-0000-000000000000", status.Checkin.Operator.Uuid);
+        }
+
+        [Fact]
+        public void Deserialize_ReadsTheStatusUuidNextToTheNumericId()
+        {
+            var status = JsonConvert.DeserializeObject<TrawellingStatus>(StatusJson);
+
+            Assert.Equal(123456, status.Id);
+            Assert.Equal("1671deca-ce69-448d-967e-83911020a66a", status.Uuid);
         }
 
         [Fact]

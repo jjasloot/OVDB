@@ -144,6 +144,7 @@ namespace OV_DB.Services
                         {
                             UserId = user.Id,
                             TrawellingStatusId = status.Id,
+                            TrawellingStatusUuid = status.Uuid,
                             PayloadJson = JsonConvert.SerializeObject(status),
                             State = TrawellingInboxState.Pending,
                             Source = TrawellingInboxSource.Sweep,
@@ -266,6 +267,7 @@ namespace OV_DB.Services
                         if (fullJson != null)
                         {
                             row.PayloadJson = fullJson;
+                            row.TrawellingStatusUuid ??= fullStatus?.Uuid;
                             row.DepartureAt = TraewellingTripMapper.GetStatusDeparture(fullStatus);
                             row.LastEventAt = DateTime.UtcNow;
                             await _dbContext.SaveChangesAsync();
@@ -723,6 +725,13 @@ namespace OV_DB.Services
             {
                 return false; // nothing imported to conflict with
             }
+            // Trips imported before Träwelling had UUIDs pick theirs up the next time their status
+            // comes by, so the numeric ids can be phased out without a bulk lookup.
+            if (instance.TrawellingStatusUuid == null && !string.IsNullOrEmpty(status.Uuid))
+            {
+                instance.TrawellingStatusUuid = status.Uuid;
+                await _dbContext.SaveChangesAsync();
+            }
             return TraewellingTripMapper.UpstreamDiffers(instance, await _mapper.MapStatusToTripDtoAsync(status));
         }
 
@@ -739,6 +748,7 @@ namespace OV_DB.Services
                 _dbContext.TrawellingInboxStatuses.Add(row);
             }
             row.PayloadJson = payloadJson;
+            row.TrawellingStatusUuid = status?.Uuid ?? row.TrawellingStatusUuid;
             row.State = state;
             row.Source = TrawellingInboxSource.Webhook;
             row.DepartureAt = TraewellingTripMapper.GetStatusDeparture(status);
@@ -858,8 +868,12 @@ namespace OV_DB.Services
                     }
                 }
 
-                // Link the status
+                // Link the status (and its UUID, which only the inbox row still has)
                 routeInstance.TrawellingStatusId = statusId;
+                routeInstance.TrawellingStatusUuid = await _dbContext.TrawellingInboxStatuses
+                    .Where(s => s.UserId == user.Id && s.TrawellingStatusId == statusId)
+                    .Select(s => s.TrawellingStatusUuid)
+                    .FirstOrDefaultAsync() ?? routeInstance.TrawellingStatusUuid;
                 await _dbContext.SaveChangesAsync();
                 await RemoveFromInboxAsync(user.Id, statusId);
 

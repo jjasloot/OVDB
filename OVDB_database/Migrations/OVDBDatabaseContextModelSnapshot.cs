@@ -324,6 +324,10 @@ namespace OVDB_database.Migrations
                     b.Property<int?>("TrawellingStatusId")
                         .HasColumnType("int");
 
+                    b.Property<string>("TrawellingStatusUuid")
+                        .HasMaxLength(36)
+                        .HasColumnType("varchar(36)");
+
                     b.HasKey("RouteInstanceId");
 
                     b.HasIndex("TrawellingStatusId");
@@ -723,6 +727,10 @@ namespace OVDB_database.Migrations
 
                     b.Property<int>("TrawellingStatusId")
                         .HasColumnType("int");
+
+                    b.Property<string>("TrawellingStatusUuid")
+                        .HasMaxLength(36)
+                        .HasColumnType("varchar(36)");
 
                     b.Property<int>("UserId")
                         .HasColumnType("int");

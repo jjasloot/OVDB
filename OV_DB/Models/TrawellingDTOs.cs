@@ -189,6 +189,10 @@ namespace OV_DB.Models
         [JsonProperty("id")]
         public int Id { get; set; }
 
+        // Replaces the numeric id upstream over time (API changelog 2026-11-15).
+        [JsonProperty("uuid")]
+        public string Uuid { get; set; }
+
         [JsonProperty("body")]
         public string Body { get; set; }
 

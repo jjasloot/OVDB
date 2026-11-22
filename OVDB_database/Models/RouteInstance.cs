@@ -39,6 +39,13 @@ namespace OVDB_database.Models
         public int? TrawellingStatusId { get; set; }
 
         /// <summary>
+        /// Träwelling's UUID for the same status. It gradually replaces the numeric id upstream; stored
+        /// alongside it so the switch-over needs no lookups. Null for imports from before it existed.
+        /// </summary>
+        [MaxLength(36)]
+        public string? TrawellingStatusUuid { get; set; }
+
+        /// <summary>
         /// Träwelling has no planned times for this check-in (a manual trip, say), so the
         /// scheduled-times backfill should stop asking for them.
         /// </summary>
