@@ -107,6 +107,19 @@ public class TraewellingStatusUuidTests
         Assert.Equal(NewUuid, row.TrawellingStatusUuid);
     }
 
+    [Fact]
+    public async Task ABackfillIsNeededOnlyWhileImportedTripsLackTheirUuid()
+    {
+        var (_, _, context) = NewService(Status("101", KnownUuid));
+
+        Assert.True(await TraewellingInboxSweepService.NeedsUuidBackfillAsync(context, 1, default));
+        Assert.False(await TraewellingInboxSweepService.NeedsUuidBackfillAsync(context, 2, default)); // not their trip
+
+        (await context.RouteInstances.SingleAsync()).TrawellingStatusUuid = KnownUuid;
+        await context.SaveChangesAsync();
+        Assert.False(await TraewellingInboxSweepService.NeedsUuidBackfillAsync(context, 1, default));
+    }
+
     [Theory]
     [InlineData("123", 123, null)]
     [InlineData("\"123\"", 123, null)]
