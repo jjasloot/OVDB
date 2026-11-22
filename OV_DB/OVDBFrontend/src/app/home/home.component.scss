@@ -113,3 +113,51 @@ mat-list-item {
 .update-text {
   white-space: pre-line;
 }
+
+.map-summary {
+  display: block;
+  font-weight: normal;
+  font-size: 0.85em;
+  opacity: 0.7;
+}
+
+.recent-trips {
+  margin: 16px 0;
+}
+
+.recent-trip {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--app-divider-color, rgba(0, 0, 0, 0.12));
+  color: inherit;
+  text-decoration: none;
+
+  &:last-child {
+    border-bottom: 0;
+  }
+
+  &:hover .recent-name {
+    text-decoration: underline;
+  }
+}
+
+.recent-date {
+  min-width: 110px;
+  opacity: 0.7;
+}
+
+.recent-name {
+  flex: 1;
+  font-weight: 500;
+}
+
+.recent-delay {
+  font-size: 0.85em;
+  color: #2e7d32;
+
+  &.late {
+    color: #c62828;
+  }
+}

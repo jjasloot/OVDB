@@ -2,7 +2,9 @@
     @for (region of sortedRegionStats(); track region.id) {
     <mat-card class="region-card" [class.top-level]="!region.parentRegionId" [ngClass]="getRegionClass(region)">
         @if (!region.parentRegionId) {
-        <div class="region-header clickable" (click)="toggle(region.id)">
+        <div class="region-header clickable" role="button" tabindex="0" (click)="toggle(region.id)"
+            (keydown.enter)="toggle(region.id)" (keydown.space)="$event.preventDefault(); toggle(region.id)"
+            [attr.aria-expanded]="isExpanded(region.id)">
             @if (region.flagEmoji) {
             <span class="region-flag">{{ region.flagEmoji }}</span>
             }
@@ -65,7 +67,7 @@
         }
         @if (region.children?.length && ((!region.parentRegionId && isExpanded(region.id)) || region.parentRegionId)) {
         <div class="region-children">
-            <app-region-stats-display [regionStats]="region.children" />
+            <app-region-stats-display [regionStats]="region.children" [sortBy]="sortBy()" [hideUnvisited]="hideUnvisited()" />
         </div>
         }
     </mat-card>

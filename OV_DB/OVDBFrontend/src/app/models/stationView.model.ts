@@ -26,6 +26,8 @@ export interface StationDTO {
   /** Null is the ordinary case for now — the web marks without claiming a date. */
   firstStoppedDate: string | null;
   firstEntryExitDate: string | null;
+  firstStoppedRouteInstanceId: number | null;
+  firstEntryExitRouteInstanceId: number | null;
 }
 
 /** The state of a single visit after marking, un-marking or changing its level. */

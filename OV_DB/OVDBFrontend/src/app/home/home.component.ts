@@ -1,3 +1,6 @@
+import { DatePipe, DecimalPipe } from "@angular/common";
+import { RouteInstanceListDTO } from "src/app/models/routeInstanceList.model";
+import { injectLinkCopied } from "src/app/utils/link-copied";
 import { Component, OnInit, inject, DestroyRef, signal, ChangeDetectionStrategy } from "@angular/core";
 import { AuthenticationService } from "../services/authentication.service";
 import { ApiService } from "../services/api.service";
@@ -25,6 +28,8 @@ import { DemoMapComponent } from "./demo-map/demo-map.component";
   styleUrls: ["./home.component.scss"],
   changeDetection: ChangeDetectionStrategy.Eager,
   imports: [
+    DecimalPipe,
+    DatePipe,
     MatButton,
     RouterLink,
     MatCard,
@@ -47,8 +52,13 @@ export class HomeComponent implements OnInit {
   private translationService = inject(TranslationService);
   private apiService = inject(ApiService);
   private destroyRef = inject(DestroyRef);
+  linkCopied = injectLinkCopied();
 
   maps = signal<Map[]>([]);
+  // This year's trips and km per map guid; a map without trips this year is absent.
+  mapSummary = signal<Record<string, { trips: number; distanceKm: number }>>({});
+  readonly currentYear = new Date().getFullYear();
+  recentTrips = signal<RouteInstanceListDTO[]>([]);
   loading = 0;
   stationMaps = signal<StationMap[]>([]);
 
@@ -77,6 +87,12 @@ export class HomeComponent implements OnInit {
       },
       error: () => this.loading--,
     });
+    // Extra information only (no spinner): the last few trips, newest first.
+    this.apiService.getAllRouteInstances(0, 5, "date", true).subscribe((page) => this.recentTrips.set(page.instances));
+    // Extra information only: no spinner, and a failure just leaves the figures out.
+    this.apiService.getMapsSummary().subscribe((rows) =>
+      this.mapSummary.set(Object.fromEntries(rows.map((r) => [r.mapGuid, r])))
+    );
     this.loading++;
     this.apiService.listStationMaps().subscribe({
       next: (maps) => {

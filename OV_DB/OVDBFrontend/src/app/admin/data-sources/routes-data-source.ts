@@ -1,7 +1,7 @@
 import { Route, RouteList } from "src/app/models/route.model";
 import { DataSource } from "@angular/cdk/table";
 import { BehaviorSubject, Observable, of } from "rxjs";
-import { ApiService } from "src/app/services/api.service";
+import { ApiService, RouteListFilters } from "src/app/services/api.service";
 import { CollectionViewer } from "@angular/cdk/collections";
 import { catchError, finalize, tap } from "rxjs/operators";
 
@@ -27,12 +27,13 @@ export class RoutesDataSource implements DataSource<Route> {
     count = 10,
     column = "date",
     descending = true,
-    filter = ""
+    filter = "",
+    filters?: RouteListFilters
   ): Observable<RouteList> {
     this.loadingSubject.next(true);
 
     return this.apiService
-      .getAllRoutes(start, count, column, descending, filter)
+      .getAllRoutes(start, count, column, descending, filter, filters)
       .pipe(
         catchError(() => of({ count: 0, routes: [] })),
         tap((routes) => {

@@ -1,3 +1,5 @@
+import { of, switchMap } from "rxjs";
+import { contrastTextColour } from "src/app/utils/colour";
 import { Component, OnInit, inject, ChangeDetectionStrategy } from "@angular/core";
 import { ActivatedRoute, Router } from "@angular/router";
 import { ApiService } from "src/app/services/api.service";
@@ -49,6 +51,7 @@ import { STANDARD_DIALOG } from "src/app/constants/dialog-sizes";
   ]
 })
 export class WizzardStep2Component implements OnInit {
+  contrastColour = contrastTextColour;
   private activatedRoute = inject(ActivatedRoute);
   private apiService = inject(ApiService);
   private translateService = inject(TranslateService);
@@ -77,6 +80,8 @@ export class WizzardStep2Component implements OnInit {
   error = false;
   from!: number;
   to!: number;
+  /** The stops `data` currently runs between; Save cuts first when the selection has moved since. */
+  private dataRange: { from?: number; to?: number } = {};
   dateTime: DateTime | null = null;
   fromTraewelling = false;
   trawellingTripData: TrawellingTripContext | null = null;
@@ -122,6 +127,7 @@ export class WizzardStep2Component implements OnInit {
               this.stops = stops;
               this.from = this.stops[0].id;
               this.to = this.stops[this.stops.length - 1].id;
+              this.dataRange = { from: this.from, to: this.to };
             },
             error: () => {
               this.error = true;
@@ -139,7 +145,11 @@ export class WizzardStep2Component implements OnInit {
   }
 
   goback() {
-    this.router.navigate(["/", "admin", "wizard"]);
+    // Keep the Träwelling trip, or step 1 loses its card and prefill.
+    const queryParams = this.fromTraewelling && this.trawellingTripData
+      ? { traewellingTripId: this.trawellingTripData.tripId }
+      : {};
+    this.router.navigate(["/", "admin", "wizard"], { queryParams });
   }
   save() {
     const dialogRef = this.dialog.open(AreYouSureDialogComponent, {
@@ -151,8 +161,15 @@ export class WizzardStep2Component implements OnInit {
     dialogRef.afterClosed().subscribe((result: boolean) => {
       if (result) {
         this.loading = true;
+        const cutNeeded = this.from !== this.dataRange.from || this.to !== this.dataRange.to;
+        const line$ = cutNeeded
+          ? this.apiService.importerGetLine(this.id, this.from, this.to, this.dateTime ?? undefined)
+          : of(this.data);
 
-        this.apiService.importerAddRoute(this.data).subscribe(
+        line$.pipe(switchMap((line) => {
+          this.data = line;
+          return this.apiService.importerAddRoute(line);
+        })).subscribe(
           (route) => {
             // Not asked here: the route has no date yet, so nothing the user ticked could be dated.
             // The stops wait until the route is saved, or until its first trip is, whichever comes.
@@ -230,6 +247,7 @@ export class WizzardStep2Component implements OnInit {
       .subscribe(
         (data) => {
           this.data = data;
+          this.dataRange = { from: this.from, to: this.to };
           this.addTrackToMap();
           this.loading = false;
         },
@@ -247,6 +265,7 @@ export class WizzardStep2Component implements OnInit {
       .subscribe(
         (data) => {
           this.data = data;
+          this.dataRange = { from: this.stops[0]?.id, to: this.stops[this.stops.length - 1]?.id };
           this.addTrackToMap();
           this.from = this.stops[0].id;
           this.to = this.stops[this.stops.length - 1].id;

@@ -6,6 +6,8 @@ import { RegistrationRequest } from '../models/registrationRequest.model';
 import { tap } from 'rxjs/operators';
 import { BehaviorSubject } from 'rxjs';
 import { SKIP_ERROR_TOAST } from '../guards/http-error.interceptor';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { TranslateService } from '@ngx-translate/core';
 
 @Injectable({
   providedIn: 'root'
@@ -13,6 +15,8 @@ import { SKIP_ERROR_TOAST } from '../guards/http-error.interceptor';
 export class AuthenticationService {
   private httpClient = inject(HttpClient);
   private router = inject(Router);
+  private snackBar = inject(MatSnackBar);
+  private translateService = inject(TranslateService);
 
   private isLoggedInSubject = new BehaviorSubject<boolean>(false);
   public isLoggedIn$ = this.isLoggedInSubject.asObservable();
@@ -52,25 +56,22 @@ export class AuthenticationService {
       { email, password },
       { context: new HttpContext().set(SKIP_ERROR_TOAST, true) }).pipe(tap((data: any) => {
         this.HandleArrivalOfTokens(data);
-
-        if (this.returnUrl) {
-          this.router.navigateByUrl(this.returnUrl);
-        } else {
-          this.router.navigate(['/']);
-        }
+        this.navigateAfterSignIn();
       }));
+  }
+
+  /** Back to the page that sent the user to log in, once; later sign-ins start from home. */
+  private navigateAfterSignIn() {
+    const target = this.returnUrl || '/';
+    this.returnUrl = '';
+    this.router.navigateByUrl(target);
   }
 
   registration(registration: RegistrationRequest) {
     return this.httpClient.post(environment.backend + 'api/Authentication/register', registration,
       { context: new HttpContext().set(SKIP_ERROR_TOAST, true) }).pipe(tap(data => {
       this.HandleArrivalOfTokens(data);
-
-      if (this.returnUrl) {
-        this.router.navigateByUrl(this.returnUrl);
-      } else {
-        this.router.navigate(['/']);
-      }
+      this.navigateAfterSignIn();
     }));
   }
 
@@ -172,7 +173,7 @@ export class AuthenticationService {
       } catch (error: any) {
         console.error('Token refresh failed:', error);
         if (error?.status === 401 || error?.status === 400) {
-          this.logOut();
+          this.sessionExpired();
         }
         return false;
       }
@@ -185,7 +186,28 @@ export class AuthenticationService {
     return run();
   }
 
-  logOut() {
+  /** The refresh token is dead: say so, and offer the way back rather than a silent jump home. */
+  private sessionExpired() {
+    let route = this.router.routerState.snapshot.root;
+    let needsLogin = false;
+    while (route) {
+      needsLogin ||= !!route.routeConfig?.canActivate?.length;
+      route = route.firstChild!;
+    }
+    const url = this.router.url;
+    // Public pages (a shared map) stay put; only pages that need a login send you to it.
+    this.logOut(needsLogin ? '/login' : null);
+    if (needsLogin) {
+      this.returnUrl = url;
+    }
+    this.snackBar.open(
+      this.translateService.instant('LOGIN.SESSION_EXPIRED'),
+      this.translateService.instant('CLOSE'),
+      { duration: 8000 }
+    );
+  }
+
+  logOut(navigateTo: string | null = '/') {
     if (this.refreshTrigger) {
       clearTimeout(this.refreshTrigger);
     }
@@ -205,8 +227,21 @@ export class AuthenticationService {
     
     // Emit login state change
     this.updateLoginState();
-    
-    this.router.navigate(['/']);
+
+    if (navigateTo) {
+      this.router.navigateByUrl(navigateTo);
+    }
+  }
+
+  /**
+   * For route guards: an expired access token with a live refresh token is still a session — the
+   * silent refresh just hasn't finished. Checking isLoggedIn alone bounced such users to /login.
+   */
+  async ensureLoggedIn(): Promise<boolean> {
+    if (this.isLoggedIn) {
+      return true;
+    }
+    return !!this.refreshToken && (await this.refreshTheToken()) && this.isLoggedIn;
   }
 
   get isLoggedIn(): boolean {

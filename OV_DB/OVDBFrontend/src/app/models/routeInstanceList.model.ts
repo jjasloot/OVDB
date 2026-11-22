@@ -15,6 +15,9 @@ export interface RouteInstanceListDTO extends RouteInstance {
 export interface RouteInstanceListResponseDTO {
   count: number;
   instances: RouteInstanceListDTO[];
+  /** Over all trips matching the search and filters, not just the page. */
+  totalDistanceKm?: number;
+  totalHours?: number;
 }
 export interface RouteTypeDTO {
   name: string;

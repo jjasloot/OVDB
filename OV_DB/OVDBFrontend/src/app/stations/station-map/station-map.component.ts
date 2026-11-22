@@ -1,3 +1,7 @@
+import { MatSlideToggle } from "@angular/material/slide-toggle";
+import { MatAutocomplete, MatAutocompleteTrigger } from "@angular/material/autocomplete";
+import { MatOption } from "@angular/material/core";
+import { injectLocateControl } from "src/app/utils/locate-control";
 import { ChangeDetectorRef, Component, OnInit, input, inject, signal, computed, ChangeDetectionStrategy } from "@angular/core";
 import { firstValueFrom } from "rxjs";
 import {
@@ -15,8 +19,9 @@ import { NgClass } from "@angular/common";
 import { MatProgressSpinner } from "@angular/material/progress-spinner";
 import { MatSnackBar, MatSnackBarConfig } from "@angular/material/snack-bar";
 import { MatDialog } from "@angular/material/dialog";
-import { TranslateService } from "@ngx-translate/core";
+import { TranslateModule, TranslateService } from "@ngx-translate/core";
 import { createMarkerClusterGroup } from "src/app/leaflet-markercluster-loader";
+import { safeTooltipContent } from "src/app/utils/safe-leaflet-content";
 import { StationVisitDates, StationVisitLevel } from "src/app/models/stationView.model";
 import {
   StationVisitDialogComponent,
@@ -57,9 +62,16 @@ const SMALL_DIALOG = { maxWidth: "95vw", width: "360px" };
         LeafletModule,
         NgClass,
         MatProgressSpinner,
+        TranslateModule,
+        MatAutocomplete,
+        MatAutocompleteTrigger,
+        MatOption,
+        MatSlideToggle,
     ]
 })
 export class StationMapComponent implements OnInit {
+  /** "My location" button; bound to (leafletMapReady). */
+  locate = injectLocateControl();
   private apiService = inject(ApiService);
   private translationService = inject(TranslationService);
   private cd = inject(ChangeDetectorRef);
@@ -80,6 +92,49 @@ export class StationMapComponent implements OnInit {
   names = signal<{ name: any; nameNL: any }>({ name: null, nameNL: null });
   layers = signal<any[]>([]);
   loading = signal(true);
+  loadError = signal<string | null>(null);
+
+  // Station search: type part of a name, pick one, and the map zooms to it.
+  private clusterGroup: any = null;
+  private searchableStations = signal<{ name: string; marker: any }[]>([]);
+  stationQuery = signal("");
+  stationMatches = computed(() => {
+    const query = this.stationQuery().trim().toLocaleLowerCase();
+    if (query.length < 2) {
+      return [];
+    }
+    return this.searchableStations()
+      .filter((s) => s.name.toLocaleLowerCase().includes(query))
+      .slice(0, 15);
+  });
+
+  showOnlyUnvisited = signal(false);
+
+  /**
+   * For planning: hide the stations already visited. A station marked while this is on stays on
+   * the map until the toggle changes, so it does not vanish under the cursor.
+   */
+  setShowOnlyUnvisited(only: boolean) {
+    this.showOnlyUnvisited.set(only);
+    const visitedMarkers = this.searchableStations()
+      .map((s) => s.marker)
+      .filter((marker) => marker.feature.properties.visited);
+    if (only) {
+      this.clusterGroup?.removeLayers(visitedMarkers);
+    } else {
+      this.clusterGroup?.addLayers(visitedMarkers.filter((marker) => !this.clusterGroup.hasLayer(marker)));
+    }
+  }
+
+  findStation(entry: { name: string; marker: any }) {
+    this.stationQuery.set("");
+    // A visited station hidden by "only unvisited" is shown again when searched for.
+    if (this.clusterGroup && !this.clusterGroup.hasLayer(entry.marker)) {
+      this.clusterGroup.addLayer(entry.marker);
+    }
+    // Unclusters as far as needed, then shows the name the marker already carries.
+    this.clusterGroup?.zoomToShowLayer(entry.marker, () => entry.marker.openTooltip());
+  }
 
   percentage = computed(() => {
     if (!this.total() || this.visited() == undefined) {
@@ -112,7 +167,15 @@ export class StationMapComponent implements OnInit {
   async getData() {
     this.loading.set(true);
 
-    const text = await firstValueFrom(this.apiService.getStationMap(this.guid()!));
+    let text;
+    try {
+      text = await firstValueFrom(this.apiService.getStationMap(this.guid()!));
+    } catch (e: any) {
+      // Logged-out visitors of a shared link get a 401, which the global error toast skips.
+      this.loadError.set(e?.status === 401 || e?.status === 403 ? 'STATIONS.MAP_LOGIN_REQUIRED' : 'ERRORS.GENERIC');
+      this.loading.set(false);
+      return;
+    }
     const parent = this;
     this.total.set(text.total);
     this.visited.set(text.visited);
@@ -120,6 +183,7 @@ export class StationMapComponent implements OnInit {
       name: text.name,
       nameNL: text.nameNL,
     });
+    const searchable: { name: string; marker: any }[] = [];
     const markers = await createMarkerClusterGroup({
       iconCreateFunction: (cluster) => {
         return divIcon({
@@ -143,6 +207,8 @@ export class StationMapComponent implements OnInit {
         new LatLng(station.lattitude, station.longitude, station.elevation!),
         markerStyle(station.visited, station.visitLevel)
       );
+      // A click on an unvisited station marks it, so its name has to be visible before that.
+      marker.bindTooltip(safeTooltipContent(station.name));
       marker.feature = {
         properties: {
           id: station.id,
@@ -151,12 +217,17 @@ export class StationMapComponent implements OnInit {
           visitLevel: station.visitLevel,
           firstStoppedDate: station.firstStoppedDate,
           firstEntryExitDate: station.firstEntryExitDate,
+          firstStoppedRouteInstanceId: station.firstStoppedRouteInstanceId,
+          firstEntryExitRouteInstanceId: station.firstEntryExitRouteInstanceId,
         },
         type: "Feature",
         geometry: null!,
       };
       markers.addLayer(marker);
+      searchable.push({ name: station.name, marker });
     });
+    this.searchableStations.set(searchable);
+    this.clusterGroup = markers;
     markers.addEventListener("click", (f: LeafletEvent) => {
       const properties = f.propagatedFrom.feature.properties;
       if (properties.visited) {
@@ -190,6 +261,8 @@ export class StationMapComponent implements OnInit {
         this.apiService.updateStation(properties.id, true, level)
       );
       this.applyState(marker, state.visited, state.level, state.firstStoppedDate, state.firstEntryExitDate);
+      properties.firstStoppedRouteInstanceId = state.firstStoppedRouteInstanceId;
+      properties.firstEntryExitRouteInstanceId = state.firstEntryExitRouteInstanceId;
       if (!wasVisited) {
         this.visited.update((v) => v + 1);
       }
@@ -210,6 +283,8 @@ export class StationMapComponent implements OnInit {
     try {
       await firstValueFrom(this.apiService.updateStation(properties.id, false));
       this.applyState(marker, false, null, null, null);
+      properties.firstStoppedRouteInstanceId = null;
+      properties.firstEntryExitRouteInstanceId = null;
       this.visited.update((v) => v - 1);
       // Un-marking discards the dates, so undo re-marks at the level it had.
       this.snackBar

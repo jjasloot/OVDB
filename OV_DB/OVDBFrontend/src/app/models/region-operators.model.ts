@@ -10,4 +10,6 @@ export interface RegionOperator {
     operatorId: number;
     operatorNames: string[];
     hasUserRoute: boolean;
+    trips: number;
+    distanceKm: number;
 }

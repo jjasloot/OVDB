@@ -45,7 +45,7 @@
           [disabled]="isSaving()">
       </mat-form-field>
 
-      <button
+      <button type="button"
         mat-raised-button
         color="primary"
         (click)="addMapping()"
@@ -76,7 +76,7 @@
               <mat-icon class="chip-arrow">arrow_forward</mat-icon>
               <span class="to-tag">{{ mapping.trainlogOperator }}</span>
             </div>
-            <button
+            <button type="button"
               class="chip-remove"
               (click)="removeMapping($index)"
               [disabled]="isSaving()"

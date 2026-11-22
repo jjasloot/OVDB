@@ -23,6 +23,25 @@
       </mat-card-content>
     </mat-card>
 
+    @if (recentTrips().length > 0) {
+    <mat-card class="recent-trips">
+      <mat-card-header>
+        <mat-card-title>{{ "HOME.RECENT_TRIPS" | translate }}</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        @for (trip of recentTrips(); track trip.routeInstanceId) {
+        <a class="recent-trip" [routerLink]="['/admin/routes/instances', trip.routeId]">
+          <span class="recent-date">{{ trip.date | date: 'mediumDate' }}</span>
+          <span class="recent-name">{{ trip.routeName }}</span>
+          @if (trip.arrivalDelayMinutes !== null && trip.arrivalDelayMinutes !== undefined) {
+          <span class="recent-delay" [class.late]="trip.arrivalDelayMinutes > 1">{{ trip.arrivalDelayMinutes > 0 ? '+' : '' }}{{ trip.arrivalDelayMinutes | number: '1.0-0' }} min</span>
+          }
+        </a>
+        }
+      </mat-card-content>
+    </mat-card>
+    }
+
     @if (!!maps() || !!stationMaps()) {
     <div>
       @if (maps().length > 0 || stationMaps().length > 0) {
@@ -38,13 +57,18 @@
               <b>{{ getName(map) }}</b>@if(map.completed){
               <mat-icon style="height: 19px;">download_done</mat-icon>
               }
+              @if (mapSummary()[map.mapGuid]; as summary) {
+              <span class="map-summary">
+                {{ 'HOME.MAP_SUMMARY' | translate: { km: (summary.distanceKm | number: '1.0-0'), trips: summary.trips, year: currentYear } }}
+              </span>
+              }
             </h4>
             <div class="desktop buttons">
               <button mat-raised-button color="primary" (click)="view(map)">
                 {{ "HOME.VIEW" | translate }}
               </button>
               @if (!!map.sharingLinkName) {
-              <button mat-button [cdkCopyToClipboard]="getLink(map)">
+              <button mat-button [cdkCopyToClipboard]="getLink(map)" (cdkCopyToClipboardCopied)="linkCopied($event)">
                 {{ "HOME.COPY" | translate }}
               </button>
               }
@@ -55,7 +79,7 @@
                 <mat-icon>visibility</mat-icon>
               </button>
               @if (!!map.sharingLinkName) {
-              <button mat-icon-button [cdkCopyToClipboard]="getLink(map)"
+              <button mat-icon-button [cdkCopyToClipboard]="getLink(map)" (cdkCopyToClipboardCopied)="linkCopied($event)"
                 [attr.aria-label]="'HOME.COPY' | translate">
                 <mat-icon>content_copy</mat-icon>
               </button>
@@ -79,7 +103,7 @@
                 {{ "HOME.VIEW" | translate }}
               </button>
               @if (!!map.sharingLinkName) {
-              <button mat-button [cdkCopyToClipboard]="getLinkStation(map)">
+              <button mat-button [cdkCopyToClipboard]="getLinkStation(map)" (cdkCopyToClipboardCopied)="linkCopied($event)">
                 {{ "HOME.COPY" | translate }}
               </button>
               }
@@ -90,7 +114,7 @@
                 <mat-icon>visibility</mat-icon>
               </button>
               @if (!!map.sharingLinkName) {
-              <button mat-icon-button [cdkCopyToClipboard]="getLinkStation(map)"
+              <button mat-icon-button [cdkCopyToClipboard]="getLinkStation(map)" (cdkCopyToClipboardCopied)="linkCopied($event)"
                 [attr.aria-label]="'HOME.COPY' | translate">
                 <mat-icon>content_copy</mat-icon>
               </button>

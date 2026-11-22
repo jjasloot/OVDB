@@ -1,7 +1,10 @@
 @if (!error) {
   <div #box class="container" style="display: flex;flex-direction: column;">
+    @if (routeName) {
+    <div class="map-title"><b>{{ routeName }}</b></div>
+    }
     <div class="map-container" #mapContainer>
-      <div class="map" leaflet [leafletOptions]="options" [leafletLayers]="layers" [leafletLayersControl]="leafletLayersControl" [leafletFitBounds]="bounds">
+      <div class="map" leaflet (leafletMapReady)="locate($event)" [leafletOptions]="options" [leafletLayers]="layers" [leafletLayersControl]="leafletLayersControl" [leafletFitBounds]="bounds">
       </div>
       <div [ngClass]="{'loading':loading,'loading-indicator':true}">
         <mat-spinner></mat-spinner>
@@ -12,6 +15,6 @@
 
 @if (error) {
   <div>
-    {{'ERROR'|translate}}
+    {{'ERRORS.GENERIC'|translate}}
   </div>
 }

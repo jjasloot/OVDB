@@ -1,6 +1,6 @@
 import { Component, OnInit, ChangeDetectorRef, AfterViewInit, inject, ChangeDetectionStrategy } from '@angular/core';
 import { MatDialogRef, MAT_DIALOG_DATA, MatDialogTitle, MatDialogContent, MatDialogActions } from '@angular/material/dialog';
-import { merge } from 'rxjs';
+import { catchError, finalize, forkJoin, of } from 'rxjs';
 import { ApiService } from '../services/api.service';
 import { RouteInstance } from '../models/routeInstance.model';
 import { TranslateService, TranslateModule } from '@ngx-translate/core';
@@ -67,30 +67,23 @@ export class MapInstanceDialogComponent implements OnInit {
     return '';
   }
   getData() {
-    if (this.loadAll) {
-      this.apiService.getRouteInstancesForMap(this.mapGuid, this.id).subscribe(data => {
-        this.instances = data.routeInstances;
-      });
-      return;
+    // No period filter on the map means there is nothing to limit to: show every trip.
+    if (this.limits.length === 0) {
+      this.loadAll = true;
     }
-    let completed = 0;
-    merge(...this.limits.map(l => this.apiService.getRouteInstancesForMap(
-      this.mapGuid,
-      this.id,
-      l.start.toFormat('yyyy-MM-dd'),
-      l.end.toFormat('yyyy-MM-dd')
-    ))).subscribe(data => {
-      this.instances = this.instances.concat(...data.routeInstances);
-      completed++;
-      if (completed === this.limits.length) {
-        this.loading = false;
-      }
-    }, err => {
-      completed++;
-      if (completed === this.limits.length) {
-        this.loading = false;
-      }
-    });
+    const requests = this.loadAll
+      ? [this.apiService.getRouteInstancesForMap(this.mapGuid, this.id)]
+      : this.limits.map(l => this.apiService.getRouteInstancesForMap(
+        this.mapGuid,
+        this.id,
+        l.start.toFormat('yyyy-MM-dd'),
+        l.end.toFormat('yyyy-MM-dd')
+      ));
+    this.loading = true;
+    // One failed period leaves the others shown; the global toast reports the failure.
+    forkJoin(requests.map(r => r.pipe(catchError(() => of({ routeInstances: [] as RouteInstance[] })))))
+      .pipe(finalize(() => this.loading = false))
+      .subscribe(results => this.instances = results.flatMap(r => r.routeInstances));
   }
 
 

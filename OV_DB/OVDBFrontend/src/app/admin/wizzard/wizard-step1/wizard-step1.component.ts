@@ -152,8 +152,9 @@ export class WizzardStep1Component implements OnInit {
     this.loading = true;
     this.error = false;
     this.lastSearch = () => this.getLines();
-    this.dateTime = value.dateTime;
-    this.apiService.importerGetLines(value.reference, value.network, value.type, value.dateTime).subscribe({
+    // A hidden date (box unticked) must not still steer the search.
+    this.dateTime = this.differentTimeLeft ? value.dateTime : null;
+    this.apiService.importerGetLines(value.reference, value.network, value.type, this.dateTime!).subscribe({
       next: (data) => {
         this.lines = data;
         this.step = 2;
@@ -173,6 +174,9 @@ export class WizzardStep1Component implements OnInit {
     this.loading = true;
     this.error = false;
     this.lastSearch = () => this.getNetwork();
+    if (!this.differentTimeRight) {
+      this.dateTime = null;
+    }
     this.apiService.importerGetNetwork(this.selectedNetwork, this.dateTime!).subscribe({
       next: (data) => {
         this.lines = data;

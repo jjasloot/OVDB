@@ -1,3 +1,4 @@
+import { RouterLink } from '@angular/router';
 import { NgClass } from '@angular/common';
 import { Component, Signal, viewChild, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -18,11 +19,13 @@ import { MapTileLayersService } from 'src/app/services/map-tile-layers.service';
 import { Map } from 'src/app/models/map.model';
 import { BaseChartDirective } from 'ng2-charts';
 import 'chartjs-adapter-luxon';
+import { finalize } from 'rxjs';
+import { DecimalPipe } from '@angular/common';
 import { MatTabsModule } from '@angular/material/tabs';
 import { safePopupContent } from 'src/app/utils/safe-leaflet-content';
 @Component({
   selector: 'app-time-stats',
-  imports: [MatCard, MatCardTitle, MatFormField, MatLabel, MatSelect, MatOption, FormsModule, MatButton, LeafletModule, NgClass, MatProgressSpinner, TranslateModule, BaseChartDirective, MatTabsModule, MatCardContent],
+  imports: [MatCard, MatCardTitle, MatFormField, MatLabel, MatSelect, MatOption, FormsModule, MatButton, LeafletModule, NgClass, MatProgressSpinner, TranslateModule, BaseChartDirective, MatTabsModule, MatCardContent, DecimalPipe, RouterLink],
   templateUrl: './time-stats.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './time-stats.component.scss'
@@ -37,6 +40,7 @@ export class TimeStatsComponent implements OnInit {
   singleData: any;
 
   loadingMap = false;
+  downloading = false;
   selectedMap: string | null = null;
   selectedYear: number | null = null;
   bounds = new LatLngBounds(new LatLng(50.656245, 2.921360), new LatLng(53.604563, 7.428211));
@@ -132,8 +136,12 @@ export class TimeStatsComponent implements OnInit {
       this.tableData = data;
     });
     this.loadingMap = true;
-    this.apiService.getStatsReach(this.selectedMap!, year!).subscribe((data: any) => {
+    this.apiService.getStatsReach(this.selectedMap!, year!).pipe(finalize(() => this.loadingMap = false)).subscribe((data: any) => {
       this.layers = [];
+      // An empty reply means no trips in this selection: nothing to mark.
+      if (!data) {
+        return;
+      }
       const latMin = marker([data.latMin.lat, data.latMin.long], {
         title: 'LatMin', icon: icon({
           iconSize: [25, 41],
@@ -184,27 +192,38 @@ export class TimeStatsComponent implements OnInit {
 
   }
 
+  routesLink(row: { typeId?: number }) {
+    return {
+      typeId: row.typeId ?? null,
+      mapId: this.maps.find((m) => m.mapGuid === this.selectedMap)?.mapId ?? null,
+      year: this.selectedYear || null,
+    };
+  }
+
   name(item: { name: string, nameNL: string }) {
     return this.translationService.getNameForItem(item);
   }
 
   download() {
-    this.apiService.getTripReport(this.selectedMap!, this.selectedYear!).subscribe(data => {
-      saveAs(data as Blob, 'tripreport.xlsx');
-    });
+    this.downloading = true;
+    // 0 is the "All" option: no year filter.
+    this.apiService.getTripReport(this.selectedMap!, this.selectedYear || null, this.translationService.language === 'en')
+      .pipe(finalize(() => this.downloading = false))
+      .subscribe(data => saveAs(data as Blob, 'tripreport.xlsx'));
   }
 
   private extremePopup(titleKey: string, point: { lat: number; long: number; route: { name: string } }): HTMLElement {
     return safePopupContent(this.translateService.instant(titleKey), [
-      'Latitude: ' + point.lat,
-      'Longitude: ' + point.long,
-      'Route: ' + point.route.name,
+      this.translateService.instant('EXTREMES.LATITUDE') + ': ' + point.lat,
+      this.translateService.instant('EXTREMES.LONGITUDE') + ': ' + point.long,
+      this.translateService.instant('EXTREMES.ROUTE') + ': ' + point.route.name,
     ]);
   }
 
   export() {
-    this.apiService.getCompleteExport(this.selectedMap!, this.selectedYear!).subscribe(data => {
-      saveAs(data as Blob, 'export.geojson');
-    });
+    this.downloading = true;
+    this.apiService.getCompleteExport(this.selectedMap!, this.selectedYear || undefined)
+      .pipe(finalize(() => this.downloading = false))
+      .subscribe(data => saveAs(data as Blob, 'export.geojson'));
   }
 }

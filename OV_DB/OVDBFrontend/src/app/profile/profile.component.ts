@@ -77,6 +77,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
   savingProfile = false;
   changingPassword = false;
   trawellingLoading = false;
+  trawellingStatusError = false;
   trawellingConnecting = false;
   trawellingDisconnecting = false;
   backfillingScheduled = false;
@@ -131,7 +132,16 @@ export class ProfileComponent implements OnInit, OnDestroy {
   passwordMatchValidator(group: UntypedFormGroup) {
     const newPassword = group.get('newPassword')?.value;
     const confirmPassword = group.get('confirmPassword')?.value;
-    return newPassword === confirmPassword ? null : { passwordMismatch: true };
+    const mismatch = newPassword !== confirmPassword;
+    // Also on the control itself: mat-error only shows for an invalid control, not an invalid group.
+    const confirm = group.get('confirmPassword');
+    if (mismatch && confirm && !confirm.hasError('required')) {
+      confirm.setErrors({ ...(confirm.errors ?? {}), passwordMismatch: true });
+    } else if (!mismatch && confirm?.hasError('passwordMismatch')) {
+      const { passwordMismatch, ...rest } = confirm.errors!;
+      confirm.setErrors(Object.keys(rest).length ? rest : null);
+    }
+    return mismatch ? { passwordMismatch: true } : null;
   }
 
   loadProfile(): void {
@@ -140,7 +150,8 @@ export class ProfileComponent implements OnInit, OnDestroy {
       next: (profile) => {
         this.userProfile = profile;
         this.profileForm.patchValue({
-          preferredLanguage: profile.preferredLanguage || '',
+          // Older accounts never chose one; without a fallback the required select blocks every save.
+          preferredLanguage: profile.preferredLanguage || this.translationService.language,
           telegramUserId: profile.telegramUserId || null,
           trainlogMaterialKey: profile.trainlogMaterialKey || '',
           trainlogRegistrationKey: profile.trainlogRegistrationKey || '',
@@ -205,9 +216,11 @@ export class ProfileComponent implements OnInit, OnDestroy {
 
       this.apiService.changePassword(changePassword).subscribe({
         next: () => {
-          this.showMessage('PROFILE.PASSWORD_CHANGED_SUCCESSFULLY');
-          this.passwordForm.reset();
+          // The backend revokes every refresh token, this session's too: without signing out now
+          // the session would just die silently once the access token runs out.
           this.changingPassword = false;
+          this.authService.logOut('/login');
+          this.showMessage('PROFILE.PASSWORD_CHANGED_RELOGIN');
         },
         error: (error) => {
           console.error('Error changing password:', error);
@@ -229,6 +242,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
 
   loadTrawellingStatus(): void {
     this.trawellingLoading = true;
+    this.trawellingStatusError = false;
     this.apiService.getTrawellingStatus().subscribe({
       next: (status) => {
         this.trawellingStatus = status;
@@ -236,6 +250,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
       },
       error: (error) => {
         console.error('Error loading Träwelling status:', error);
+        this.trawellingStatusError = true;
         this.trawellingLoading = false;
       }
     });
@@ -256,6 +271,12 @@ export class ProfileComponent implements OnInit, OnDestroy {
       next: (response) => {
         // Open the authorization URL in a new window
         const authWindow = window.open(response.authorizationUrl, '_blank', 'width=600,height=700');
+        if (!authWindow) {
+          // Blocked popup: nothing would ever close, so the buttons would stay disabled for good.
+          this.trawellingConnecting = false;
+          this.showMessage('PROFILE.TRAEWELLING_POPUP_BLOCKED');
+          return;
+        }
 
         // Listen for messages from the popup
         const messageListener = (event: MessageEvent) => {
@@ -302,6 +323,16 @@ export class ProfileComponent implements OnInit, OnDestroy {
   }
 
   disconnectTraewelling(): void {
+    this.dialog.open(AreYouSureDialogComponent, {
+      data: { item: this.translateService.instant('PROFILE.DISCONNECT_TRAEWELLING_ITEM') },
+    }).afterClosed().subscribe((confirmed: boolean) => {
+      if (confirmed) {
+        this.doDisconnectTraewelling();
+      }
+    });
+  }
+
+  private doDisconnectTraewelling(): void {
     this.trawellingDisconnecting = true;
     this.apiService.disconnectTraewelling().subscribe({
       next: () => {
@@ -376,7 +407,8 @@ export class ProfileComponent implements OnInit, OnDestroy {
 
   formatDate(dateString: string): string {
     const date = new Date(dateString);
-    return date.toLocaleString();
+    // In the app's language rather than the browser's.
+    return date.toLocaleString(this.translationService.dateLocale);
   }
 
   isCurrentSession(session: any): boolean {
@@ -392,11 +424,11 @@ export class ProfileComponent implements OnInit, OnDestroy {
 
   parseUserAgent(userAgent: string): string {
     if (!userAgent || userAgent === 'Unknown Device') {
-      return 'Unknown Device';
+      return this.translateService.instant('PROFILE.UNKNOWN_DEVICE');
     }
 
     // Parse browser
-    let browser = 'Unknown Browser';
+    let browser = this.translateService.instant('PROFILE.UNKNOWN_BROWSER');
     let browserVersion = '';
 
     if (userAgent.includes('Firefox/')) {
@@ -446,7 +478,9 @@ export class ProfileComponent implements OnInit, OnDestroy {
 
     // Format the result
     const versionStr = browserVersion ? ` ${browserVersion.split('.')[0]}` : '';
-    const result = os ? `${browser}${versionStr} on ${os}` : `${browser}${versionStr}`;
+    const result = os
+      ? this.translateService.instant('PROFILE.BROWSER_ON_OS', { browser: `${browser}${versionStr}`, os })
+      : `${browser}${versionStr}`;
 
     return result;
   }

@@ -130,7 +130,7 @@ export class AdministratorOperatorsComponent implements OnInit {
     });
   }
 
-  getLogo(operatorId: number): Observable<string> {
+  getLogo(operatorId: number): Observable<string | null> {
     return this.operatorService.getOperatorLogo(operatorId);
   }
 

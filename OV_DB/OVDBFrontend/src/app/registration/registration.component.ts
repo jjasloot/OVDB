@@ -1,3 +1,4 @@
+import { RouterLink } from '@angular/router';
 import { Component, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
 import { UntypedFormBuilder, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { AuthenticationService } from '../services/authentication.service';
@@ -13,7 +14,7 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
     templateUrl: './registration.component.html',
     styleUrls: ['./registration.component.scss'],
     changeDetection: ChangeDetectionStrategy.Eager,
-    imports: [FormsModule, ReactiveFormsModule, MatFormField, MatLabel, MatError, MatInput, MatButton, MatProgressSpinner, TranslateModule]
+    imports: [FormsModule, ReactiveFormsModule, MatFormField, MatLabel, MatError, MatInput, MatButton, MatProgressSpinner, TranslateModule, RouterLink]
 })
 export class RegistrationComponent implements OnInit {
   private formBuilder = inject(UntypedFormBuilder);
@@ -22,7 +23,8 @@ export class RegistrationComponent implements OnInit {
 
   form = this.formBuilder.group({
     email: ['', [Validators.required, Validators.email]],
-    password: ['', Validators.required],
+    // The backend refuses shorter passwords; say so before the round trip.
+    password: ['', [Validators.required, Validators.minLength(10)]],
     // inviteCode: ['', Validators.required]
   });
   failed = false;
@@ -42,9 +44,12 @@ export class RegistrationComponent implements OnInit {
     this.authService.registration(this.form.value as RegistrationRequest).subscribe({
       next: () => (this.loading = false),
       error: (err) => {
-        this.error = typeof err?.error === 'string' && err.error
-          ? err.error
-          : this.translateService.instant('ERRORS.GENERIC');
+        // The backend's messages are Dutch only; map the known ones to translations.
+        const known: Record<string, string> = {
+          'Wachtwoord te kort': 'PROFILE.PASSWORD_MIN_LENGTH',
+          'Mailadres wordt al gebruikt': 'REGISTER.EMAIL_IN_USE',
+        };
+        this.error = this.translateService.instant(known[err?.error] ?? 'ERRORS.GENERIC');
         this.failed = true;
         this.loading = false;
       },

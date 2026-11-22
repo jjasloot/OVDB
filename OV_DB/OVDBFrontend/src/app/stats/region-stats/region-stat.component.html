@@ -1,4 +1,17 @@
 @if(loading()){
 <mat-spinner />
+} @else if (regionStats().length === 0) {
+<p class="empty">{{ 'STATS.REGIONS_EMPTY' | translate }}</p>
+} @else {
+<div class="controls">
+  <mat-button-toggle-group [value]="sortBy()" (change)="sortBy.set($event.value)"
+    [attr.aria-label]="'STATS.REGIONS_SORT' | translate">
+    <mat-button-toggle value="name">{{ 'STATS.REGIONS_SORT_NAME' | translate }}</mat-button-toggle>
+    <mat-button-toggle value="completion">{{ 'STATS.REGIONS_SORT_COMPLETION' | translate }}</mat-button-toggle>
+  </mat-button-toggle-group>
+  <mat-slide-toggle [checked]="hideUnvisited()" (change)="hideUnvisited.set($event.checked)">
+    {{ 'STATS.REGIONS_HIDE_UNVISITED' | translate }}
+  </mat-slide-toggle>
+</div>
 }
-<app-region-stats-display [regionStats]="regionStats()" />
+<app-region-stats-display [regionStats]="regionStats()" [sortBy]="sortBy()" [hideUnvisited]="hideUnvisited()" />

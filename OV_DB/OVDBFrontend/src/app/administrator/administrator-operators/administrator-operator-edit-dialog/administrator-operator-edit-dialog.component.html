@@ -4,8 +4,11 @@
     <mat-form-field>
       <mat-label>Names</mat-label>
       <mat-chip-grid #chipList>
-        @for (name of operatorForm.get('names')?.value ; track name) {
-          <mat-chip [removable]="true" (removed)="removeName(name)">
+        @for (name of operatorForm.get('names')?.value ; track name; let first = $first) {
+          <!-- The first name is the one shown everywhere; clicking another makes it the primary one. -->
+          <mat-chip [removable]="true" (removed)="removeName(name)" [highlighted]="first"
+            (click)="makePrimary(name)" [matTooltip]="first ? 'Primary name' : 'Make primary name'">
+            <mat-icon matChipAvatar>{{ first ? 'star' : 'star_border' }}</mat-icon>
             {{ name }}
             @if (name) {
               <mat-icon matChipRemove>cancel</mat-icon>
@@ -20,6 +23,7 @@
           (matChipInputTokenEnd)="addName($event)"
           />
         </mat-chip-grid>
+        <mat-hint>The starred name is shown everywhere. Click another name to make it primary.</mat-hint>
       </mat-form-field>
       <mat-form-field>
         <mat-label>Runs trains in</mat-label>

@@ -2,9 +2,11 @@
   {{ "BACK" | translate }}
 </button>
 
+<!-- Two columns on wide screens: the form, and a preview of the route's line to check before saving. -->
+<div class="detail-layout">
 <div class="form">
   <app-traewelling-context-card [tripContext]="trawellingTripData()" />
-  @if(!!route){
+  @if(route()){
   <form [formGroup]="form" (ngSubmit)="onSubmit(form.value, false)">
     <mat-form-field>
       <mat-label>{{ "ROUTEDETAILS.NAME" | translate }}</mat-label>
@@ -48,10 +50,21 @@
     <div class="row">
       <mat-form-field style="width: 50%">
         <mat-label>{{ "ROUTEDETAILS.OVERRIDECOLOUR" | translate }}</mat-label>
-        <input [(ngModel)]="colour" [ngModelOptions]="{ standalone: true }" matInput />
+        <input [(ngModel)]="colour" [ngModelOptions]="{ standalone: true }" matInput
+          [placeholder]="typeColour() ?? ''" />
+        @if (colour()) {
+        <button mat-icon-button matSuffix type="button" (click)="colour.set('')"
+          [attr.aria-label]="'CLEAR' | translate">
+          <mat-icon>close</mat-icon>
+        </button>
+        } @else {
+        <mat-hint>{{ "ROUTEDETAILS.OVERRIDECOLOUR_HINT" | translate }}</mat-hint>
+        }
       </mat-form-field>
       <mat-form-field style="width: 50%; max-height: 71px">
-        <input type="color" [(ngModel)]="colour" [ngModelOptions]="{ standalone: true }" matInput />
+        <!-- Without an override the picker shows the type colour the route gets, not a misleading black. -->
+        <input type="color" [ngModel]="colour() || typeColour() || '#000000'" (ngModelChange)="colour.set($event)"
+          [ngModelOptions]="{ standalone: true }" matInput />
       </mat-form-field>
     </div>
     <mat-form-field>
@@ -125,15 +138,27 @@
       [disabled]="form.invalid">
       {{ "SAVE_GO_TO_INSTANCES" | translate }}
     </button>
-    <button mat-button class="danger" type="button" (click)="delete()">
+    <button mat-button class="danger" type="button" (click)="delete()" [disabled]="!route()">
       {{ "DELETE" | translate }}
     </button>
-    <button mat-button (click)="export()">
+    <button mat-button (click)="export()" [disabled]="!route()">
       {{ "ROUTESLIST.EXPORT" | translate }}
+    </button>
+    <button mat-button type="button" [disabled]="!route()" [cdkCopyToClipboard]="shareLink()"
+      (cdkCopyToClipboardCopied)="linkCopied($event)">
+      <mat-icon>share</mat-icon>
+      {{ "ROUTEDETAILS.COPY_SHARE_LINK" | translate }}
     </button>
   </div>
 
   @if(isAdmin){
   <button mat-button (click)="assignRegions()">{{ 'ROUTES.ASSIGNREGIONS' | translate }}</button>
   }
+</div>
+@if (wide() && previewLayers().length > 0) {
+<div class="route-preview">
+  <div class="preview-map" leaflet [leafletOptions]="previewOptions" [leafletLayers]="previewLayers()"
+    [leafletFitBounds]="previewBounds()!"></div>
+</div>
+}
 </div>

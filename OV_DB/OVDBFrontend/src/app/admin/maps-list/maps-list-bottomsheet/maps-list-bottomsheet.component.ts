@@ -1,3 +1,4 @@
+import { injectLinkCopied } from "src/app/utils/link-copied";
 import { Component, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { TranslateService, TranslateModule } from '@ngx-translate/core';
@@ -21,6 +22,7 @@ import { CdkCopyToClipboard } from '@angular/cdk/clipboard';
 export class MapsListBottomsheetComponent implements OnInit {
   dialogRef = inject<MatBottomSheetRef<MapsListBottomsheetComponent>>(MatBottomSheetRef);
   data = inject(MAT_BOTTOM_SHEET_DATA);
+  private linkCopied = injectLinkCopied();
 
   map: Map;
   constructor() {
@@ -32,7 +34,12 @@ export class MapsListBottomsheetComponent implements OnInit {
   ngOnInit(): void {
   }
   getLink() {
-    return location.origin + '/link/' + this.map.sharingLinkName;
+    // Station maps have their own viewer under /stations.
+    return location.origin + (this.data.linkPrefix ?? '/link/') + this.map.sharingLinkName;
+  }
+  copied(success: boolean) {
+    this.linkCopied(success);
+    this.dialogRef.dismiss();
   }
   view() {
     this.dialogRef.dismiss(MapListActions.View);

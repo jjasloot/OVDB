@@ -1,13 +1,30 @@
-<div>
+<div class="map-title">
   <b>{{ getName(names()) }}</b>
-  @if (!!total()||visited()!=undefined) {
+  @if (!loadError() && (!!total()||visited()!=undefined)) {
   <span>: {{ visited() }} / {{ total() }} ({{ percentage() }}%)</span>
   }
+  @if (!loadError()) {
+  <mat-slide-toggle class="unvisited-toggle" [checked]="showOnlyUnvisited()" (change)="setShowOnlyUnvisited($event.checked)">
+    {{ 'STATIONS.ONLY_UNVISITED' | translate }}
+  </mat-slide-toggle>
+  <input class="station-search" type="search" [placeholder]="'STATIONS.FIND' | translate"
+    [attr.aria-label]="'STATIONS.FIND' | translate"
+    [value]="stationQuery()" (input)="stationQuery.set($any($event.target).value)"
+    [matAutocomplete]="stationAuto" />
+  <mat-autocomplete #stationAuto="matAutocomplete" (optionSelected)="findStation($event.option.value)">
+    @for (entry of stationMatches(); track entry.marker) {
+    <mat-option [value]="entry">{{ entry.name }}</mat-option>
+    }
+  </mat-autocomplete>
+  }
 </div>
+@if (loadError()) {
+<p class="load-error">{{ loadError()! | translate }}</p>
+}
 <div class="map-container" #mapContainer>
   <div
     class="map"
-    leaflet
+    leaflet (leafletMapReady)="locate($event)"
     [leafletOptions]="options"
     [leafletLayers]="layers()"
     [leafletLayersControl]="leafletLayersControl"

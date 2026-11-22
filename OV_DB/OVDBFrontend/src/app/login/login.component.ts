@@ -24,6 +24,7 @@ export class LoginComponent implements OnInit {
 
   form!: UntypedFormGroup;
   failed = false;
+  failedKey = 'LOGIN.UPINCORRECT';
   loading = false;
   error: any;
 
@@ -61,6 +62,8 @@ export class LoginComponent implements OnInit {
         this.error = err;
         this.loading = false;
         this.failed = true;
+        // Only a 401 means wrong credentials; a dead server or network should not be blamed on the password.
+        this.failedKey = err?.status === 401 ? 'LOGIN.UPINCORRECT' : err?.status === 0 ? 'ERRORS.NETWORK' : 'ERRORS.GENERIC';
       },
     });
   }

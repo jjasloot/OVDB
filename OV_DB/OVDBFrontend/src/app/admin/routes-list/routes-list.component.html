@@ -4,9 +4,14 @@
 </div>
 }
 <div class="mat-elevation-z8 container">
-  <mat-form-field class="filter">
-    <input matInput placeholder="{{ 'ROUTESLIST.SEARCH' | translate }}" #input />
-  </mat-form-field>
+  <!-- One wrapping row: search, filters and actions, so the table starts high on the page. -->
+  <div class="toolbar">
+    <mat-form-field appearance="outline" subscriptSizing="dynamic" class="search">
+      <mat-icon matPrefix>search</mat-icon>
+      <input matInput placeholder="{{ 'ROUTESLIST.SEARCH' | translate }}" #input />
+    </mat-form-field>
+    <app-route-list-filters [filters]="filters" [operatorName]="operatorName"
+      (filterChange)="setFilter($event.key, $event.value)" />
   <div class="buttons desktop">
     <button mat-raised-button color="primary" (click)="editMultiple()"
       [disabled]="selectedRoutes.length === 0">
@@ -25,6 +30,7 @@
       {{ "ROUTESLIST.EXPORTSET" | translate }}
     </button>
     }
+  </div>
   </div>
   <table mat-table [dataSource]="dataSource" matSort matSortActive="date"
     matSortDirection="desc" matSortDisableClear>
@@ -51,8 +57,10 @@
       </th>
       <td mat-cell *matCellDef="let element">
         @for (operatorId of element.operatorIds; track operatorId) {
+        @if (getOperatorLogo(operatorId) | async; as logo) {
         <img style="max-height: 1rem; max-width: 2rem; background:white;padding:4px; border-radius: 2px;" alt=""
-          [src]="getOperatorLogo(operatorId) | async" />
+          [src]="logo" />
+        }
         }
       </td>
     </ng-container>
@@ -101,7 +109,7 @@
         @if (element.routeType && element.routeType.colour) {
         <mat-chip-listbox class="desktop">
           <mat-chip-option [style.background]="element.routeType.colour"
-            [style.color]="contrastColour(element.routeType.colour)" [selectable]="false">
+            [style.--mat-chip-label-text-color]="contrastColour(element.routeType.colour)" [selectable]="false">
             {{ name(element.routeType) }}
           </mat-chip-option>
         </mat-chip-listbox>
@@ -116,7 +124,7 @@
         @if (element.routeTypeColour) {
         <mat-chip-listbox>
           <mat-chip-option [style.background]="element.routeTypeColour"
-            [style.color]="contrastColour(element.routeTypeColour)" [selectable]="false">
+            [style.--mat-chip-label-text-color]="contrastColour(element.routeTypeColour)" [selectable]="false">
             {{ name(element.routeType) }}
           </mat-chip-option>
         </mat-chip-listbox>
@@ -156,7 +164,8 @@
   }
   <mat-paginator [length]="count" [pageSize]="25" [pageSizeOptions]="[10, 25, 50, 100]" [showFirstLastButtons]="true">
   </mat-paginator>
-  <div class="buttons">
+  <!-- Phones only: on wider screens the same actions sit in the toolbar above the table. -->
+  <div class="buttons mobile">
     <button mat-raised-button color="primary" (click)="editMultiple()"
       [disabled]="selectedRoutes.length === 0">
       {{ selectedRoutes.length }} {{ "ROUTESLIST.SELECTED" | translate }}

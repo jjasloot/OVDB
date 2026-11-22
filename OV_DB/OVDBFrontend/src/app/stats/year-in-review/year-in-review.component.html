@@ -1,6 +1,6 @@
 <div class="container">
   <mat-card appearance="outlined">
-    <mat-card-title>{{ 'SELECTION' | translate }}</mat-card-title>
+    <mat-card-title class="selection-title">{{ 'SELECTION' | translate }}</mat-card-title>
     <mat-card-content>
       <mat-form-field>
         <mat-label>{{ 'CHOOSEMAP' | translate }}</mat-label>
@@ -62,9 +62,10 @@
             <div class="trend" [class.up]="trend > 0" [class.down]="trend < 0">
               <mat-icon>{{ trend > 0 ? 'trending_up' : 'trending_down' }}</mat-icon>
               <span>
-                {{ 'STATS.YEARREVIEW.TREND' | translate: {
+                {{ (r.previousYearUntil ? 'STATS.YEARREVIEW.TREND_SO_FAR' : 'STATS.YEARREVIEW.TREND') | translate: {
                   percent: (trend > 0 ? '+' : '') + (trend | number: '1.0-1'),
                   year: r.year - 1,
+                  until: (r.previousYearUntil | date: 'd MMMM'),
                   distance: (r.previousYearDistanceKm | number: '1.0-0')
                 } }}
               </span>
@@ -139,6 +140,24 @@
           </mat-card>
         }
       </div>
+
+      @if (calendar(); as days) {
+        <mat-card appearance="outlined">
+          <mat-card-title>{{ 'STATS.YEARREVIEW.CALENDAR' | translate }}</mat-card-title>
+          <mat-card-content>
+            <div class="calendar" role="img" [attr.aria-label]="'STATS.YEARREVIEW.CALENDAR' | translate">
+              @for (day of days; track day.key) {
+                @if (day.date) {
+                  <span class="day" [attr.data-level]="day.level"
+                    [title]="(day.date | date: 'EEE d MMM') + (day.km > 0 ? ': ' + (day.km | number: '1.0-0') + ' km' : '')"></span>
+                } @else {
+                  <span class="day outside"></span>
+                }
+              }
+            </div>
+          </mat-card-content>
+        </mat-card>
+      }
 
       @if (monthlyChart(); as data) {
         <mat-card appearance="outlined">

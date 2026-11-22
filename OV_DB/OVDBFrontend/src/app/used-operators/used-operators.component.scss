@@ -246,3 +246,17 @@
   background: #e8f5e9 !important;
   color: #388e3c !important;
 }
+// Operators without a logo: their name in the same tile, so they still count visibly.
+.operator-name {
+  color: #222;
+  font-size: 11px;
+  line-height: 1.2;
+  text-align: center;
+  overflow: hidden;
+  word-break: break-word;
+}
+
+// Tiles of operators you rode with open your routes by that operator.
+.used {
+  cursor: pointer;
+}

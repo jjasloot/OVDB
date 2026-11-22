@@ -21,7 +21,7 @@
         <!-- Date only mode -->
         <mat-form-field appearance="outline" class="full-width">
           <mat-label>{{'ROUTEINSTANCESEDIT.DATE'|translate}}</mat-label>
-          <input matInput [matDatepicker]="pickerDate" [(ngModel)]="instance.date">
+          <input matInput [matDatepicker]="pickerDate" [(ngModel)]="instance.date" (ngModelChange)="dateChanged()">
           <mat-datepicker-toggle matSuffix [for]="pickerDate"></mat-datepicker-toggle>
           <mat-datepicker #pickerDate></mat-datepicker>
         </mat-form-field>
@@ -30,7 +30,7 @@
         <div class="time-inputs-row">
           <mat-form-field appearance="outline" class="date-field">
             <mat-label>{{'ROUTEINSTANCESEDIT.DATE'|translate}}</mat-label>
-            <input matInput [matDatepicker]="pickerDateDetailed" [(ngModel)]="instance.date">
+            <input matInput [matDatepicker]="pickerDateDetailed" [(ngModel)]="instance.date" (ngModelChange)="dateChanged()">
             <mat-datepicker-toggle matSuffix [for]="pickerDateDetailed"></mat-datepicker-toggle>
             <mat-datepicker #pickerDateDetailed></mat-datepicker>
           </mat-form-field>

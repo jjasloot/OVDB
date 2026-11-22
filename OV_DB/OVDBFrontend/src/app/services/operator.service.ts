@@ -7,7 +7,7 @@ import {
 } from "../models/operator.model";
 import { HttpClient } from "@angular/common/http";
 import { Observable, of } from "rxjs";
-import { map, shareReplay, tap } from "rxjs/operators";
+import { catchError, map, shareReplay, tap } from "rxjs/operators";
 
 @Injectable({
   providedIn: "root",
@@ -16,7 +16,7 @@ export class OperatorService {
   private httpClient = inject(HttpClient);
 
 
-  logos = new Map<number, Observable<string>>();
+  logos = new Map<number, Observable<string | null>>();
 
   getOperators() {
     return this.httpClient.get<Operator[]>(
@@ -71,7 +71,8 @@ export class OperatorService {
     );
   }
 
-  getOperatorLogo(id: number): Observable<string> {
+  /** Object URL of the logo, or null when the operator has none (the API then sends an empty file). */
+  getOperatorLogo(id: number): Observable<string | null> {
     if (this.logos.has(id)) {
       return this.logos.get(id)!;
     }
@@ -82,7 +83,9 @@ export class OperatorService {
           responseType: "blob",
         })
         .pipe(
-          map((blob) => URL.createObjectURL(blob as Blob)),
+          map((blob) => ((blob as Blob).size > 0 ? URL.createObjectURL(blob as Blob) : null)),
+          // Without a logo we show nothing or the name, never a broken image.
+          catchError(() => of(null)),
           shareReplay()
         )
     );

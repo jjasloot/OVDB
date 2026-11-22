@@ -13,7 +13,7 @@
 
   </button>
   @if (!!map.sharingLinkName) {
-    <button mat-list-item [cdkCopyToClipboard]="getLink()">
+    <button mat-list-item [cdkCopyToClipboard]="getLink()" (cdkCopyToClipboardCopied)="copied($event)">
       <mat-icon matListIcon>share</mat-icon>
       <span matLine> {{'HOME.COPY'|translate}}</span>
     </button>

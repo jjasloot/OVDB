@@ -91,6 +91,10 @@ const FIRST_LABEL_LAYER = "highway_name_other";
 export const DARK_LAYER_NAME = "Dark";
 export const DEFAULT_LIGHT_LAYER_NAME = "OpenStreetMap Mat";
 
+/** localStorage key of the base layer last picked in a layer control. */
+const PREFERRED_LAYER_KEY = "OVDBMapLayer";
+const BASE_LAYER_NAMES = ["OpenStreetMap", DEFAULT_LIGHT_LAYER_NAME, DARK_LAYER_NAME, "Esri WorldTopoMap"];
+
 /** Marks the fallback dark tiles for the CSS filter in `styles.scss`. */
 const INVERTED_TILES_CLASS = "ovdb-inverted-tiles";
 
@@ -140,7 +144,7 @@ export class MapTileLayersService {
   private themeService = inject(ThemeService);
 
   createBaseLayers(): { [name: string]: Layer } {
-    return {
+    const layers: { [name: string]: Layer } = {
       OpenStreetMap: this.lightTiles(0.8),
       // Faded so route lines and markers stay readable on top.
       [DEFAULT_LIGHT_LAYER_NAME]: this.lightTiles(0.5),
@@ -150,6 +154,25 @@ export class MapTileLayersService {
         attribution: ESRI_ATTRIBUTION,
       }),
     };
+    // Remember a base layer picked in the layer control, as the preferred provider for every map.
+    // The default layer's first add is the map starting up, not a choice, so it is not saved.
+    let startingUp = true;
+    const initial = this.defaultLayerName();
+    for (const [name, layer] of Object.entries(layers)) {
+      layer.on("add", () => {
+        if (startingUp && name === initial) {
+          startingUp = false;
+          return;
+        }
+        startingUp = false;
+        try {
+          localStorage.setItem(PREFERRED_LAYER_KEY, name);
+        } catch {
+          // Storage unavailable (private mode): the choice just isn't remembered.
+        }
+      });
+    }
+    return layers;
   }
 
   /**
@@ -158,6 +181,15 @@ export class MapTileLayersService {
    * the tiles alone so a manual choice in the layer control is not overridden.
    */
   defaultLayerName(): string {
+    let preferred: string | null = null;
+    try {
+      preferred = localStorage.getItem(PREFERRED_LAYER_KEY);
+    } catch {
+      preferred = null;
+    }
+    if (preferred && BASE_LAYER_NAMES.includes(preferred)) {
+      return preferred;
+    }
     return this.themeService.isDarkMode ? DARK_LAYER_NAME : DEFAULT_LIGHT_LAYER_NAME;
   }
 

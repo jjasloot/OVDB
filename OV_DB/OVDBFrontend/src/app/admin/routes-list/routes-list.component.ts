@@ -1,7 +1,9 @@
-import { Component, ChangeDetectionStrategy, DestroyRef, OnInit, AfterViewInit, ElementRef, HostListener, viewChild, inject } from "@angular/core";
-import { ApiService } from "src/app/services/api.service";
+import { Component, ChangeDetectionStrategy, DestroyRef, OnInit, AfterViewInit, ElementRef, HostListener, viewChild, inject, signal } from "@angular/core";
+import { ApiService, RouteListFilters } from "src/app/services/api.service";
+import { RouteListFiltersComponent } from "../route-list-filters/route-list-filters.component";
+import { MatPrefix } from "@angular/material/form-field";
 import { Route } from "src/app/models/route.model";
-import { Router } from "@angular/router";
+import { ActivatedRoute, Router } from "@angular/router";
 import { MatPaginator } from "@angular/material/paginator";
 import { RoutesDataSource } from "../data-sources/routes-data-source";
 import { AuthenticationService } from "src/app/services/authentication.service";
@@ -47,6 +49,8 @@ import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
   imports: [
     MatProgressSpinner,
     MatFormField,
+    MatPrefix,
+    RouteListFiltersComponent,
     MatInput,
     MatButton,
     MatTable,
@@ -84,6 +88,11 @@ export class RoutesListComponent implements OnInit, AfterViewInit {
   private tableStateService = inject(TableStateService);
   private authService = inject(AuthenticationService);
   private destroyRef = inject(DestroyRef);
+  private activatedRoute = inject(ActivatedRoute);
+
+  // Structured filters next to the text search; the stats page links in with typeId/operatorId.
+  filters: RouteListFilters = {};
+  operatorName: string | null = null;
 
   private readonly TABLE_ID = 'routes-list';
   
@@ -120,6 +129,11 @@ export class RoutesListComponent implements OnInit, AfterViewInit {
     
     // Restore saved table state
     this.restoreTableState();
+
+    const params = this.activatedRoute.snapshot.queryParamMap;
+    const num = (key: string) => (params.get(key) ? Number(params.get(key)) : null);
+    this.filters = { typeId: num("typeId"), mapId: num("mapId"), operatorId: num("operatorId"), year: num("year") };
+    this.operatorName = params.get("operatorName");
     
     // Load routes with restored state
     this.dataSource.loadRoutes();
@@ -151,7 +165,8 @@ export class RoutesListComponent implements OnInit, AfterViewInit {
         "edit",
       ];
     } else {
-      this.displayedColumns = ["select", "name", "type", "edit"];
+      // The type chip did not fit next to the name and pushed the actions off screen.
+      this.displayedColumns = ["select", "name", "edit"];
     }
   }
 
@@ -164,6 +179,32 @@ export class RoutesListComponent implements OnInit, AfterViewInit {
       saveAs(data, "Export.geojson");
     });
   }
+  setFilter(key: keyof RouteListFilters, value: number | null) {
+    this.filters = { ...this.filters, [key]: value };
+    if (key === "operatorId" && value === null) {
+      this.operatorName = null;
+    }
+    // Keep the URL in step, so a filtered list can be bookmarked or reloaded.
+    this.router.navigate([], {
+      relativeTo: this.activatedRoute,
+      queryParams: { ...this.filters, operatorName: this.operatorName },
+      replaceUrl: true,
+    });
+    this.paginator()!.pageIndex = 0;
+    this.filter$.next();
+  }
+
+  /** "/" jumps to the search box, unless the user is already typing somewhere. */
+  @HostListener("document:keydown", ["$event"])
+  focusSearch(event: KeyboardEvent) {
+    const target = event.target as HTMLElement | null;
+    const typing = !!target && (target.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName));
+    if (event.key === "/" && !typing && !event.ctrlKey && !event.metaKey && !event.altKey) {
+      event.preventDefault();
+      this.input()?.nativeElement.focus();
+    }
+  }
+
   get filterValue() {
     const input = this.input();
     if (!input || !input.nativeElement) {
@@ -284,7 +325,8 @@ export class RoutesListComponent implements OnInit, AfterViewInit {
       this.paginator()!.pageSize,
       this.sort()!.active,
       this.sort()!.direction === "desc",
-      this.filterValue
+      this.filterValue,
+      this.filters
     );
   }
 
@@ -355,7 +397,13 @@ export class RoutesListComponent implements OnInit, AfterViewInit {
         selectedRoutes: this.selectedRoutes,
       },
     });
-    dialog.afterClosed().subscribe(() => this.loadRoutesPage());
+    // Through filter$: loadRoutesPage() alone is a cold observable that never fires, leaving the spinner up.
+    dialog.afterClosed().subscribe((saved) => {
+      if (saved) {
+        this.selectedRoutes = [];
+        this.filter$.next();
+      }
+    });
   }
 
   clearSelection() {
@@ -373,7 +421,7 @@ export class RoutesListComponent implements OnInit, AfterViewInit {
     this.router.navigate(["/", "admin", "routes", "instances", route.routeId]);
   }
 
-  getOperatorLogo(operatorId: number): Observable<string> {
+  getOperatorLogo(operatorId: number): Observable<string | null> {
     return this.operatorService.getOperatorLogo(operatorId);
   }
 

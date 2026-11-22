@@ -1,3 +1,4 @@
+import { injectLinkCopied } from "src/app/utils/link-copied";
 import { Component, OnInit, inject, ChangeDetectionStrategy } from "@angular/core";
 import { MatBottomSheet } from "@angular/material/bottom-sheet";
 import { MatDialog } from "@angular/material/dialog";
@@ -47,8 +48,9 @@ export class StationMapsComponent implements OnInit {
   private translationService = inject(TranslationService);
   private dataUpdateService = inject(DataUpdateService);
   private bottomSheet = inject(MatBottomSheet);
+  linkCopied = injectLinkCopied();
 
-  data!: StationMap[];
+  data: StationMap[] = [];
   loading = false;
 
   ngOnInit() {
@@ -94,7 +96,7 @@ export class StationMapsComponent implements OnInit {
   }
   openBottomSheet(stationMap: StationMap): void {
     const ref = this.bottomSheet.open(MapsListBottomsheetComponent, {
-      data: { map: stationMap },
+      data: { map: stationMap, linkPrefix: "/stations/link/" },
     });
     ref.afterDismissed().subscribe((action: MapListActions) => {
       switch (action) {
@@ -112,7 +114,7 @@ export class StationMapsComponent implements OnInit {
   }
 
   getLink(map: StationMap) {
-    return location.origin + "/link/" + map.sharingLinkName;
+    return location.origin + "/stations/link/" + map.sharingLinkName;
   }
   view(map: StationMap) {
     this.router.navigate(["/stations/map", map.mapGuid]);
@@ -148,7 +150,7 @@ export class StationMapsComponent implements OnInit {
       },
     });
     dialogRef.afterClosed().subscribe((data: false | StationMap[]) => {
-      if (data === false) {
+      if (!data) { // false from Cancel, undefined from Esc or a backdrop click
         return;
       }
       this.apiService

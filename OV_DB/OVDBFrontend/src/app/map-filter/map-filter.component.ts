@@ -2,7 +2,12 @@ import { Component, OnInit, inject, signal, computed, effect, ChangeDetectionStr
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { MatCheckboxChange, MatCheckbox } from "@angular/material/checkbox";
 import { MatDialogRef, MAT_DIALOG_DATA, MatDialogTitle, MatDialogContent, MatDialogActions } from "@angular/material/dialog";
-import { FilterSettings } from "../models/filterSettings";
+import { FilterSettings, PropertyCondition } from "../models/filterSettings";
+import { MatSelect } from "@angular/material/select";
+import { MatOption } from "@angular/material/core";
+import { MatAutocomplete, MatAutocompleteTrigger } from "@angular/material/autocomplete";
+import { MatChip, MatChipRemove, MatChipSet } from "@angular/material/chips";
+import { MatIcon } from "@angular/material/icon";
 import { ApiService } from "../services/api.service";
 import { Country } from "../models/country.model";
 import { RouteType } from "../models/routeType.model";
@@ -49,6 +54,14 @@ import { MatButton } from "@angular/material/button";
     MatDialogActions,
     MatButton,
     TranslateModule,
+    MatSelect,
+    MatOption,
+    MatAutocomplete,
+    MatAutocompleteTrigger,
+    MatChipSet,
+    MatChip,
+    MatChipRemove,
+    MatIcon,
   ]
 })
 export class MapFilterComponent implements OnInit {
@@ -65,6 +78,46 @@ export class MapFilterComponent implements OnInit {
   regions = signal<Region[]>([]);
   selectedCountries = signal<number[]>([]);
   selectedTypes = signal<number[]>([]);
+  selectedOperators = signal<number[]>([]);
+
+  // Trip property conditions: pick a property, then a value (or yes/no), and add it as a chip.
+  properties = signal<{ key: string; isBool: boolean; values: string[] }[]>([]);
+  selectedProperties = signal<PropertyCondition[]>([]);
+  newPropertyKey = signal<string | null>(null);
+  newPropertyValue = signal("");
+  newPropertyBool = signal(true);
+  newProperty = computed(() => this.properties().find((p) => p.key === this.newPropertyKey()) ?? null);
+  propertyValueOptions = computed(() => {
+    const text = this.newPropertyValue().toLocaleLowerCase();
+    return (this.newProperty()?.values ?? []).filter((v) => v.toLocaleLowerCase().includes(text)).slice(0, 20);
+  });
+
+  addProperty() {
+    const property = this.newProperty();
+    if (!property) {
+      return;
+    }
+    const condition: PropertyCondition = property.isBool
+      ? { key: property.key, bool: this.newPropertyBool() }
+      : { key: property.key, value: this.newPropertyValue().trim() };
+    if (!property.isBool && !condition.value) {
+      return;
+    }
+    this.selectedProperties.update((list) => [...list, condition]);
+    this.newPropertyValue.set("");
+  }
+
+  removeProperty(index: number) {
+    this.selectedProperties.update((list) => list.filter((_, i) => i !== index));
+  }
+
+  propertyLabel(condition: PropertyCondition) {
+    const value = condition.bool === undefined || condition.bool === null
+      ? condition.value
+      : this.translateService.instant(condition.bool ? "YES" : "NO");
+    return condition.key + ": " + value;
+  }
+  operators = signal<{ id: number; name: string }[]>([]);
   selectedYears = signal<number[]>([]);
   to = signal<DateTime | null>(null);
   from = signal<DateTime | null>(null);
@@ -97,6 +150,15 @@ export class MapFilterComponent implements OnInit {
     return typesString;
   });
 
+  operatorsString = computed(() => {
+    const names = this.operators().filter((o) => this.selectedOperators().includes(o.id)).map((o) => o.name);
+    return names.length > 2 ? names.length + " " + this.translateService.instant("FILTER.SELECTED") : names.join(", ");
+  });
+
+  setOperator(id: number, checked: boolean) {
+    this.selectedOperators.update((ids) => (checked ? [...ids.filter((i) => i !== id), id] : ids.filter((i) => i !== id)));
+  }
+
   yearsString = computed(() => {
     const displayedYears = this.selectedYears().map((y) => this.displayYear(y));
     let yearsString = displayedYears.join(", ");
@@ -125,6 +187,8 @@ export class MapFilterComponent implements OnInit {
     });
     this.selectedCountries.set(this.settings.selectedCountries);
     this.selectedTypes.set(this.settings.selectedTypes);
+    this.selectedOperators.set(this.settings.selectedOperators ?? []);
+    this.selectedProperties.set(this.settings.selectedProperties ?? []);
     this.selectedYears.set(this.settings.selectedYears);
     this.from.set(this.settings.from);
     this.to.set(this.settings.to);
@@ -138,6 +202,8 @@ export class MapFilterComponent implements OnInit {
     this.apiService.getTypes(this.guid()).subscribe((types) => {
       this.routeTypes.set(types);
     });
+    this.apiService.getMapOperators(this.guid()).subscribe((operators) => this.operators.set(operators));
+    this.apiService.getMapProperties(this.guid()).subscribe((properties) => this.properties.set(properties));
     this.apiService.getYears(this.guid()).subscribe((types) => {
       this.years.set(types.sort().reverse());
     });
@@ -186,10 +252,13 @@ export class MapFilterComponent implements OnInit {
         this.includeLineColours(),
         this.limitToSelectedAreas(),
         this.from()!,
-        this.to() ?? undefined,
+        // A start date alone means "from then on"; the map only applies a range with both ends.
+        this.to() ?? DateTime.now(),
         this.selectedCountries(),
         this.selectedTypes(),
-        []
+        [],
+        this.selectedOperators(),
+        this.selectedProperties()
       );
       this.dialogRef.close(settings);
     } else {
@@ -201,7 +270,9 @@ export class MapFilterComponent implements OnInit {
         undefined,
         this.selectedCountries(),
         this.selectedTypes(),
-        this.selectedYears()
+        this.selectedYears(),
+        this.selectedOperators(),
+        this.selectedProperties()
       );
       this.dialogRef.close(settings);
     }

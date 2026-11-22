@@ -78,13 +78,15 @@ export class MapsAddComponent implements OnInit {
       this.apiService.addMap(this.createMap()).subscribe(() => {
         this.dialogRef.close(true);
       }, err => {
-        this.error = this.translateService.instant('ADDTYPE.ERROR') + ' ' + err.error;
+        this.error = this.translateService.instant('ADDTYPE.ERROR') + ' ' + (typeof err.error === 'string' ? err.error : this.translateService.instant('ERRORS.GENERIC'));
+        this.loading = false;
       });
     } else {
       this.apiService.updateMap(this.createMap()).subscribe(() => {
         this.dialogRef.close(true);
       }, err => {
-        this.error = this.translateService.instant('ADDTYPE.ERROR') + ' ' + err.error;
+        this.error = this.translateService.instant('ADDTYPE.ERROR') + ' ' + (typeof err.error === 'string' ? err.error : this.translateService.instant('ERRORS.GENERIC'));
+        this.loading = false;
       });
     }
 

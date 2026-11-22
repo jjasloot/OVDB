@@ -17,7 +17,7 @@
     }
   </mat-form-field>
   @if (failed) {
-  <div class="failed">{{'LOGIN.UPINCORRECT'|translate}}</div>
+  <div class="failed">{{failedKey|translate}}</div>
   }
 
   <button mat-raised-button type="submit" [disabled]="loading">{{'LOGIN.SUBMIT'|translate}}</button>

@@ -92,22 +92,22 @@ export class StationMapsEditComponent implements OnInit {
     });
   }
 
+  saving = false;
+
   onSubmit() {
-    if (this.form.invalid || this.selectedOptions.length < 1) {
+    if (this.saving || this.form.invalid || this.selectedOptions.length < 1) {
       return;
     }
+    this.saving = true;
+    const done = { next: () => this.dialogRef.close(true), error: () => (this.saving = false) };
     this.map.name = this.form.value.name;
     this.map.nameNL = this.form.value.nameNL;
     this.map.sharingLinkName = this.form.value.sharingLinkName;
     this.map.regionIds = this.selectedOptions;
     if (this.map.id) {
-      this.apiService.updateStationMap(this.map).subscribe(() => {
-        this.dialogRef.close(true);
-      });
+      this.apiService.updateStationMap(this.map).subscribe(done);
     } else {
-      this.apiService.addStationMap(this.map).subscribe(() => {
-        this.dialogRef.close(true);
-      });
+      this.apiService.addStationMap(this.map).subscribe(done);
     }
   }
 

@@ -17,10 +17,17 @@
       @for (operator of region.operators; track operator) {
       @let logo = getLogo(operator)|async;
       @if(!!logo){
-      <span class="operator-logo-wrapper {{operator.hasUserRoute ? 'used' : 'unused'}}">
+      <span class="operator-logo-wrapper {{operator.hasUserRoute ? 'used' : 'unused'}}"
+        [routerLink]="operator.hasUserRoute ? ['/admin/routes'] : null"
+        [queryParams]="{ operatorId: operator.operatorId, operatorName: operator.operatorNames[0] }">
         <img [src]="logo" class="operator-logo" alt="{{ operator.operatorNames[0] }}"
-          title="{{ operator.operatorNames[0] }}" />
+          [title]="tileTitle(operator)" />
       </span>
+      } @else {
+      <span class="operator-logo-wrapper operator-name {{operator.hasUserRoute ? 'used' : 'unused'}}"
+        [routerLink]="operator.hasUserRoute ? ['/admin/routes'] : null"
+        [queryParams]="{ operatorId: operator.operatorId, operatorName: operator.operatorNames[0] }"
+        [title]="tileTitle(operator)">{{ operator.operatorNames[0] }}</span>
       }
       }
     </div>
@@ -36,10 +43,17 @@
           @for (operator of region.operators; track operator) {
           @let logo = getLogo(operator)|async;
           @if(!!logo){
-          <span class="compact-operator-logo-wrapper {{operator.hasUserRoute ? 'used' : 'unused'}}">
+          <span class="compact-operator-logo-wrapper {{operator.hasUserRoute ? 'used' : 'unused'}}"
+        [routerLink]="operator.hasUserRoute ? ['/admin/routes'] : null"
+        [queryParams]="{ operatorId: operator.operatorId, operatorName: operator.operatorNames[0] }">
             <img [src]="logo" class="operator-logo" alt="{{ operator.operatorNames[0] }}"
-              title="{{ operator.operatorNames[0] }}" />
+              [title]="tileTitle(operator)" />
           </span>
+          } @else {
+          <span class="compact-operator-logo-wrapper operator-name {{operator.hasUserRoute ? 'used' : 'unused'}}"
+        [routerLink]="operator.hasUserRoute ? ['/admin/routes'] : null"
+        [queryParams]="{ operatorId: operator.operatorId, operatorName: operator.operatorNames[0] }"
+            [title]="tileTitle(operator)">{{ operator.operatorNames[0] }}</span>
           }
           }
         </span>

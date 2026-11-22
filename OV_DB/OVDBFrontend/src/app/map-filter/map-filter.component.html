@@ -79,6 +79,83 @@
       </div>
     </mat-expansion-panel>
     }
+    @if (operators().length > 0) {
+    <mat-expansion-panel>
+      <mat-expansion-panel-header>
+        <mat-panel-title>
+          {{ "FILTER.OPERATORS" | translate }}
+        </mat-panel-title>
+        <mat-panel-description class="ellipsis">
+          {{ operatorsString() }}
+        </mat-panel-description>
+      </mat-expansion-panel-header>
+      <div class="grid">
+        @for (operator of operators(); track operator.id) {
+        <mat-checkbox [checked]="selectedOperators().includes(operator.id)"
+          (change)="setOperator(operator.id, $event.checked)">{{ operator.name }}</mat-checkbox>
+        }
+      </div>
+    </mat-expansion-panel>
+    }
+    @if (properties().length > 0) {
+    <mat-expansion-panel>
+      <mat-expansion-panel-header>
+        <mat-panel-title>
+          {{ "FILTER.PROPERTIES" | translate }}
+        </mat-panel-title>
+        <mat-panel-description class="ellipsis">
+          @if (selectedProperties().length > 0) {
+          {{ selectedProperties().length }} {{ "FILTER.SELECTED" | translate }}
+          }
+        </mat-panel-description>
+      </mat-expansion-panel-header>
+      <p class="hint">{{ "FILTER.PROPERTIES_HINT" | translate }}</p>
+      <div class="property-row">
+        <mat-form-field subscriptSizing="dynamic">
+          <mat-label>{{ "FILTER.PROPERTY" | translate }}</mat-label>
+          <mat-select [value]="newPropertyKey()" (selectionChange)="newPropertyKey.set($event.value)">
+            @for (property of properties(); track property.key) {
+            <mat-option [value]="property.key">{{ property.key }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        @if (newProperty()?.isBool) {
+        <mat-form-field subscriptSizing="dynamic">
+          <mat-label>{{ "FILTER.VALUE" | translate }}</mat-label>
+          <mat-select [value]="newPropertyBool()" (selectionChange)="newPropertyBool.set($event.value)">
+            <mat-option [value]="true">{{ "YES" | translate }}</mat-option>
+            <mat-option [value]="false">{{ "NO" | translate }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+        } @else {
+        <mat-form-field subscriptSizing="dynamic">
+          <mat-label>{{ "FILTER.VALUE_CONTAINS" | translate }}</mat-label>
+          <input matInput [value]="newPropertyValue()" (input)="newPropertyValue.set($any($event.target).value)"
+            (keydown.enter)="addProperty()" [matAutocomplete]="valueAuto" [disabled]="!newProperty()" />
+          <mat-autocomplete #valueAuto="matAutocomplete" (optionSelected)="newPropertyValue.set($event.option.value)">
+            @for (value of propertyValueOptions(); track value) {
+            <mat-option [value]="value">{{ value }}</mat-option>
+            }
+          </mat-autocomplete>
+        </mat-form-field>
+        }
+        <button mat-stroked-button type="button" (click)="addProperty()"
+          [disabled]="!newProperty() || (!newProperty()!.isBool && !newPropertyValue().trim())">
+          {{ "ADD" | translate }}
+        </button>
+      </div>
+      @if (selectedProperties().length > 0) {
+      <mat-chip-set>
+        @for (condition of selectedProperties(); track $index) {
+        <mat-chip (removed)="removeProperty($index)">
+          {{ propertyLabel(condition) }}
+          <button matChipRemove [attr.aria-label]="'CLEAR' | translate"><mat-icon>cancel</mat-icon></button>
+        </mat-chip>
+        }
+      </mat-chip-set>
+      }
+    </mat-expansion-panel>
+    }
     @if (routeTypes()) {
     <mat-expansion-panel>
       <mat-expansion-panel-header>
@@ -103,13 +180,13 @@
     <div class="info">{{ "FILTER.EXPLAINDATES" | translate }}</div>
     <mat-form-field>
       <mat-label>{{ "FILTER.STARTDATE" | translate }}</mat-label>
-      <input matInput [matDatepicker]="picker" [ngModel]="from()" (ngModelChange)="from.set($event)" (input)="resetYears()" />
+      <input matInput [matDatepicker]="picker" [ngModel]="from()" (ngModelChange)="from.set($event); resetYears()" />
       <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
       <mat-datepicker #picker></mat-datepicker>
     </mat-form-field>
     <mat-form-field>
       <mat-label>{{ "FILTER.ENDDATE" | translate }}</mat-label>
-      <input matInput [matDatepicker]="picker2" [ngModel]="to()" (ngModelChange)="to.set($event)" (input)="resetYears()" />
+      <input matInput [matDatepicker]="picker2" [ngModel]="to()" (ngModelChange)="to.set($event); resetYears()" />
       <mat-datepicker-toggle matSuffix [for]="picker2"></mat-datepicker-toggle>
       <mat-datepicker #picker2></mat-datepicker>
     </mat-form-field>

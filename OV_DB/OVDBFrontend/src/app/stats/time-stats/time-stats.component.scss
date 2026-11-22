@@ -76,3 +76,14 @@ mat-card {
         width: 100%;
     }
 }
+.distance {
+    white-space: nowrap;
+    text-align: right;
+}
+
+.downloads {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 16px 0;
+}

@@ -54,7 +54,7 @@
                       class="desktop"
                       mat-icon-button
                       matTooltip="{{ 'HOME.COPY' | translate }}"
-                      [cdkCopyToClipboard]="getLink(map)"
+                      [cdkCopyToClipboard]="getLink(map)" (cdkCopyToClipboardCopied)="linkCopied($event)"
                       >
                       <mat-icon>share</mat-icon>
                     </button>

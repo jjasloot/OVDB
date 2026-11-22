@@ -1,3 +1,10 @@
+import { BreakpointObserver } from "@angular/cdk/layout";
+import { LeafletModule } from "@bluehalo/ngx-leaflet";
+import { geoJSON, latLng, Layer, LatLngBounds } from "leaflet";
+import { map } from "rxjs";
+import { MapTileLayersService } from "src/app/services/map-tile-layers.service";
+import { CdkCopyToClipboard } from "@angular/cdk/clipboard";
+import { injectLinkCopied } from "src/app/utils/link-copied";
 import { Component, DestroyRef, OnInit, signal, viewChild, inject, computed, ChangeDetectionStrategy } from "@angular/core";
 import { ActivatedRoute, Router } from "@angular/router";
 import { Route } from "src/app/models/route.model";
@@ -22,8 +29,9 @@ import { AreYouSureDialogComponent } from "src/app/are-you-sure-dialog/are-you-s
 import { STANDARD_DIALOG } from "src/app/constants/dialog-sizes";
 import saveAs from "file-saver";
 import { AuthenticationService } from "src/app/services/authentication.service";
-import { MatButton } from "@angular/material/button";
-import { MatFormField, MatLabel, MatError, MatSuffix } from "@angular/material/form-field";
+import { MatButton, MatIconButton } from "@angular/material/button";
+import { MatIcon } from "@angular/material/icon";
+import { MatFormField, MatLabel, MatError, MatSuffix, MatHint } from "@angular/material/form-field";
 import { MatSnackBar } from "@angular/material/snack-bar";
 import { MatInput } from "@angular/material/input";
 import { RouteDetailOperatorSelectionComponent } from "./route-detail-operator-selection/route-detail-operator-selection.component";
@@ -35,7 +43,7 @@ import { MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle, Mat
 import { DecimalPipe } from "@angular/common";
 import { TrawellingTripContext } from "src/app/models/traewelling.model";
 import { TrawellingContextCardComponent } from "src/app/traewelling/context-card/traewelling-context-card.component";
-import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
+import { takeUntilDestroyed, toSignal } from "@angular/core/rxjs-interop";
 
 @Component({
   selector: "app-route-detail",
@@ -43,6 +51,7 @@ import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
   styleUrls: ["./route-detail.component.scss"],
   changeDetection: ChangeDetectionStrategy.Eager,
   imports: [
+    LeafletModule,
     MatButton,
     FormsModule,
     ReactiveFormsModule,
@@ -54,6 +63,10 @@ import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
     MatDatepickerInput,
     MatDatepickerToggle,
     MatSuffix,
+    MatHint,
+    MatIconButton,
+    MatIcon,
+    CdkCopyToClipboard,
     MatDatepicker,
     MatSelect,
     MatOption,
@@ -97,6 +110,19 @@ export class RouteDetailComponent implements OnInit {
   activeOperators = signal<number[]>([]);
   logo = signal<string | null>(null);
   colour = signal<string>("");
+  linkCopied = injectLinkCopied();
+
+  /** Public link to this route alone on a map (the single-route page). */
+  shareLink(): string {
+    const r = this.route();
+    return r ? `${location.origin}/route/${r.routeId}/${r.share}` : "";
+  }
+
+  /** The colour the route gets from its type when there is no override. */
+  typeColour(): string | null {
+    const typeId = this.form?.value?.routeTypeId;
+    return this.types().find((t) => t.typeId === typeId)?.colour ?? null;
+  }
   fromTraewelling = signal(false);
   trawellingTripData = signal<TrawellingTripContext | null>(null);
 
@@ -168,9 +194,28 @@ export class RouteDetailComponent implements OnInit {
         }
       });
   }
+  // Route preview (wide screens only): the route's own line, from the single-route endpoint.
+  private mapTileLayersService = inject(MapTileLayersService);
+  wide = toSignal(inject(BreakpointObserver).observe("(min-width: 1200px)").pipe(map((s) => s.matches)), { initialValue: false });
+  previewOptions = { layers: [this.mapTileLayersService.createThemedLayer(0.8)], zoom: 7, center: latLng(52.1, 5.3) };
+  previewLayers = signal<Layer[]>([]);
+  previewBounds = signal<LatLngBounds | null>(null);
+
+  private loadPreview(route: Route) {
+    if (!this.wide() || !route.share) {
+      return;
+    }
+    this.apiService.getSingleRoute(route.routeId, route.share, this.translationService.language).subscribe((geo) => {
+      const line = geoJSON(geo as any, { style: (f) => ({ color: f?.properties?.stroke ?? "#1976d2", weight: 4 }) });
+      this.previewLayers.set([line]);
+      this.previewBounds.set(line.getBounds());
+    });
+  }
+
   private loadData() {
     this.apiService.getRoute(this.routeId()).subscribe((data) => {
       this.route.set(data);
+      this.loadPreview(data);
       if (!data.firstDateTime) {
         data.firstDateTime = DateTime.now();
       }

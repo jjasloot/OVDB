@@ -2,10 +2,13 @@
   <p>{{ "IMAGES.DESCRIPTION" | translate }}</p>
   <mat-card appearance="outlined">
     <b>{{ "ADMINPAGES.MAPS" | translate }}</b>
+    <p class="hint">{{ "IMAGES.NEEDS_LINK" | translate }}</p>
     <div class="column">
       @for (map of maps; track map) {
+      <!-- The image endpoint only serves maps that have a sharing link. -->
       <mat-checkbox
         [checked]="isMapChecked(map.mapGuid)"
+        [disabled]="!map.sharingLinkName"
         (change)="selectMap(map.mapGuid, $event)"
       >
         {{ name(map) }}</mat-checkbox
@@ -44,7 +47,11 @@
   </mat-card>
   <br />
   <mat-card appearance="outlined">
+    @if (selectedGuids.length > 0) {
     <p>{{ imageSrc }}</p>
-    <img [src]="imageSrc" />
+    <img [src]="imageSrc" alt="" />
+    } @else {
+    <p>{{ "IMAGES.PICK_MAP" | translate }}</p>
+    }
   </mat-card>
 </div>

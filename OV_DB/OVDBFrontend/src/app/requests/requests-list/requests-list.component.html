@@ -11,7 +11,7 @@
         rows="6"
       ></textarea>
     </mat-form-field>
-    <button mat-raised-button color="primary" (click)="sendRequest()" [disabled]="sending">
+    <button mat-raised-button color="primary" (click)="sendRequest()" [disabled]="sending || !newRequest?.trim()">
       {{ "REQUESTS.SEND_REQUEST" | translate }}
     </button>
   </mat-card>

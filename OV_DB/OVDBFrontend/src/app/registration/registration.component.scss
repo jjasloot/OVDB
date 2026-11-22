@@ -8,3 +8,9 @@ form {
 .failed {
     color: red
 }
+.login-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 32px;
+}

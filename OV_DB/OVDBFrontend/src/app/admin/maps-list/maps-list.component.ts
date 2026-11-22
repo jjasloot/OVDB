@@ -1,3 +1,4 @@
+import { injectLinkCopied } from "src/app/utils/link-copied";
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, OnInit, inject } from "@angular/core";
 import { Map } from "src/app/models/map.model";
 import { ApiService } from "src/app/services/api.service";
@@ -47,9 +48,10 @@ export class MapsListComponent implements OnInit {
   private dataUpdateService = inject(DataUpdateService);
   private bottomSheet = inject(MatBottomSheet);
   private destroyRef = inject(DestroyRef);
+  linkCopied = injectLinkCopied();
   private cdr = inject(ChangeDetectorRef);
 
-  data!: Map[];
+  data: Map[] = [];
   loading = false;
 
   ngOnInit() {
@@ -157,7 +159,7 @@ export class MapsListComponent implements OnInit {
       },
     });
     dialogRef.afterClosed().subscribe((data: false | Map[]) => {
-      if (data === false) {
+      if (!data) { // false from Cancel, undefined from Esc or a backdrop click
         return;
       }
       this.apiService

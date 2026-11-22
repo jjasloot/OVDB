@@ -110,6 +110,7 @@ export class StationBackfillComponent implements OnInit, OnDestroy {
    * made every station feel like a fresh page.
    */
   firstLoad = signal(true);
+  loadFailed = signal(false);
 
   /** Route lines already fetched. Selecting back and forth should not re-download them. */
   private geometryCache = new Map<number, [number, number][]>();
@@ -343,6 +344,10 @@ export class StationBackfillComponent implements OnInit, OnDestroy {
     void this.load();
   }
 
+  retryLoad(): void {
+    void this.load();
+  }
+
   /**
    * Loads the station to work on: the next one in the queue, or a named one when undo needs to
    * return to the answer it just took back.
@@ -370,6 +375,10 @@ export class StationBackfillComponent implements OnInit, OnDestroy {
       if (item.suggestedRouteInstanceId) {
         await this.drawRoute(this.routeIdFor(item.suggestedRouteInstanceId));
       }
+      this.loadFailed.set(false);
+    } catch {
+      // Without this an empty item reads as "all done"; the global toast says what went wrong.
+      this.loadFailed.set(true);
     } finally {
       this.loading.set(false);
       this.firstLoad.set(false);

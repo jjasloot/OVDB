@@ -18,12 +18,26 @@
     <div class="map-container" #mapContainer>
       <div
         class="map"
-        leaflet
+        leaflet (leafletMapReady)="locate($event)"
         [leafletOptions]="options"
         [leafletLayers]="layers"
         [leafletLayersControl]="leafletLayersControl"
         [leafletFitBounds]="bounds"
       ></div>
+      @if (legend().length > 0) {
+      <div class="map-legend">
+        <button type="button" class="legend-toggle" (click)="legendOpen.set(!legendOpen())"
+          [attr.aria-expanded]="legendOpen()">
+          {{ "MAP.LEGEND" | translate }}
+          <mat-icon>{{ legendOpen() ? "expand_more" : "expand_less" }}</mat-icon>
+        </button>
+        @if (legendOpen()) {
+        @for (item of legend(); track item.type) {
+        <div class="legend-item"><span class="swatch" [style.background]="item.colour"></span>{{ item.type }}</div>
+        }
+        }
+      </div>
+      }
       <div [ngClass]="{ loading: loading(), 'loading-indicator': true }">
         <mat-progress-spinner
           [mode]="loading() === true ? 'indeterminate' : 'determinate'"
@@ -35,8 +49,12 @@
 }
 
 @if (error) {
-  <div>
-    {{ "ERROR" | translate }}
+  <div class="map-error">
+    {{ "ERRORS.GENERIC" | translate }}
+    <button mat-button color="primary" (click)="refresh()">
+      <mat-icon>refresh</mat-icon>
+      {{ "RETRY" | translate }}
+    </button>
   </div>
 }
 
@@ -85,6 +103,8 @@
     id="refresh"
     (click)="refresh()"
     [disabled]="loading()"
+    [matTooltip]="'REFRESH' | translate"
+    [attr.aria-label]="'REFRESH' | translate"
     >
     <mat-icon>refresh</mat-icon>
   </button>

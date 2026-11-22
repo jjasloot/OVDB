@@ -1,7 +1,7 @@
 import { RouteInstanceListDTO, RouteInstanceListResponseDTO } from "src/app/models/routeInstanceList.model";
 import { DataSource } from "@angular/cdk/table";
 import { BehaviorSubject, Observable, of } from "rxjs";
-import { ApiService } from "src/app/services/api.service";
+import { ApiService, RouteListFilters } from "src/app/services/api.service";
 import { CollectionViewer } from "@angular/cdk/collections";
 import { catchError, finalize, tap } from "rxjs/operators";
 
@@ -27,13 +27,14 @@ export class RouteInstancesDataSource implements DataSource<RouteInstanceListDTO
     count = 10,
     column = "date",
     descending = true,
-    filter = ""
+    filter = "",
+    filters?: RouteListFilters
   ): Observable<RouteInstanceListResponseDTO> {
     this.loadingSubject.next(true);
     if(isNaN(start)) start = 0;
     if(isNaN(count)) count = 10;
     return this.apiService
-      .getAllRouteInstances(start, count, column, descending, filter)
+      .getAllRouteInstances(start, count, column, descending, filter, filters)
       .pipe(
         catchError(() => of({ count: 0, instances: [] })),
         tap((data) => {

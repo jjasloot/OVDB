@@ -1,3 +1,4 @@
+import { RouterLink } from '@angular/router';
 import { Component, OnInit, OnDestroy, inject, ChangeDetectionStrategy } from '@angular/core';
 import { Subscription, firstValueFrom } from 'rxjs';
 import { CommonModule } from '@angular/common';
@@ -38,7 +39,8 @@ import { STANDARD_DIALOG } from '../constants/dialog-sizes';
     MatProgressSpinnerModule,
     TranslateModule,
     TripCardComponent,
-    ConflictCardComponent
+    ConflictCardComponent,
+    RouterLink
   ],
   templateUrl: './traewelling.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
@@ -137,7 +139,7 @@ export class TrawellingComponent implements OnInit, OnDestroy {
     try {
       this.connectionStatus = await this.trawellingService.getConnectionStatus();
     } catch (error) {
-      this.snackBar.open('Failed to check Träwelling connection', 'Close', { duration: 5000 });
+      this.snackBar.open(this.translateService.instant('ERRORS.GENERIC'), this.translateService.instant('CLOSE'), { duration: 5000 });
     }
   }
 
@@ -250,7 +252,7 @@ export class TrawellingComponent implements OnInit, OnDestroy {
       this.hasMorePages = response.hasMorePages;
       this.currentPage = response.meta.current_page;
     } catch (error) {
-      this.snackBar.open('Failed to load trips', 'Close', { duration: 5000 });
+      this.snackBar.open(this.translateService.instant('TRAEWELLING.ERROR_LOADING_TRIPS'), this.translateService.instant('CLOSE'), { duration: 5000 });
     }
   }
 
@@ -266,7 +268,7 @@ export class TrawellingComponent implements OnInit, OnDestroy {
       this.hasMorePages = response.hasMorePages;
       this.currentPage = response.meta.current_page;
     } catch (error) {
-      this.snackBar.open('Failed to load more trips', 'Close', { duration: 5000 });
+      this.snackBar.open(this.translateService.instant('TRAEWELLING.ERROR_LOADING_TRIPS'), this.translateService.instant('CLOSE'), { duration: 5000 });
     } finally {
       this.isLoadingMore = false;
     }

@@ -5,8 +5,9 @@ import { Operator } from "src/app/models/operator.model";
 import { Region, RegionMinimal } from "src/app/models/region.model";
 import { RegionsService } from "src/app/services/regions.service";
 import { CdkScrollable } from "@angular/cdk/scrolling";
-import { MatFormField, MatLabel } from "@angular/material/form-field";
-import { MatChipGrid, MatChip, MatChipRemove, MatChipInput } from "@angular/material/chips";
+import { MatFormField, MatLabel, MatHint } from "@angular/material/form-field";
+import { MatTooltip } from "@angular/material/tooltip";
+import { MatChipGrid, MatChip, MatChipRemove, MatChipInput, MatChipAvatar } from "@angular/material/chips";
 import { MatIcon } from "@angular/material/icon";
 import { MatInput } from "@angular/material/input";
 import { MatSelect } from "@angular/material/select";
@@ -30,6 +31,9 @@ import { MatButton } from "@angular/material/button";
         MatChip,
         MatIcon,
         MatChipRemove,
+        MatChipAvatar,
+        MatTooltip,
+        MatHint,
         MatInput,
         MatChipInput,
         MatSelect,
@@ -56,7 +60,8 @@ export class AdministratorOperatorEditDialogComponent {
     { allowSignalWrites: true }
   );
   operatorForm = this.fb.group({
-    names: [this.data.names, [Validators.required, Validators.minLength(1)]],
+    // A copy: the chips edit the array in place, and Cancel must leave the operator untouched.
+    names: [[...(this.data.names ?? [])], [Validators.required, Validators.minLength(1)]],
     runsTrainsInRegionIds: [
       this.data.runsTrainsInRegions.map((region) => region.id),
     ],
@@ -87,6 +92,16 @@ export class AdministratorOperatorEditDialogComponent {
 
     if (input) {
       input.value = "";
+    }
+  }
+
+  makePrimary(name: string): void {
+    const names: string[] = this.operatorForm.get("names")!.value!;
+    const index = names.indexOf(name);
+    if (index > 0) {
+      names.splice(index, 1);
+      names.unshift(name);
+      this.operatorForm.get("names")!.updateValueAndValidity();
     }
   }
 

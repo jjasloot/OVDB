@@ -27,6 +27,8 @@ export class TranslationService {
   set language(value: Language) {
     this._language = value;
     this.translateService.use(value);
+    // Screen readers pick their pronunciation from this.
+    document.documentElement.lang = value;
     localStorage.setItem('OVDBLanguage', value);
     this.languageChanged.emit(this._language);
   }

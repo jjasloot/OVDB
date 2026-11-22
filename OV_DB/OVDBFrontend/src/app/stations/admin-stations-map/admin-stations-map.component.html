@@ -1,6 +1,6 @@
 <div class="flex">
   <div class="map-container" #mapContainer>
-    <div class="map" leaflet [leafletOptions]="options" [leafletLayers]="layers"
+    <div class="map" leaflet (leafletMapReady)="locate($event)" [leafletOptions]="options" [leafletLayers]="layers"
       [leafletLayersControl]="leafletLayersControl" [leafletFitBounds]="bounds"></div>
     <div [ngClass]="{ loading: loading, 'loading-indicator': true }">
       <mat-spinner></mat-spinner>

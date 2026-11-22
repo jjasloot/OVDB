@@ -88,3 +88,50 @@ mat-panel-title {
 #refresh {
   margin-left: 1rem;
 }
+
+.map-legend {
+  position: absolute;
+  left: 10px;
+  bottom: 24px;
+  z-index: 1000;
+  max-height: 40%;
+  overflow-y: auto;
+  padding: 4px 10px 6px;
+  border-radius: 6px;
+  background: var(--app-surface-color, #fff);
+  color: var(--app-text-color, #000);
+  box-shadow: 0 1px 5px var(--app-shadow-color, rgba(0, 0, 0, 0.4));
+  font-size: 12px;
+}
+
+.legend-toggle {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-weight: 500;
+  cursor: pointer;
+
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+  }
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  line-height: 20px;
+}
+
+.swatch {
+  width: 16px;
+  height: 4px;
+  border-radius: 2px;
+}

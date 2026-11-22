@@ -84,7 +84,11 @@
       "DISMISS": "Don't ask again",
       "DONE": "Done",
       "SHOW_MORE": "Show {{count}} more along this trip"
-    }
+    },
+    "MAP_LOGIN_REQUIRED": "Log in to see this station map: it shows which stations you have visited yourself.",
+    "LINK_NOT_FOUND": "There is no station map behind this link (any more).",
+    "FIND": "Find a station...",
+    "ONLY_UNVISITED": "Only unvisited"
   },
   "MISSINGDATA.NODATA": "No routes with missing information.",
   "ADDMAP.TITLE": "Add map",
@@ -143,17 +147,14 @@
   "ROUTEINSTANCES.NOINSTANCES": "No trips found",
   "ROUTEINSTANCES.DELETECONFIRM": "delete this trip",
   "REQUESTS.NO_REQUESTS": "No requests yet. Ask a question above and you will see the reply here.",
-  "MENU.ADMINISTRATOR": "Administration",
   "ADD": "Add",
   "SORT": "Sort",
   "ACTIONS": "Actions",
   "LOADING": "Loading...",
   "FILTER.TITLE": "Custom selection",
   "ROUTES.ASSIGNREGIONS": "Assign regions",
-  "STATS.COMPACT": "Compact",
   "ROUTEINSTANCE.SAVE_ERROR": "Could not save the trip. Please try again.",
   "ROUTEINSTANCE.SUGGESTIONS_UNAVAILABLE": "The trip was saved, but this trip's calling pattern could not be read, so no stations are being suggested.",
-  "TRAEWELLING.IGNORE_ERROR": "Could not ignore the trip. Please try again.",
   "IMPORTER.STEP1": "Search for a line and a type, add a network to limit results.",
   "IMPORTER.REFERENCE": "Name of the line",
   "IMPORTER.NETWORK": "Network",
@@ -233,7 +234,7 @@
     "POST_SCRIPTUM": "This help page was mainly written by AI. I just didn't fancy doing it myself and it works quite well."
   },
   "HOME.WELCOME": "Welcome to OVDB",
-  "HOME.EXPLANATION": "Add your routes using the Data button or add types or countries. View your own maps with the buttons below and create links to share them online.",
+  "HOME.EXPLANATION": "Add your routes and trips with the Data button, where you also manage your maps and route types. View your maps with the buttons below and create a link to share one online.",
   "HOME.DATA": "Data",
   "HOME.CREATELINKTOSHARE": "Create a sharing link name to be able to share",
   "HOME.LANDING_TITLE": "Every journey you've made, on one map",
@@ -548,7 +549,9 @@
       "BASED_ON": "based on {{count}} trips",
       "PER_MONTH": "Distance per month",
       "BY_TYPE": "By type",
-      "TOP_OPERATORS": "Most used operators"
+      "TOP_OPERATORS": "Most used operators",
+      "TREND_SO_FAR": "{{percent}}% compared to {{year}} up to {{until}} ({{distance}} km)",
+      "CALENDAR": "Travel days"
     },
     "PUNCTUALITY": {
       "TITLE": "Punctuality",
@@ -580,7 +583,14 @@
         "D30_60": "30-60 min",
         "D60PLUS": "60+ min"
       }
-    }
+    },
+    "COMPACT": "Compact",
+    "REGIONS_EMPTY": "None of your trips passes through a known region yet.",
+    "REGIONS_SORT": "Sort regions",
+    "REGIONS_SORT_NAME": "Name",
+    "REGIONS_SORT_COMPLETION": "Most complete",
+    "REGIONS_HIDE_UNVISITED": "Hide regions without visits",
+    "OPERATOR_TOTALS": "{{trips}} trips, {{km}} km"
   },
   "MENU": {
     "PROFILE": "Profile",
@@ -591,7 +601,8 @@
     "DATA": "Data",
     "REQUESTS": "Requests",
     "DARK_MODE": "Dark mode",
-    "LIGHT_MODE": "Light mode"
+    "LIGHT_MODE": "Light mode",
+    "ADMINISTRATOR": "Administration"
   },
   "PROFILE": {
     "TITLE": "User profile",
@@ -672,7 +683,14 @@
     "TRAINLOG_OPERATOR_MAPPING_SAVED": "Operator mappings saved",
     "TRAINLOG_OPERATOR_MAPPING_ERROR": "Error saving operator mappings. Please try again.",
     "TRAINLOG_NO_OPERATOR_MAPPINGS": "No operator mappings defined yet.",
-    "SAVING": "Saving..."
+    "SAVING": "Saving...",
+    "TRAEWELLING_POPUP_BLOCKED": "Your browser blocked the Träwelling window. Allow pop-ups for this site and try again.",
+    "DISCONNECT_TRAEWELLING_ITEM": "disconnect Träwelling (reconnecting means logging in to Träwelling again)",
+    "PASSWORD_CHANGED_RELOGIN": "Password changed. You have been logged out everywhere, so please log in again.",
+    "UNKNOWN_DEVICE": "Unknown device",
+    "UNKNOWN_BROWSER": "Unknown browser",
+    "BROWSER_ON_OS": "{{browser}} on {{os}}",
+    "TRAEWELLING_LOADING_STATUS": "Checking the Träwelling connection..."
   },
   "TRAEWELLING": {
     "TITLE": "Träwelling connection",
@@ -816,7 +834,41 @@
     "START_TIME": "Departure",
     "END_TIME": "Arrival",
     "DESCRIPTION": "Description",
-    "ALERT_READ_MORE": "Read more"
+    "ALERT_READ_MORE": "Read more",
+    "IGNORE_ERROR": "Could not ignore the trip. Please try again.",
+    "LAST_EVENT": "Last trip received from Träwelling: {{when}}"
   },
-  "ROUTESLIST.EXPORTTOTRAINLOG": "Export selection for Trainlog"
+  "ROUTESLIST.EXPORTTOTRAINLOG": "Export selection for Trainlog",
+  "REFRESH": "Refresh",
+  "EXTREMES.LATITUDE": "Latitude",
+  "EXTREMES.LONGITUDE": "Longitude",
+  "EXTREMES.ROUTE": "Route",
+  "LINK_COPIED": "Link copied",
+  "IMAGES.NEEDS_LINK": "Only maps with a sharing link can be used in an image. Set one when editing the map.",
+  "IMAGES.PICK_MAP": "Pick at least one map to see the image and its link.",
+  "REGISTER.EMAIL_IN_USE": "There is already an account with this email address.",
+  "REGISTER.HAVE_ACCOUNT": "Already have an account?",
+  "EDITMAP.TITLE": "Edit map",
+  "EDITTYPE.TITLE": "Edit route type",
+  "LOGIN.SESSION_EXPIRED": "Your session has expired. Please log in again.",
+  "IMPORTER.NO_LINES": "No lines found. Check the name and type, or leave out the network.",
+  "ROUTEDETAILS.OVERRIDECOLOUR_HINT": "Empty: the route uses its type colour",
+  "CLEAR": "Clear",
+  "ROUTESLIST.FILTER_TYPE": "Type",
+  "ROUTESLIST.FILTER_MAP": "Map",
+  "ROUTESLIST.FILTER_YEAR": "Ridden in",
+  "ROUTESLIST.OPERATOR_FILTER": "Operator",
+  "ROUTEDETAILS.COPY_SHARE_LINK": "Copy share link",
+  "MAP.MY_LOCATION": "Show my location",
+  "MAP.LOCATION_UNAVAILABLE": "Your location is not available. Allow location access for this site and try again.",
+  "HOME.MAP_SUMMARY": "{{km}} km, {{trips}} trips in {{year}}",
+  "FILTER.OPERATORS": "Operators",
+  "FILTER.PROPERTIES": "Trip properties",
+  "FILTER.PROPERTIES_HINT": "Show only trips with a property, such as a vehicle type. A trip matching any of the conditions is shown.",
+  "FILTER.PROPERTY": "Property",
+  "FILTER.VALUE": "Value",
+  "FILTER.VALUE_CONTAINS": "Contains",
+  "MAP.LEGEND": "Legend",
+  "ROUTEINSTANCES.TOTALS": "{{trips}} trips · {{km}} km · {{hours}} h",
+  "HOME.RECENT_TRIPS": "Recent trips"
 }

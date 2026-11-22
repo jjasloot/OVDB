@@ -1,3 +1,6 @@
+import { MatButtonToggleModule } from '@angular/material/button-toggle';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { TranslateModule } from '@ngx-translate/core';
 import { Component, inject, OnInit, signal, ChangeDetectionStrategy } from '@angular/core';
 import { MatListModule } from '@angular/material/list';
 import { MatIconModule } from '@angular/material/icon';
@@ -14,11 +17,13 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
   styleUrls: ['./region-stat.component.scss'],
   standalone: true,
   changeDetection: ChangeDetectionStrategy.Eager,
-  imports: [MatListModule, MatIconModule, MatProgressBarModule, RegionStatsDisplayComponent, MatProgressSpinnerModule]
+  imports: [MatListModule, MatIconModule, MatProgressBarModule, RegionStatsDisplayComponent, MatProgressSpinnerModule, TranslateModule, MatButtonToggleModule, MatSlideToggleModule]
 })
 export class RegionStatComponent implements OnInit {
   regionStats = signal([] as RegionStat[]);
   loading = signal(true);
+  sortBy = signal<'name' | 'completion'>('name');
+  hideUnvisited = signal(false);
   private readonly apiService = inject(ApiService);
   private readonly translationService = inject(TranslationService);
 

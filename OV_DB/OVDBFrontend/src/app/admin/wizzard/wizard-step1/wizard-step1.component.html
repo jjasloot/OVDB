@@ -109,6 +109,8 @@
           <button mat-raised-button color="primary" (click)="select(line)">{{'IMPORTER.SELECT'|translate}}</button>
         </div>
       </div>
+      } @empty {
+      <p>{{'IMPORTER.NO_LINES'|translate}}</p>
       }
     </div>
     }

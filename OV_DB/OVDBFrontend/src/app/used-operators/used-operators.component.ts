@@ -1,3 +1,6 @@
+import { formatNumber } from '@angular/common';
+import { TranslateService } from '@ngx-translate/core';
+import { RouterLink } from '@angular/router';
 import { Component, OnInit, computed, inject, signal, ChangeDetectionStrategy } from "@angular/core";
 import { ApiService } from "src/app/services/api.service";
 import { MatCardModule } from "@angular/material/card";
@@ -32,13 +35,15 @@ import { TranslateModule } from "@ngx-translate/core";
     AsyncPipe,
     NgClass,
     MatProgressSpinnerModule,
-    TranslateModule
+    TranslateModule,
+    RouterLink
   ],
 })
 export class UsedOperatorsComponent implements OnInit {
   apiService = inject(ApiService);
   operatorService = inject(OperatorService)
   translationService = inject(TranslationService);
+  private translateService = inject(TranslateService);
   regions = signal<RegionOperators[]>([]);
   compact = false;
   currentLanguage = toSignal(this.translationService.languageChanged);
@@ -64,6 +69,18 @@ export class UsedOperatorsComponent implements OnInit {
         this.loading.set(false);
       },
       error: () => this.loading.set(false),
+    });
+  }
+
+  /** Name, plus your trips and km with this operator when there are any. */
+  tileTitle(operator: RegionOperator): string {
+    const name = operator.operatorNames[0];
+    if (!operator.trips) {
+      return name;
+    }
+    return name + " · " + this.translateService.instant("STATS.OPERATOR_TOTALS", {
+      trips: formatNumber(operator.trips, this.translationService.dateLocale),
+      km: formatNumber(operator.distanceKm, this.translationService.dateLocale, "1.0-0"),
     });
   }
 

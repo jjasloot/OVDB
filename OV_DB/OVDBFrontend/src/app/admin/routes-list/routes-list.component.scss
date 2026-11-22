@@ -1,3 +1,4 @@
+@use '@angular/material' as mat;
 .spinner-container {
     height: 100px;
     width: 100px;
@@ -108,3 +109,36 @@ button:not(.mat-mdc-fab) {
     opacity: 0.7;
 }
 
+
+// Search, filters and actions in one row (wraps on narrow screens), with compact 40px fields.
+.toolbar {
+  @include mat.form-field-overrides((
+    container-height: 40px,
+    container-vertical-padding: 8px,
+  ));
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+
+  mat-form-field {
+    width: 150px;
+  }
+
+  .search {
+    flex: 1 1 220px;
+  }
+
+  .buttons {
+    margin-left: auto;
+    gap: 8px;
+  }
+}
+
+@media (min-width: 600px) {
+  // .desktop sets display: unset, which would drop the flex gap between the action buttons.
+  .toolbar .buttons {
+    display: flex;
+  }
+}

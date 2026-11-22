@@ -32,7 +32,7 @@ export class RouteTypesComponent implements OnInit {
   private dataUpdateService = inject(DataUpdateService);
 
 
-  data!: RouteType[];
+  data: RouteType[] = [];
   loading = false;
 
   ngOnInit() {
@@ -69,7 +69,7 @@ export class RouteTypesComponent implements OnInit {
       }
     });
     dialogRef.afterClosed().subscribe((data: false | RouteType[]) => {
-      if (data === false) {
+      if (!data) { // false from Cancel, undefined from Esc or a backdrop click
         return;
       }
       this.apiService.updateRouteTypeOrder(data.map(d => d.typeId!)).subscribe(() => this.loadData());

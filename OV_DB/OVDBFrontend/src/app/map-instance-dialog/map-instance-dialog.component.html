@@ -4,6 +4,8 @@
 <div mat-dialog-content>
   @if (loading) {
     <mat-spinner></mat-spinner>
+  } @else if (instances.length === 0) {
+    <p>{{'ROUTEINSTANCES.NOINSTANCES'|translate}}</p>
   }
   @for (instance of instances; track instance) {
     <mat-expansion-panel [hideToggle]="instance.routeInstanceProperties.length==0">

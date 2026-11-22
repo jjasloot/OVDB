@@ -50,6 +50,14 @@ import {
 } from "../models/traewelling.model";
 import { StationMergeRegion, StationMergePairsResponse } from "../models/stationMerge.model";
 
+/** Structured filters for the routes list, on top of the free-text search. */
+export interface RouteListFilters {
+  typeId?: number | null;
+  mapId?: number | null;
+  operatorId?: number | null;
+  year?: number | null;
+}
+
 @Injectable({
   providedIn: "root",
 })
@@ -93,6 +101,13 @@ export class ApiService {
     );
   }
 
+  /** Trips and km per map this year, for the home page. */
+  getMapsSummary(): Observable<{ mapGuid: string; trips: number; distanceKm: number }[]> {
+    return this.httpClient.get<{ mapGuid: string; trips: number; distanceKm: number }[]>(
+      environment.backend + "api/stats/maps-summary"
+    );
+  }
+
   getMaps(): Observable<Map[]> {
     return this.httpClient.get<Map[]>(environment.backend + "api/maps/");
   }
@@ -113,6 +128,16 @@ export class ApiService {
   deleteMap(mapId: number) {
     return this.httpClient.delete(environment.backend + "api/maps/" + mapId);
   }
+  /** Trip properties used on a map with their most common values, for the map filter. */
+  getMapProperties(guid: string): Observable<{ key: string; isBool: boolean; values: string[] }[]> {
+    return this.httpClient.get<{ key: string; isBool: boolean; values: string[] }[]>(environment.backend + "api/mapfilter/properties/" + guid);
+  }
+
+  /** Operators of the routes on a map, for the map filter. */
+  getMapOperators(guid: string): Observable<{ id: number; name: string }[]> {
+    return this.httpClient.get<{ id: number; name: string }[]>(environment.backend + "api/mapfilter/operators/" + guid);
+  }
+
   getYears(guid: string): Observable<number[]> {
     return this.httpClient.get<number[]>(
       environment.backend + "api/mapfilter/years/" + guid
@@ -168,9 +193,15 @@ export class ApiService {
     count?: number,
     column?: string,
     order?: boolean,
-    filter?: string
+    filter?: string,
+    filters?: RouteListFilters
   ): Observable<RouteList> {
     let params = new HttpParams();
+    for (const [key, value] of Object.entries(filters ?? {})) {
+      if (value !== null && value !== undefined) {
+        params = params.set(key, String(value));
+      }
+    }
     if (start !== undefined && count !== undefined) {
       params = params
         .set("start", start.toString())
@@ -195,9 +226,15 @@ export class ApiService {
     count?: number,
     column?: string,
     order?: boolean,
-    filter?: string
+    filter?: string,
+    filters?: RouteListFilters
   ): Observable<RouteInstanceListResponseDTO> {
     let params = new HttpParams();
+    for (const [key, value] of Object.entries(filters ?? {})) {
+      if (value !== null && value !== undefined) {
+        params = params.set(key, String(value));
+      }
+    }
     if (start !== undefined && count !== undefined) {
       params = params
         .set("start", start.toString())
@@ -673,9 +710,12 @@ export class ApiService {
       environment.backend + "api/stationmaps/" + stationMapId
     );
   }
-  getTripReport(selectedMap: string, selectedYear: number) {
-    const url = `${environment.backend}api/tripreport?guid=${selectedMap}&year=${selectedYear}`;
-    return this.httpClient.get(url, { responseType: "blob" });
+  getTripReport(selectedMap: string, selectedYear: number | null, english: boolean) {
+    let params = new HttpParams().append("guid", selectedMap).append("english", english);
+    if (selectedYear) {
+      params = params.append("year", selectedYear);
+    }
+    return this.httpClient.get(environment.backend + "api/tripreport", { params, responseType: "blob" });
   }
 
   getOperatorsGroupedByRegion(): Observable<RegionOperators[]> {

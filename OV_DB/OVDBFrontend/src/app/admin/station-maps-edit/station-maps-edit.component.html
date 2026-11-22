@@ -69,7 +69,7 @@
               mat-button
               color="primary"
               type="submit"
-              [disabled]="form.invalid || selectedOptions.length < 1"
+              [disabled]="saving || form.invalid || selectedOptions.length < 1"
               >
               {{ "SAVE" | translate }}
             </button>

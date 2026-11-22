@@ -59,7 +59,7 @@
       </mat-form-field>
 
       <!-- Add Button -->
-      <button
+      <button type="button"
         mat-raised-button
         color="primary"
         (click)="addMapping()"
@@ -100,7 +100,7 @@
               <mat-icon class="chip-arrow">arrow_forward</mat-icon>
               <span class="to-tag">{{ mapping.toTag }}</span>
             </div>
-            <button 
+            <button type="button"
               class="chip-remove"
               (click)="removeMapping($index)" 
               [disabled]="isSaving()"

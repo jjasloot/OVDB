@@ -11,7 +11,7 @@
     @if (fileToUpload) {
       <span class="file-count">{{ fileToUpload.length }} {{'ADDROUTE.FILESSELECTED'|translate}}</span>
     }
-    <button mat-raised-button color="primary" (click)="saveFiles()" [disabled]="!fileToUpload || fileToUpload.length === 0">{{'ADDROUTE.SAVEFILES'|translate}}</button>
+    <button mat-raised-button color="primary" (click)="saveFiles()" [disabled]="filesLoading || !fileToUpload || fileToUpload.length === 0">{{'ADDROUTE.SAVEFILES'|translate}}</button>
   </div>
   @if (!filesLoading) {
     <div>

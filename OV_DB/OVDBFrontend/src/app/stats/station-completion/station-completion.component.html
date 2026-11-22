@@ -7,13 +7,13 @@
     <div class="tiles">
       <mat-card appearance="outlined" class="tile">
         <mat-card-content>
-          <span class="value">{{ totalVisited() }}</span>
+          <span class="value">{{ totalVisited() | number }}</span>
           <span class="label">{{ 'STATS.COMPLETION.STATIONS_VISITED' | translate }}</span>
         </mat-card-content>
       </mat-card>
       <mat-card appearance="outlined" class="tile">
         <mat-card-content>
-          <span class="value">{{ totalEntryExit() }}</span>
+          <span class="value">{{ totalEntryExit() | number }}</span>
           <span class="label">{{ 'STATS.COMPLETION.STATIONS_ENTRY_EXIT' | translate }}</span>
         </mat-card-content>
       </mat-card>

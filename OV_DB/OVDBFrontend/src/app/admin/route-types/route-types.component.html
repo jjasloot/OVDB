@@ -15,7 +15,7 @@
                 <mat-chip-listbox style="margin-left:1rem">
                   <mat-chip-option
                     [style.background]="routeType.colour"
-                    [style.color]="contrastColour(routeType.colour)"
+                    [style.--mat-chip-label-text-color]="contrastColour(routeType.colour)"
                     [selectable]="false"
                     >
                     <span class="desktop">{{ routeType.colour }}</span>

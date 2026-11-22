@@ -361,3 +361,20 @@ body {
 .leaflet-tile-pane .ovdb-inverted-tiles {
   filter: invert(1) hue-rotate(180deg) brightness(0.85) contrast(0.9) saturate(0.6);
 }
+
+// The stats "Selection" cards put their title straight in the card, where it gets no padding and
+// sits on the border. Not global: other bare titles (requests, administrator) already pad themselves.
+.mat-mdc-card-title.selection-title {
+  padding: 16px 16px 0;
+}
+
+// The "my location" map button (utils/locate-control.ts), sized like Leaflet's zoom buttons.
+.leaflet-control .locate-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  .material-icons {
+    font-size: 18px;
+  }
+}

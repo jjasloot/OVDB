@@ -91,14 +91,6 @@
           <mat-icon matSuffix>event_seat</mat-icon>
         </mat-form-field>
 
-        @if (enableTrainlogExport()) {
-        <h4>{{ 'PROFILE.TRAINLOG_OPERATOR_MAPPINGS' | translate }}</h4>
-        <app-operator-mapping
-          [mappings]="operatorMappings()"
-          [availableOperators]="availableOperators()"
-          (mappingsChange)="onOperatorMappingsChange($event)">
-        </app-operator-mapping>
-        }
 
         <div class="form-actions">
           <button mat-raised-button color="primary" type="submit" [disabled]="!profileForm.valid || savingProfile">
@@ -111,6 +103,15 @@
           </button>
         </div>
       </form>
+      <!-- Outside the form: the mappings save on their own, and Enter in them must not submit the profile. -->
+      @if (enableTrainlogExport()) {
+      <h4>{{ 'PROFILE.TRAINLOG_OPERATOR_MAPPINGS' | translate }}</h4>
+      <app-operator-mapping
+        [mappings]="operatorMappings()"
+        [availableOperators]="availableOperators()"
+        (mappingsChange)="onOperatorMappingsChange($event)">
+      </app-operator-mapping>
+      }
     </mat-card-content>
   </mat-card>
   }
@@ -124,7 +125,7 @@
       @if (trawellingLoading) {
       <div class="loading-container">
         <mat-spinner diameter="24"></mat-spinner>
-        <span>{{ 'TRAEWELLING.LOADING_TRIPS' | translate }}</span>
+        <span>{{ 'PROFILE.TRAEWELLING_LOADING_STATUS' | translate }}</span>
       </div>
       } @else {
       <div class="traewelling-info">
@@ -150,6 +151,12 @@
             </p>
             }
           </div>
+          } @else if (trawellingStatusError) {
+          <!-- A failed status call is not "not connected": offering Connect here would start a second link. -->
+          <p class="traewelling-not-connected">
+            {{ 'ERRORS.GENERIC' | translate }}
+            <button mat-button type="button" (click)="loadTrawellingStatus()">{{ 'RETRY' | translate }}</button>
+          </p>
           } @else {
           <p class="traewelling-not-connected">{{ 'PROFILE.TRAEWELLING_NOT_CONNECTED' | translate }}</p>
           }
@@ -194,7 +201,7 @@
           }
           {{ 'PROFILE.TRAEWELLING_DISCONNECT' | translate }}
         </button>
-        } @else {
+        } @else if (!trawellingStatusError) {
         <button mat-raised-button color="accent" (click)="connectTraewelling()" [disabled]="trawellingConnecting">
           @if (trawellingConnecting) {
           <mat-spinner diameter="20"></mat-spinner>
@@ -317,7 +324,7 @@
           <mat-label>{{ 'PROFILE.CONFIRM_PASSWORD' | translate }}</mat-label>
           <input matInput type="password" autocomplete="new-password" formControlName="confirmPassword">
           <mat-icon matSuffix>lock_outline</mat-icon>
-          @if (passwordForm.hasError('passwordMismatch') && passwordForm.get('confirmPassword')?.touched) {
+          @if (passwordForm.get('confirmPassword')?.hasError('passwordMismatch')) {
           <mat-error>{{ 'PROFILE.PASSWORDS_DO_NOT_MATCH' | translate }}</mat-error>
           }
         </mat-form-field>

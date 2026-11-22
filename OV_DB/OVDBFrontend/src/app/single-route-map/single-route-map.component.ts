@@ -1,3 +1,4 @@
+import { injectLocateControl } from "src/app/utils/locate-control";
 import { Component, OnInit, viewChild, inject, ChangeDetectionStrategy, DestroyRef } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { firstValueFrom } from 'rxjs';
@@ -20,6 +21,8 @@ import { safePopupContent } from '../utils/safe-leaflet-content';
     imports: [LeafletModule, NgClass, MatProgressSpinner, TranslateModule]
 })
 export class SingleRouteMapComponent implements OnInit {
+  /** "My location" button; bound to (leafletMapReady). */
+  locate = injectLocateControl();
   private translateService = inject(TranslateService);
   private translationService = inject(TranslationService);
   private destroyRef = inject(DestroyRef);
@@ -31,6 +34,7 @@ export class SingleRouteMapComponent implements OnInit {
   loading = false;
   layers: Layer[] = [];
   error = false;
+  routeName: string | null = null;
   active = '';
   guid!: string;
   routeId!: number;
@@ -105,6 +109,8 @@ export class SingleRouteMapComponent implements OnInit {
             lines.push(parent.translateService.instant('MAP.POPUP.OPERATINGCOMPANY') + ': ' + props.operatingCompany);
           }
           const popup = safePopupContent(props.name, lines);
+          // A shared link otherwise shows a bare line with nothing saying what it is.
+          parent.routeName = props.name;
           layer.on('click', f => {
             f.target.setStyle({ weight: 8, });
             f.target.bringToFront();

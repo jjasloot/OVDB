@@ -11,6 +11,7 @@ import { MatMenuModule } from "@angular/material/menu";
 import { MatTooltip } from "@angular/material/tooltip";
 import { TranslateModule } from "@ngx-translate/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
+import { distinctUntilChanged } from "rxjs";
 
 @Component({
   selector: "app-layout",
@@ -55,12 +56,20 @@ export class LayoutComponent implements OnInit {
         this.hasUnreadRequestsAdmin = hasUnread;
       });
 
-    if (this.isLoggedIn) {
-      this.requestsService.refreshUnreadRequests();
-      if (this.isAdmin) {
-        this.requestsService.refreshUnreadAdminRequests();
-      }
-    }
+    // The layout outlives sign-in and sign-out, so follow the login state instead of checking once.
+    this.authService.isLoggedIn$
+      .pipe(distinctUntilChanged(), takeUntilDestroyed(this.destroyRef))
+      .subscribe((loggedIn) => {
+        if (!loggedIn) {
+          this.hasUnreadRequests = false;
+          this.hasUnreadRequestsAdmin = false;
+          return;
+        }
+        this.requestsService.refreshUnreadRequests();
+        if (this.isAdmin) {
+          this.requestsService.refreshUnreadAdminRequests();
+        }
+      });
   }
   gotoHome() {
     this.router.navigate(["/"]);

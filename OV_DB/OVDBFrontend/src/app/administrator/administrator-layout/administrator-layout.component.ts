@@ -1,7 +1,7 @@
 import { Component, OnInit, inject, ChangeDetectionStrategy } from "@angular/core";
 import { Router, RouterLinkActive, RouterLink, RouterOutlet } from "@angular/router";
 import { TranslateService } from "@ngx-translate/core";
-import { MatTabNav, MatTabLink } from "@angular/material/tabs";
+import { MatTabNav, MatTabNavPanel, MatTabLink } from "@angular/material/tabs";
 import { SignalRService } from "src/app/services/signal-r.service";
 
 @Component({
@@ -11,6 +11,7 @@ import { SignalRService } from "src/app/services/signal-r.service";
     changeDetection: ChangeDetectionStrategy.Eager,
     imports: [
         MatTabNav,
+        MatTabNavPanel,
         MatTabLink,
         RouterLinkActive,
         RouterLink,

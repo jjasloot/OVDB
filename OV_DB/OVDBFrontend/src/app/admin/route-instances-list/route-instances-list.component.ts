@@ -1,6 +1,8 @@
 import { Component, DestroyRef, OnInit, AfterViewInit, ElementRef, HostListener, viewChild, inject, computed, ChangeDetectionStrategy } from "@angular/core";
-import { ApiService } from "src/app/services/api.service";
-import { Router } from "@angular/router";
+import { ApiService, RouteListFilters } from "src/app/services/api.service";
+import { RouteListFiltersComponent } from "../route-list-filters/route-list-filters.component";
+import { MatPrefix } from "@angular/material/form-field";
+import { ActivatedRoute, Router } from "@angular/router";
 import { MatPaginator } from "@angular/material/paginator";
 import { RouteInstancesDataSource } from "../data-sources/route-instances-data-source";
 import { AuthenticationService } from "src/app/services/authentication.service";
@@ -9,6 +11,7 @@ import {
   debounceTime,
   distinctUntilChanged,
   switchMap,
+  map,
 } from "rxjs/operators";
 import { merge, fromEvent, Subject } from "rxjs";
 import { MatSort, MatSortHeader } from "@angular/material/sort";
@@ -30,7 +33,8 @@ import { MatChipListbox, MatChipOption } from "@angular/material/chips";
 import { MatTooltip } from "@angular/material/tooltip";
 import { MatIcon } from "@angular/material/icon";
 import { AsyncPipe, DatePipe, DecimalPipe } from "@angular/common";
-import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
+import { takeUntilDestroyed, toSignal } from "@angular/core/rxjs-interop";
+import { BreakpointObserver } from "@angular/cdk/layout";
 import { RoutesListBottomsheetComponent } from "../routes-list/routes-list-bottomsheet/routes-list-bottomsheet.component";
 import { RoutesListActions } from "src/app/models/routes-list-actions.enum";
 import { RouteInstanceListDTO } from "src/app/models/routeInstanceList.model";
@@ -48,6 +52,8 @@ import { contrastTextColour } from "src/app/utils/colour";
   changeDetection: ChangeDetectionStrategy.Eager,
   imports: [
     MatProgressSpinner,
+    RouteListFiltersComponent,
+    MatPrefix,
     MatFormField,
     MatInput,
     MatButton,
@@ -79,6 +85,7 @@ import { contrastTextColour } from "src/app/utils/colour";
 export class RouteInstancesListComponent implements OnInit, AfterViewInit {
   private apiService = inject(ApiService);
   private router = inject(Router);
+  private activatedRoute = inject(ActivatedRoute);
   private translationService = inject(TranslationService);
   private operatorService = inject(OperatorService);
   private dialog = inject(MatDialog);
@@ -92,7 +99,14 @@ export class RouteInstancesListComponent implements OnInit, AfterViewInit {
 
   instancesDataSource!: RouteInstancesDataSource;
   selectedInstanceIds: number[] = [];
-  displayedColumns: string[] = ["select", "date", "time", "delay", "name", "type", "from", "to", "distance", "edit"];
+  private narrow = toSignal(
+    inject(BreakpointObserver).observe("(max-width: 700px)").pipe(map((state) => state.matches)),
+    { initialValue: false }
+  );
+  // On a phone the full set scrolls sideways and pushes the trip name off screen.
+  displayedColumns = computed(() => this.narrow()
+    ? ["select", "date", "name", "edit"]
+    : ["select", "date", "time", "delay", "name", "type", "from", "to", "distance", "edit"]);
 
   readonly paginator = viewChild(MatPaginator);
   readonly sort = viewChild(MatSort);
@@ -117,14 +131,21 @@ export class RouteInstancesListComponent implements OnInit, AfterViewInit {
     const sortDirection = this.restoredState?.sortDirection ?? 'desc';
     const filter = this.restoredState?.filter ?? '';
 
+    const params = this.activatedRoute.snapshot.queryParamMap;
+    const num = (key: string) => (params.get(key) ? Number(params.get(key)) : null);
+    this.filters = { typeId: num("typeId"), mapId: num("mapId"), operatorId: num("operatorId"), year: num("year") };
+    this.operatorName = params.get("operatorName");
+
     this.instancesDataSource.loadInstances(
       pageIndex * pageSize,
       pageSize,
       sortActive,
       sortDirection === 'desc',
-      filter
+      filter,
+      this.filters
     ).subscribe((data) => {
       this.count = data.count;
+      this.totals = { km: data.totalDistanceKm ?? 0, hours: data.totalHours ?? 0 };
       this.loading = false;
       this.hasInitialized = true;
     });
@@ -202,6 +223,7 @@ export class RouteInstancesListComponent implements OnInit, AfterViewInit {
       .subscribe({
         next: (routes) => {
           this.count = routes.count;
+          this.totals = { km: routes.totalDistanceKm ?? 0, hours: routes.totalHours ?? 0 };
           this.hasInitialized = true;
         },
       });
@@ -225,8 +247,39 @@ export class RouteInstancesListComponent implements OnInit, AfterViewInit {
       this.paginator()!.pageSize,
       this.sort()!.active,
       this.sort()!.direction === "desc",
-      this.filterValue
+      this.filterValue,
+      this.filters
     );
+  }
+
+  // Same structured filters as the routes list (shared RouteListFiltersComponent), kept in the URL.
+  filters: RouteListFilters = {};
+  totals = { km: 0, hours: 0 };
+  operatorName: string | null = null;
+
+  setFilter(key: keyof RouteListFilters, value: number | null) {
+    this.filters = { ...this.filters, [key]: value };
+    if (key === "operatorId" && value === null) {
+      this.operatorName = null;
+    }
+    this.router.navigate([], {
+      relativeTo: this.activatedRoute,
+      queryParams: { ...this.filters, operatorName: this.operatorName },
+      replaceUrl: true,
+    });
+    this.paginator()!.pageIndex = 0;
+    this.filter$.next();
+  }
+
+  /** "/" jumps to the search box, unless the user is already typing somewhere. */
+  @HostListener("document:keydown", ["$event"])
+  focusSearch(event: KeyboardEvent) {
+    const target = event.target as HTMLElement | null;
+    const typing = !!target && (target.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName));
+    if (event.key === "/" && !typing && !event.ctrlKey && !event.metaKey && !event.altKey) {
+      event.preventDefault();
+      this.input()?.nativeElement.focus();
+    }
   }
 
   get filterValue() {
@@ -270,7 +323,7 @@ export class RouteInstancesListComponent implements OnInit, AfterViewInit {
     this.router.navigate(["/route", element.routeId, element.share]);
   }
 
-  edit(element: RouteInstanceListDTO) {
+  edit(element: RouteInstanceListDTO | RouteInstance) {
     const dialogRef = this.dialog.open(RouteInstancesEditComponent, {
       ...STANDARD_DIALOG,
       data: { instance: element, new: false }
@@ -287,6 +340,8 @@ export class RouteInstancesListComponent implements OnInit, AfterViewInit {
           error: (err) => {
             console.error('Failed to save route instance', err);
             this.snackBar.open(this.translateService.instant('ROUTEINSTANCE.SAVE_ERROR'), undefined, { duration: 5000 });
+            // Reopened with the input, which would otherwise be gone with the dialog.
+            this.edit(result);
           },
         });
       }
@@ -332,6 +387,9 @@ export class RouteInstancesListComponent implements OnInit, AfterViewInit {
           return;
         case RoutesListActions.Edit:
           this.edit(instance);
+          return;
+        case RoutesListActions.Instances:
+          this.router.navigate(["/admin/routes/instances", instance.routeId]);
           return;
       }
     });

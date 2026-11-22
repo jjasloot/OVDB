@@ -1,4 +1,4 @@
-<h3 mat-dialog-title>{{ "ADDTYPE.TITLE" | translate }}</h3>
+<h3 mat-dialog-title>{{ (id ? "EDITTYPE.TITLE" : "ADDTYPE.TITLE") | translate }}</h3>
 <div mat-dialog-content>
   <mat-form-field style="width: 100%">
     <mat-label>{{ "ADDTYPE.NAME" | translate }}</mat-label>
@@ -51,7 +51,7 @@
 </div>
 <div mat-dialog-actions>
   <button mat-button (click)="cancel()">{{ "CANCEL" | translate }}</button>
-  <button mat-button color="primary" (click)="return()">
+  <button mat-button color="primary" (click)="return()" [disabled]="loading">
     {{ "SAVE" | translate }}
   </button>
 </div>

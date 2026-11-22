@@ -1,6 +1,6 @@
 <div class="container">
   <mat-card appearance="outlined">
-    <mat-card-title>{{ 'SELECTION' | translate }}</mat-card-title>
+    <mat-card-title class="selection-title">{{ 'SELECTION' | translate }}</mat-card-title>
     <mat-card-content>
       <mat-form-field>
         <mat-label>{{ 'CHOOSEMAP' | translate }}</mat-label>
@@ -12,7 +12,7 @@
       </mat-form-field>
       <mat-form-field>
         <mat-label>{{ 'CHOOSEYEAR' | translate }}</mat-label>
-        <mat-select [value]="selectedYear()" (selectionChange)="changeYear($event.value)">
+        <mat-select [value]="selectedYear() ?? 0" (selectionChange)="changeYear($event.value)">
           @for (year of years(); track year) {
             <mat-option [value]="year">{{ year }}</mat-option>
           }
@@ -166,7 +166,7 @@
                   @for (trip of s.worstTrips; track trip.routeInstanceId) {
                     <tr>
                       <td>{{ trip.date | date: 'shortDate' }}</td>
-                      <td>{{ tripName(trip) }}</td>
+                      <td><a [routerLink]="['/admin/routes/instances', trip.routeId]">{{ tripName(trip) }}</a></td>
                       <td>{{ trip.operator }}</td>
                       <td class="numeric delay">{{ trip.delayMinutes | number: '1.0-0' }}</td>
                     </tr>

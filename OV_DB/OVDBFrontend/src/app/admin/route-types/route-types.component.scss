@@ -37,4 +37,6 @@ button:not(.mat-mdc-fab) {
 .container {
   max-width: 1100px;
   margin: 0 auto;
+  // Room under the last row: the fixed sort/add buttons otherwise cover its actions.
+  padding-bottom: 120px;
 }

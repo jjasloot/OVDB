@@ -35,17 +35,29 @@ export class RegionStatsDisplayComponent {
 
   currentLanguage = toSignal(this.translationService.languageChanged);
 
+  sortBy = input<'name' | 'completion'>('name');
+  hideUnvisited = input(false);
+
+  /** Share of the region done: its stations if it has any, otherwise its sub-regions. */
+  completion(region: RegionStat): number {
+    if (region.totalStations > 0) {
+      return region.visitedStations / region.totalStations;
+    }
+    const children = region.children?.length ?? 0;
+    return children > 0 ? this.visitedCount(region.children) / children : region.visited ? 1 : 0;
+  }
+
+  private touched(region: RegionStat): boolean {
+    return region.visited || region.visitedStations > 0 || this.visitedCount(region.children ?? []) > 0;
+  }
+
   sortedRegionStats = computed(() => {
     this.currentLanguage(); //so we update when the language changes
-    return this.regionStats().sort((a, b) => {
-      if (this.name(a) < this.name(b)) {
-        return -1;
-      }
-      if (this.name(a) > this.name(b)) {
-        return 1;
-      }
-      return 0;
-    })
+    const byName = (a: RegionStat, b: RegionStat) => this.name(a).localeCompare(this.name(b));
+    const list = this.regionStats().filter((r) => !this.hideUnvisited() || this.touched(r));
+    return [...list].sort(this.sortBy() === 'completion'
+      ? (a, b) => this.completion(b) - this.completion(a) || byName(a, b)
+      : byName);
   });
 
   visitedCount(regions: RegionStat[]) {

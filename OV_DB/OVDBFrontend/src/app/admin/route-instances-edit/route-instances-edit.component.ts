@@ -98,7 +98,6 @@ export class RouteInstancesEditComponent implements OnInit {
     const [hours, minutes] = value.split(':').map(num => parseInt(num, 10));
     const combinedDate = new Date(baseDate.getFullYear(), baseDate.getMonth(), baseDate.getDate(), hours, minutes);
     this.instance.startTime = this.formatDateTimeLocal(combinedDate);
-    console.log(combinedDate);
 
     // Keep scheduled = actual when not delayed
     if (!this.enterScheduledTimes()) {
@@ -169,6 +168,21 @@ export class RouteInstancesEditComponent implements OnInit {
     // Use same day offset as endTime
     const combinedDate = new Date(baseDate.getFullYear(), baseDate.getMonth(), baseDate.getDate() + this.endTimeDayOffset(), hours, minutes);
     this.instance.scheduledEndTime = this.formatDateTimeLocal(combinedDate);
+  }
+
+  /** The times carry a date of their own; moving the trip to another day has to move them along. */
+  dateChanged(): void {
+    const start = this.startTimeOnly;
+    const end = this.endTimeOnly;
+    const scheduledStart = this.scheduledStartTimeOnly;
+    const scheduledEnd = this.scheduledEndTimeOnly;
+    if (start) this.startTimeOnly = start;
+    if (end) this.endTimeOnly = end;
+    // Without separate scheduled times the setters above already copied the actual ones.
+    if (this.enterScheduledTimes()) {
+      if (scheduledStart) this.scheduledStartTimeOnly = scheduledStart;
+      if (scheduledEnd) this.scheduledEndTimeOnly = scheduledEnd;
+    }
   }
 
   private formatDateTimeLocal(date: Date): string {

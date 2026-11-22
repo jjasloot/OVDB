@@ -1,8 +1,11 @@
-<nav mat-tab-nav-bar>
+<!-- [tabPanel] is required: without it MatTabNav throws on every administrator page. -->
+<nav mat-tab-nav-bar [tabPanel]="tabPanel">
   @for (link of navLinks; track link) {
     <a mat-tab-link [routerLink]="link.link" routerLinkActive #rla="routerLinkActive" [active]="rla.isActive">
       {{link.label}}
     </a>
   }
 </nav>
-<router-outlet></router-outlet>
+<mat-tab-nav-panel #tabPanel>
+  <router-outlet></router-outlet>
+</mat-tab-nav-panel>

@@ -1,3 +1,4 @@
+import { DecimalPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { MatCard, MatCardContent, MatCardTitle } from '@angular/material/card';
 import { MatExpansionModule } from '@angular/material/expansion';
@@ -35,6 +36,7 @@ interface CompletionRow {
 
     MatProgressSpinner,
     TranslateModule,
+    DecimalPipe,
   ],
 })
 export class StationCompletionComponent implements OnInit {

@@ -227,26 +227,38 @@ export class RouteInstancesComponent implements OnInit {
   }
 
   edit(instance: RouteInstance) {
+    this.openEditor(instance, false, () => {
+      this.router.navigate(['/admin/routes/instances', this.routeId()]);
+      this.getData();
+    });
+  }
+
+  /**
+   * Opens the trip dialog and saves what it returns. A failed save reopens the dialog with the
+   * user's input, which otherwise would be gone along with the dialog.
+   */
+  private openEditor(instance: RouteInstance, isNew: boolean, saved: (response: any) => void) {
     const dialogRef = this.dialog.open(RouteInstancesEditComponent, {
       ...STANDARD_DIALOG,
       data: {
-        instance, route: this.route(),
+        instance,
+        new: isNew,
+        route: this.route(),
         traewellingTripData: this.fromTraewelling() ? this.trawellingTripData() : null // Pass trip context for display
       },
     });
     dialogRef.afterClosed().subscribe((result: RouteInstance) => {
-      if (result) {
-        this.apiService.updateRouteInstance(result).subscribe({
-          next: () => {
-            this.router.navigate(['/admin/routes/instances', this.routeId()]);
-            this.getData();
-          },
-          error: (err) => {
-            console.error('Failed to save route instance', err);
-            this.snackBar.open(this.translateService.instant('ROUTEINSTANCE.SAVE_ERROR'), undefined, { duration: 5000 });
-          },
-        });
+      if (!result) {
+        return;
       }
+      this.apiService.updateRouteInstance(result).subscribe({
+        next: saved,
+        error: (err) => {
+          console.error('Failed to save route instance', err);
+          this.snackBar.open(this.translateService.instant('ROUTEINSTANCE.SAVE_ERROR'), undefined, { duration: 5000 });
+          this.openEditor(result, isNew, saved);
+        },
+      });
     });
   }
 
@@ -276,34 +288,15 @@ export class RouteInstancesComponent implements OnInit {
     // Pre-populate with Träwelling data if available
     this.prefillWithTraewellingData(newInstance);
 
-    const dialogRef = this.dialog.open(RouteInstancesEditComponent, {
-      ...STANDARD_DIALOG,
-      data: {
-        instance: newInstance,
-        new: true,
-        route: this.route(),
-        traewellingTripData: this.fromTraewelling() ? this.trawellingTripData() : null // Pass trip context for display
-      },
-    });
-    dialogRef.afterClosed().subscribe((result: RouteInstance) => {
-      if (result) {
-        this.apiService.updateRouteInstance(result).subscribe({
-          next: (response) => {
-            this.router.navigate(['/admin/routes/instances', this.routeId()]);
-            this.getData();
-            // Importing is the only moment the calling pattern is on hand, so the stations it
-            // says were called at but are not marked get offered now or not at all.
-            this.offerStationSuggestions(response);
-            // Clear the fromTraewelling flag after successful creation
-            this.fromTraewelling.set(false);
-            this.trawellingTripData.set(null);
-          },
-          error: (err) => {
-            console.error('Failed to save route instance', err);
-            this.snackBar.open(this.translateService.instant('ROUTEINSTANCE.SAVE_ERROR'), undefined, { duration: 5000 });
-          },
-        });
-      }
+    this.openEditor(newInstance, true, (response) => {
+      this.router.navigate(['/admin/routes/instances', this.routeId()]);
+      this.getData();
+      // Importing is the only moment the calling pattern is on hand, so the stations it
+      // says were called at but are not marked get offered now or not at all.
+      this.offerStationSuggestions(response);
+      // Clear the fromTraewelling flag after successful creation
+      this.fromTraewelling.set(false);
+      this.trawellingTripData.set(null);
     });
   }
 

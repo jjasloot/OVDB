@@ -1,6 +1,6 @@
 <div class="container">
     <mat-card appearance="outlined">
-        <mat-card-title>{{'SELECTION'|translate}}</mat-card-title>
+        <mat-card-title class="selection-title">{{'SELECTION'|translate}}</mat-card-title>
         <mat-card-content>
             <mat-form-field>
                 <mat-label>{{'CHOOSEMAP'|translate}}</mat-label>
@@ -30,6 +30,7 @@
 
     <div class="row">
         @if (!!tableData) {
+        <div>
         <table>
             <tr>
                 <th>{{'NAME'|translate}}</th>
@@ -37,13 +38,17 @@
             </tr>
             @for (row of tableData; track row) {
             <tr>
-                <td>{{name(row)}}</td>
-                <td>{{row.distance}} km</td>
+                <!-- Opens the routes of that type on this map (and year), filtered in the routes list. -->
+                <td><a [routerLink]="['/admin/routes']" [queryParams]="routesLink(row)">{{name(row)}}</a></td>
+                <td class="distance">{{row.distance | number:'1.0-1'}} km</td>
             </tr>
             }
-            <button mat-raised-button (click)="download()">{{'TRIPREPORT.DOWNLOAD'|translate}}</button>
-            <button mat-raised-button (click)="export()">{{'TRIPREPORT.EXPORT'|translate}}</button>
         </table>
+        <div class="downloads">
+            <button mat-raised-button (click)="download()" [disabled]="downloading">{{'TRIPREPORT.DOWNLOAD'|translate}}</button>
+            <button mat-raised-button (click)="export()" [disabled]="downloading">{{'TRIPREPORT.EXPORT'|translate}}</button>
+        </div>
+        </div>
         }
         @if(!!data || !!singleData){
         <mat-tab-group class="graph-tab">

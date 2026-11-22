@@ -40,6 +40,8 @@ export interface YearInReview {
   topRouteTypes: NameCount[];
   topOperators: NameCount[];
   monthlyDistanceKm: number[];
+  /** km per day with trips, keyed yyyy-MM-dd. */
+  dailyDistanceKm: Record<string, number>;
   longestTrip: HighlightTrip | null;
   fastestTrip: HighlightTrip | null;
   busiestDay: BusiestDay | null;
@@ -48,4 +50,5 @@ export interface YearInReview {
   tripsWithArrivalData: number;
   previousYearTrips: number;
   previousYearDistanceKm: number;
+  previousYearUntil: string | null;
 }

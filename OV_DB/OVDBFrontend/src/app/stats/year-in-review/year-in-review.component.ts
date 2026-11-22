@@ -51,6 +51,33 @@ export class YearInReviewComponent implements OnInit {
   private currentLanguage = toSignal(this.translationService.languageChanged);
 
   /** Percentage change in distance against the previous year, null when there is nothing to compare. */
+  /**
+   * Travel-day calendar: weeks as columns (Monday on top), one square per day. Levels 1–4 are
+   * quartiles of your own travel days, so a quiet year still shows contrast.
+   */
+  calendar = computed(() => {
+    const r = this.review();
+    if (!r) {
+      return null;
+    }
+    const daily = r.dailyDistanceKm ?? {};
+    const values = Object.values(daily).filter((v) => v > 0).sort((a, b) => a - b);
+    const quartile = (q: number) => values[Math.min(values.length - 1, Math.floor(q * values.length))] ?? 0;
+    const cuts = [quartile(0.25), quartile(0.5), quartile(0.75)];
+    const first = new Date(r.year, 0, 1);
+    const start = new Date(first);
+    start.setDate(first.getDate() - ((first.getDay() + 6) % 7)); // back to Monday
+    const cells: { key: string; date: Date | null; km: number; level: number }[] = [];
+    for (const d = new Date(start); d.getFullYear() <= r.year; d.setDate(d.getDate() + 1)) {
+      const inYear = d.getFullYear() === r.year;
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+      const km = inYear ? daily[key] ?? 0 : 0;
+      const level = km <= 0 ? 0 : km <= cuts[0] ? 1 : km <= cuts[1] ? 2 : km <= cuts[2] ? 3 : 4;
+      cells.push({ key, date: inYear ? new Date(d) : null, km, level });
+    }
+    return cells;
+  });
+
   distanceTrend = computed(() => {
     const review = this.review();
     if (!review || review.previousYearDistanceKm <= 0) {

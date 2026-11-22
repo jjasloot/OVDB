@@ -21,8 +21,9 @@ export class AuthInterceptor implements HttpInterceptor {
 
     intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
         const isBackend = req.url.startsWith(environment.backend);
-        // Never attach/refresh tokens for the auth endpoints themselves (login/refresh/logout).
-        const isAuthEndpoint = req.url.includes('api/Authentication/');
+        // Never refresh-and-retry the token endpoints themselves; sessions/revoke under the same
+        // controller are ordinary authenticated calls and do need it.
+        const isAuthEndpoint = /api\/Authentication\/(login|refreshToken|logout|register)/i.test(req.url);
 
         if (isBackend) {
             req = this.addToken(req);

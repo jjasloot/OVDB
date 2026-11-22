@@ -1,4 +1,4 @@
-<h3 mat-dialog-title>{{'ADDMAP.TITLE'|translate}}</h3>
+<h3 mat-dialog-title>{{(id ? 'EDITMAP.TITLE' : 'ADDMAP.TITLE')|translate}}</h3>
 <div mat-dialog-content>
     <mat-form-field style="width: 100%;">
         <mat-label>{{'ADDMAP.NAME'|translate}}</mat-label>
@@ -17,5 +17,5 @@
 </div>
 <div mat-dialog-actions>
     <button mat-button (click)="cancel()">{{'CANCEL'|translate}}</button>
-    <button mat-button color="primary" (click)="return()">{{'SAVE'|translate}}</button>
+    <button mat-button color="primary" (click)="return()" [disabled]="loading">{{'SAVE'|translate}}</button>
 </div>

@@ -11,6 +11,17 @@
       @if (connectionStatus?.user) {
       <mat-card-subtitle>
         {{ 'PROFILE.TRAEWELLING_CONNECTED' | translate }} {{ connectionStatus.user.displayName }}
+        @if (connectionStatus.liveSyncEnabled) {
+        ·
+        @if (connectionStatus.liveSyncHealth === 'DisabledUpstream' || connectionStatus.liveSyncHealth === 'Missing') {
+        <span class="live-sync-broken">{{ 'PROFILE.TRAEWELLING_LIVE_SYNC_BROKEN' | translate }}</span>
+        } @else {
+        {{ 'PROFILE.TRAEWELLING_LIVE_SYNC_ACTIVE' | translate }}
+        }
+        }
+        @if (connectionStatus.lastEventAt) {
+        <br />{{ 'TRAEWELLING.LAST_EVENT' | translate: { when: (connectionStatus.lastEventAt | date: 'medium') } }}
+        }
       </mat-card-subtitle>
       }
       @if (connectionStatus?.connected) {
@@ -60,6 +71,16 @@
   </div>
   }
 
+  @else if (!connectionStatus?.connected) {
+  <!-- Not connected (or the token died): the "all imported" empty state would be a lie here. -->
+  <mat-card class="empty-card">
+    <mat-card-content class="empty-content">
+      <mat-icon class="empty-icon">link_off</mat-icon>
+      <h3>{{ 'PROFILE.TRAEWELLING_NOT_CONNECTED' | translate }}</h3>
+      <a mat-raised-button color="primary" routerLink="/profile">{{ 'PROFILE.TRAEWELLING_CONNECT' | translate }}</a>
+    </mat-card-content>
+  </mat-card>
+  }
   @else{
 
   <!-- Upstream conflicts: imported trips edited or deleted on Träwelling -->

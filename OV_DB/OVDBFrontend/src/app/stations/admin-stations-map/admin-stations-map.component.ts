@@ -1,3 +1,4 @@
+import { injectLocateControl } from "src/app/utils/locate-control";
 import { firstValueFrom } from 'rxjs';
 import {
   ChangeDetectorRef,
@@ -61,6 +62,8 @@ import { createMarkerClusterGroup } from "src/app/leaflet-markercluster-loader";
   ]
 })
 export class AdminStationsMapComponent implements OnInit {
+  /** "My location" button; bound to (leafletMapReady). */
+  locate = injectLocateControl();
   private apiService = inject(ApiService);
   private cd = inject(ChangeDetectorRef);
   private route = inject(ActivatedRoute);
@@ -253,7 +256,7 @@ export class AdminStationsMapComponent implements OnInit {
   }
 
   setAllRegions() {
-    const list = this.regions;
+    const list = [...this.regions];
     this.regions.forEach((region) => {
       list.push(...region.subRegions);
     });

@@ -40,11 +40,11 @@
   }
 
   @if (!!error) {
-    <div class="error">{{error|json}}</div>
+    <div class="error">{{'ERRORS.GENERIC'|translate}}</div>
   }
 
 </div>
 <div mat-dialog-actions>
   <button mat-button (click)="cancel()">{{'CANCEL'|translate}}</button>
-  <button mat-button color="primary" (click)="return()">{{'SAVE'|translate}}</button>
+  <button mat-button color="primary" (click)="return()" [disabled]="saving">{{'SAVE'|translate}}</button>
 </div>

@@ -20,7 +20,6 @@ import { MatInput } from '@angular/material/input';
 import { MatDatepickerInput, MatDatepickerToggle, MatDatepicker } from '@angular/material/datepicker';
 import { MatSelect } from '@angular/material/select';
 import { MatButton } from '@angular/material/button';
-import { JsonPipe } from '@angular/common';
 
 
 @Component({
@@ -28,7 +27,7 @@ import { JsonPipe } from '@angular/common';
     templateUrl: './edit-multiple.component.html',
     styleUrls: ['./edit-multiple.component.scss'],
     changeDetection: ChangeDetectionStrategy.Eager,
-    imports: [MatDialogTitle, CdkScrollable, MatDialogContent, MatCheckbox, FormsModule, MatFormField, MatLabel, MatInput, MatDatepickerInput, MatDatepickerToggle, MatSuffix, MatDatepicker, MatSelect, MatOption, MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle, MatExpansionPanelDescription, MatSelectionList, MatListOption, MatDialogActions, MatButton, JsonPipe, TranslateModule]
+    imports: [MatDialogTitle, CdkScrollable, MatDialogContent, MatCheckbox, FormsModule, MatFormField, MatLabel, MatInput, MatDatepickerInput, MatDatepickerToggle, MatSuffix, MatDatepicker, MatSelect, MatOption, MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle, MatExpansionPanelDescription, MatSelectionList, MatListOption, MatDialogActions, MatButton, TranslateModule]
 })
 export class EditMultipleComponent implements OnInit {
   dialogRef = inject<MatDialogRef<EditMultipleComponent>>(MatDialogRef);
@@ -59,6 +58,8 @@ export class EditMultipleComponent implements OnInit {
       this.selectedRoutes = data.selectedRoutes;
     }
   }
+
+  saving = false;
 
   ngOnInit(): void {
     this.translationService.languageChanged.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
@@ -119,6 +120,10 @@ export class EditMultipleComponent implements OnInit {
     if (this.updateMaps) {
       model.maps = this.mapsSelection()!.selectedOptions.selected.map(s => s.value);
     }
-    this.apiService.updateMultiple(model).subscribe(() => { this.dialogRef.close(); }, err => { this.error = err.error; });
+    this.saving = true;
+    this.apiService.updateMultiple(model).subscribe({
+      next: () => this.dialogRef.close(true),
+      error: err => { this.error = err.error; this.saving = false; },
+    });
   }
 }

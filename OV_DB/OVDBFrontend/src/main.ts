@@ -53,7 +53,8 @@ import { AppComponent } from "./app/app.component";
 import { TranslateHttpLoader } from "@ngx-translate/http-loader";
 import localeNl from "@angular/common/locales/nl";
 import localeEnGB from "@angular/common/locales/en-GB";
-import { provideRouter, withInMemoryScrolling } from "@angular/router";
+import { provideRouter, TitleStrategy, withInMemoryScrolling } from "@angular/router";
+import { TranslatedTitleStrategy } from "./app/translated-title-strategy";
 import { routes } from "./app/app.routes";
 import { MAT_DATE_LOCALE } from "@angular/material/core";
 
@@ -160,6 +161,7 @@ bootstrapApplication(AppComponent, {
     provideHttpClient(withXhr(), withInterceptorsFromDi()),
     provideAnimations(),
     provideRouter(routes, withInMemoryScrolling({ scrollPositionRestoration: "enabled" })),
+    { provide: TitleStrategy, useClass: TranslatedTitleStrategy },
     provideZoneChangeDetection(),
   ],
 }).catch((err) => console.error(err));

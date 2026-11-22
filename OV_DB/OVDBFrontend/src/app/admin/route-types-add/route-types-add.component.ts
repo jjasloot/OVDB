@@ -64,7 +64,7 @@ export class RouteTypesAddComponent implements OnInit {
   }
 
   return() {
-    if (!this.routeTypeName) {
+    if (!this.routeTypeName || this.loading) {
       return;
     }
     this.loading = true;
@@ -82,8 +82,8 @@ export class RouteTypesAddComponent implements OnInit {
             this.dialogRef.close(true);
           },
           (err) => {
-            this.error =
-              this.translateService.instant("ADDTYPE.ERROR") + " " + err.error;
+            this.error = this.translateService.instant('ADDTYPE.ERROR') + ' ' + (typeof err.error === 'string' ? err.error : this.translateService.instant('ERRORS.GENERIC'));
+        this.loading = false;
           }
         );
     } else {
@@ -101,8 +101,8 @@ export class RouteTypesAddComponent implements OnInit {
             this.dialogRef.close(true);
           },
           (err) => {
-            this.error =
-              this.translateService.instant("ADDTYPE.ERROR") + " " + err.error;
+            this.error = this.translateService.instant('ADDTYPE.ERROR') + ' ' + (typeof err.error === 'string' ? err.error : this.translateService.instant('ERRORS.GENERIC'));
+        this.loading = false;
           }
         );
     }

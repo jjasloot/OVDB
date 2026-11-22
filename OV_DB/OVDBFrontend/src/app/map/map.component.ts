@@ -1,8 +1,9 @@
+import { injectLocateControl } from "src/app/utils/locate-control";
 import { Component, OnInit, AfterViewInit, ChangeDetectorRef, EventEmitter, OnDestroy, input, viewChild, signal, inject, ChangeDetectionStrategy } from "@angular/core";
 import { DateTime } from "luxon";
 import { ApiService } from "../services/api.service";
 import { LatLngBounds, LatLng, geoJSON, LatLngLiteral, Layer } from "leaflet";
-import { FilterSettings } from "../models/filterSettings";
+import { FilterSettings, PropertyCondition } from "../models/filterSettings";
 import { MatDialog } from "@angular/material/dialog";
 import { Country } from "../models/country.model";
 import { MapFilterComponent } from "../map-filter/map-filter.component";
@@ -10,8 +11,8 @@ import { TranslateService, TranslateModule } from "@ngx-translate/core";
 import { TranslationService } from "../services/translation.service";
 import { Router, ActivatedRoute } from "@angular/router";
 import { MapInstanceDialogComponent } from "../map-instance-dialog/map-instance-dialog.component";
-import { switchMap } from "rxjs/operators";
-import { Observable, Subscription, from } from "rxjs";
+import { catchError, switchMap } from "rxjs/operators";
+import { EMPTY, Observable, Subscription, from } from "rxjs";
 import { MapDataDTO } from "../models/map-data.model";
 import { SignalRService } from "../services/signal-r.service";
 import { MapTileLayersService } from "../services/map-tile-layers.service";
@@ -30,6 +31,7 @@ import { LeafletModule } from "@bluehalo/ngx-leaflet";
 import { MatProgressSpinner } from "@angular/material/progress-spinner";
 import { MatButton } from "@angular/material/button";
 import { MatIcon } from "@angular/material/icon";
+import { MatTooltip } from "@angular/material/tooltip";
 import { STANDARD_DIALOG, WIDE_DIALOG } from "src/app/constants/dialog-sizes";
 
 @Component({
@@ -47,12 +49,15 @@ import { STANDARD_DIALOG, WIDE_DIALOG } from "src/app/constants/dialog-sizes";
     MatProgressSpinner,
     MatButton,
     MatIcon,
+    MatTooltip,
     UpperCasePipe,
     KeyValuePipe,
     TranslateModule,
   ],
 })
 export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
+  /** "My location" button; bound to (leafletMapReady). */
+  locate = injectLocateControl();
   private translateService = inject(TranslateService);
   private translationService = inject(TranslationService);
   private apiService = inject(ApiService);
@@ -71,9 +76,11 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
   to: DateTime | null = null;
   selectedRegion: number[] = [];
   selectedTypes: number[] = [];
+  selectedOperators: number[] = [];
+  selectedProperties: PropertyCondition[] = [];
   layers: Layer[] = [];
   countries: Country[] = [];
-  selectedYears!: number[];
+  selectedYears: number[] = [];
   error = false;
   active = signal<string>("");
   selectedRoute: any;
@@ -176,12 +183,20 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     this.subscriptions.add(
       this.getRoutes$
         .pipe(
-          switchMap((filter) => {
-            return this.getRoutes(filter);
-          })
+          switchMap((filter) =>
+            // Caught per request so one failed load doesn't end the stream (and with it refresh).
+            this.getRoutes(filter).pipe(
+              catchError(() => {
+                this.error = true;
+                this.loading.set(false);
+                return EMPTY;
+              })
+            )
+          )
         )
         .subscribe({
           next: (data: MapDataDTO) => {
+            this.error = false;
             this.showRoutes(data);
           },
           error: () => {
@@ -232,6 +247,19 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
         .split(",")
         .map((c) => +c);
     }
+    if (queryParams.has("props")) {
+      try {
+        this.selectedProperties = JSON.parse(queryParams.get("props")!);
+      } catch {
+        this.selectedProperties = [];
+      }
+    }
+    if (queryParams.has("operators")) {
+      this.selectedOperators = queryParams
+        .get("operators")!
+        .split(",")
+        .map((c) => +c);
+    }
     if (queryParams.has("countries")) {
       this.selectedRegion = queryParams
         .get("countries")!
@@ -270,7 +298,27 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
       )
     );
   }
+  // Route types on the map with their colour, most common colour per type (line colours can vary).
+  legend = signal<{ type: string; colour: string }[]>([]);
+  legendOpen = signal(true);
+
+  private buildLegend(features: { properties?: { type?: string; stroke?: string } }[]) {
+    const counts = new Map<string, Map<string, number>>();
+    for (const f of features) {
+      const type = f.properties?.type;
+      const colour = f.properties?.stroke;
+      if (!type || !colour) continue;
+      const perColour = counts.get(type) ?? new Map<string, number>();
+      perColour.set(colour, (perColour.get(colour) ?? 0) + 1);
+      counts.set(type, perColour);
+    }
+    this.legend.set([...counts.entries()]
+      .map(([type, perColour]) => ({ type, colour: [...perColour.entries()].sort((a, b) => b[1] - a[1])[0][0] }))
+      .sort((a, b) => a.type.localeCompare(b.type)));
+  }
+
   private showRoutes(data: MapDataDTO) {
+    this.buildLegend(data.routes?.features ?? []);
     const parent = this;
     const track = geoJSON(data.routes, {
       style: (feature) => {
@@ -385,6 +433,12 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     if (this.selectedTypes && this.selectedTypes.length > 0) {
       queryParams["types"] = this.selectedTypes.join(",");
     }
+    if (this.selectedOperators.length > 0) {
+      queryParams["operators"] = this.selectedOperators.join(",");
+    }
+    if (this.selectedProperties.length > 0) {
+      queryParams["props"] = JSON.stringify(this.selectedProperties);
+    }
     if (this.selectedYears && this.selectedYears.length > 0) {
       queryParams["years"] = this.selectedYears.join(",");
     }
@@ -430,6 +484,18 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
       filter += ") and ";
     }
 
+    if (this.selectedOperators.length > 0) {
+      filter += "(" + this.selectedOperators.map((id) => "Route/Operators/any(o: o/Id eq " + id + ")").join(" or ") + ") and ";
+    }
+    if (this.selectedProperties.length > 0) {
+      // OData escapes a quote inside a string by doubling it; the backend whitelist relies on that.
+      const quote = (text: string) => "'" + text.replace(/'/g, "''") + "'";
+      filter += "(" + this.selectedProperties.map((p) => p.bool !== undefined && p.bool !== null
+        ? "RouteInstanceProperties/any(p: p/Key eq " + quote(p.key) + " and p/Bool eq " + p.bool + ")"
+        : "RouteInstanceProperties/any(p: p/Key eq " + quote(p.key) + " and contains(p/Value," + quote(p.value ?? "") + "))"
+      ).join(" or ") + ") and ";
+    }
+
     if (this.selectedYears && this.selectedYears.length > 0) {
       filter += "(";
       this.selectedYears.filter((year) => !!year).forEach((year) => {
@@ -453,6 +519,8 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     this.selectedRegion = [...option.selectedCountries];
     this.selectedTypes = [...option.selectedTypes];
     this.selectedYears = [...option.selectedYears];
+    this.selectedOperators = [...(option.selectedOperators ?? [])];
+    this.selectedProperties = [...(option.selectedProperties ?? [])];
     this.includeLineColours = option.includeLineColours;
     this.limitToSelectedArea = option.limitToSelectedAreas;
     this.active.set(option.name);
@@ -469,7 +537,9 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
       this.to ?? undefined,
       this.selectedRegion,
       this.selectedTypes,
-      this.selectedYears
+      this.selectedYears,
+      this.selectedOperators,
+      this.selectedProperties
     );
     const dialogRef = this.dialog.open(MapFilterComponent, {
       ...WIDE_DIALOG,
@@ -515,6 +585,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   refresh() {
+    this.error = false;
     this.getRoutes$.next(this.getFilter());
   }
 

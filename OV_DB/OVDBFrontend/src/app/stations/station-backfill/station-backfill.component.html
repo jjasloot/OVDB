@@ -19,6 +19,11 @@
     </div>
   } @else if (firstLoad()) {
     <mat-spinner diameter="32" />
+  } @else if (loadFailed() && !hasWork()) {
+    <div class="done">
+      <p>{{ 'ERRORS.GENERIC' | translate }}</p>
+      <button mat-stroked-button (click)="retryLoad()">{{ 'RETRY' | translate }}</button>
+    </div>
   } @else if (!hasWork()) {
     <div class="done">
       <h2>{{ 'STATIONS.BACKFILL.ALL_DONE_TITLE' | translate }}</h2>

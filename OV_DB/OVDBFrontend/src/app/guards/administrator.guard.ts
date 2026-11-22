@@ -1,6 +1,5 @@
 import { Injectable, inject } from '@angular/core';
 import { Route, UrlSegment, ActivatedRouteSnapshot, RouterStateSnapshot, UrlTree, Router } from '@angular/router';
-import { Observable } from 'rxjs';
 import { AuthenticationService } from '../services/authentication.service';
 
 @Injectable({
@@ -13,8 +12,12 @@ export class AdministratorGuard  {
 
   canActivate(
     next: ActivatedRouteSnapshot,
-    state: RouterStateSnapshot): Observable<boolean | UrlTree> | Promise<boolean | UrlTree> | boolean | UrlTree {
-    if (!this.authService.isLoggedIn || !this.authService.admin) {
+    state: RouterStateSnapshot): Promise<boolean | UrlTree> {
+    return this.check();
+  }
+
+  private async check(): Promise<boolean | UrlTree> {
+    if (!(await this.authService.ensureLoggedIn()) || !this.authService.admin) {
       return this.router.parseUrl('/');
     }
     return true;

@@ -1,6 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { Route, UrlSegment, ActivatedRouteSnapshot, RouterStateSnapshot, UrlTree, Router } from '@angular/router';
-import { Observable } from 'rxjs';
+import { ActivatedRouteSnapshot, RouterStateSnapshot, UrlTree, Router } from '@angular/router';
 import { AuthenticationService } from '../services/authentication.service';
 
 @Injectable({
@@ -10,19 +9,12 @@ export class LoginGuard  {
   authService = inject(AuthenticationService);
   router = inject(Router);
 
-
-  canActivate(
-    next: ActivatedRouteSnapshot,
-    state: RouterStateSnapshot): Observable<boolean | UrlTree> | Promise<boolean | UrlTree> | boolean | UrlTree {
-
-    if (state) {
-      this.authService.returnUrl = state.url;
+  async canActivate(next: ActivatedRouteSnapshot, state: RouterStateSnapshot): Promise<boolean | UrlTree> {
+    if (await this.authService.ensureLoggedIn()) {
+      return true;
     }
-
-    if (!this.authService.isLoggedIn) {
-      this.router.navigate(['/login'], { queryParams: { returnUrl: '/' + next.url.join('/') } });
-      return false;
-    }
-    return true;
+    // Only remembered when it is needed, so a later plain login doesn't jump to a stale page.
+    this.authService.returnUrl = state.url;
+    return this.router.createUrlTree(['/login'], { queryParams: { returnUrl: state.url } });
   }
 }

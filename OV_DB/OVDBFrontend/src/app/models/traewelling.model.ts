@@ -10,6 +10,8 @@ export interface TrawellingConnectionStatus {
   liveSyncHealth?: 'NotEnabled' | 'Active' | 'DisabledUpstream' | 'Missing' | 'Unknown';
   /** A full-history resync started earlier is still walking; its finish still arrives over the hub. */
   resyncRunning?: boolean;
+  /** UTC time Träwelling last delivered a trip event; null if never. */
+  lastEventAt?: string | null;
 }
 
 export interface TrawellingUser {

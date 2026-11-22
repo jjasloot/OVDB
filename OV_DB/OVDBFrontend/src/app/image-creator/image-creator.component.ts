@@ -45,7 +45,6 @@ export class ImageCreatorComponent implements OnInit {
   }
 
   setImage() {
-    console.log(this.selectedGuids);
     let query = "";
     query += `?includeTotal=${this.includeTotals}`;
     query += `&language=${this.translationService.language}`;
@@ -53,7 +52,7 @@ export class ImageCreatorComponent implements OnInit {
       query += `&guid=${guid}`;
     });
     if (this.title) {
-      query += `&title=${this.title}`;
+      query += `&title=${encodeURIComponent(this.title)}`;
     }
     if (this.width) {
       query += `&width=${this.width}`;

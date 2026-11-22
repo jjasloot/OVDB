@@ -83,7 +83,11 @@
       "DISMISS": "Niet meer vragen",
       "DONE": "Klaar",
       "SHOW_MORE": "Toon nog {{count}} op deze rit"
-    }
+    },
+    "MAP_LOGIN_REQUIRED": "Log in om deze stationskaart te bekijken: hij laat zien welke stations jij zelf hebt bezocht.",
+    "LINK_NOT_FOUND": "Achter deze link zit (niet meer) een stationskaart.",
+    "FIND": "Zoek een station...",
+    "ONLY_UNVISITED": "Alleen onbezocht"
   },
   "SAVE": "Opslaan",
   "MISSINGDATA.NODATA": "Geen routes met missende informatie.",
@@ -141,17 +145,14 @@
   "ROUTEINSTANCES.NOINSTANCES": "Geen ritten gevonden",
   "ROUTEINSTANCES.DELETECONFIRM": "deze rit wilt verwijderen",
   "REQUESTS.NO_REQUESTS": "Nog geen verzoeken. Stel hierboven een vraag, dan verschijnt het antwoord hier.",
-  "MENU.ADMINISTRATOR": "Beheer",
   "ADD": "Toevoegen",
   "SORT": "Sorteren",
   "ACTIONS": "Acties",
   "LOADING": "Laden...",
   "FILTER.TITLE": "Aangepaste selectie",
   "ROUTES.ASSIGNREGIONS": "Regio's toewijzen",
-  "STATS.COMPACT": "Compact",
   "ROUTEINSTANCE.SAVE_ERROR": "Kon de rit niet opslaan. Probeer het opnieuw.",
   "ROUTEINSTANCE.SUGGESTIONS_UNAVAILABLE": "De rit is opgeslagen, maar de stopplaatsen van deze rit konden niet worden opgehaald. Er worden daarom geen stations voorgesteld.",
-  "TRAEWELLING.IGNORE_ERROR": "Kon de rit niet negeren. Probeer het opnieuw.",
   "IMPORTER.STEP1": "Zoek op een naam en een type. Voeg een netwerk toe om resultaten te beperken.",
   "IMPORTER.REFERENCE": "Naam van de lijn",
   "IMPORTER.NETWORK": "Netwerk",
@@ -231,7 +232,7 @@
     "POST_SCRIPTUM": "Deze helppagina is voornamelijk geschreven door AI. Ik had er gewoon niet zo heel veel zin in en het werkt op zich niet verkeerd."
   },
   "HOME.WELCOME": "Welkom bij OVDB",
-  "HOME.EXPLANATION": "Voeg je routes toe via de knop gegevens of voeg types en landen toe. Bekijk je eigen kaart met die knoppen. Maak een deel link aan en deel de kaart online.",
+  "HOME.EXPLANATION": "Voeg je routes en reizen toe via de knop Data, waar je ook je kaarten en routetypes beheert. Bekijk je kaarten met de knoppen hieronder en maak een deellink om een kaart online te delen.",
   "HOME.DATA": "Data",
   "HOME.CREATELINKTOSHARE": "Maak een linknaam aan om te kunnen delen",
   "HOME.LANDING_TITLE": "Al je reizen op één kaart",
@@ -546,7 +547,9 @@
       "BASED_ON": "op basis van {{count}} ritten",
       "PER_MONTH": "Afstand per maand",
       "BY_TYPE": "Per type",
-      "TOP_OPERATORS": "Meest gebruikte vervoerders"
+      "TOP_OPERATORS": "Meest gebruikte vervoerders",
+      "TREND_SO_FAR": "{{percent}}% ten opzichte van {{year}} t/m {{until}} ({{distance}} km)",
+      "CALENDAR": "Reisdagen"
     },
     "PUNCTUALITY": {
       "TITLE": "Punctualiteit",
@@ -578,7 +581,14 @@
         "D30_60": "30-60 min",
         "D60PLUS": "60+ min"
       }
-    }
+    },
+    "COMPACT": "Compact",
+    "REGIONS_EMPTY": "Nog geen van je ritten gaat door een bekende regio.",
+    "REGIONS_SORT": "Regio's sorteren",
+    "REGIONS_SORT_NAME": "Naam",
+    "REGIONS_SORT_COMPLETION": "Meest compleet",
+    "REGIONS_HIDE_UNVISITED": "Regio's zonder bezoek verbergen",
+    "OPERATOR_TOTALS": "{{trips}} ritten, {{km}} km"
   },
   "MENU": {
     "PROFILE": "Profiel",
@@ -589,7 +599,8 @@
     "DATA": "Data",
     "REQUESTS": "Verzoeken",
     "DARK_MODE": "Donkere modus",
-    "LIGHT_MODE": "Lichte modus"
+    "LIGHT_MODE": "Lichte modus",
+    "ADMINISTRATOR": "Beheer"
   },
   "PROFILE": {
     "TITLE": "Gebruikersprofiel",
@@ -670,7 +681,14 @@
     "TRAINLOG_OPERATOR_MAPPING_SAVED": "Vervoerderkoppelingen opgeslagen",
     "TRAINLOG_OPERATOR_MAPPING_ERROR": "Fout bij opslaan vervoerderkoppelingen. Probeer opnieuw.",
     "TRAINLOG_NO_OPERATOR_MAPPINGS": "Nog geen vervoerderkoppelingen ingesteld.",
-    "SAVING": "Opslaan..."
+    "SAVING": "Opslaan...",
+    "TRAEWELLING_POPUP_BLOCKED": "Je browser blokkeerde het Träwelling-venster. Sta pop-ups toe voor deze site en probeer het opnieuw.",
+    "DISCONNECT_TRAEWELLING_ITEM": "Träwelling wilt ontkoppelen (opnieuw koppelen betekent opnieuw inloggen bij Träwelling)",
+    "PASSWORD_CHANGED_RELOGIN": "Wachtwoord gewijzigd. Je bent overal uitgelogd, dus log opnieuw in.",
+    "UNKNOWN_DEVICE": "Onbekend apparaat",
+    "UNKNOWN_BROWSER": "Onbekende browser",
+    "BROWSER_ON_OS": "{{browser}} op {{os}}",
+    "TRAEWELLING_LOADING_STATUS": "Träwelling-koppeling controleren..."
   },
   "TRAEWELLING": {
     "TITLE": "Träwelling koppeling",
@@ -791,8 +809,8 @@
     "CONFLICT_REIMPORTED": "Reis staat weer in de importlijst",
     "CONFLICT_DISMISSED": "Wijziging genegeerd",
     "CONFLICT_INSTANCE_DELETED": "Reis verwijderd",
-    "CONFLICT_DELETE_CONFIRM": "deze reis ook uit OVDB verwijderen",
-    "CONFLICT_DELETE_CONFIRM_WITH_ROUTE": "deze reis ook uit OVDB verwijderen — het is de enige reis op deze route, dus de route wordt ook verwijderd",
+    "CONFLICT_DELETE_CONFIRM": "deze reis ook uit OVDB wilt verwijderen",
+    "CONFLICT_DELETE_CONFIRM_WITH_ROUTE": "deze reis ook uit OVDB wilt verwijderen — het is de enige reis op deze route, dus de route wordt ook verwijderd",
     "CONFLICT_FROM": "Van",
     "CONFLICT_TO": "Naar",
     "CONFLICT_ROUTE_CHANGED": "Het begin- of eindstation is gewijzigd op Träwelling — importeer de reis opnieuw om de route bij te werken.",
@@ -814,9 +832,43 @@
     "START_TIME": "Vertrek",
     "END_TIME": "Aankomst",
     "DESCRIPTION": "Beschrijving",
-    "ALERT_READ_MORE": "Meer informatie"
+    "ALERT_READ_MORE": "Meer informatie",
+    "IGNORE_ERROR": "Kon de rit niet negeren. Probeer het opnieuw.",
+    "LAST_EVENT": "Laatste rit ontvangen van Träwelling: {{when}}"
   },
   "ROUTESLIST.EXPORTTOTRAINLOG": "Exporteer selectie voor Trainlog",
   "ROUTESLIST.SHOWROUTES": "Toon routes",
-  "ROUTESLIST.SHOWINSTANCES": "Toon ritten"
+  "ROUTESLIST.SHOWINSTANCES": "Toon ritten",
+  "REFRESH": "Vernieuwen",
+  "EXTREMES.LATITUDE": "Breedtegraad",
+  "EXTREMES.LONGITUDE": "Lengtegraad",
+  "EXTREMES.ROUTE": "Route",
+  "LINK_COPIED": "Link gekopieerd",
+  "IMAGES.NEEDS_LINK": "Alleen kaarten met een deellink kunnen in een afbeelding. Stel er een in bij het bewerken van de kaart.",
+  "IMAGES.PICK_MAP": "Kies minstens een kaart om de afbeelding en de link te zien.",
+  "REGISTER.EMAIL_IN_USE": "Er bestaat al een account met dit e-mailadres.",
+  "REGISTER.HAVE_ACCOUNT": "Heb je al een account?",
+  "EDITMAP.TITLE": "Kaart bewerken",
+  "EDITTYPE.TITLE": "Route type bewerken",
+  "LOGIN.SESSION_EXPIRED": "Je sessie is verlopen. Log opnieuw in.",
+  "IMPORTER.NO_LINES": "Geen lijnen gevonden. Controleer de naam en het type, of laat het netwerk weg.",
+  "ROUTEDETAILS.OVERRIDECOLOUR_HINT": "Leeg: de route krijgt de kleur van zijn type",
+  "CLEAR": "Wissen",
+  "ROUTESLIST.FILTER_TYPE": "Type",
+  "ROUTESLIST.FILTER_MAP": "Kaart",
+  "ROUTESLIST.FILTER_YEAR": "Gereden in",
+  "ROUTESLIST.OPERATOR_FILTER": "Vervoerder",
+  "ROUTEDETAILS.COPY_SHARE_LINK": "Deellink kopiëren",
+  "MAP.MY_LOCATION": "Toon mijn locatie",
+  "MAP.LOCATION_UNAVAILABLE": "Je locatie is niet beschikbaar. Sta locatietoegang toe voor deze site en probeer het opnieuw.",
+  "HOME.MAP_SUMMARY": "{{km}} km, {{trips}} ritten in {{year}}",
+  "FILTER.OPERATORS": "Vervoerders",
+  "FILTER.PROPERTIES": "Ritkenmerken",
+  "FILTER.PROPERTIES_HINT": "Toon alleen ritten met een kenmerk, zoals een voertuigtype. Een rit die aan een van de voorwaarden voldoet wordt getoond.",
+  "FILTER.PROPERTY": "Kenmerk",
+  "FILTER.VALUE": "Waarde",
+  "FILTER.VALUE_CONTAINS": "Bevat",
+  "MAP.LEGEND": "Legenda",
+  "ROUTEINSTANCES.TOTALS": "{{trips}} ritten · {{km}} km · {{hours}} uur",
+  "HOME.RECENT_TRIPS": "Recente ritten"
 }
