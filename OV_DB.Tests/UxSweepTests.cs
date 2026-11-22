@@ -66,6 +66,38 @@ public class UxSweepTests
         Assert.Equal(new[] { 2, 4 }, mapIds);
     }
 
+    /// <summary>
+    /// A shared station link shows the owner's visits to anyone, logged in or not, read-only and
+    /// without the trip ids behind the visits.
+    /// </summary>
+    [Fact]
+    public async Task SharedStationLinkShowsTheOwnersVisitsReadOnly()
+    {
+        var context = NewContext();
+        var region = new Region { Id = 1, Name = "NL", NameNL = "NL", OriginalName = "NL" };
+        context.Regions.Add(region);
+        context.Stations.AddRange(
+            new Station { Id = 1, Name = "Visited by owner", Regions = [region] },
+            new Station { Id = 2, Name = "Visited by viewer", Regions = [region] });
+        context.StationVisits.AddRange(
+            new StationVisit { Id = 1, StationId = 1, UserId = 1, FirstStoppedDate = new DateTime(2024, 5, 1), FirstStoppedRouteInstanceId = 42 },
+            new StationVisit { Id = 2, StationId = 2, UserId = 2 });
+        context.StationGroupings.Add(new StationGrouping { Id = 1, UserId = 1, Name = "NL", NameNL = "NL", MapGuid = Guid.NewGuid(), SharingLinkName = "owner-nl", Regions = [region] });
+        await context.SaveChangesAsync();
+        var anonymous = new StationMapsController(context)
+        {
+            ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() }
+        };
+
+        var result = await anonymous.GetSharedStationMap("owner-nl");
+
+        var view = Assert.IsType<StationView>(Assert.IsType<OkObjectResult>(result).Value);
+        Assert.True(view.ReadOnly);
+        Assert.Equal([1], view.Stations.Where(s => s.Visited).Select(s => s.Id));
+        Assert.All(view.Stations, s => Assert.Null(s.FirstStoppedRouteInstanceId));
+        Assert.IsType<NotFoundResult>(await anonymous.GetSharedStationMap("no-such-link"));
+    }
+
     /// <summary>Station maps live in StationGroupings; the legacy StationMaps table is not what the page reads.</summary>
     [Fact]
     public async Task StationLinkResolvesFromStationGroupings()

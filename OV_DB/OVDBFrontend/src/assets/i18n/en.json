@@ -88,7 +88,8 @@
     "MAP_LOGIN_REQUIRED": "Log in to see this station map: it shows which stations you have visited yourself.",
     "LINK_NOT_FOUND": "There is no station map behind this link (any more).",
     "FIND": "Find a station...",
-    "ONLY_UNVISITED": "Only unvisited"
+    "ONLY_UNVISITED": "Only unvisited",
+    "SHARED_READ_ONLY": "(shared map: view only)"
   },
   "MISSINGDATA.NODATA": "No routes with missing information.",
   "ADDMAP.TITLE": "Add map",

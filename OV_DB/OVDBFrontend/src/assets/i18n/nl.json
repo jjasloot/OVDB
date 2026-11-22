@@ -87,7 +87,8 @@
     "MAP_LOGIN_REQUIRED": "Log in om deze stationskaart te bekijken: hij laat zien welke stations jij zelf hebt bezocht.",
     "LINK_NOT_FOUND": "Achter deze link zit (niet meer) een stationskaart.",
     "FIND": "Zoek een station...",
-    "ONLY_UNVISITED": "Alleen onbezocht"
+    "ONLY_UNVISITED": "Alleen onbezocht",
+    "SHARED_READ_ONLY": "(gedeelde kaart: alleen bekijken)"
   },
   "SAVE": "Opslaan",
   "MISSINGDATA.NODATA": "Geen routes met missende informatie.",

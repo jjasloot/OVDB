@@ -13,5 +13,7 @@ namespace OV_DB.Models
         public int Visited { get; set; }
         public string Name { get; set; }
         public string NameNL { get; set; }
+        /// <summary>Opened through a sharing link: someone else's visits, shown but not editable.</summary>
+        public bool ReadOnly { get; set; }
     }
 }

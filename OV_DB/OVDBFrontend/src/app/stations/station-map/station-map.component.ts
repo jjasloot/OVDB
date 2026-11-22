@@ -90,6 +90,9 @@ export class StationMapComponent implements OnInit {
 
   baseLayers = this.mapTileLayersService.createBaseLayers();
   readonly guid = input<string>();
+  /** Set when opened through a sharing link: shows the owner's visits, read-only. */
+  readonly sharedName = input<string | null>(null);
+  readOnly = signal(false);
   options = {
     layers: [this.mapTileLayersService.defaultLayer(this.baseLayers)],
     zoom: 5,
@@ -177,11 +180,13 @@ export class StationMapComponent implements OnInit {
 
     let text;
     try {
-      text = await firstValueFrom(this.apiService.getStationMap(this.guid()!));
+      const shared = this.sharedName();
+      text = await firstValueFrom(shared ? this.apiService.getSharedStationMap(shared) : this.apiService.getStationMap(this.guid()!));
+      this.readOnly.set(!!text.readOnly);
     } catch (e: unknown) {
-      // Logged-out visitors of a shared link get a 401, which the global error toast skips.
+      // 404: an unknown sharing link. 401/403 would skip the global toast, so say it here.
       const status = (e as { status?: number } | null)?.status;
-      this.loadError.set(status === 401 || status === 403 ? 'STATIONS.MAP_LOGIN_REQUIRED' : 'ERRORS.GENERIC');
+      this.loadError.set(status === 404 ? 'STATIONS.LINK_NOT_FOUND' : status === 401 || status === 403 ? 'STATIONS.MAP_LOGIN_REQUIRED' : 'ERRORS.GENERIC');
       this.loading.set(false);
       return;
     }
@@ -238,6 +243,10 @@ export class StationMapComponent implements OnInit {
     this.searchableStations.set(searchable);
     this.clusterGroup = markers;
     markers.addEventListener("click", (f: LeafletEvent) => {
+      // Someone else's map: the tooltip shows the name, there is nothing to mark.
+      if (parent.readOnly()) {
+        return;
+      }
       const properties = f.propagatedFrom.feature.properties;
       if (properties.visited) {
         // Already visited: changing it is deliberate, so ask what to do rather than toggling

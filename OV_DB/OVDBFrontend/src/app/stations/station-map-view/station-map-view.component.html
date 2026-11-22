@@ -1,5 +1,6 @@
-@if (!!guid) {
+@if (sharedName) {
+  <!-- A sharing link shows the owner's visits, read-only, also without logging in. -->
+  <app-station-map [sharedName]="sharedName"></app-station-map>
+} @else if (!!guid) {
   <app-station-map [guid]="guid"></app-station-map>
-} @else if (linkNotFound) {
-  <p class="not-found">{{ 'STATIONS.LINK_NOT_FOUND' | translate }}</p>
 }

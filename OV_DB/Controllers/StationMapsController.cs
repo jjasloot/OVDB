@@ -178,6 +178,38 @@ namespace OV_DB.Controllers
             {
                 return NotFound();
             }
+            return Ok(await BuildStationViewAsync(stationMap, userIdClaim, readOnly: false));
+        }
+
+        /// <summary>
+        /// A station map opened through its sharing link: the owner's visits, read-only, also for
+        /// visitors who are not logged in (as shared route maps are). The trips behind the visits stay private.
+        /// </summary>
+        [AllowAnonymous]
+        [HttpGet("shared/{name}")]
+        public async Task<IActionResult> GetSharedStationMap(string name)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                return NotFound();
+            }
+            var stationMap = await _context.StationGroupings.Include(r => r.Regions).SingleOrDefaultAsync(sm => sm.SharingLinkName == name);
+            if (stationMap is null)
+            {
+                return NotFound();
+            }
+            var view = await BuildStationViewAsync(stationMap, stationMap.UserId, readOnly: true);
+            foreach (var station in view.Stations)
+            {
+                station.FirstStoppedRouteInstanceId = null;
+                station.FirstEntryExitRouteInstanceId = null;
+            }
+            return Ok(view);
+        }
+
+        /// <summary>Every station in the map's regions, with <paramref name="visitUserId"/>'s visits.</summary>
+        private async Task<StationView> BuildStationViewAsync(StationGrouping stationMap, int visitUserId, bool readOnly)
+        {
             var regionIds = stationMap.Regions.Select(r => r.Id).ToList();
             var stationsQuery = _context.Stations.AsQueryable();
             stationsQuery = stationsQuery.Where(s => s.Regions.Any(r => regionIds.Contains(r.Id)))
@@ -193,27 +225,27 @@ namespace OV_DB.Controllers
                 Name = s.Name,
                 Network = s.Network,
                 Operator = s.Operator,
-                Visited = s.StationVisits.Any(sv => sv.UserId == userIdClaim),
+                Visited = s.StationVisits.Any(sv => sv.UserId == visitUserId),
                 VisitLevel = s.StationVisits
-                    .Where(sv => sv.UserId == userIdClaim)
+                    .Where(sv => sv.UserId == visitUserId)
                     .Select(sv => sv.FirstEntryExitDate.HasValue
                         ? StationVisitLevel.EntryExit
                         : (StationVisitLevel?)StationVisitLevel.Stopped)
                     .FirstOrDefault(),
                 FirstStoppedDate = s.StationVisits
-                    .Where(sv => sv.UserId == userIdClaim)
+                    .Where(sv => sv.UserId == visitUserId)
                     .Select(sv => sv.FirstStoppedDate)
                     .FirstOrDefault(),
                 FirstEntryExitDate = s.StationVisits
-                    .Where(sv => sv.UserId == userIdClaim)
+                    .Where(sv => sv.UserId == visitUserId)
                     .Select(sv => sv.FirstEntryExitDate)
                     .FirstOrDefault(),
                 FirstStoppedRouteInstanceId = s.StationVisits
-                    .Where(sv => sv.UserId == userIdClaim)
+                    .Where(sv => sv.UserId == visitUserId)
                     .Select(sv => sv.FirstStoppedRouteInstanceId)
                     .FirstOrDefault(),
                 FirstEntryExitRouteInstanceId = s.StationVisits
-                    .Where(sv => sv.UserId == userIdClaim)
+                    .Where(sv => sv.UserId == visitUserId)
                     .Select(sv => sv.FirstEntryExitRouteInstanceId)
                     .FirstOrDefault()
             }).ToListAsync();
@@ -226,9 +258,10 @@ namespace OV_DB.Controllers
                 Total = stations.Count,
                 Name = stationMap.Name,
                 NameNL = stationMap.NameNL,
-                Visited = stations.Where(s => s.Visited).Count()
+                Visited = stations.Where(s => s.Visited).Count(),
+                ReadOnly = readOnly
             };
-            return Ok(response);
+            return response;
         }
 
         private bool MapExists(int id)

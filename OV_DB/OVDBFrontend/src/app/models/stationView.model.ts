@@ -10,6 +10,8 @@ export interface StationView {
   stations: StationDTO[];
   total: number;
   visited: number;
+  /** Opened through a sharing link: the owner's visits, not editable. */
+  readOnly?: boolean;
 }
 
 export interface StationDTO {

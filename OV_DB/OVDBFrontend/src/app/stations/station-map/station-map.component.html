@@ -3,6 +3,9 @@
   @if (!loadError() && (!!total()||visited()!=undefined)) {
   <span>: {{ visited() }} / {{ total() }} ({{ percentage() }}%)</span>
   }
+  @if (readOnly()) {
+  <span class="read-only">{{ 'STATIONS.SHARED_READ_ONLY' | translate }}</span>
+  }
   @if (!loadError()) {
   <mat-slide-toggle class="unvisited-toggle" [checked]="showOnlyUnvisited()" (change)="setShowOnlyUnvisited($event.checked)">
     {{ 'STATIONS.ONLY_UNVISITED' | translate }}

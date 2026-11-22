@@ -540,6 +540,11 @@ export class ApiService {
     return this.httpClient.get<string[]>(url);
   }
 
+  /** A station map through its sharing link: the owner's visits, read-only, no login needed. */
+  getSharedStationMap(name: string) {
+    return this.httpClient.get<StationView>(environment.backend + "api/stationmaps/shared/" + encodeURIComponent(name));
+  }
+
   getStationMap(guid: string) {
     const url = environment.backend + "api/stationmaps/map/" + guid;
     return this.httpClient.get<StationView>(url);
