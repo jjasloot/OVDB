@@ -9,6 +9,8 @@ import {
   LatLng,
   divIcon,
   circleMarker,
+  CircleMarker,
+  MarkerClusterGroup,
   LeafletEvent
 } from "leaflet";
 import { ApiService } from "src/app/services/api.service";
@@ -53,6 +55,12 @@ const UNDOABLE: MatSnackBarConfig = { verticalPosition: "bottom" };
 
 const SMALL_DIALOG = { maxWidth: "95vw", width: "360px" };
 
+/** A station marker with the name it can be searched by. */
+interface SearchableStation {
+  name: string;
+  marker: CircleMarker;
+}
+
 @Component({
     selector: "app-station-map",
     templateUrl: "./station-map.component.html",
@@ -95,8 +103,8 @@ export class StationMapComponent implements OnInit {
   loadError = signal<string | null>(null);
 
   // Station search: type part of a name, pick one, and the map zooms to it.
-  private clusterGroup: any = null;
-  private searchableStations = signal<{ name: string; marker: any }[]>([]);
+  private clusterGroup: MarkerClusterGroup | null = null;
+  private searchableStations = signal<SearchableStation[]>([]);
   stationQuery = signal("");
   stationMatches = computed(() => {
     const query = this.stationQuery().trim().toLocaleLowerCase();
@@ -118,15 +126,15 @@ export class StationMapComponent implements OnInit {
     this.showOnlyUnvisited.set(only);
     const visitedMarkers = this.searchableStations()
       .map((s) => s.marker)
-      .filter((marker) => marker.feature.properties.visited);
+      .filter((marker) => marker.feature?.properties?.visited);
     if (only) {
       this.clusterGroup?.removeLayers(visitedMarkers);
     } else {
-      this.clusterGroup?.addLayers(visitedMarkers.filter((marker) => !this.clusterGroup.hasLayer(marker)));
+      this.clusterGroup?.addLayers(visitedMarkers.filter((marker) => !this.clusterGroup!.hasLayer(marker)));
     }
   }
 
-  findStation(entry: { name: string; marker: any }) {
+  findStation(entry: SearchableStation) {
     this.stationQuery.set("");
     // A visited station hidden by "only unvisited" is shown again when searched for.
     if (this.clusterGroup && !this.clusterGroup.hasLayer(entry.marker)) {
@@ -170,9 +178,10 @@ export class StationMapComponent implements OnInit {
     let text;
     try {
       text = await firstValueFrom(this.apiService.getStationMap(this.guid()!));
-    } catch (e: any) {
+    } catch (e: unknown) {
       // Logged-out visitors of a shared link get a 401, which the global error toast skips.
-      this.loadError.set(e?.status === 401 || e?.status === 403 ? 'STATIONS.MAP_LOGIN_REQUIRED' : 'ERRORS.GENERIC');
+      const status = (e as { status?: number } | null)?.status;
+      this.loadError.set(status === 401 || status === 403 ? 'STATIONS.MAP_LOGIN_REQUIRED' : 'ERRORS.GENERIC');
       this.loading.set(false);
       return;
     }
@@ -183,7 +192,7 @@ export class StationMapComponent implements OnInit {
       name: text.name,
       nameNL: text.nameNL,
     });
-    const searchable: { name: string; marker: any }[] = [];
+    const searchable: SearchableStation[] = [];
     const markers = await createMarkerClusterGroup({
       iconCreateFunction: (cluster) => {
         return divIcon({

@@ -144,7 +144,7 @@ export class MapTileLayersService {
   private themeService = inject(ThemeService);
 
   createBaseLayers(): { [name: string]: Layer } {
-    const layers: { [name: string]: Layer } = {
+    const layers: Record<string, Layer> = {
       OpenStreetMap: this.lightTiles(0.8),
       // Faded so route lines and markers stay readable on top.
       [DEFAULT_LIGHT_LAYER_NAME]: this.lightTiles(0.5),

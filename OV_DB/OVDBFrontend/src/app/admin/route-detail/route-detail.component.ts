@@ -206,7 +206,7 @@ export class RouteDetailComponent implements OnInit {
       return;
     }
     this.apiService.getSingleRoute(route.routeId, route.share, this.translationService.language).subscribe((geo) => {
-      const line = geoJSON(geo as any, { style: (f) => ({ color: f?.properties?.stroke ?? "#1976d2", weight: 4 }) });
+      const line = geoJSON(geo as unknown as GeoJSON.GeoJsonObject, { style: (f) => ({ color: f?.properties?.stroke ?? "#1976d2", weight: 4 }) });
       this.previewLayers.set([line]);
       this.previewBounds.set(line.getBounds());
     });

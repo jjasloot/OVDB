@@ -40,7 +40,8 @@ export class RouteTypesAddComponent implements OnInit {
   routeTypeNameNL!: string;
   loading!: boolean;
   error!: string;
-  colour!: string;
+  // A new type needs a colour (the API requires one); an empty picker shows black but sends nothing.
+  colour = "#1976d2";
   id!: number;
   isTrain = false;
   trainlogType!: string;

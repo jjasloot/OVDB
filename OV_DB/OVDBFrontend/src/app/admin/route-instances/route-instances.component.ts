@@ -237,7 +237,7 @@ export class RouteInstancesComponent implements OnInit {
    * Opens the trip dialog and saves what it returns. A failed save reopens the dialog with the
    * user's input, which otherwise would be gone along with the dialog.
    */
-  private openEditor(instance: RouteInstance, isNew: boolean, saved: (response: any) => void) {
+  private openEditor(instance: RouteInstance, isNew: boolean, saved: (response: unknown) => void) {
     const dialogRef = this.dialog.open(RouteInstancesEditComponent, {
       ...STANDARD_DIALOG,
       data: {

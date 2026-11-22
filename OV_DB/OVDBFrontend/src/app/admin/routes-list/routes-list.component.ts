@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, DestroyRef, OnInit, AfterViewInit, ElementRef, HostListener, viewChild, inject, signal } from "@angular/core";
+import { Component, ChangeDetectionStrategy, DestroyRef, OnInit, AfterViewInit, ElementRef, HostListener, viewChild, inject } from "@angular/core";
 import { ApiService, RouteListFilters } from "src/app/services/api.service";
 import { RouteListFiltersComponent } from "../route-list-filters/route-list-filters.component";
 import { MatPrefix } from "@angular/material/form-field";

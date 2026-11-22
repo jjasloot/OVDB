@@ -300,7 +300,8 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
   }
   // Route types on the map with their colour, most common colour per type (line colours can vary).
   legend = signal<{ type: string; colour: string }[]>([]);
-  legendOpen = signal(true);
+  // Open on wide screens; on a phone the open legend would cover much of the map.
+  legendOpen = signal(window.matchMedia("(min-width: 700px)").matches);
 
   private buildLegend(features: { properties?: { type?: string; stroke?: string } }[]) {
     const counts = new Map<string, Map<string, number>>();

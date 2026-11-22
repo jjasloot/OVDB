@@ -87,3 +87,10 @@ mat-card {
     gap: 8px;
     margin: 16px 0;
 }
+
+// Links into the routes list: readable in both themes, still recognisable as links.
+td a {
+  color: inherit;
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+}

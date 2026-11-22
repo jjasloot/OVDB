@@ -138,7 +138,8 @@ export class ProfileComponent implements OnInit, OnDestroy {
     if (mismatch && confirm && !confirm.hasError('required')) {
       confirm.setErrors({ ...(confirm.errors ?? {}), passwordMismatch: true });
     } else if (!mismatch && confirm?.hasError('passwordMismatch')) {
-      const { passwordMismatch, ...rest } = confirm.errors!;
+      const rest = { ...confirm.errors };
+      delete rest['passwordMismatch'];
       confirm.setErrors(Object.keys(rest).length ? rest : null);
     }
     return mismatch ? { passwordMismatch: true } : null;
