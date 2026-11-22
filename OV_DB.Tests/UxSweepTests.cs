@@ -98,6 +98,43 @@ public class UxSweepTests
         Assert.IsType<NotFoundResult>(await anonymous.GetSharedStationMap("no-such-link"));
     }
 
+    /// <summary>The routes list's "needs attention" filter: routes an import left without operator, type or trips.</summary>
+    [Fact]
+    public async Task NeedsAttentionFilterFindsIncompleteRoutes()
+    {
+        var context = NewContext();
+        context.Maps.Add(new Map { MapId = 1, UserId = 1, Name = "Map", MapGuid = Guid.NewGuid() });
+        context.RouteTypes.Add(new RouteType { TypeId = 1, UserId = 1, Name = "Train", NameNL = "Trein", Colour = "#000" });
+        context.Operators.Add(new Operator { Id = 1, Names = ["NS"] });
+        await context.SaveChangesAsync();
+        var op = await context.Operators.SingleAsync();
+        context.Routes.AddRange(
+            new Route { RouteId = 1, Name = "Complete", Share = Guid.NewGuid(), RouteTypeId = 1, Operators = [op] },
+            new Route { RouteId = 2, Name = "No operator", Share = Guid.NewGuid(), RouteTypeId = 1 },
+            new Route { RouteId = 3, Name = "No type", Share = Guid.NewGuid(), Operators = [op] });
+        context.RoutesMaps.AddRange(
+            new RouteMap { RouteMapId = 1, RouteId = 1, MapId = 1 },
+            new RouteMap { RouteMapId = 2, RouteId = 2, MapId = 1 },
+            new RouteMap { RouteMapId = 3, RouteId = 3, MapId = 1 });
+        context.RouteInstances.AddRange(
+            new RouteInstance { RouteInstanceId = 1, RouteId = 1, Date = new DateTime(2025, 1, 1) },
+            new RouteInstance { RouteInstanceId = 2, RouteId = 3, Date = new DateTime(2025, 1, 1) });
+        await context.SaveChangesAsync();
+        var controller = new RoutesController(context, Mock.Of<IRouteRegionsService>(), Mock.Of<ITimezoneService>())
+        {
+            ControllerContext = AsUser(1)
+        };
+
+        async Task<int[]> Missing(string what) =>
+            (await controller.GetRoutes(null, null, "name", false, null, default, missing: what)).Value!.Routes
+                .Select(r => r.RouteId).OrderBy(id => id).ToArray();
+
+        Assert.Equal(new[] { 2 }, await Missing("operator"));
+        Assert.Equal(new[] { 3 }, await Missing("type"));
+        Assert.Equal(new[] { 2 }, await Missing("trips"));
+        Assert.Equal(new[] { 1, 2, 3 }, await Missing(null!));
+    }
+
     /// <summary>Station maps live in StationGroupings; the legacy StationMaps table is not what the page reads.</summary>
     [Fact]
     public async Task StationLinkResolvesFromStationGroupings()

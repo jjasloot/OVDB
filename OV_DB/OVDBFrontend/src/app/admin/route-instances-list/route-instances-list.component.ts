@@ -257,7 +257,7 @@ export class RouteInstancesListComponent implements OnInit, AfterViewInit {
   totals = { km: 0, hours: 0 };
   operatorName: string | null = null;
 
-  setFilter(key: keyof RouteListFilters, value: number | null) {
+  setFilter(key: keyof RouteListFilters, value: number | string | null) {
     this.filters = { ...this.filters, [key]: value };
     if (key === "operatorId" && value === null) {
       this.operatorName = null;

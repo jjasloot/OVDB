@@ -56,6 +56,8 @@ export interface RouteListFilters {
   mapId?: number | null;
   operatorId?: number | null;
   year?: number | null;
+  /** Routes list only: "operator", "type" or "trips" — routes without one. */
+  missing?: string | null;
 }
 
 @Injectable({

@@ -10,7 +10,7 @@
       <mat-icon matPrefix>search</mat-icon>
       <input matInput placeholder="{{ 'ROUTESLIST.SEARCH' | translate }}" #input />
     </mat-form-field>
-    <app-route-list-filters [filters]="filters" [operatorName]="operatorName"
+    <app-route-list-filters [filters]="filters" [operatorName]="operatorName" [showMissing]="true"
       (filterChange)="setFilter($event.key, $event.value)" />
   <div class="buttons desktop">
     <button mat-raised-button color="primary" (click)="editMultiple()"

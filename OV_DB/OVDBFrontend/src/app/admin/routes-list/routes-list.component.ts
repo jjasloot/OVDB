@@ -132,7 +132,7 @@ export class RoutesListComponent implements OnInit, AfterViewInit {
 
     const params = this.activatedRoute.snapshot.queryParamMap;
     const num = (key: string) => (params.get(key) ? Number(params.get(key)) : null);
-    this.filters = { typeId: num("typeId"), mapId: num("mapId"), operatorId: num("operatorId"), year: num("year") };
+    this.filters = { typeId: num("typeId"), mapId: num("mapId"), operatorId: num("operatorId"), year: num("year"), missing: params.get("missing") };
     this.operatorName = params.get("operatorName");
     
     // Load routes with restored state
@@ -179,7 +179,7 @@ export class RoutesListComponent implements OnInit, AfterViewInit {
       saveAs(data, "Export.geojson");
     });
   }
-  setFilter(key: keyof RouteListFilters, value: number | null) {
+  setFilter(key: keyof RouteListFilters, value: number | string | null) {
     this.filters = { ...this.filters, [key]: value };
     if (key === "operatorId" && value === null) {
       this.operatorName = null;

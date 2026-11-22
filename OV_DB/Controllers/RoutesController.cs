@@ -44,7 +44,8 @@ namespace OV_DB.Controllers
         // GET: api/RoutesAPI
         [HttpGet]
         public async Task<ActionResult<RouteListDTO>> GetRoutes([FromQuery] int? start, [FromQuery] int? count, [FromQuery] string sortColumn, [FromQuery] bool? descending, [FromQuery] string filter, CancellationToken cancellationToken,
-            [FromQuery] int? typeId = null, [FromQuery] int? mapId = null, [FromQuery] int? operatorId = null, [FromQuery] int? year = null)
+            [FromQuery] int? typeId = null, [FromQuery] int? mapId = null, [FromQuery] int? operatorId = null, [FromQuery] int? year = null,
+            [FromQuery] string missing = null)
         {
             var userIdClaim = User.GetUserId();
             if (userIdClaim < 0)
@@ -75,6 +76,14 @@ namespace OV_DB.Controllers
                 originalQuery = originalQuery.Where(r => r.Operators.Any(o => o.Id == operatorId));
             if (year.HasValue)
                 originalQuery = originalQuery.Where(r => r.RouteInstances.Any(ri => ri.Date.Year == year));
+            // "Needs attention": routes an import left incomplete.
+            originalQuery = missing switch
+            {
+                "operator" => originalQuery.Where(r => !r.Operators.Any()),
+                "type" => originalQuery.Where(r => r.RouteTypeId == null),
+                "trips" => originalQuery.Where(r => !r.RouteInstances.Any()),
+                _ => originalQuery,
+            };
             var query = originalQuery.SelectToRouteDTO();
             if (!string.IsNullOrWhiteSpace(sortColumn))
             {

@@ -871,5 +871,9 @@
   "FILTER.VALUE_CONTAINS": "Contains",
   "MAP.LEGEND": "Legend",
   "ROUTEINSTANCES.TOTALS": "{{trips}} trips · {{km}} km · {{hours}} h",
-  "HOME.RECENT_TRIPS": "Recent trips"
+  "HOME.RECENT_TRIPS": "Recent trips",
+  "ROUTESLIST.FILTER_MISSING": "Needs attention",
+  "ROUTESLIST.MISSING_OPERATOR": "No operator",
+  "ROUTESLIST.MISSING_TYPE": "No type",
+  "ROUTESLIST.MISSING_TRIPS": "No trips"
 }

@@ -48,6 +48,17 @@ import { Map as OvdbMap } from "src/app/models/map.model";
         }
       </mat-select>
     </mat-form-field>
+    @if (showMissing()) {
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>{{ "ROUTESLIST.FILTER_MISSING" | translate }}</mat-label>
+      <mat-select [value]="filters().missing ?? null" (selectionChange)="filterChange.emit({ key: 'missing', value: $event.value })">
+        <mat-option [value]="null">{{ "ALL" | translate }}</mat-option>
+        <mat-option value="operator">{{ "ROUTESLIST.MISSING_OPERATOR" | translate }}</mat-option>
+        <mat-option value="type">{{ "ROUTESLIST.MISSING_TYPE" | translate }}</mat-option>
+        <mat-option value="trips">{{ "ROUTESLIST.MISSING_TRIPS" | translate }}</mat-option>
+      </mat-select>
+    </mat-form-field>
+    }
     @if (filters().operatorId) {
     <mat-chip (removed)="filterChange.emit({ key: 'operatorId', value: null })">
       {{ operatorName() ?? ("ROUTESLIST.OPERATOR_FILTER" | translate) }}
@@ -62,7 +73,9 @@ export class RouteListFiltersComponent implements OnInit {
 
   filters = input.required<RouteListFilters>();
   operatorName = input<string | null>(null);
-  filterChange = output<{ key: keyof RouteListFilters; value: number | null }>();
+  /** The "needs attention" select: routes list only, it has no meaning for trips. */
+  showMissing = input(false);
+  filterChange = output<{ key: keyof RouteListFilters; value: number | string | null }>();
 
   types = signal<RouteType[]>([]);
   maps = signal<OvdbMap[]>([]);

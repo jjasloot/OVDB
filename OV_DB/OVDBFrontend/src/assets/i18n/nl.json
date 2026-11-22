@@ -871,5 +871,9 @@
   "FILTER.VALUE_CONTAINS": "Bevat",
   "MAP.LEGEND": "Legenda",
   "ROUTEINSTANCES.TOTALS": "{{trips}} ritten · {{km}} km · {{hours}} uur",
-  "HOME.RECENT_TRIPS": "Recente ritten"
+  "HOME.RECENT_TRIPS": "Recente ritten",
+  "ROUTESLIST.FILTER_MISSING": "Aandacht nodig",
+  "ROUTESLIST.MISSING_OPERATOR": "Geen vervoerder",
+  "ROUTESLIST.MISSING_TYPE": "Geen type",
+  "ROUTESLIST.MISSING_TRIPS": "Geen ritten"
 }
