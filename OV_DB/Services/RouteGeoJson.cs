@@ -151,7 +151,7 @@ namespace OV_DB.Services
         /// <summary>
         /// What makes two trips on one route the same trip, so a re-import adds only the missing ones.
         /// </summary>
-        public static string TripKey(int? traewellingStatusId, DateTime date, DateTime? start, DateTime? end) =>
-            traewellingStatusId?.ToString() ?? $"{date:O}|{start:O}|{end:O}";
+        public static string TripKey(int? traewellingStatusId, string traewellingStatusUuid, DateTime date, DateTime? start, DateTime? end) =>
+            traewellingStatusId?.ToString() ?? traewellingStatusUuid ?? $"{date:O}|{start:O}|{end:O}";
     }
 }

@@ -805,7 +805,7 @@ export class ApiService {
     );
   }
 
-  ignoreTrawellingStatus(statusId: number): Observable<TrawellingIgnoreResponse> {
+  ignoreTrawellingStatus(statusId: string): Observable<TrawellingIgnoreResponse> {
     return this.httpClient.post<TrawellingIgnoreResponse>(
       environment.backend + "api/traewelling/ignore",
       { statusId }

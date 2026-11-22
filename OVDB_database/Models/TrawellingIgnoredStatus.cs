@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 namespace OVDB_database.Models
 {
     [Index(nameof(UserId), nameof(TrawellingStatusId), IsUnique = true)]
-    [Index(nameof(UserId), nameof(TrawellingStatusUuid))]
+    [Index(nameof(UserId), nameof(TrawellingStatusUuid), IsUnique = true)]
     public class TrawellingIgnoredStatus
     {
         [Key]
@@ -14,8 +14,8 @@ namespace OVDB_database.Models
         [Required]
         public int UserId { get; set; }
         
-        [Required]
-        public int TrawellingStatusId { get; set; }
+        /// <summary>Träwelling's numeric id; null for a status that came with only its UUID.</summary>
+        public int? TrawellingStatusId { get; set; }
 
         /// <summary>Träwelling's UUID for the status (see RouteInstance.TrawellingStatusUuid).</summary>
         [MaxLength(36)]

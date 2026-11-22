@@ -686,7 +686,7 @@ namespace OVDB_database.Migrations
                     b.Property<DateTime>("IgnoredAt")
                         .HasColumnType("datetime(6)");
 
-                    b.Property<int>("TrawellingStatusId")
+                    b.Property<int?>("TrawellingStatusId")
                         .HasColumnType("int");
 
                     b.Property<string>("TrawellingStatusUuid")
@@ -701,7 +701,8 @@ namespace OVDB_database.Migrations
                     b.HasIndex("UserId", "TrawellingStatusId")
                         .IsUnique();
 
-                    b.HasIndex("UserId", "TrawellingStatusUuid");
+                    b.HasIndex("UserId", "TrawellingStatusUuid")
+                        .IsUnique();
 
                     b.ToTable("TrawellingIgnoredStatuses");
                 });
@@ -733,7 +734,7 @@ namespace OVDB_database.Migrations
                     b.Property<int>("State")
                         .HasColumnType("int");
 
-                    b.Property<int>("TrawellingStatusId")
+                    b.Property<int?>("TrawellingStatusId")
                         .HasColumnType("int");
 
                     b.Property<string>("TrawellingStatusUuid")
@@ -748,7 +749,8 @@ namespace OVDB_database.Migrations
                     b.HasIndex("UserId", "TrawellingStatusId")
                         .IsUnique();
 
-                    b.HasIndex("UserId", "TrawellingStatusUuid");
+                    b.HasIndex("UserId", "TrawellingStatusUuid")
+                        .IsUnique();
 
                     b.ToTable("TrawellingInboxStatuses");
                 });

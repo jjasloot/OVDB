@@ -609,7 +609,8 @@ namespace OV_DB.Models
     // Optimized DTOs for frontend with local timing
     public class TrawellingTripDto
     {
-        public int Id { get; set; }
+        /// <summary>The status key (see TraewellingStatusKey): the UUID when known, else the number.</summary>
+        public string Id { get; set; }
         public string Body { get; set; }
         public TrawellingBusiness Business { get; set; }
         public TrawellingStatusVisibility Visibility { get; set; }
@@ -693,7 +694,7 @@ namespace OV_DB.Models
     /// </summary>
     public class TrawellingConflictDto
     {
-        public int StatusId { get; set; }
+        public string StatusId { get; set; }
         /// <summary>ChangedAfterImport or DeletedUpstream</summary>
         public string State { get; set; }
         public DateTime LastEventAt { get; set; }
@@ -712,7 +713,7 @@ namespace OV_DB.Models
 
     public class LinkToRouteInstanceRequest
     {
-        public int StatusId { get; set; }
+        public string StatusId { get; set; }
         public int RouteInstanceId { get; set; }
     }
 
@@ -740,7 +741,7 @@ namespace OV_DB.Models
 
     public class TrawellingIgnoreRequest
     {
-        public int StatusId { get; set; }
+        public string StatusId { get; set; }
     }
 
     public class TrawellingIgnoreResponse

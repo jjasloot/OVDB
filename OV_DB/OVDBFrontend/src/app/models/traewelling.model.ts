@@ -33,7 +33,7 @@ export interface TrawellingTripsResponse {
 }
 
 export interface TrawellingConflict {
-  statusId: number;
+  statusId: string;
   state: 'ChangedAfterImport' | 'DeletedUpstream';
   lastEventAt: string;
   routeInstanceId: number;
@@ -50,7 +50,8 @@ export interface TrawellingConflict {
 export type TrawellingConflictAction = 'apply-times' | 'reimport' | 'dismiss' | 'delete-instance';
 
 export interface TrawellingTrip {
-  id: number;
+  /** The status key: its Träwelling UUID, or its number for statuses that have none yet. */
+  id: string;
   body?: string;
   createdAt: string;
   transport: TrawellingTransport;
@@ -137,7 +138,7 @@ export interface RouteInstanceSearchResult {
 }
 
 export interface LinkToRouteInstanceRequest {
-  statusId: number;
+  statusId: string;
   routeInstanceId: number;
 }
 
@@ -156,7 +157,7 @@ export interface LinkToRouteInstanceResponse {
 
 // Ignore functionality
 export interface TrawellingIgnoreRequest {
-  statusId: number;
+  statusId: string;
 }
 
 export interface TrawellingIgnoreResponse {
@@ -242,7 +243,7 @@ export interface TrawellingStats {
 
 // Trip context for route creation workflows
 export interface TrawellingTripContext {
-  tripId: number;
+  tripId: string;
   originName: string;
   destinationName: string;
   departureTime?: string;

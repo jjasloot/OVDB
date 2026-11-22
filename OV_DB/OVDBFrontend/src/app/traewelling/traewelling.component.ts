@@ -83,7 +83,7 @@ export class TrawellingComponent implements OnInit, OnDestroy {
     this.liveService.disconnect();
   }
 
-  removeTrip(tripId: number): void {
+  removeTrip(tripId: string): void {
     this.trips = this.trips.filter(trip => trip.id !== tripId);
   }
 
@@ -100,7 +100,7 @@ export class TrawellingComponent implements OnInit, OnDestroy {
   }
 
   /** A conflict the backend decided has nothing left to report — a like, or an edit undone. */
-  private removeConflict(statusId: number): void {
+  private removeConflict(statusId: string): void {
     this.conflicts = this.conflicts.filter(c => c.statusId !== statusId);
   }
 

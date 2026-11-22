@@ -113,7 +113,7 @@ namespace OV_DB.Services
 
                 return new TrawellingTripDto
                 {
-                    Id = status.Id,
+                    Id = TraewellingStatusKey.Of(status).ToString(),
                     Body = status.Body,
                     Business = status.Business,
                     Visibility = status.Visibility,

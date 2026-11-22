@@ -348,7 +348,7 @@ namespace OV_DB.Controllers
                 if (!_api.IsConnected(user))
                     return BadRequest("Träwelling account not connected or tokens expired");
 
-                var success = await _trawellingService.IgnoreStatusAsync(user, request.StatusId);
+                var success = await _trawellingService.IgnoreStatusAsync(user, TraewellingStatusKey.Parse(request.StatusId));
 
                 if (!success)
                     return BadRequest("Failed to ignore status or status already ignored");
@@ -428,50 +428,50 @@ namespace OV_DB.Controllers
             }
         }
 
-        [HttpPost("conflicts/{statusId:int}/apply-times")]
-        public async Task<IActionResult> ApplyConflictTimes(int statusId)
+        [HttpPost("conflicts/{statusId}/apply-times")]
+        public async Task<IActionResult> ApplyConflictTimes(string statusId)
         {
             var user = await GetAuthorizedUserAsync();
             if (user == null)
                 return Unauthorized();
 
-            return await _trawellingService.ApplyConflictTimesAsync(user, statusId)
+            return await _trawellingService.ApplyConflictTimesAsync(user, TraewellingStatusKey.Parse(statusId))
                 ? Ok(new { success = true })
                 : BadRequest("Conflict not found or times could not be applied");
         }
 
-        [HttpPost("conflicts/{statusId:int}/reimport")]
-        public async Task<IActionResult> ReimportConflict(int statusId)
+        [HttpPost("conflicts/{statusId}/reimport")]
+        public async Task<IActionResult> ReimportConflict(string statusId)
         {
             var user = await GetAuthorizedUserAsync();
             if (user == null)
                 return Unauthorized();
 
-            return await _trawellingService.ReimportConflictAsync(user, statusId)
+            return await _trawellingService.ReimportConflictAsync(user, TraewellingStatusKey.Parse(statusId))
                 ? Ok(new { success = true })
                 : BadRequest("Conflict not found");
         }
 
-        [HttpPost("conflicts/{statusId:int}/dismiss")]
-        public async Task<IActionResult> DismissConflict(int statusId)
+        [HttpPost("conflicts/{statusId}/dismiss")]
+        public async Task<IActionResult> DismissConflict(string statusId)
         {
             var user = await GetAuthorizedUserAsync();
             if (user == null)
                 return Unauthorized();
 
-            return await _trawellingService.DismissConflictAsync(user, statusId)
+            return await _trawellingService.DismissConflictAsync(user, TraewellingStatusKey.Parse(statusId))
                 ? Ok(new { success = true })
                 : BadRequest("Conflict not found");
         }
 
-        [HttpPost("conflicts/{statusId:int}/delete-instance")]
-        public async Task<IActionResult> DeleteInstanceForConflict(int statusId)
+        [HttpPost("conflicts/{statusId}/delete-instance")]
+        public async Task<IActionResult> DeleteInstanceForConflict(string statusId)
         {
             var user = await GetAuthorizedUserAsync();
             if (user == null)
                 return Unauthorized();
 
-            return await _trawellingService.DeleteInstanceForConflictAsync(user, statusId)
+            return await _trawellingService.DeleteInstanceForConflictAsync(user, TraewellingStatusKey.Parse(statusId))
                 ? Ok(new { success = true })
                 : BadRequest("Conflict not found");
         }
@@ -511,7 +511,7 @@ namespace OV_DB.Controllers
                 // Count RouteInstances linked to Träwelling
                 var importedTripsCount = await _dbContext.RouteInstances
                     .Where(ownedByUser)
-                    .Where(ri => ri.TrawellingStatusId.HasValue)
+                    .Where(ri => ri.TrawellingStatusId.HasValue || ri.TrawellingStatusUuid != null)
                     .CountAsync();
 
                 // Count RouteInstances with timing data
@@ -575,7 +575,7 @@ namespace OV_DB.Controllers
                     endTime = ri.EndTime,
                     durationHours = ri.DurationHours,
                     trawellingStatusId = ri.TrawellingStatusId,
-                    hasTraewellingLink = ri.TrawellingStatusId.HasValue
+                    hasTraewellingLink = ri.TrawellingStatusId.HasValue || ri.TrawellingStatusUuid != null
                 }).ToList();
 
                 return Ok(result);
@@ -606,13 +606,15 @@ namespace OV_DB.Controllers
 
                 // Linking is an import too, so it earns the same station suggestions. Read the
                 // check-in payload first: linking clears the inbox row, and with it the trip id.
+                var key = TraewellingStatusKey.Parse(request.StatusId);
                 var payload = await _dbContext.TrawellingInboxStatuses
-                    .Where(s => s.UserId == userId.Value && s.TrawellingStatusId == request.StatusId)
+                    .Where(s => s.UserId == userId.Value)
+                    .WhereStatus(key)
                     .Select(s => s.PayloadJson)
                     .FirstOrDefaultAsync();
 
                 var routeInstance = await _trawellingService.LinkStatusToRouteInstanceAsync(
-                    user, request.StatusId, request.RouteInstanceId);
+                    user, key, request.RouteInstanceId);
 
                 if (routeInstance == null)
                     return BadRequest("Failed to link status to RouteInstance. Status may already be linked or RouteInstance may not exist.");

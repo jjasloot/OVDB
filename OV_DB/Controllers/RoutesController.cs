@@ -651,11 +651,11 @@ namespace OV_DB.Controllers
             {
                 // Counted, not a set: two untimed trips on the same day are two trips.
                 var known = route.RouteInstances
-                    .GroupBy(ri => RouteGeoJson.TripKey(ri.TrawellingStatusId, ri.Date, ri.StartTime, ri.EndTime))
+                    .GroupBy(ri => RouteGeoJson.TripKey(ri.TrawellingStatusId, ri.TrawellingStatusUuid, ri.Date, ri.StartTime, ri.EndTime))
                     .ToDictionary(g => g.Key, g => g.Count());
                 foreach (var trip in trips ?? [])
                 {
-                    var key = RouteGeoJson.TripKey(trip.TraewellingStatusId, trip.Date, trip.StartTime, trip.EndTime);
+                    var key = RouteGeoJson.TripKey(trip.TraewellingStatusId, trip.TraewellingStatusUuid, trip.Date, trip.StartTime, trip.EndTime);
                     if (known.GetValueOrDefault(key) > 0)
                     {
                         known[key]--;
@@ -1083,6 +1083,24 @@ namespace OV_DB.Controllers
             // any station suggestions against the trip it just imported.
             RouteInstance savedInstance = null;
 
+            // The Träwelling status this trip imports, if any. Both ids, and the payload, come from its
+            // inbox row, which is deleted once the trip is saved.
+            var statusKey = TraewellingStatusKey.Parse(update.TraewellingStatusId);
+            string statusPayload = null;
+            if (!statusKey.IsEmpty)
+            {
+                var inboxRow = await _context.TrawellingInboxStatuses
+                    .Where(s => s.UserId == userIdClaim)
+                    .WhereStatus(statusKey)
+                    .Select(s => new { s.TrawellingStatusId, s.TrawellingStatusUuid, s.PayloadJson })
+                    .FirstOrDefaultAsync();
+                if (inboxRow != null)
+                {
+                    statusKey = new TraewellingStatusKey(inboxRow.TrawellingStatusId, inboxRow.TrawellingStatusUuid);
+                    statusPayload = inboxRow.PayloadJson;
+                }
+            }
+
             if (update.RouteInstanceId.HasValue)
             {
                 var current = await _context.RouteInstances
@@ -1140,9 +1158,10 @@ namespace OV_DB.Controllers
                     mapIds.Where(id => !current.RouteInstanceMaps.Any(ri => ri.MapId == id)).ToList()
                         .ForEach(id => current.RouteInstanceMaps.Add(new RouteInstanceMap { MapId = id }));
 
-                    if (update.TraewellingStatusId.HasValue)
+                    if (!statusKey.IsEmpty)
                     {
-                        current.TrawellingStatusId = update.TraewellingStatusId.Value;
+                        current.TrawellingStatusId = statusKey.Id;
+                        current.TrawellingStatusUuid = statusKey.Uuid;
                     }
 
                 }
@@ -1151,9 +1170,8 @@ namespace OV_DB.Controllers
             {
                 // A double-click or a second tab must not import the same check-in twice: later
                 // updates and deletes from Träwelling would only ever reach one of the copies.
-                if (update.TraewellingStatusId.HasValue && await _context.RouteInstances.AnyAsync(ri =>
-                        ri.TrawellingStatusId == update.TraewellingStatusId.Value
-                        && (ri.RouteInstanceMaps.Any(rim => rim.Map.UserId == userIdClaim) || ri.Route.RouteMaps.Any(rm => rm.Map.UserId == userIdClaim))))
+                if (!statusKey.IsEmpty && await _context.RouteInstances.WhereStatus(statusKey).AnyAsync(ri =>
+                        (ri.RouteInstanceMaps.Any(rim => rim.Map.UserId == userIdClaim) || ri.Route.RouteMaps.Any(rm => rm.Map.UserId == userIdClaim))))
                 {
                     return Conflict("This check-in has already been imported");
                 }
@@ -1166,7 +1184,8 @@ namespace OV_DB.Controllers
                     EndTime = update.EndTime,
                     ScheduledStartTime = update.ScheduledStartTime,
                     ScheduledEndTime = update.ScheduledEndTime,
-                    TrawellingStatusId = update.TraewellingStatusId
+                    TrawellingStatusId = statusKey.Id,
+                    TrawellingStatusUuid = statusKey.Uuid,
                 };
 
                 // Calculate and store duration if both start and end times are provided
@@ -1196,29 +1215,19 @@ namespace OV_DB.Controllers
             await _context.SaveChangesAsync();
 
             var suggestions = StationSuggestionResult.Nothing;
-            if (update.TraewellingStatusId.HasValue)
+            if (!statusKey.IsEmpty)
             {
                 // This is the import moment, and the only place the calling pattern is worth
-                // fetching: the inbox row still holds the check-in payload, so the trip id is free.
-                // Read it before the delete below takes it away.
-                var inboxRow = await _context.TrawellingInboxStatuses
-                    .Where(s => s.UserId == userIdClaim && s.TrawellingStatusId == update.TraewellingStatusId.Value)
-                    .Select(s => new { s.PayloadJson, s.TrawellingStatusUuid })
-                    .FirstOrDefaultAsync();
-                var payload = inboxRow?.PayloadJson;
-                // The UUID only lives on the inbox row, which is deleted below: keep it on the trip.
-                if (savedInstance != null && inboxRow?.TrawellingStatusUuid != null)
-                {
-                    savedInstance.TrawellingStatusUuid = inboxRow.TrawellingStatusUuid;
-                    await _context.SaveChangesAsync();
-                }
+                // fetching: the inbox row held the check-in payload, so the trip id is free.
+                var payload = statusPayload;
 
                 // The status is imported now; its Träwelling inbox row is no longer pending.
                 // Before the suggestions rather than after: the trip is saved either way, and the
                 // fetch below can be abandoned — if the client has gone, skipping this would leave
                 // an imported trip sitting in the inbox pretending it still needs importing.
                 await _context.TrawellingInboxStatuses
-                    .Where(s => s.UserId == userIdClaim && s.TrawellingStatusId == update.TraewellingStatusId.Value)
+                    .Where(s => s.UserId == userIdClaim)
+                    .WhereStatus(statusKey)
                     .ExecuteDeleteAsync();
 
                 var user = await _context.Users.SingleOrDefaultAsync(u => u.Id == userIdClaim);

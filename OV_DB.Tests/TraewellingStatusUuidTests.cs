@@ -22,7 +22,7 @@ namespace OV_DB.Tests;
 
 /// <summary>
 /// Träwelling's status ids are moving to UUIDs. OVDB stores both, fills the UUID on a resync, and keeps
-/// working when a status arrives with only a UUID: known ones are matched by it, new ones get a local key.
+/// working when a status arrives with only a UUID: rows are keyed by it, with the number kept where known.
 /// </summary>
 public class TraewellingStatusUuidTests
 {
@@ -99,14 +99,14 @@ public class TraewellingStatusUuidTests
     }
 
     [Fact]
-    public async Task WithoutNumericIdsANewStatusGetsALocalKeyAndKeepsItsUuid()
+    public async Task WithoutNumericIdsANewStatusIsKeyedByItsUuid()
     {
         var (service, user, context) = NewService(Status($"\"{NewUuid}\""));
 
         await service.SweepInboxAsync(user, TrawellingSweepMode.Full);
 
         var row = await context.TrawellingInboxStatuses.SingleAsync();
-        Assert.True(row.TrawellingStatusId < 0);
+        Assert.Null(row.TrawellingStatusId);
         Assert.Equal(NewUuid, row.TrawellingStatusUuid);
     }
 
@@ -133,6 +133,85 @@ public class TraewellingStatusUuidTests
         var (service2, user2, context2) = NewService(Status("202", NewUuid));
         await service2.SweepInboxAsync(user2, TrawellingSweepMode.Full);
         Assert.NotNull((await context2.Users.SingleAsync()).TraewellingLastReceivedAt);
+    }
+
+    private static TrawellingInboxStatus InboxRow(int? id, string uuid, TrawellingInboxState state = TrawellingInboxState.Pending) => new()
+    {
+        UserId = 1, TrawellingStatusId = id, TrawellingStatusUuid = uuid, State = state, PayloadJson = "{}",
+        DepartureAt = new DateTime(2017, 10, 15, 12, 0, 0), ReceivedAt = DateTime.UtcNow, LastEventAt = DateTime.UtcNow,
+    };
+
+    [Fact]
+    public async Task HealingUpstreamDeletesMatchesRowsByNumberOrUuid()
+    {
+        // The listing has one status by UUID only and one by number only.
+        var (service, user, context) = NewService(Status($"\"{NewUuid}\"") + "," + Status("303"));
+        context.TrawellingInboxStatuses.AddRange(
+            InboxRow(null, NewUuid),                                  // listed by its UUID
+            InboxRow(303, "9b2f4c1e-0000-4000-8000-000000000003"),    // stamped, listed by its number
+            InboxRow(null, "9b2f4c1e-0000-4000-8000-000000000004"));  // gone upstream
+        await context.SaveChangesAsync();
+
+        await service.SweepInboxAsync(user, TrawellingSweepMode.Full);
+
+        var left = await context.TrawellingInboxStatuses.Select(s => s.TrawellingStatusUuid).ToListAsync();
+        Assert.Equal(new[] { NewUuid, "9b2f4c1e-0000-4000-8000-000000000003" }.OrderBy(u => u), left.OrderBy(u => u));
+    }
+
+    private static string Webhook(string eventType, string status) => "{\"event\":\"" + eventType + "\",\"status\":" + status + "}";
+
+    [Fact]
+    public async Task AWebhookWithOnlyAUuidCreatesAndDeletesItsInboxRow()
+    {
+        var (service, user, context) = NewService("");
+
+        await service.ProcessWebhookEventAsync(user, Webhook("checkin_create", Status($"\"{NewUuid}\"")));
+        var row = await context.TrawellingInboxStatuses.SingleAsync();
+        Assert.Null(row.TrawellingStatusId);
+        Assert.Equal(NewUuid, row.TrawellingStatusUuid);
+
+        await service.ProcessWebhookEventAsync(user, Webhook("checkin_delete", Status($"\"{NewUuid}\"")));
+        Assert.Empty(context.TrawellingInboxStatuses);
+    }
+
+    [Fact]
+    public async Task AWebhookWithOnlyAUuidFindsATripImportedUnderItsNumber()
+    {
+        var (service, user, context) = NewService("");
+        (await context.RouteInstances.SingleAsync()).TrawellingStatusUuid = KnownUuid; // stamped by a resync
+        await context.SaveChangesAsync();
+
+        await service.ProcessWebhookEventAsync(user, Webhook("checkin_delete", Status($"\"{KnownUuid}\"")));
+
+        // Flagged for review against the imported trip, not dropped as an unknown status.
+        var row = await context.TrawellingInboxStatuses.SingleAsync();
+        Assert.Equal(TrawellingInboxState.DeletedUpstream, row.State);
+        Assert.Equal(KnownUuid, row.TrawellingStatusUuid);
+    }
+
+    [Theory]
+    [InlineData("101")]       // from a page loaded before the row got its UUID
+    [InlineData(KnownUuid)]
+    public async Task EitherKeyFindsAStampedRow(string key)
+    {
+        var (service, user, context) = NewService("");
+        context.TrawellingInboxStatuses.Add(InboxRow(101, KnownUuid, TrawellingInboxState.ChangedAfterImport));
+        await context.SaveChangesAsync();
+
+        Assert.True(await service.DismissConflictAsync(user, TraewellingStatusKey.Parse(key)));
+        Assert.Equal(TrawellingInboxState.ConflictDismissed, (await context.TrawellingInboxStatuses.SingleAsync()).State);
+    }
+
+    [Theory]
+    [InlineData("101", 101, null)]
+    [InlineData(KnownUuid, null, KnownUuid)]
+    [InlineData("1671DECA-CE69-448D-967E-83911020A66A", null, KnownUuid)]
+    [InlineData("-5", null, null)]
+    [InlineData("nonsense", null, null)]
+    [InlineData(null, null, null)]
+    public void AClientKeyIsAUuidOrAPositiveNumber(string key, int? id, string uuid)
+    {
+        Assert.Equal(new TraewellingStatusKey(id, uuid), TraewellingStatusKey.Parse(key));
     }
 
     [Theory]

@@ -22,9 +22,9 @@ export class TraewellingLiveService {
   private connection?: HubConnection;
 
   tripUpserted$ = new Subject<TrawellingTrip>();
-  tripRemoved$ = new Subject<number>();
+  tripRemoved$ = new Subject<string>();
   conflictUpserted$ = new Subject<TrawellingConflict>();
-  conflictRemoved$ = new Subject<number>();
+  conflictRemoved$ = new Subject<string>();
   resyncProgress$ = new Subject<TrawellingResyncProgress>();
   resyncFinished$ = new Subject<TrawellingResyncResult>();
 
@@ -47,7 +47,7 @@ export class TraewellingLiveService {
         console.error('Could not parse live Träwelling trip payload', err);
       }
     });
-    connection.on('PendingTripRemoved', (statusId: number) => {
+    connection.on('PendingTripRemoved', (statusId: string) => {
       this.tripRemoved$.next(statusId);
     });
     connection.on('ConflictUpserted', (conflictJson: string) => {
@@ -57,7 +57,7 @@ export class TraewellingLiveService {
         console.error('Could not parse live Träwelling conflict payload', err);
       }
     });
-    connection.on('ConflictRemoved', (statusId: number) => {
+    connection.on('ConflictRemoved', (statusId: string) => {
       this.conflictRemoved$.next(statusId);
     });
     connection.on('ResyncProgress', (progressJson: string) => {

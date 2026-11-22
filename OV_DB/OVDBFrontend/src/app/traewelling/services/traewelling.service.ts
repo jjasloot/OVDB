@@ -72,14 +72,14 @@ export class TrawellingService {
       );
   }
 
-  async resolveConflict(statusId: number, action: TrawellingConflictAction): Promise<boolean> {
+  async resolveConflict(statusId: string, action: TrawellingConflictAction): Promise<boolean> {
     const response = await firstValueFrom(this.http.post<{ success: boolean }>(
-      `${this.baseUrl}/conflicts/${statusId}/${action}`, {})
+      `${this.baseUrl}/conflicts/${encodeURIComponent(statusId)}/${action}`, {})
       .pipe(first()));
     return response?.success ?? false;
   }
 
-  async ignoreTrip(tripId: number): Promise<TrawellingIgnoreResponse> {
+  async ignoreTrip(tripId: string): Promise<TrawellingIgnoreResponse> {
     const request: TrawellingIgnoreRequest = { statusId: tripId };
     return firstValueFrom(this.http.post<TrawellingIgnoreResponse>(`${this.baseUrl}/ignore`, request)
       .pipe(first())
@@ -102,7 +102,7 @@ export class TrawellingService {
       );
   }
 
-  async linkToRouteInstance(tripId: number, routeInstanceId: number): Promise<LinkToRouteInstanceResponse> {
+  async linkToRouteInstance(tripId: string, routeInstanceId: number): Promise<LinkToRouteInstanceResponse> {
     const request: LinkToRouteInstanceRequest = { statusId: tripId, routeInstanceId };
     return firstValueFrom(this.http.post<LinkToRouteInstanceResponse>(`${this.baseUrl}/link`, request)
       .pipe(first())

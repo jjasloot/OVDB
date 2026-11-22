@@ -93,7 +93,7 @@ public class TrawellingAccountSafetyTests
         context.RouteInstances.Add(new RouteInstance { RouteInstanceId = 100, RouteId = 1, Date = new DateTime(2026, 8, 1) });
         await context.SaveChangesAsync();
 
-        var result = await service.LinkStatusToRouteInstanceAsync(attacker, statusId: 555, routeInstanceId: 100);
+        var result = await service.LinkStatusToRouteInstanceAsync(attacker, new TraewellingStatusKey(555, null), routeInstanceId: 100);
 
         Assert.Null(result);
         Assert.Null((await context.RouteInstances.SingleAsync()).TrawellingStatusId);

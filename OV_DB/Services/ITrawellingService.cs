@@ -61,8 +61,8 @@ namespace OV_DB.Services
         /// Remove a status from the inbox after it has been imported or ignored
         /// </summary>
         /// <param name="userId">OVDB user id</param>
-        /// <param name="statusId">Träwelling status id</param>
-        Task RemoveFromInboxAsync(int userId, int statusId);
+        /// <param name="key">Träwelling status id</param>
+        Task RemoveFromInboxAsync(int userId, TraewellingStatusKey key);
 
         /// <summary>
         /// List imported trips whose Träwelling status was edited or deleted upstream,
@@ -75,23 +75,23 @@ namespace OV_DB.Services
         /// Apply the upstream time changes of a ChangedAfterImport conflict to the linked
         /// RouteInstance and resolve the conflict
         /// </summary>
-        Task<bool> ApplyConflictTimesAsync(User user, int statusId);
+        Task<bool> ApplyConflictTimesAsync(User user, TraewellingStatusKey key);
 
         /// <summary>
         /// Unlink the RouteInstance and put the status back in the unimported list
         /// </summary>
-        Task<bool> ReimportConflictAsync(User user, int statusId);
+        Task<bool> ReimportConflictAsync(User user, TraewellingStatusKey key);
 
         /// <summary>
         /// Dismiss a conflict; a dismissed change won't re-flag unless the journey facts
         /// change again
         /// </summary>
-        Task<bool> DismissConflictAsync(User user, int statusId);
+        Task<bool> DismissConflictAsync(User user, TraewellingStatusKey key);
 
         /// <summary>
         /// Delete the linked RouteInstance following an upstream deletion (DeletedUpstream)
         /// </summary>
-        Task<bool> DeleteInstanceForConflictAsync(User user, int statusId);
+        Task<bool> DeleteInstanceForConflictAsync(User user, TraewellingStatusKey key);
 
         /// <summary>
         /// Apply a verified webhook delivery to the inbox: creates/updates pending statuses,
@@ -106,9 +106,9 @@ namespace OV_DB.Services
         /// Ignore a specific Träwelling status so it doesn't appear in unimported list
         /// </summary>
         /// <param name="user">User ignoring the status</param>
-        /// <param name="statusId">Träwelling status ID to ignore</param>
+        /// <param name="key">Träwelling status ID to ignore</param>
         /// <returns>Success status</returns>
-        Task<bool> IgnoreStatusAsync(User user, int statusId);
+        Task<bool> IgnoreStatusAsync(User user, TraewellingStatusKey key);
 
         /// <summary>
         /// Existing RouteInstances on a date that are not linked to Träwelling yet
@@ -119,10 +119,10 @@ namespace OV_DB.Services
         /// Link a Träwelling status to an existing RouteInstance
         /// </summary>
         /// <param name="user">User performing the link</param>
-        /// <param name="statusId">Träwelling status ID</param>
+        /// <param name="key">Träwelling status ID</param>
         /// <param name="routeInstanceId">Existing OVDB RouteInstance ID</param>
         /// <returns>Updated RouteInstance or null if failed</returns>
-        Task<RouteInstance> LinkStatusToRouteInstanceAsync(User user, int statusId, int routeInstanceId);
+        Task<RouteInstance> LinkStatusToRouteInstanceAsync(User user, TraewellingStatusKey key, int routeInstanceId);
 
         /// <summary>
         /// Backfill scheduled (planned) departure and arrival times for existing trips imported from Träwelling

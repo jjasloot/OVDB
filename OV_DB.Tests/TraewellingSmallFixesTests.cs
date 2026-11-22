@@ -90,7 +90,7 @@ public class TraewellingSmallFixesTests
         await context.SaveChangesAsync();
 
         var api = new Mock<ITraewellingApiClient>();
-        api.Setup(a => a.FetchStatusRawAsync(It.IsAny<User>(), 123456, It.IsAny<bool>(), It.IsAny<string>()))
+        api.Setup(a => a.FetchStatusRawAsync(It.IsAny<User>(), new TraewellingStatusKey(123456, null), It.IsAny<bool>()))
             .ReturnsAsync(("{}", Status(departurePlanned: null, arrivalPlanned: null)));
         var service = new TrawellingService(api.Object, new TraewellingTripMapper(Mock.Of<ITimezoneService>(), NullLogger<TraewellingTripMapper>.Instance),
             Mock.Of<ITimezoneService>(), context, NullLogger<TrawellingService>.Instance, new MemoryCache(new MemoryCacheOptions()),
@@ -102,6 +102,6 @@ public class TraewellingSmallFixesTests
         Assert.Equal((1, 0, 1), first);
         Assert.Equal((0, 0, 0), second);
         Assert.True((await context.RouteInstances.SingleAsync()).ScheduledTimesUnavailable);
-        api.Verify(a => a.FetchStatusRawAsync(It.IsAny<User>(), 123456, It.IsAny<bool>(), It.IsAny<string>()), Times.Once);
+        api.Verify(a => a.FetchStatusRawAsync(It.IsAny<User>(), new TraewellingStatusKey(123456, null), It.IsAny<bool>()), Times.Once);
     }
 }

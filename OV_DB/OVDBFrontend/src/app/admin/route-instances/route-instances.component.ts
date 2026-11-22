@@ -132,7 +132,7 @@ export class RouteInstancesComponent implements OnInit {
           const tripDataStr = sessionStorage.getItem('traewellingTripContext');
           if (tripDataStr) {
             const trawellingTripData = JSON.parse(tripDataStr) as TrawellingTripContext;
-            if (trawellingTripData.tripId === +params['traewellingTripId']) {
+            if (String(trawellingTripData.tripId) === params['traewellingTripId']) {
               // If the IDs match, use the data
               this.trawellingTripData.set(trawellingTripData);
               if (!this.newRoute()) {

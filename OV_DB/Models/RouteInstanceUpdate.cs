@@ -17,6 +17,7 @@ namespace OV_DB.Models
         public DateTime? ScheduledEndTime { get; set; }
         public List<RouteInstancePropertyUpdate> RouteInstanceProperties { get; set; }
         public List<RouteInstanceMap> RouteInstanceMaps { get; set; }
-        public int? TraewellingStatusId { get; set; }
+        /// <summary>The Träwelling status this trip imports: its UUID, or its number for statuses that have none yet.</summary>
+        public string TraewellingStatusId { get; set; }
     }
 }

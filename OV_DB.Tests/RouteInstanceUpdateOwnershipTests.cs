@@ -93,7 +93,28 @@ public class RouteInstanceUpdateOwnershipTests
         await context.SaveChangesAsync();
 
         var second = NewTrip(MyMap);
-        second.TraewellingStatusId = 777;
+        second.TraewellingStatusId = "777";
+        var result = await controller.UpdateInstance(second, Mock.Of<IStationSuggestionService>());
+
+        Assert.IsType<ConflictObjectResult>(result);
+        Assert.Equal(1, await context.RouteInstances.CountAsync());
+    }
+
+    private const string Uuid = "1671deca-ce69-448d-967e-83911020a66a";
+
+    [Theory]
+    [InlineData(777, null, Uuid)]    // imported under its number, sent by UUID: the inbox row links them
+    [InlineData(null, Uuid, "777")]  // imported by UUID, sent by number from an older page
+    [InlineData(null, Uuid, Uuid)]
+    public async Task SameCheckInIsNotImportedTwiceWhicheverKeyIsUsed(int? importedId, string importedUuid, string sentKey)
+    {
+        var (controller, context) = await SetUpAsync();
+        context.RouteInstances.Add(new RouteInstance { RouteInstanceId = 5, RouteId = 1, Date = new DateTime(2026, 8, 1), TrawellingStatusId = importedId, TrawellingStatusUuid = importedUuid });
+        context.TrawellingInboxStatuses.Add(new TrawellingInboxStatus { UserId = Me, TrawellingStatusId = 777, TrawellingStatusUuid = Uuid, PayloadJson = "{}" });
+        await context.SaveChangesAsync();
+
+        var second = NewTrip(MyMap);
+        second.TraewellingStatusId = sentKey;
         var result = await controller.UpdateInstance(second, Mock.Of<IStationSuggestionService>());
 
         Assert.IsType<ConflictObjectResult>(result);

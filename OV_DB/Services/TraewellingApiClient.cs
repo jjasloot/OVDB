@@ -125,7 +125,7 @@ namespace OV_DB.Services
         /// <param name="waitIfLimited">False for callers that must answer quickly (webhook deliveries):
         /// gives up instead of waiting out the rate limit or retrying.</param>
         /// <param name="uuid">The status's UUID when known: preferred, and required for a negative (local-only) id.</param>
-        Task<(string Json, TrawellingStatus Status)> FetchStatusRawAsync(User user, int statusId, bool waitIfLimited = true, string uuid = null);
+        Task<(string Json, TrawellingStatus Status)> FetchStatusRawAsync(User user, TraewellingStatusKey key, bool waitIfLimited = true);
 
         /// <summary>
         /// GET an API path (relative to Traewelling:BaseUrl) as this user, through the shared
@@ -497,13 +497,12 @@ namespace OV_DB.Services
         /// webhook delivery payload, this endpoint returns the complete resource including
         /// the stopovers' station objects.
         /// </summary>
-        public async Task<(string Json, TrawellingStatus Status)> FetchStatusRawAsync(User user, int statusId, bool waitIfLimited = true, string uuid = null)
+        public async Task<(string Json, TrawellingStatus Status)> FetchStatusRawAsync(User user, TraewellingStatusKey key, bool waitIfLimited = true)
         {
             try
             {
-                // Träwelling accepts either id here and is moving to UUIDs; a negative id is OVDB's own
-                // key for a status that came without a number, so it can only be fetched by UUID.
-                var idForApi = !string.IsNullOrEmpty(uuid) ? uuid : statusId > 0 ? statusId.ToString() : null;
+                // Träwelling accepts either id here; the UUID when known, as the numbers are on their way out.
+                var idForApi = key.ToString();
                 if (idForApi == null)
                     return (null, null);
                 if (!waitIfLimited && _rateLimiter.IsLimited)
@@ -524,7 +523,7 @@ namespace OV_DB.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error fetching full status {StatusId} for user {UserId}", statusId, user.Id);
+                _logger.LogError(ex, "Error fetching full status {StatusId} for user {UserId}", key, user.Id);
                 return (null, null);
             }
         }

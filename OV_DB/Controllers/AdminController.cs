@@ -66,7 +66,7 @@ namespace OV_DB.Controllers
                     .SelectMany(m => m.RouteMaps)
                     .Select(rm => rm.Route)
                     .SelectMany(r => r.RouteInstances)
-                    .Count(ri => ri.TrawellingStatusId.HasValue),
+                    .Count(ri => ri.TrawellingStatusId.HasValue || ri.TrawellingStatusUuid != null),
                     
                 LastRouteInstanceDate = u.Maps
                     .SelectMany(m => m.RouteMaps)
