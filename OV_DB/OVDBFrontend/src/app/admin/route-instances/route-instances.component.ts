@@ -386,9 +386,13 @@ export class RouteInstancesComponent implements OnInit {
   private prefillWithTraewellingData(newInstance: RouteInstance) {
     if (this.fromTraewelling() && this.trawellingTripData()) {
       const tripData = this.trawellingTripData();
-      // Use the local calendar date, not the UTC one: toISOString() would roll a late-evening
-      // local check-in back to the previous day.
-      newInstance.date = (tripData!.date ? this.toLocalDateString(new Date(tripData!.date)) : undefined)!;
+      // The departure arrives as the station's local time ("2026-08-03T17:49:00"), so its date part is
+      // the journey's date; converting through the browser's timezone could shift a trip abroad.
+      // Anything else (an older context with a check-in time) falls back to the local calendar date.
+      const date = tripData!.date;
+      newInstance.date = (date
+        ? /^\d{4}-\d{2}-\d{2}T[^Z+]*$/.test(String(date)) ? String(date).slice(0, 10) : this.toLocalDateString(new Date(date))
+        : undefined)!;
       newInstance.startTime = tripData!.departureTime;
       newInstance.endTime = tripData!.arrivalTime;
       newInstance.scheduledStartTime = tripData!.scheduledDepartureTime;

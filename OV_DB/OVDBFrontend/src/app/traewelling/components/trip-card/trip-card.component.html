@@ -17,7 +17,7 @@
     <div class="trip-meta">
       <div class="trip-date">
         <mat-icon>event</mat-icon>
-        {{ trawellingService.formatDate(trip.createdAt) }}
+        {{ trawellingService.formatDate(trip.transport.origin.departureScheduled || trip.transport.origin.departureReal || trip.createdAt) }}
       </div>
     </div>
   </div>

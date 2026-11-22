@@ -157,7 +157,9 @@ export class TrawellingService {
       duration: trip.transport.duration,
       description: trip.body,
       tags: mappedTags,
-      date: trip.createdAt
+      // The day of the journey, not of the check-in: checking in afterwards (or the evening
+      // before a just-after-midnight departure) put the trip on the wrong day.
+      date: trip.transport.origin.departureScheduled || trip.transport.origin.departureReal || trip.createdAt
     };
   }
 
